@@ -1,8 +1,10 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.schema.api.ArchiveConfigContainer;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.PlatformConfigContainer;
+import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.internal.reflect.Instantiator;
 
 import java.util.IdentityHashMap;
@@ -18,6 +20,8 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
 
     private final String name;
     private final DefaultArchiveConfigContainer archives;
+    private final CompositeDomainObjectSet<ArchiveConfig> allArchives;
+
     private final PlatformConfigContainer container;
     private PlatformConfigInternal parent;
     private Map<PlatformConfig, PlatformConfig> children = new IdentityHashMap<>();
@@ -44,6 +48,9 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
         // TODO: A smart delegate where we can check the platform for archives first,
         // then default to the schema itself.
         archives = new DefaultArchiveConfigContainer(()->this, instantiator);
+        allArchives = CompositeDomainObjectSet.create(ArchiveConfig.class, archives);
+        allArchives.addCollection(archives);
+
         schemaArchives.configureEach(archives::add);
         this.parent = parent;
         this.container = container;
@@ -73,6 +80,11 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     @Override
     public ArchiveConfigContainerInternal getArchives() {
         return archives;
+    }
+
+    @Override
+    public CompositeDomainObjectSet<ArchiveConfig> getAllArchives() {
+        return allArchives;
     }
 
     @Override

@@ -44,7 +44,6 @@ public interface BuildGraph {
     Set<String> registeredProjects();
 
     ProjectView rootProject();
-    ProjectView getProject();
 
     // Consider composite-mapping a bit here...
 

@@ -4,8 +4,8 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
+import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectContainer;
 
 import java.util.Set;
 
@@ -38,7 +38,7 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
     }
 
     @Override
-    public NamedDomainObjectContainer<PlatformGraph> platforms() {
+    public RealizableNamedObjectContainer<PlatformGraph> platforms() {
         return super.getItems();
     }
 
@@ -70,5 +70,31 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
     @Override
     public String getName() {
         return project.getPath();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final DefaultProjectGraph that = (DefaultProjectGraph) o;
+
+        return project.getPath().equals(that.project.getPath());
+    }
+
+    @Override
+    public int hashCode() {
+        return project.getPath().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultProjectGraph{" +
+            // later, when main() is configurable, we _may_ want to do this:
+//            "main=" + main().getName() +
+            "name='" + getName() + '\'' +
+            "} " + super.toString();
     }
 }

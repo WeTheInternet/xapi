@@ -3,9 +3,9 @@ package net.wti.gradle.internal.require.api;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
+import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.SourceSetContainer;
@@ -22,7 +22,7 @@ public interface PlatformGraph extends Named {
 
     ArchiveGraph archive(Object name);
 
-    NamedDomainObjectContainer<ArchiveGraph> archives();
+    RealizableNamedObjectContainer<ArchiveGraph> archives();
 
     NamedDomainObjectProvider<ArchiveGraph> getOrRegister(String archive);
 

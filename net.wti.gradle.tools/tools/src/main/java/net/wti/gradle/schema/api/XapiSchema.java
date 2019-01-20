@@ -9,15 +9,15 @@ import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
 import org.gradle.api.Action;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ConfigurationContainer;
-import org.gradle.api.artifacts.ConfigurationPublications;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
+import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.jvm.tasks.Jar;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 
@@ -145,16 +145,18 @@ public class XapiSchema {
         Callable<PlatformConfigInternal> getMain = this::getMainPlatform;
         archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, getMain, instantiator);
         platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, instantiator, archives);
+
         final ProjectView root = XapiSchemaPlugin.schemaRootProject(pv);
         if (root != pv) {
             initialize(root.getSchema());
         }
+        platforms.configureEach(plat -> {
+            plat.getAllArchives().addCollection(archives);
+        });
         pv.getGradle().projectsEvaluated(gradle->{
 
             platforms.configureEach(plat -> {
-
-                plat.getArchives().addAll(archives);
-                plat.getArchives().configureEach(arch -> {
+                plat.getAllArchives().configureEach(arch -> {
                     final ArchiveGraph archive = pv.getProjectGraph()
                         .platform(plat.getName())
                         .archive(arch.getName());
@@ -169,8 +171,8 @@ public class XapiSchema {
         );
     }
 
-    public void configureArchive(
-        ProjectView pv,
+    protected void configureArchive(
+        ProjectView view,
         PlatformConfig platConfig,
         ArchiveConfig archConfig,
         ArchiveGraph archGraph
@@ -187,7 +189,7 @@ public class XapiSchema {
 
         final PlatformGraph platGraph = archGraph.platform();
 
-        final DependencyHandler deps = pv.getDependencies();
+        final DependencyHandler deps = view.getDependencies();
 
         if (!platConfig.isRoot()) {
             final PlatformGraph parent = platGraph.project().platform(platConfig.getParent().getName());
@@ -208,13 +210,16 @@ public class XapiSchema {
                 meta.getSrc().getOutput()
             );
 
+            // Need publishing artifact setup.
+            final TaskProvider<Task> jarTask = view.getTasks().named(meta.getSrc().getJarTaskName());
+            PublishArtifact jarArtifact = new LazyPublishArtifact(jarTask);
+            view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(jarArtifact);
 
         }
         if (platConfig.isRequireSource() || archConfig.isSourceAllowed()) {
             // Instead of isSourceAllowed, we may want to allow platform source
             // requirements to trigger source creation of super-platforms.
-            final Configuration sourceConfig = addSourceConfiguration(pv, archGraph);
-            transitive.extendsFrom(sourceConfig);
+            transitive.extendsFrom(archGraph.configSource());
         }
 
         final Set<String> needed = archConfig.required();
@@ -224,87 +229,21 @@ public class XapiSchema {
             if (only) {
                 need = need.substring(0, need.length()-1);
             }
-            PlatformConfigInternal conf = pv.getSchema().findPlatform(need);
+            PlatformConfigInternal conf = view.getSchema().findPlatform(need);
             if (conf == null) {
-                conf = pv.getSchema().getMainPlatform();
+                conf = view.getSchema().getMainPlatform();
             }
             need = GUtil.toLowerCamelCase(need.replace(conf.getName(), ""));
             final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
             final ArchiveGraph neededArchive = needPlat.archive(need);
 
-            Dependency dep = pv.dependencyFor(neededArchive.configAssembled());
+            Dependency dep = view.dependencyFor(neededArchive.configAssembled());
 
             deps.add(
                 only ? archGraph.configIntransitive().getName(): transitive.getName()
                 , dep);
         }
 
-    }
-
-    private Configuration addSourceConfiguration(
-        ProjectView project,
-        ArchiveGraph archive
-    ) {
-        XapiSchema schema = project.getSchema();
-        String name = archive.getSrcName() + "Source";
-        ConfigurationContainer configs = project.getConfigurations();
-        Configuration config = configs.findByName(name);
-        if (config != null) {
-            return config;
-        }
-
-        String taskName = name + "Jar";
-        final TaskContainer tasks = project.getTasks();
-        config = configs.maybeCreate(name);
-
-        boolean hasSrc = archive.srcExists();
-
-        final TaskProvider<Jar> jarTask = tasks.register(taskName, Jar.class, jar -> {
-            if (hasSrc) {
-                SourceMeta meta = archive.getSource();
-                jar.from(meta.getSrc().getAllSource());
-                jar.getExtensions().add(SourceMeta.EXT_NAME, meta);
-            }
-            if (schema.getArchives().isWithCoordinate()) {
-                assert !schema.getArchives().isWithClassifier() : "Archive container cannot use both coordinate and classifier: " + schema.getArchives();
-                jar.getArchiveAppendix().set("sources");
-            } else {
-                jar.getArchiveClassifier().set("sources");
-            }
-        });
-
-        final ConfigurationPublications outgoing = config.getOutgoing();
-
-//        outgoing.variants(variants->{
-//            final ConfigurationVariant variant = variants.maybeCreate("sources");
-//            variant.attributes(attrs->
-//                attrs.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, "sources")
-//            );
-////        if (hasSrc) {
-////            for (File srcDir : archive.allSourceDirs().getSourceDirectories()) {
-////                final Provider<File> provider = providers.provider(() -> srcDir);
-////                LazyPublishArtifact src = new LazyPublishArtifact(provider);
-////                final Directory proj = project.getLayout().getProjectDirectory();
-////                final String seg = srcDir.getAbsolutePath().replace(proj.getAsFile().getAbsolutePath(), "").substring(1);
-////                final Directory asDir = proj.dir(seg);
-////                outgoing.artifact(new FileSystemPublishArtifact(
-////                    asDir, project.getVersion()
-////                ));
-//////                outgoing.artifact(src);
-////            }
-////        }
-//        });
-
-        archive.configAssembled().extendsFrom(config);
-
-        if (archive.srcExists()) {
-            project.getDependencies().add(
-                name,
-                archive.allSourceDirs().getSourceDirectories()
-            );
-        }
-
-        return config;
     }
 
     public PlatformConfigContainerInternal getPlatforms() {

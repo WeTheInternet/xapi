@@ -13,14 +13,17 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
+import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
@@ -28,6 +31,7 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.GUtil;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 /**
  * A "lightweight view" of commonly-passed-around objects from a given gradle {@link Project}.
@@ -52,10 +56,14 @@ public interface ProjectView extends ExtensionAware {
     ConfigurationContainer getConfigurations();
     RepositoryHandler getRepositories();
     DependencyHandler getDependencies();
+    SoftwareComponentContainer getComponents();
     ArtifactHandler getArtifacts();
     SourceSetContainer getSourceSets();
     Object findProperty(String named);
     ProjectView findProject(String named);
+    ImmutableAttributesFactory getAttributesFactory();
+    String getGroup();
+    String getName();
     String getVersion();
 
     static ProjectView fromProject(Project project) {
@@ -63,8 +71,9 @@ public interface ProjectView extends ExtensionAware {
             ProjectInternal p = (ProjectInternal) project;
             final Instantiator inst = p.getServices().get(Instantiator.class);
             final CollectionCallbackActionDecorator dec = p.getServices().get(CollectionCallbackActionDecorator.class);
-            ProjectFinder finder = p.getServices().get(ProjectFinder.class);
-            return new DefaultProjectView(project, inst, dec, finder);
+            final ProjectFinder finder = p.getServices().get(ProjectFinder.class);
+            final ImmutableAttributesFactory attributesFactory = p.getServices().get(ImmutableAttributesFactory.class);
+            return new DefaultProjectView(project, inst, dec, finder, attributesFactory);
         });
     }
 
@@ -121,4 +130,19 @@ public interface ProjectView extends ExtensionAware {
         );
     }
 
+    default <T> Provider<T> lazyProvider(Callable<T> items) {
+        return lazyProvider(getProviders().provider(items));
+    }
+
+    default <T> Provider<T> lazyProvider(Provider<T> items) {
+        Object[] result = {null};
+        return getProviders().provider(()->{
+            synchronized (result) {
+                if (result[0] == null) {
+                    result[0] = items.get();
+                }
+            }
+            return (T)result[0];
+        });
+    }
 }

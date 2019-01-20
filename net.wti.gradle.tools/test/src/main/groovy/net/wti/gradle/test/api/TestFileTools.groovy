@@ -1,14 +1,13 @@
-package net.wti.gradle.test
+package net.wti.gradle.test.api
+
 
 import java.util.function.Function
-
 /**
  * Handy tools for creating test files.
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:20 AM.
  */
-trait TestFileTools {
-    abstract File getRootDir()
+trait TestFileTools implements HasTestFiles {
 
     File newFolder(String ... paths) {
         File f = getRootDir()

@@ -207,7 +207,7 @@ public interface GradleService {
 
             final File loc = gradleLoc;
             project.getLogger().trace("configuring wrapper for {} using {}", root, loc);
-            final String gradleVersion = "5.1-x-5";
+            final String gradleVersion = "5.1-x-6";
             final String zipSeg = "gradle-" + gradleVersion + ".zip";
             final File zipLoc = new File(loc.getParentFile(), zipSeg);
 
@@ -239,7 +239,7 @@ public interface GradleService {
                     wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());
                     if (!zipLoc.exists()) {
                         project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
-                        wrapper.dependsOn(distZip);
+                        wrapper.dependsOn(distZip.get());
                     }
 
                 }

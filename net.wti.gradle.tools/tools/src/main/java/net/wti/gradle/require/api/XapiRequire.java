@@ -4,8 +4,10 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.XapiRegistration;
+import net.wti.gradle.schema.internal.XapiRegistration.RegistrationMode;
 import org.gradle.api.Named.Namer;
 import org.gradle.api.NamedDomainObjectList;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.internal.DefaultNamedDomainObjectList;
 
 /**
@@ -20,6 +22,7 @@ public class XapiRequire {
 
     private final NamedDomainObjectList<XapiRegistration> registrations;
     private final XapiSchema schema;
+    private final ProjectView view;
 
     public XapiRequire(ProjectView project) {
         this.schema = project.getSchema();
@@ -28,6 +31,7 @@ public class XapiRequire {
             project.getInstantiator(),
             Namer.forType(XapiRegistration.class)
         );
+        this.view = project;
     }
 
     /**
@@ -41,6 +45,12 @@ public class XapiRequire {
      */
     public void project(Object project) {
         XapiRegistration reg = XapiRegistration.from(project, null, null);
+        registrations.add(reg);
+    }
+
+    public void external(Object project) {
+        final Dependency dep = view.getDependencies().module(project);
+        XapiRegistration reg = XapiRegistration.from(project, dep.getGroup(), dep.getName(), null, RegistrationMode.external);
         registrations.add(reg);
     }
 

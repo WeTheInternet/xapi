@@ -1,14 +1,10 @@
-package net.wti.gradle.test
-
+package net.wti.gradle.test.api
 
 import org.gradle.api.Named
-import org.gradle.api.NonNullApi
-
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:16 AM.
  */
-@NonNullApi
-class TestProject implements Named, TestProjectDir {
+class TestProject implements Named, TestProjectDir, TestFileTools {
     private final String name
     private final File rootDir
     private boolean included

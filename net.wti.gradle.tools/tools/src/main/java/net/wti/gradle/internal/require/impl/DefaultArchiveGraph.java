@@ -63,4 +63,33 @@ public class DefaultArchiveGraph implements ArchiveGraph {
     public String getName() {
         return name;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final DefaultArchiveGraph that = (DefaultArchiveGraph) o;
+
+        if (!platform.equals(that.platform))
+            return false;
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = platform.hashCode();
+        result = 31 * result + name.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultArchiveGraph{" +
+            "platform=" + platform +
+            ", name='" + name + '\'' +
+            '}';
+    }
 }

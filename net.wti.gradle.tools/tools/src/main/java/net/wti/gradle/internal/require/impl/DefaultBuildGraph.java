@@ -42,12 +42,11 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
     }
 
     @Override
-    public ProjectView getProject() {
-        return project;
-    }
-
-    @Override
     public ProjectView rootProject() {
+        // Perhaps also have a method for the schema root;
+        // For now, the build graph is global across all possible schemas,
+        // and it's likely that we'll want to keep it that way,
+        // in case we find it useful to opt-out of a root schema...
         return service.getView();
     }
 

@@ -1,8 +1,11 @@
 package net.wti.gradle.internal.require.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
-import org.gradle.api.*;
-import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
+import net.wti.gradle.system.api.RealizableNamedObjectContainer;
+import net.wti.gradle.system.impl.DefaultRealizableNamedObjectContainer;
+import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.Namer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.internal.reflect.Instantiator;
 
@@ -15,9 +18,9 @@ import java.util.Set;
  */
 public abstract class AbstractBuildGraphNode <T> {
     private final Set<String> registeredItems, realizedItems;
-    private final NamedDomainObjectContainer<T> items;
+    private final RealizableNamedObjectContainer<T> items;
 
-    protected class GraphNodeContainer extends AbstractNamedDomainObjectContainer<T> {
+    protected class GraphNodeContainer extends DefaultRealizableNamedObjectContainer<T> {
 
         protected GraphNodeContainer(
             Class<T> type,
@@ -51,7 +54,7 @@ public abstract class AbstractBuildGraphNode <T> {
         items = new GraphNodeContainer(type, project.getInstantiator(), project.getDecorator());
     }
 
-    protected NamedDomainObjectContainer<T> getItems() {
+    protected RealizableNamedObjectContainer<T> getItems() {
         return items;
     }
 

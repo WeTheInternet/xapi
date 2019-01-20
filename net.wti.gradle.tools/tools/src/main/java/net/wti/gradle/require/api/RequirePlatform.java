@@ -9,10 +9,23 @@ import org.gradle.internal.reflect.Instantiator;
 import static org.gradle.api.Named.Namer.forType;
 
 /**
+ * A xapiRequire DSL for a specific platform:
+ * xapiRequire {
+ *     // The gwt{} block here is a RequirePlatform; xapiRequire itself is a container for RequirePlatforms
+ *     gwt {
+ *         // applies to _all_ gwt platform archives
+ *         external 'a:b:c'
+ *         main {
+ *             // applies only to gwt:main archive.
+ *             external 'x.y.z'
+ *         }
+ *     }
+ * }
+ *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/4/19 @ 10:45 PM.
  */
-public class RequireProject extends DefaultNamedDomainObjectList<XapiRegistration> {
-    public RequireProject(
+public class RequirePlatform extends DefaultNamedDomainObjectList<XapiRegistration> {
+    public RequirePlatform(
         DefaultNamedDomainObjectList<? super XapiRegistration> objects,
         CollectionFilter<XapiRegistration> filter,
         Instantiator instantiator
@@ -20,7 +33,7 @@ public class RequireProject extends DefaultNamedDomainObjectList<XapiRegistratio
         super(objects, filter, instantiator, forType(XapiRegistration.class));
     }
 
-    public RequireProject(
+    public RequirePlatform(
         Instantiator instantiator,
         CollectionCallbackActionDecorator decorator
     ) {

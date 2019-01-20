@@ -1,14 +1,12 @@
 package net.wti.gradle.internal.api;
 
 import net.wti.gradle.internal.require.api.ProjectGraph;
-import net.wti.gradle.schema.api.XapiSchema;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.component.ComponentWithVariants;
 import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.ProviderFactory;
 import org.gradle.internal.reflect.Instantiator;
 
 import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
@@ -46,6 +44,7 @@ import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
  */
 public class XapiLibrary implements XapiVariant, ComponentWithVariants {
 
+    public static final String EXT_NAME = "xapiLibrary";
     private final XapiPlatformContainer platforms;
     private final CompositeDomainObjectSet<XapiUsageContext> all;
     /**
@@ -63,19 +62,18 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
 
     @SuppressWarnings("unchecked")
     public XapiLibrary(
-        XapiSchema schema,
-        ObjectFactory objects,
-        ProviderFactory providers,
-        Instantiator instantiator
+        ProjectView project
     ) {
-        platforms = new XapiPlatformContainer(instantiator, objects);
+
+        final Instantiator instantiator = project.getInstantiator();
+        this.objects = project.getObjects();
+        platforms =  new XapiPlatformContainer(instantiator, objects);
         main = objects.property(XapiPlatform.class);
         all = CompositeDomainObjectSet.create(XapiUsageContext.class, NOOP);
         platforms.whenObjectAdded(p-> all.addCollection(p.getUsages()));
-        main.convention(providers.provider(()->
+        main.convention(project.getProviders().provider(()->
             getPlatform("main")
         ));
-        this.objects = objects;
     }
 
     /**

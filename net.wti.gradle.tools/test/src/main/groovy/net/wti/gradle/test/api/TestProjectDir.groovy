@@ -1,9 +1,8 @@
-package net.wti.gradle.test
-
+package net.wti.gradle.test.api
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:45 AM.
  */
-trait TestProjectDir extends TestFileTools {
+trait TestProjectDir implements HasProjectFiles {
 
     private File buildFile
 

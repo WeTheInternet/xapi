@@ -10,6 +10,7 @@ apply from: "$xapiHome/gradle/xapi-env.gradle"
 apply from: "$xapiHome/gradle/int-test.gradle"
 
 dependencies {
+    compile project(':xapi-gradle-core')
     compile gradleApi()
     compile gradleTestKit()
     compile 'org.junit.jupiter:junit-jupiter-api:5.3.2'
@@ -25,5 +26,16 @@ configurations {
                 file: compileGroovy.destinationDir,
                 type: ArtifactTypeDefinition.JVM_CLASS_DIRECTORY,
                 builtBy: compileGroovy)
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = []
+        }
+        groovy { 
+            srcDirs = ['src/main/java', 'src/main/groovy']
+        }
     }
 }

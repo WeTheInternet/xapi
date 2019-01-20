@@ -1,10 +1,10 @@
 package net.wti.gradle.internal.require.api;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectProvider;
 
 import java.util.Set;
@@ -17,7 +17,7 @@ public interface ProjectGraph extends Named {
 
     ProjectView project();
 
-    NamedDomainObjectContainer<PlatformGraph> platforms();
+    RealizableNamedObjectContainer<PlatformGraph> platforms();
 
     default PlatformGraph platform(CharSequence name) {
         return platforms().maybeCreate(name.toString());
@@ -46,5 +46,9 @@ public interface ProjectGraph extends Named {
 
     default String getPath() {
         return project().getPath();
+    }
+
+    default String getGroup() {
+        return project().getVersion();
     }
 }

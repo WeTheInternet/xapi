@@ -1,19 +1,17 @@
 package net.wti.gradle.internal.require.impl;
 
-import net.wti.gradle.internal.require.api.ArchiveGraph;
-import net.wti.gradle.internal.require.api.ArchiveRequest;
-import net.wti.gradle.internal.require.api.PlatformGraph;
-import net.wti.gradle.internal.require.api.ProjectGraph;
+import net.wti.gradle.internal.require.api.*;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
+import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -59,7 +57,7 @@ public class DefaultPlatformGraph extends AbstractBuildGraphNode<ArchiveGraph> i
     }
 
     @Override
-    public NamedDomainObjectContainer<ArchiveGraph> archives() {
+    public RealizableNamedObjectContainer<ArchiveGraph> archives() {
         return getItems();
     }
 
@@ -70,10 +68,8 @@ public class DefaultPlatformGraph extends AbstractBuildGraphNode<ArchiveGraph> i
 
     @Override
     public Set<ArchiveGraph> realize() {
-        getItems().all(ignored->{});
         Set<ArchiveGraph> all = new LinkedHashSet<>();
-        getItems().whenObjectAdded(all::add);
-        getItems().whenObjectRemoved(all::remove);
+        getItems().realizeInto(all);
         return all;
     }
 
@@ -132,4 +128,36 @@ public class DefaultPlatformGraph extends AbstractBuildGraphNode<ArchiveGraph> i
 
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final DefaultPlatformGraph that = (DefaultPlatformGraph) o;
+
+        if (!project.equals(that.project))
+            return false;
+        if (!name.equals(that.name))
+            return false;
+        return Objects.equals(parent, that.parent);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = project.hashCode();
+        result = 31 * result + name.hashCode();
+        result = 31 * result + (parent != null ? parent.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultPlatformGraph{" +
+            "project=" + project +
+            ", name='" + name + '\'' +
+            ", parent=" + parent +
+            "} ";
+    }
 }

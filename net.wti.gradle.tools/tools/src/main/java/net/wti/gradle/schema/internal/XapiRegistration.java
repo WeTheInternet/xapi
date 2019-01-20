@@ -10,21 +10,31 @@ import java.util.Objects;
  */
 public class XapiRegistration implements Named {
 
+    public enum RegistrationMode {
+        internal, external;
+        public static RegistrationMode DEFAULT = internal;
+    }
+
     private Object project;
     private Object platform;
     private Object archive;
     private Object into;
     private boolean resolved;
+    private final RegistrationMode mode;
 
     public XapiRegistration(Object project, Object platform, Object archive) {
         this(project, platform, archive, null);
     }
 
     public XapiRegistration(Object project, Object platform, Object archive, Object into) {
+        this(project, platform, archive, into, RegistrationMode.DEFAULT);
+    }
+    public XapiRegistration(Object project, Object platform, Object archive, Object into, RegistrationMode mode) {
         this.project = project;
         this.platform = platform;
         this.archive = archive;
         this.into = into;
+        this.mode = mode;
     }
 
     public static XapiRegistration from(Object project, Object platform, Object archive) {
@@ -33,6 +43,10 @@ public class XapiRegistration implements Named {
 
     public static XapiRegistration from(Object project, Object platform, Object archive, Object into) {
         return new XapiRegistration(project, platform, archive, into);
+    }
+
+    public static XapiRegistration from(Object project, Object platform, Object archive, Object into, RegistrationMode mode) {
+        return new XapiRegistration(project, platform, archive, into, mode);
     }
 
     private void maybeResolve() {
@@ -118,5 +132,9 @@ public class XapiRegistration implements Named {
             .append(":")
             .append(archive);
         return b.toString();
+    }
+
+    public RegistrationMode getMode() {
+        return mode;
     }
 }

@@ -1,16 +1,15 @@
 package net.wti.gradle.system.tools;
 
-import groovy.lang.Closure;
 import org.gradle.api.GradleException;
 import org.gradle.api.Named;
 import org.gradle.api.provider.Provider;
 import org.gradle.util.GUtil;
 
+import java.io.File;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -53,6 +52,12 @@ public class GradleCoerce {
             if (item instanceof Named) {
                 return ((Named) item).getName();
             }
+            if (item instanceof CharSequence
+                || item instanceof File
+                || item instanceof Number
+                || item instanceof Boolean) {
+                return item.toString();
+            }
             return DEFAULT_FALLBACK.apply(o);
         });
         return items.stream().map(String::valueOf).collect(Collectors.toList());
@@ -69,9 +74,6 @@ public class GradleCoerce {
             }
         } else if (o instanceof Provider) {
             final Object item = ((Provider) o).get();
-            result.addAll(unwrap(item));
-        } else if (o instanceof Closure) {
-            final Object item = ((Closure) o).call();
             result.addAll(unwrap(item));
         } else if (o instanceof Callable) {
             final Object item;

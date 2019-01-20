@@ -1,30 +1,29 @@
 package net.wti.gradle.test
 
 
+import net.wti.gradle.test.api.TestBuild
+import net.wti.gradle.test.api.TestFileTools
 import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import spock.lang.Specification
 
 import java.nio.file.Files
-import java.util.concurrent.Callable
 
 import static org.gradle.api.logging.LogLevel.*
-import static org.gradle.util.GUtil.uncheckedCall
-
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:04 AM.
  */
-trait XapiGradleTestMixin <S extends Specification & XapiGradleTestMixin<S>> extends TestProjectDir {
+abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools {
 
     LogLevel LOG_LEVEL = QUIET
     Boolean DEBUG = true// Boolean.getBoolean("xapi.debug")
 
     abstract S selfSpec()
 
-    private File settingsFile
     private File rootDir
     private String rootProjectName
+    private boolean printedProjectName
 
     File getRootDir() {
         this.@rootDir ?: (this.@rootDir = newTmpDir())
@@ -34,15 +33,10 @@ trait XapiGradleTestMixin <S extends Specification & XapiGradleTestMixin<S>> ext
         Files.createTempDirectory(selfSpec().class.simpleName).toFile()
     }
 
-    File getSettingsFile() {
-        this.@settingsFile ?: (this.@settingsFile = file('settings.gradle'))
-    }
-
-
     BuildResult runSucceed(
             LogLevel logLevel = LOG_LEVEL,
             File projectDir = getRootDir(),
-            boolean debug = DEBUG,
+            Boolean debug = DEBUG,
             String ... task
     ) {
         flush()
@@ -63,7 +57,7 @@ trait XapiGradleTestMixin <S extends Specification & XapiGradleTestMixin<S>> ext
 
     BuildResult runFail(
             LogLevel logLevel = LOG_LEVEL,
-            boolean debug = DEBUG,
+            Boolean debug = DEBUG,
             File projectDir = getRootDir(),
             String ... task
     ) {
@@ -97,13 +91,18 @@ trait XapiGradleTestMixin <S extends Specification & XapiGradleTestMixin<S>> ext
         runSucceed logLevel, 'tasks', '--all'
     }
 
-    /**
-     * Flushes any pending source generation.
-     */
-    void flush() {
-        if (!getSettingsFile().exists() || !settingsFile.text) {
+    @Override
+    Boolean hasWorkRemaining() {
+        return TestBuild.super.hasWorkRemaining() || !printedProjectName
+    }
+
+    @Override
+    void doWork() {
+        if (!printedProjectName) {
+            printedProjectName = true
             settingsFile << "rootProject.name='${getRootProjectName()}'\n"
         }
+        TestBuild.super.doWork()
     }
 
     String toFlag(LogLevel logLevel) {
@@ -119,22 +118,6 @@ trait XapiGradleTestMixin <S extends Specification & XapiGradleTestMixin<S>> ext
             default:
                 throw new UnsupportedOperationException("$logLevel not supported")
         }
-    }
-
-    String coerceString(Object value) {
-        if (value == null) {
-            return null
-        } else if (value instanceof CharSequence
-                || value instanceof File
-                || value instanceof Number
-                || value instanceof Boolean) {
-            return value.toString()
-        } else if (value instanceof Callable) {
-            final Callable callableNotation = (Callable) value
-            final Object called = uncheckedCall(callableNotation)
-            return coerceString(called)
-        }
-        throw new IllegalArgumentException("Cannot coerce ${value.class}: $value")
     }
 
     String getRootProjectName() {
