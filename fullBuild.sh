@@ -1,4 +1,12 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
+args=$(
+ (($# == 0)) && echo "build publishXapi" || echo "$@"
+)
 
-# mvn clean install -T 2.5C -Dxapi.log.level=INFO -Dxapi.prod=true -Dxapi.debug=false -Dxapi.release=true -Dxapi.skip.test=false $@
-./gradlew build publishXapi -Dxapi.composite=true -Pxapi.changing=true -x test --parallel --build-cache -Pxapi.debug=false $@
+pushd net.wti.gradle.tools > /dev/null
+# the tools will install themselves to local repo whenever we build them.
+./gradlew $args -x test
+popd > /dev/null
+
+./gradlew $args -Dxapi.composite=true -Pxapi.changing=true -x test --parallel --build-cache -Pxapi.debug=false
