@@ -1,7 +1,6 @@
 package net.wti.gradle.internal.api;
 
 import org.gradle.api.internal.component.SoftwareComponentInternal;
-import org.gradle.api.internal.component.UsageContext;
 
 import java.util.Set;
 

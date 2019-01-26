@@ -29,4 +29,8 @@ public abstract class DefaultRealizableNamedObjectContainer <T> extends Abstract
         super(type, instantiator, callbackActionDecorator);
     }
 
+    @Override
+    public boolean hasWithName(String name) {
+        return super.hasWithName(name);
+    }
 }

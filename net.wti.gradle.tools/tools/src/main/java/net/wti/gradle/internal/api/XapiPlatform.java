@@ -1,33 +1,44 @@
 package net.wti.gradle.internal.api;
 
-import org.gradle.api.DomainObjectSet;
-import org.gradle.api.internal.DefaultDomainObjectSet;
-import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.Property;
-
-import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
+import net.wti.gradle.publish.api.PublishedModule;
+import net.wti.gradle.publish.api.PublishedModuleContainer;
+import org.gradle.api.Action;
+import org.gradle.api.Named;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/10/18 @ 2:53 AM.
  */
-public class XapiPlatform implements XapiVariant {
+public class XapiPlatform implements Named {
 
     private final String name;
-    private final Property<DomainObjectSet<XapiUsageContext>> usages;
+    private final PublishedModuleContainer usages;
 
-    public XapiPlatform(ObjectFactory objects, String name) {
+    public XapiPlatform(
+        ProjectView view,
+        String name
+    ) {
         this.name = name;
-        this.usages = objects.property(Class.class.cast(DomainObjectSet.class));
-        usages.set(new DefaultDomainObjectSet<>(XapiUsageContext.class, NOOP));
-    }
-
-    @Override
-    public DomainObjectSet<XapiUsageContext> getUsages() {
-        return usages.get();
+        this.usages = new PublishedModuleContainer(view, this);
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    public PublishedModule getModule(String name) {
+        return usages.maybeCreate(name);
+    }
+
+    public boolean isEmpty() {
+        return usages.isEmpty();
+    }
+
+    public void whenModuleAdded(Action<? super PublishedModule> callback) {
+        usages.whenObjectAdded(callback);
+    }
+
+    public PublishedModuleContainer getModules() {
+        return usages;
     }
 }

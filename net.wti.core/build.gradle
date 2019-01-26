@@ -11,6 +11,8 @@ apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 String xapiHome = extensions.getByName('xapiHome')
 apply from: "$xapiHome/gradle/child-build.gradle"
 
+TaskProvider required = tasks.register('publishRequired')
+
 allprojects {
     group 'net.wti.core'
     version '0.5.1'
@@ -74,6 +76,7 @@ subprojects {
                 ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file://" + i.file.absolutePath}).join('/n')}"
             }
             ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME, sourceJar)
+            required.configure {it.dependsOn ptml}
             p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)
     }
     publishing.publications.create "${name}.jar", MavenPublication, {

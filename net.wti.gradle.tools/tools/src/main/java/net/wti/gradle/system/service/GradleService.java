@@ -207,7 +207,7 @@ public interface GradleService {
 
             final File loc = gradleLoc;
             project.getLogger().trace("configuring wrapper for {} using {}", root, loc);
-            final String gradleVersion = "5.1-x-6";
+            final String gradleVersion = "5.1-x-11";
             final String zipSeg = "gradle-" + gradleVersion + ".zip";
             final File zipLoc = new File(loc.getParentFile(), zipSeg);
 

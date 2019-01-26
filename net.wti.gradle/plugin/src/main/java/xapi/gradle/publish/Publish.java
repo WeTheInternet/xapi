@@ -1,6 +1,5 @@
 package xapi.gradle.publish;
 
-import net.wti.gradle.PublishXapi;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.execution.TaskExecutionGraph;
@@ -29,7 +28,6 @@ import xapi.gradle.task.SourceJar;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
@@ -78,14 +76,14 @@ public class Publish {
                 return graph.hasTask(pathRoot + "uploadArchives")
                        // This could(should?) be tailored to fit the isBintray/isArtifactory dichotomy
                        || graph.hasTask(pathRoot + "artifactoryPublish")
-                       || graph.hasTask(pathRoot + "publishXapi")
-                       || graph.hasTask(pathRoot + "pX")
+                       || graph.hasTask(pathRoot + "xapiPublish")
+                       || graph.hasTask(pathRoot + "xP")
                        || graph.hasTask(pathRoot  + PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME);
             } else {
                 // We have to guess from the startParameters.
                 final List<String> requested = p.getGradle().getStartParameter().getTaskNames();
                 for (String r : requested) {
-                    if (r.toLowerCase().contains("publish") || "pX".equals(r) || r.contains("upload")) {
+                    if (r.toLowerCase().contains("publish") || "xP".equals(r) || r.contains("upload")) {
                         return true;
                     }
                 }

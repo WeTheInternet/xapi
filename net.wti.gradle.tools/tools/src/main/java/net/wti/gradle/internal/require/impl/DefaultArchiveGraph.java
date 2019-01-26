@@ -3,6 +3,7 @@ package net.wti.gradle.internal.require.impl;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.ArchiveRequest;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
+import net.wti.gradle.internal.require.api.ModuleTasks;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.require.api.DependencyKey;
 
@@ -19,12 +20,14 @@ public class DefaultArchiveGraph implements ArchiveGraph {
     private final String name;
     private final Set<ArchiveRequest> incoming;
     private final Set<ArchiveRequest> outgoing;
+    private final ModuleTasks tasks;
 
     public DefaultArchiveGraph(PlatformGraph platform, String name) {
         this.platform = platform;
         this.name = name;
         incoming = new LinkedHashSet<>();
         outgoing = new LinkedHashSet<>();
+        tasks = new ModuleTasks(this);
     }
 
     @Override
@@ -47,6 +50,11 @@ public class DefaultArchiveGraph implements ArchiveGraph {
     @Override
     public File srcRoot() {
         return new File(platform.getView().getProjectDir(), "src/" + getSrcName());
+    }
+
+    @Override
+    public ModuleTasks getTasks() {
+        return tasks;
     }
 
     @Override

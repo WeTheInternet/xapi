@@ -2,6 +2,7 @@ package net.wti.gradle.internal.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
+import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
@@ -17,6 +18,7 @@ import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSetContainer;
@@ -55,6 +57,8 @@ public class DefaultProjectView implements ProjectView {
     private final Provider<Object> name;
     private final Provider<Object> version;
     private final SoftwareComponentContainer components;
+    private final Action<Action<? super Boolean>> whenReady;
+    private final PluginContainer plugins;
 
     public DefaultProjectView(
         Project project,
@@ -69,6 +73,7 @@ public class DefaultProjectView implements ProjectView {
             project.getObjects(),
             instantiator,
             project.getExtensions(),
+            project.getPlugins(),
             project.getProviders(),
             project.getLogger(),
             project.getTasks(),
@@ -83,6 +88,13 @@ public class DefaultProjectView implements ProjectView {
             dec,
             finder,
             attributesFactory,
+            done-> {
+                if (project.getState().getExecuted()) {
+                    done.execute(true);
+                } else {
+                    project.afterEvaluate(p -> done.execute(false));
+                }
+            },
             project.getProviders().provider(project::getGroup),
             project.getProviders().provider(project::getName),
             project.getProviders().provider(project::getVersion),
@@ -96,6 +108,7 @@ public class DefaultProjectView implements ProjectView {
         ObjectFactory objects,
         Instantiator instantiator,
         ExtensionContainer extensions,
+        PluginContainer plugins,
         ProviderFactory providers,
         Logger logger,
         TaskContainer tasks,
@@ -110,6 +123,7 @@ public class DefaultProjectView implements ProjectView {
         CollectionCallbackActionDecorator decorator,
         ProjectFinder projectFinder,
         ImmutableAttributesFactory attributesFactory,
+        Action<Action<? super Boolean>> whenReady,
         Provider<Object> group,
         Provider<Object> name,
         Provider<Object> version,
@@ -120,6 +134,7 @@ public class DefaultProjectView implements ProjectView {
         this.objects = objects;
         this.instantiator = instantiator;
         this.extensions = extensions;
+        this.plugins = plugins;
         this.providers = providers;
         this.logger = logger;
         this.tasks = tasks;
@@ -133,6 +148,7 @@ public class DefaultProjectView implements ProjectView {
         this.decorator = decorator;
         this.projectFinder = projectFinder;
         this.attributesFactory = attributesFactory;
+        this.whenReady = whenReady;
         this.buildGraph = buildGraph;
         this.layout = layout;
         this.group = group;
@@ -228,6 +244,11 @@ public class DefaultProjectView implements ProjectView {
     }
 
     @Override
+    public PluginContainer getPlugins() {
+        return plugins;
+    }
+
+    @Override
     public BuildGraph getBuildGraph() {
         return buildGraph.get();
     }
@@ -257,6 +278,11 @@ public class DefaultProjectView implements ProjectView {
     public String getName() {
         final Object n = name.get();
         return String.valueOf(n);
+    }
+
+    @Override
+    public void whenReady(Action<? super ProjectView> callback) {
+        whenReady.execute(immediate->callback.execute(this));
     }
 
     @Override

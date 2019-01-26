@@ -6,7 +6,6 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.XapiRequire;
-import net.wti.gradle.schema.internal.XapiRegistration.RegistrationMode;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -17,9 +16,6 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 
 import javax.inject.Inject;
-
-import static net.wti.gradle.schema.internal.XapiRegistration.RegistrationMode.external;
-import static net.wti.gradle.schema.internal.XapiRegistration.RegistrationMode.internal;
 
 /**
  * A plugin which adds the xapiRequire {} dsl object to your build scripts.
@@ -91,20 +87,20 @@ public class XapiRequirePlugin implements Plugin<Project> {
                             // project-wide requirement; bind every platform + archive pair
                             proj.platforms().all(plat->
                                 plat.archives().all(arch->
-                                    include(view, incProj,  plat, arch, internal)
+                                    includeInternal(view, incProj,  plat, arch)
                             ));
                         } else {
                             // platform-wide requirement. This will get sticky if we allow
                             // subprojects to customize archive types, as we don't want to
                             // mess around w/ evaluating the foreign project.
                             final PlatformGraph plat = proj.platform(incPlat);
-                            plat.archives().all(arch -> include(view, incProj, plat, arch, internal));
+                            plat.archives().all(arch -> includeInternal(view, incProj, plat, arch));
                         }
                     } else {
                         // a single project:platform:archive selector
                         final PlatformGraph plat = proj.platform(incPlat);
                         final ArchiveGraph arch = plat.archive(incArch);
-                        include(view, incProj, plat, arch, internal);
+                        includeInternal(view, incProj, plat, arch);
                     }
                     break;
                 case external:
@@ -116,7 +112,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                     // and wire in the differentiation of to/from later (this complexity should be hidden from user).
                     proj.platforms().all(plat->
                         plat.archives().all(arch->
-                            include(view, incProj,  plat, arch, external)
+                            includeExternal(view, incProj, incPlat, incArch,  plat, arch)
                     ));
 
                     break;
@@ -126,44 +122,62 @@ public class XapiRequirePlugin implements Plugin<Project> {
         });
     }
 
-    private void include(
+    private void includeInternal(
         ProjectView self,
         String projId,
         PlatformGraph plat,
-        ArchiveGraph arch,
-        RegistrationMode mode
+        ArchiveGraph arch
     ) {
 
         final Configuration target;
         final DependencyHandler deps = self.getDependencies();
         final Dependency dep;
-        switch (mode) {
-            case internal:
-                final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
-                final String projName = incProject.getName();
-                assert !projName.equals(self.getPath());
-                dep = self.dependencyFor(projName, arch.configAssembled());
-                target = arch.configTransitive();
-                deps.add(target.getName(), dep);
-                break;
-            case external:
-                // The projId here is a g:n[:v] module identifier.
-                if (projId.indexOf(':') == projId.lastIndexOf(':')) {
-                    // TODO: this should be looked up from a cache somewhere...
-                    projId += ":" + self.getVersion();
-                }
-                dep = self.getDependencies().create(projId);
-                // transform the dependency to match our platform/archive
-                String newGroup = "main".equals(plat.getName()) ? dep.getGroup() : dep.getGroup() + "." + plat.getName();
-                String newName = "main".equals(arch.getName()) ? dep.getName() : dep.getName() + "-" + arch.getName();
-                // Hm...  the transitivity here should be controllable...
-                target = arch.configTransitiveLenient();
-                deps.add(target.getName(), deps.create(newGroup + ":" + newName + ":" + dep.getVersion()));
-                break;
-                default:
-                        throw new UnsupportedOperationException(mode + " was not handled");
-        }
+        final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
+        final String projName = incProject.getName();
+        assert !projName.equals(self.getPath());
+        dep = self.dependencyFor(projName, arch.configAssembled());
+        target = arch.configTransitive();
+        deps.add(target.getName(), dep);
+    }
 
+    private void includeExternal(
+        ProjectView self,
+        String projId,
+        String requestedGroup,
+        String requestedName,
+        PlatformGraph plat,
+        ArchiveGraph arch
+    ) {
+
+        final Configuration target;
+        final DependencyHandler deps = self.getDependencies();
+        final Dependency dep;
+        // The projId here is a g:n[:v] module identifier.
+        if (projId.indexOf(':') == projId.lastIndexOf(':')) {
+            // TODO: this should be looked up from a cache somewhere...
+            projId += ":" + self.getVersion();
+        }
+        dep = self.getDependencies().create(projId);
+        // transform the dependency to match our platform/archive
+        String newGroup =
+            dep.getGroup();
+//            arch.asGroup(requestedGroup);
+        String newName =
+            dep.getName();
+//            arch.asModuleName(requestedName);
+        // Note: it's actually better to just add the plain g:n:v than it is to add the module-specific name.
+        // If you have `com.foo:thing:1`, gradle will know it is variant-mapped and use our import configuration to select correctly.
+        // If you have `com.foo:thing-api:1`, gradle will look for it in your local repo, and will fail if it is not found.
+
+
+        // Hm...  the transitivity here should be controllable...
+        // It's already ~too complex for a prototype, so transitive-it-is, for now.
+        target = arch.configTransitiveLenient();
+
+        // we need per-variant, on-demand inputs to the lenient config.
+        Configuration dest = arch.configImport(target);
+
+        deps.add(dest.getName(), deps.create(newGroup + ":" + newName + ":" + dep.getVersion()));
     }
 
 }

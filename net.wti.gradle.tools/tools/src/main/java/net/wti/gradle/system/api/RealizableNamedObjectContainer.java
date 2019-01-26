@@ -9,6 +9,18 @@ import java.util.Collection;
  */
 public interface RealizableNamedObjectContainer <T> extends NamedDomainObjectContainer<T> {
 
+    /**
+     * This method raises the visibility of the same-sig protected method
+     * found in DefaultNamedDomainObjectCollection.
+     *
+     * The presence of this method forces you to expose a public override.
+     * Just `return super.hasWithName(name);`.
+     *
+     * @param name The key to check
+     * @return true if the object is registered
+     */
+    boolean hasWithName(String name);
+
     default RealizableNamedObjectContainer<T> realize() {
         // This will call org.gradle.api.internal.DefaultDomainObjectCollection.addEagerAction
         // which is what will realize the objects in this container.  It's a shame this isn't public API.

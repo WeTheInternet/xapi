@@ -1,15 +1,17 @@
 package net.wti.gradle.internal.api;
 
 import net.wti.gradle.internal.require.api.ProjectGraph;
-import org.gradle.api.DomainObjectSet;
+import net.wti.gradle.publish.api.PublishedModule;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.component.ComponentWithVariants;
 import org.gradle.api.internal.CompositeDomainObjectSet;
+import org.gradle.api.internal.component.SoftwareComponentInternal;
+import org.gradle.api.internal.component.UsageContext;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
-import org.gradle.internal.reflect.Instantiator;
 
-import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * A XapiLibrary represents an entire project's groups of archives.
@@ -42,7 +44,7 @@ import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/10/18 @ 2:15 AM.
  */
-public class XapiLibrary implements XapiVariant, ComponentWithVariants {
+public class XapiLibrary implements SoftwareComponentInternal, ComponentWithVariants {
 
     public static final String EXT_NAME = "xapiLibrary";
     private final XapiPlatformContainer platforms;
@@ -59,19 +61,19 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
      */
     private final Property<XapiPlatform> main;
     private final ObjectFactory objects;
+    private final CompositeDomainObjectSet<PublishedModule> allModules;
 
     @SuppressWarnings("unchecked")
     public XapiLibrary(
-        ProjectView project
+        ProjectView view
     ) {
-
-        final Instantiator instantiator = project.getInstantiator();
-        this.objects = project.getObjects();
-        platforms =  new XapiPlatformContainer(instantiator, objects);
+        this.objects = view.getObjects();
+        allModules = CompositeDomainObjectSet.create(PublishedModule.class, view.getDecorator());
+        platforms =  new XapiPlatformContainer(view, allModules);
         main = objects.property(XapiPlatform.class);
-        all = CompositeDomainObjectSet.create(XapiUsageContext.class, NOOP);
-        platforms.whenObjectAdded(p-> all.addCollection(p.getUsages()));
-        main.convention(project.getProviders().provider(()->
+        all = CompositeDomainObjectSet.create(XapiUsageContext.class, view.getDecorator());
+        platforms.whenObjectAdded(p-> p.whenModuleAdded(m->all.addCollection(m.getUsages())));
+        main.convention(view.getProviders().provider(()->
             getPlatform("main")
         ));
     }
@@ -106,45 +108,13 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
      *
      */
     @Override
-    public NamedDomainObjectSet<XapiPlatform> getVariants() {
+    public CompositeDomainObjectSet<PublishedModule> getVariants() {
         // Return the various XapiPlatform that exist for this module / library
-        return platforms;
+        return platforms.getAllVariants();
     }
 
     public XapiPlatform getPlatform(String named) {
         return platforms.maybeCreate(named);
-    }
-
-    /**
-     * These usage contexts represent the "main" set of artifacts created by this library.
-     *
-     * Each usage context should describe how this library should be consumed.
-     *
-     * Here in XapiLibrary, our usage contexts are designed to augment the standard java library api/runtime usages.
-     * You should *not* use _this_ implementation of usages as an example for creating your own variants/components,
-     * unless you also intend to augment/supplant the standard java sourcesets.  Most likely you will want to
-     * look at the implementations of {@link XapiPlatform#getUsages()} for examples of creating arbitrary extra variants.
-     *
-     * Each usage context has it's own transitive dependency graph, and should represent ~one output artifact.
-     * For cases like a main artifact that requires both api and spi archives, the main usage should have a module
-     * dependency on the coordinates of the api/spi usages.
-     *
-     * This is designed to primarily work with gradle metadata in the output repository,
-     * but should also produce correct poms for each usage.
-     *
-     * Note that source jars are represented as its own artifact name with transitive dependency graph,
-     * such that simply inheriting your project's own MAIN_SOURCE artifact will also inherit all MAIN_SOURCE
-     * of all xapi requires / project dependencies (only xapiRequire {} is implemented at this time).
-     *
-     */
-    @Override
-    public DomainObjectSet<XapiUsageContext> getUsages() {
-        // Return the set of "main" usage context instances;
-        // To stay compatible w/ the main java plugin, we will
-        // staple in the java plugin's same Usage attributes,
-        // so consuming the main artifact is the same as any other java lib.
-        main.finalizeValue();
-        return main.get().getUsages();
     }
 
     @Override
@@ -163,5 +133,21 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
 
     public void setMain(XapiPlatform platform) {
         main.set(platform);
+    }
+
+    public boolean isEmpty() {
+        return platforms.isEmpty() ||
+            (platforms.size() == 1 && platforms.iterator().next().isEmpty());
+    }
+
+    @Override
+    public Set<? extends UsageContext> getUsages() {
+        // It's not obvious whether we should return the main archive usages or not.
+        // My guess is ...probably?  but will have to write some java-library integration tests to be sure.
+        // For now, an empty set seems to work.
+
+//        main.finalizeValue();
+//        return main.get().getModule("main").getUsages();
+        return Collections.emptySet();
     }
 }

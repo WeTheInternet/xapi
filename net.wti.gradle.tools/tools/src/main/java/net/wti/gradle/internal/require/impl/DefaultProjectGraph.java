@@ -73,6 +73,11 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
     }
 
     @Override
+    public void whenFinalized(Action<? super ProjectGraph> callback) {
+        project.whenReady(p->callback.execute(this));
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;

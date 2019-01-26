@@ -7,20 +7,21 @@ import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
+import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.api.LazyFileCollection;
 import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
-import org.gradle.api.attributes.Usage;
+import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
-import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.internal.Actions;
 import org.gradle.internal.component.external.model.DefaultModuleComponentIdentifier;
 import org.gradle.jvm.tasks.Jar;
@@ -33,6 +34,8 @@ import java.util.Set;
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 
 /**
+ * TODO: rename to ModuleGraph
+ *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/2/19 @ 4:23 AM.
  */
 @SuppressWarnings("UnstableApiUsage")
@@ -66,6 +69,8 @@ public interface ArchiveGraph extends Named {
      * `$rootDir/projName/src/platArch`
      */
     File srcRoot();
+
+    ModuleTasks getTasks();
 
     default boolean srcExists() {
         // TODO: replace this with a .whenExists variation
@@ -122,28 +127,65 @@ public interface ArchiveGraph extends Named {
 
     @SuppressWarnings("deprecation")
     default Configuration configExportedApi() {
-        return config(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
+//        return config(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
+        return config("ExportCompile", apiElements -> {
             apiElements.extendsFrom(configApi());
             apiElements.setVisible(false);
             apiElements.setCanBeResolved(false);
             apiElements.setCanBeConsumed(true);
-            apiElements.getAttributes().attribute(USAGE_ATTRIBUTE, getView().getObjects().named(Usage.class, Usage.JAVA_API));
+            apiElements.getOutgoing().capability(getCapability());
+            withAttributes(apiElements)
+                .attribute(USAGE_ATTRIBUTE, project().usageApi());
+
         });
     }
 
-    default Configuration configExportedRuntime() {
-        return config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
-            apiElements.extendsFrom(configInternal());
-            apiElements.setVisible(false);
-            apiElements.setCanBeResolved(false);
-            apiElements.setCanBeConsumed(true);
-            apiElements.getAttributes().attribute(USAGE_ATTRIBUTE, getView().getObjects().named(Usage.class, Usage.JAVA_RUNTIME));
+    default Configuration configExported() {
+        // Takes on the role of "all output artifacts" from the "default" configuration.
+        // This is what you should depend on, in a configuration with appropriate variant attributes setup.
+        return config("Out", exported-> {
+            exported.extendsFrom(configExportedApi());
+            exported.extendsFrom(configExportedRuntime());
+            exported.setVisible(true);
+            exported.setCanBeResolved(true);
+            exported.setCanBeConsumed(true);
+            exported.getOutgoing().capability(getCapability());
         });
+    }
+
+    default String getCapability() {
+        return getGroup() + ":" + getModuleName() + ":" + getView().getVersion();
+    }
+
+    default Configuration configExportedRuntime() {
+//        return config("OutRuntime", runtimeElements -> {
+//            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
+        return config("ExportRuntime", runtimeElements -> {
+            runtimeElements.extendsFrom(configInternal());
+            runtimeElements.setVisible(false);
+            runtimeElements.setCanBeResolved(false);
+            runtimeElements.setCanBeConsumed(true);
+            runtimeElements.getOutgoing().capability(getCapability());
+            withAttributes(runtimeElements)
+                .attribute(USAGE_ATTRIBUTE, project().usageRuntime());
+        });
+    }
+
+    default AttributeContainer withAttributes(Configuration conf) {
+        return conf.getAttributes()
+                .attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, platform().getName())
+            .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName());
     }
 
     default Configuration configAssembled() {
         return config("Assembled", assembled -> {
             assembled.extendsFrom(configTransitive());
+        });
+    }
+
+    default Configuration configPackaged() {
+        return config("Packaged", assembled -> {
+            assembled.extendsFrom(configAssembled());
         });
     }
 
@@ -185,19 +227,22 @@ public interface ArchiveGraph extends Named {
         return DefaultModuleIdentifier.newId(getGroup(), getModuleName());
     }
 
+    default String asGroup(String group) {
+        return platform().asGroup(group);
+    }
+
     default String getGroup() {
-        final String platId = platform().getName();
-        String group = project().getGroup();
-        if ("main".equals(platId)) {
-            return group;
-        }
-        return group + "." + platId;
+        return platform().getGroup();
+    }
+
+    default String asModuleName(String projName) {
+        String name = getName();
+        return "main".equals(name) ? projName : projName + "-" + name;
     }
 
     default String getModuleName() {
-        String name = getName();
         String projName = getView().getName();
-        return "main".equals(name) ? projName : projName + "-" + name;
+        return asModuleName(projName);
     }
 
     default Configuration configIntransitive() {
@@ -246,6 +291,27 @@ public interface ArchiveGraph extends Named {
 
         PublishArtifact jarArtifact = new LazyPublishArtifact(jarTask);
         view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(jarArtifact);
+
+        // Now that we have the rest of variants working, we should be able to reinstate this...
+        //        outgoing.variants(variants->{
+        //            final ConfigurationVariant variant = variants.maybeCreate("sources");
+        //            variant.attributes(attrs->
+        //                attrs.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, "sources")
+        //            );
+        ////        if (hasSrc) {
+        ////            for (File srcDir : archive.allSourceDirs().getSourceDirectories()) {
+        ////                final Provider<File> provider = providers.provider(() -> srcDir);
+        ////                LazyPublishArtifact src = new LazyPublishArtifact(provider);
+        ////                final Directory proj = project.getLayout().getProjectDirectory();
+        ////                final String seg = srcDir.getAbsolutePath().replace(proj.getAsFile().getAbsolutePath(), "").substring(1);
+        ////                final Directory asDir = proj.dir(seg);
+        ////                outgoing.artifact(new FileSystemPublishArtifact(
+        ////                    asDir, project.getVersion()
+        ////                ));
+        //////                outgoing.artifact(src);
+        ////            }
+        ////        }
+        //        });
 
         configAssembled().extendsFrom(config);
 
@@ -309,7 +375,7 @@ public interface ArchiveGraph extends Named {
     default Configuration config(String suffix, Action<? super Configuration> whenCreated) {
         final ConfigurationContainer configs = getConfigurations();
         final String srcName = getSrcName();
-        String name = srcName.equals(suffix) ? suffix : srcName + GUtil.toCamelCase(suffix);
+        String name = "main".equals(srcName) || srcName.equals(suffix) ? GUtil.toLowerCamelCase(suffix) : srcName + GUtil.toCamelCase(suffix);
         Configuration existing = configs.findByName(name);
         if (existing == null) {
             existing = configs.create(name);
@@ -333,5 +399,25 @@ public interface ArchiveGraph extends Named {
 
     default SourceDirectorySet allSourceDirs() {
         return getSource().getSrc().getAllSource();
+    }
+
+    default TaskProvider<Jar> getJarTask() {
+        return getTasks().getJarTask();
+    }
+
+    default TaskProvider<JavaCompile> getJavacTask() {
+        return getTasks().getJavacTask();
+    }
+
+    default Configuration configImport(Configuration target) {
+        return config(target.getName() + "Import" + GUtil.toCamelCase(getConfigName()), conf->{
+            target.extendsFrom(conf);
+            // set platform/archive attributes on the configuration
+            final AttributeContainer attributes = withAttributes(target);
+            // gradle's PreferJavaRuntimeVariant defaults to runtime in order to maintain backwards compatibility
+            // with maven-repo users, who expect runtime transitive dependencies.
+            // We do not need to maintain any backwards compatibility, so we'll use api for now, and make configurable later.
+            attributes.attribute(USAGE_ATTRIBUTE, project().usageApi());
+        });
     }
 }

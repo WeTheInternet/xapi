@@ -8,6 +8,8 @@ apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
 String xapiHome = extensions.getByName('xapiHome')
 apply from: "$xapiHome/gradle/child-build.gradle"
 
+TaskProvider required = tasks.register('publishRequired')
+
 subprojects {
     apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
     plugins.apply('java-library')
@@ -19,17 +21,18 @@ subprojects {
             PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME
     )
     // We're creating this here, manually, so we can get picked up when someone runs
-    // ./gradlew publishXapi or `gw pX` if you have gw alias for ./gradlew-finder (google "gradle gw gist")
-    Task publishXapi = tasks.create('publishXapi')
-    publishXapi.group = 'Publishing'
-    publishXapi.description = 'Publish jars to xapiLocal repository'
+    // ./gradlew xapiPublish or `gw pX` if you have gw alias for ./gradlew-finder (google "gradle gw gist")
+    Task xapiPublish = tasks.create('xapiPublish')
+    required.configure { it.dependsOn xapiPublish }
+    xapiPublish.group = 'Publishing'
+    xapiPublish.description = 'Publish jars to xapiLocal repository'
     tasks.withType(PublishToMavenRepository).all {
         PublishToMavenRepository pub ->
             afterEvaluate {
 
                 if (pub.repository.name == 'xapiLocal') {
                     assemble.finalizedBy pub
-                    publishXapi.dependsOn pub
+                    xapiPublish.dependsOn pub
                 }
             }
     }

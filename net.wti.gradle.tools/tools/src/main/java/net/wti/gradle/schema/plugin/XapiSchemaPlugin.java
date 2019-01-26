@@ -57,7 +57,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
     public static final String PROP_SCHEMA_APPLIES_JAVA_LIBRARY = "xapi.apply.java-library";
 
     public static final Attribute<String> ATTR_USAGE = Attribute.of("usage", String.class);
-    public static final Attribute<String> ATTR_ARTIFACT_TYPE = Attribute.of("artifactType", String.class);
+    public static final Attribute<String> ATTR_ARTIFACT_TYPE = Attribute.of("moduleType", String.class);
     public static final Attribute<String> ATTR_PLATFORM_TYPE = Attribute.of("platformType", String.class);
 
     private final Instantiator instantiator;

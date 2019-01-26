@@ -79,4 +79,11 @@ abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> exten
         return realizedBuilds
     }
 
+    File getTopDir() {
+        rootDir
+    }
+
+    File getXapiRepo() {
+        new File(topDir, 'repo')
+    }
 }

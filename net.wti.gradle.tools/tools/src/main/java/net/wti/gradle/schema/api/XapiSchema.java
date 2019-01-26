@@ -9,14 +9,9 @@ import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
 import org.gradle.api.Action;
-import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
-import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
-import org.gradle.api.tasks.TaskProvider;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
@@ -153,8 +148,7 @@ public class XapiSchema {
         platforms.configureEach(plat -> {
             plat.getAllArchives().addCollection(archives);
         });
-        pv.getGradle().projectsEvaluated(gradle->{
-
+        pv.whenReady(p->{
             platforms.configureEach(plat -> {
                 plat.getAllArchives().configureEach(arch -> {
                     final ArchiveGraph archive = pv.getProjectGraph()
@@ -210,10 +204,9 @@ public class XapiSchema {
                 meta.getSrc().getOutput()
             );
 
-            // Need publishing artifact setup.
-            final TaskProvider<Task> jarTask = view.getTasks().named(meta.getSrc().getJarTaskName());
-            PublishArtifact jarArtifact = new LazyPublishArtifact(jarTask);
-            view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(jarArtifact);
+            // Registers build tasks
+            archGraph.getJarTask();
+            archGraph.getJavacTask();
 
         }
         if (platConfig.isRequireSource() || archConfig.isSourceAllowed()) {
@@ -242,6 +235,7 @@ public class XapiSchema {
             deps.add(
                 only ? archGraph.configIntransitive().getName(): transitive.getName()
                 , dep);
+
         }
 
     }

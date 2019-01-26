@@ -5,6 +5,7 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.system.service.GradleService;
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -23,6 +24,7 @@ import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSetContainer;
@@ -83,6 +85,8 @@ public interface ProjectView extends ExtensionAware {
 
     CollectionCallbackActionDecorator getDecorator();
 
+    PluginContainer getPlugins();
+
     BuildGraph getBuildGraph();
 
     default NamedDomainObjectProvider<ProjectGraph> projectGraph() {
@@ -100,8 +104,7 @@ public interface ProjectView extends ExtensionAware {
     ProjectLayout getLayout();
 
     default File getProjectDir() {
-        final File f = getLayout().getProjectDirectory().getAsFile();
-        return f;
+        return getLayout().getProjectDirectory().getAsFile();
     }
 
     default File getBuildDir() {
@@ -145,4 +148,6 @@ public interface ProjectView extends ExtensionAware {
             return (T)result[0];
         });
     }
+
+    void whenReady(Action<? super ProjectView> callback);
 }

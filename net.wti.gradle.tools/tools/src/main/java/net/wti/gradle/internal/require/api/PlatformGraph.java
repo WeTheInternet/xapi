@@ -68,4 +68,16 @@ public interface PlatformGraph extends Named {
     default String getPath() {
         return project().getPath() + ":" + getName();
     }
+
+    default String asGroup(String group) {
+        final String platId = getName();
+        if ("main".equals(platId)) {
+            return group;
+        }
+        return group + "." + platId;
+    }
+
+    default String getGroup() {
+        return asGroup(project().getGroup());
+    }
 }

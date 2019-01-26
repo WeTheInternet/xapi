@@ -6,6 +6,7 @@ import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.attributes.Usage;
 
 import java.util.Set;
 
@@ -49,6 +50,16 @@ public interface ProjectGraph extends Named {
     }
 
     default String getGroup() {
-        return project().getVersion();
+        return project().getGroup();
     }
+
+    default Usage usageApi() {
+        return project().getObjects().named(Usage.class, Usage.JAVA_API);
+    }
+
+    default Usage usageRuntime() {
+        return project().getObjects().named(Usage.class, Usage.JAVA_RUNTIME);
+    }
+
+    void whenFinalized(Action<? super ProjectGraph> callback);
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 args=$(
- (($# == 0)) && echo "build publishXapi" || echo "$@"
+ (($# == 0)) && echo "build xapiPublish" || echo "$@"
 )
 
 pushd net.wti.gradle.tools > /dev/null

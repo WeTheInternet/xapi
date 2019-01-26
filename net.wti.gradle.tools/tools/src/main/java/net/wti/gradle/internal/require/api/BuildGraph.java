@@ -6,7 +6,8 @@ import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.SourceMeta;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.spi.GradleServiceFinder;
-import org.gradle.api.*;
+import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.Project;
 
 import java.util.Set;
 
