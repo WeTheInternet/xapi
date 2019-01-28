@@ -172,10 +172,13 @@ public class XapiRequirePlugin implements Plugin<Project> {
 
         // Hm...  the transitivity here should be controllable...
         // It's already ~too complex for a prototype, so transitive-it-is, for now.
-        target = arch.configTransitiveLenient();
+        target = arch.configTransitive();
 
         // we need per-variant, on-demand inputs to the lenient config.
-        Configuration dest = arch.configImport(target);
+        Configuration dest = arch.configImportApi(target);
+
+        // Now, make it lenient...  This will copy the attributes set from configImportApi.
+        dest = arch.configLenient(dest);
 
         deps.add(dest.getName(), deps.create(newGroup + ":" + newName + ":" + dep.getVersion()));
     }

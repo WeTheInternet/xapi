@@ -9,7 +9,7 @@ import java.util.function.Function
  */
 trait TestFileTools implements HasTestFiles {
 
-    File newFolder(String ... paths) {
+    File folder(String ... paths) {
         File f = getRootDir()
         for (String path : paths) {
             f = new File(f, path)
@@ -21,20 +21,21 @@ trait TestFileTools implements HasTestFiles {
     }
 
     File file(String ... paths) {
-        File f = folder(paths.init()).apply(paths.last())
+        File f = folderFactory(paths.init()).apply(paths.last())
+        !f.parentFile.exists() && f.mkdirs()
         !f.exists() && f.createNewFile()
         assert f.file : "Not a file: $f"
         return f
     }
 
-    Function<String, File> folder(String ... paths) {
-        File f = newFolder(paths)
+    Function<String, File> folderFactory(String ... paths) {
+        File f = folder(paths)
         return { rest -> new File(f, rest) }
     }
 
     File sourceFile(String srcSet = 'main', String pkg, String cls) {
         String[] paths = "src/$srcSet/java/${pkg.replace('.', '/')}".split("[/]")
-        File dir = newFolder(paths)
+        File dir = folder(paths)
         return new File(dir, cls + '.java')
     }
 
@@ -51,7 +52,7 @@ trait TestFileTools implements HasTestFiles {
     */
 
     File withSource(String srcSet = '', @DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure src) {
-        File root = srcSet ? newFolder("src/$srcSet/java") : rootDir
+        File root = srcSet ? folder("src/$srcSet/java") : rootDir
         new FileTreeBuilder(root).call(src)
         return root
     }

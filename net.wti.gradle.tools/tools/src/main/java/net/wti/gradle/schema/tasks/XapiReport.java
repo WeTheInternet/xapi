@@ -98,11 +98,15 @@ public class XapiReport extends DefaultTask {
                 b
                     .append("\n\tCompile classpath of ")
                     .append(getProject().getPath())
-                    .append(":\n\t\t")
+                    .append(":")
+                    .append(platform)
+                    .append(" ->\n\t\t")
                     .append(fixPath(src.getCompileClasspath().getAsPath()))
                     .append("\n\tRuntime classpath of ")
                     .append(getProject().getPath())
-                    .append(":\n\t\t")
+                    .append(":")
+                    .append(platform)
+                    .append(" ->\n\t\t")
                     .append(fixPath(src.getRuntimeClasspath().getAsPath()))
                 ;
             }

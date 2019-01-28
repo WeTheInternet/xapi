@@ -13,6 +13,7 @@ import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
+import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
@@ -129,7 +130,7 @@ public interface ArchiveGraph extends Named {
     default Configuration configExportedApi() {
 //        return config(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
         return config("ExportCompile", apiElements -> {
-            apiElements.extendsFrom(configApi());
+            apiElements.extendsFrom(configAssembled());
             apiElements.setVisible(false);
             apiElements.setCanBeResolved(false);
             apiElements.setCanBeConsumed(true);
@@ -158,7 +159,6 @@ public interface ArchiveGraph extends Named {
     }
 
     default Configuration configExportedRuntime() {
-//        return config("OutRuntime", runtimeElements -> {
 //            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
         return config("ExportRuntime", runtimeElements -> {
             runtimeElements.extendsFrom(configInternal());
@@ -174,12 +174,14 @@ public interface ArchiveGraph extends Named {
     default AttributeContainer withAttributes(Configuration conf) {
         return conf.getAttributes()
                 .attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, platform().getName())
-            .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName());
+                .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName());
     }
 
+    @SuppressWarnings("deprecation")
     default Configuration configAssembled() {
         return config("Assembled", assembled -> {
             assembled.extendsFrom(configTransitive());
+            assembled.extendsFrom(configApi());
         });
     }
 
@@ -197,7 +199,11 @@ public interface ArchiveGraph extends Named {
      */
     @Deprecated
     default Configuration configApi() {
-        final Configuration api = getView().getConfigurations().findByName(getSrcName() + "Api");
+        String key = getSrcName() + "Api";
+        if ("mainApi".equals(key)) {
+            key = "api";
+        }
+        final Configuration api = getView().getConfigurations().findByName(key);
         if (api == null) {
             return config("Compile");
         } else {
@@ -217,10 +223,6 @@ public interface ArchiveGraph extends Named {
                 configApi().extendsFrom(transitive);
             }
         });
-    }
-
-    default Configuration configTransitiveLenient() {
-        return configLenient(configTransitive());
     }
 
     default ModuleIdentifier getModuleIdentifier() {
@@ -349,6 +351,7 @@ public interface ArchiveGraph extends Named {
         });
     }
 
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
     default Configuration configLenient(Configuration from) {
         return config(from.getName() + "Lenient", lenient -> {
             final ModuleIdentifier mid = getModuleIdentifier();
@@ -361,10 +364,15 @@ public interface ArchiveGraph extends Named {
             LazyFileCollection lazy = new DefaultLazyFileCollection(getView(), lenient, true);
             // We might want a more specific subtype for this self resolving dependency, so we are detectable externally.
             configTransitive().getDependencies().add(new DefaultSelfResolvingDependency(compId, lazy));
-            // The configuration object is for resolving dependencies, in a lazy fashion.
+            // The configuration object can be used for resolving dependencies, in a lazy fashion.
             lenient.setVisible(false);
             lenient.setCanBeConsumed(false);
             lenient.setCanBeResolved(true);
+            final AttributeContainer fromAttrs = from.getAttributes();
+            for (Attribute attribute : fromAttrs.keySet()) {
+                lenient.getAttributes().attribute(attribute, fromAttrs.getAttribute(attribute));
+            }
+
         });
     }
 
@@ -375,7 +383,7 @@ public interface ArchiveGraph extends Named {
     default Configuration config(String suffix, Action<? super Configuration> whenCreated) {
         final ConfigurationContainer configs = getConfigurations();
         final String srcName = getSrcName();
-        String name = "main".equals(srcName) || srcName.equals(suffix) ? GUtil.toLowerCamelCase(suffix) : srcName + GUtil.toCamelCase(suffix);
+        String name = "main".equals(srcName) || srcName.equals(suffix) || suffix.startsWith(srcName) ? GUtil.toLowerCamelCase(suffix) : srcName + GUtil.toCamelCase(suffix);
         Configuration existing = configs.findByName(name);
         if (existing == null) {
             existing = configs.create(name);
@@ -409,15 +417,32 @@ public interface ArchiveGraph extends Named {
         return getTasks().getJavacTask();
     }
 
-    default Configuration configImport(Configuration target) {
-        return config(target.getName() + "Import" + GUtil.toCamelCase(getConfigName()), conf->{
+    default Configuration configImport(Configuration target, String suffix, Action<? super AttributeContainer> attrCallback) {
+        String targetName = target.getName();
+        String myName = getSrcName();
+        String name = myName.equals(targetName) ? myName + "Import" + suffix : targetName + "Import" + suffix +
+            (targetName.startsWith(myName) ? "" : GUtil.toCamelCase(getConfigName()));
+        return config(name, conf->{
             target.extendsFrom(conf);
             // set platform/archive attributes on the configuration
-            final AttributeContainer attributes = withAttributes(target);
+            final AttributeContainer attrs = withAttributes(conf);
+            conf.setCanBeResolved(true);
+            conf.setCanBeConsumed(false);
+            conf.setVisible(false);
+            attrCallback.execute(attrs);
+        });
+    }
+    default Configuration configImportApi(Configuration target) {
+        return configImport(target, "Api", attributes->
             // gradle's PreferJavaRuntimeVariant defaults to runtime in order to maintain backwards compatibility
             // with maven-repo users, who expect runtime transitive dependencies.
             // We do not need to maintain any backwards compatibility, so we'll use api for now, and make configurable later.
-            attributes.attribute(USAGE_ATTRIBUTE, project().usageApi());
-        });
+            attributes.attribute(USAGE_ATTRIBUTE, project().usageApi())
+        );
+    }
+    default Configuration configImportRuntime(Configuration target) {
+        return configImport(target, "Runtime", attributes->
+            attributes.attribute(USAGE_ATTRIBUTE, project().usageRuntime())
+        );
     }
 }

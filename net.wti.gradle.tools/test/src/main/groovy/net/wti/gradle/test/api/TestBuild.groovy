@@ -53,7 +53,7 @@ trait TestBuild implements Named, HasWork, HasBuildFiles {
                     String key = GradleCoerce.unwrapString(k)
                     TestProject proj
 
-                    File dir = key == ':' ? rootDir : newFolder(key.split(':'))
+                    File dir = key == ':' ? rootDir : folder(key.split(':'))
                     proj = realizedProjects.computeIfAbsent(key, {
                         new TestProject(key, dir)
                     })

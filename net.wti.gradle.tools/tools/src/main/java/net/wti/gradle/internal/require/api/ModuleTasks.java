@@ -3,7 +3,6 @@ package net.wti.gradle.internal.require.api;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.impl.DefaultArchiveGraph;
 import net.wti.gradle.schema.internal.SourceMeta;
-import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationPublications;
 import org.gradle.api.artifacts.ConfigurationVariant;
@@ -79,7 +78,7 @@ public class ModuleTasks {
                 "classes");
             runtimeVariant.artifact(artifact);
             runtimeVariant.getAttributes().attribute(
-                XapiSchemaPlugin.ATTR_USAGE, Usage.JAVA_API_CLASSES
+                Usage.USAGE_ATTRIBUTE, view().getProjectGraph().usage(Usage.JAVA_API_CLASSES)
             );
 
         }
@@ -118,7 +117,7 @@ public class ModuleTasks {
                 "runtime");
             runtimeVariant.artifact(artifact);
             runtimeVariant.getAttributes().attribute(
-                XapiSchemaPlugin.ATTR_USAGE, Usage.JAVA_RUNTIME_JARS
+                Usage.USAGE_ATTRIBUTE, view().getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
             );
 
             view().getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);

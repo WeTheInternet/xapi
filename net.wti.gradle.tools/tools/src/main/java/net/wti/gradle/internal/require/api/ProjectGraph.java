@@ -54,11 +54,15 @@ public interface ProjectGraph extends Named {
     }
 
     default Usage usageApi() {
-        return project().getObjects().named(Usage.class, Usage.JAVA_API);
+        return usage(Usage.JAVA_API);
     }
 
     default Usage usageRuntime() {
-        return project().getObjects().named(Usage.class, Usage.JAVA_RUNTIME);
+        return usage(Usage.JAVA_RUNTIME);
+    }
+
+    default Usage usage(String usageType) {
+        return project().getObjects().named(Usage.class, usageType);
     }
 
     void whenFinalized(Action<? super ProjectGraph> callback);

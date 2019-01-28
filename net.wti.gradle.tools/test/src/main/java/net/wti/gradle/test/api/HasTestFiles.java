@@ -12,11 +12,11 @@ import java.util.function.Function;
  */
 public interface HasTestFiles extends HasRootDir {
 
-    File newFolder(String ... paths);
+    File folder(String ... paths);
 
     File file(String ... paths);
 
-    Function<String, File> folder(String ... paths);
+    Function<String, File> folderFactory(String ... paths);
 
     default File sourceFile(String pkg, String cls) {
         return sourceFile("main", pkg, cls);

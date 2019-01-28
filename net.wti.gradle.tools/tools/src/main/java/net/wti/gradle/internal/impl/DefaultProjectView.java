@@ -271,7 +271,8 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public String getGroup() {
         final Object g = group.get();
-        return String.valueOf(g);
+        String group = String.valueOf(g);
+        return group.isEmpty() ? "group.not.set.in." + getPath().replace(':', '_') : group;
     }
 
     @Override

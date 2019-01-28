@@ -2,6 +2,7 @@ package net.wti.gradle.internal.api
 
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin
 import net.wti.gradle.test.AbstractMultiBuildTest
+import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 
@@ -16,24 +17,17 @@ class XapiSchemaTest extends AbstractMultiBuildTest<XapiSchemaTest> {
 
     private String setupSimpleGwt(String name="gwtP", String plugin='', String rootProject=':', String version="1.0") {
         boolean isRoot = name == rootProject
-        if (!isRoot) {
-            withProject(rootProject, {
-                if (buildFile.length() == 0) {
-                    buildFile << simpleSchema(true)
-                }
-                null
-            })
-        }
 
-        withProject(name, {
+        Closure<?> configure = {
             def use = plugin ?: defaultPlugin
             buildFile << """
 plugins {
     id 'java'
     ${use.startsWith('id') ? use : "id '$use'"}
 }
-${isRoot ? simpleSchema(false) : ''}
+${simpleSchema()}
 version = $version
+group = '${rootProject == ':' ? 'testgroup' : rootProject}'
 """
             addSource("com.foo.$name", 'Main', """
 package com.foo.$name;
@@ -53,7 +47,16 @@ class GwtMain {
   }
 }
 """)
-        })
+            null
+        }
+        if (isRoot && ':' != rootProject) {
+            withComposite(rootProject, {
+                withProject(':', configure)
+                null
+            })
+        } else {
+            withProject(name, configure)
+        }
         return name
     }
 
@@ -79,23 +82,27 @@ xapiRequire.project 'gwt1'
         given:
         setupSimpleGwt('gwt1', '', 'gwt1')
         setupSimpleGwt('gwt2', "xapi-require", 'gwt2')
-        withProject 'gwt2', {
-            buildFile << '''
+        withComposite 'gwt2', {
+            withProject ':', {
+                buildFile << '''
 xapiRequire.external 'gwt1:gwt1'
 '''
-            settingsFile << '''
+                settingsFile << '''
 rootProject.name = 'gwt2'
 includeBuild '../gwt1'
 '''
+            }
         }
-        withProject 'gwt1', {
-            settingsFile << '''
+        withComposite'gwt1', {
+            withProject ':', {
+                settingsFile << '''
 rootProject.name = 'gwt1'
 '''
+            }
         }
 
         when:
-        BuildResult res = runSucceed(':gwt2:xapiReport', ':gwt2:compileGwtJava', '-Pxapi.debug=true')
+        BuildResult res = runSucceed(LogLevel.QUIET, folder('gwt2'),':xapiReport', ':compileGwtJava', '-Pxapi.debug=true')
         then:
         res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
@@ -160,8 +167,14 @@ apply plugin: 'java'"""
         res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
 
         when: "Explicitly apply java-library plugin and re-run"
-        getProject(proj).buildFile << """
-apply plugin: 'java-library'"""
+        // When applying the plugins directly, java-library must be applied before xapi plugins.
+        // This is future-proofing for a time when we "polyfill" missing java plugins, rather than require them.
+        // That is, it would be nice to avoid creating "useless" (to us) configurations,
+        // yet still be consumable by projects using only java/java-library.  For now, we apply java or java-library directly.
+        getProject(proj).buildFile.text = getProject(proj).buildFile.text.replace 'plugins {',
+'''plugins {
+id 'java-library'
+'''
         res = runSucceed('compileGwtJava')
         then:
         res.task(":$proj:compileGwtJava").outcome == TaskOutcome.UP_TO_DATE
@@ -175,13 +188,8 @@ apply plugin: 'java-library'"""
         res.task(":$proj:compileJava").outcome == TaskOutcome.UP_TO_DATE
     }
 
-    String simpleSchema(boolean withPlugins=true) {
+    String simpleSchema() {
         """
-${withPlugins?'''
-plugins {
-  id 'xapi-schema'
-}
-''' : ''}
 xapiSchema {
   platforms {
     main

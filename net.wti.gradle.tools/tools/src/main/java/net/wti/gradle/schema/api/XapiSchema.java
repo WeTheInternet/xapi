@@ -173,13 +173,7 @@ public class XapiSchema {
     ) {
 
         final Configuration
-            transitive = archGraph.configTransitive()
-//            intransitive = archGraph.configIntransitive(),
-//            impl = archGraph.configImpl(),
-//            compile = archGraph.configCompile(),
-//            runtime = archGraph.configRuntime(),
-//            assembled = archGraph.configAssembled()
-        ;
+            transitive = archGraph.configTransitive();
 
         final PlatformGraph platGraph = archGraph.platform();
 
@@ -189,10 +183,15 @@ public class XapiSchema {
             final PlatformGraph parent = platGraph.project().platform(platConfig.getParent().getName());
             platGraph.setParent(parent);
             final ArchiveGraph parentArch = parent.archive(archGraph.getName());
-            deps.add(
-                transitive.getName(),
-                parentArch.configRuntime()
-            );
+            // Here is where we want to add inheritance points from child to parent platforms.
+
+
+            final Configuration importApi = archGraph.configImportApi(archGraph.configTransitive());
+            importApi.extendsFrom(parentArch.configExportedApi());
+
+            final Configuration importRuntime = archGraph.configImportRuntime(archGraph.configRuntime());
+            importRuntime.extendsFrom(parentArch.configExportedRuntime());
+
         }
 
         if (archGraph.srcExists()) {
@@ -200,7 +199,7 @@ public class XapiSchema {
 
             deps.add(
                 archGraph.configAssembled().getName(),
-                // The assembled configuration is where we'll grab all sourceset outputs.
+                // The assembled configuration is where we'll put the sourceset outputs.
                 meta.getSrc().getOutput()
             );
 
