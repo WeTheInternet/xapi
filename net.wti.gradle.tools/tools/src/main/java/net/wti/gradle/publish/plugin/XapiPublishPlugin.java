@@ -7,6 +7,7 @@ import net.wti.gradle.internal.impl.DefaultXapiUsageContext;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
+import net.wti.gradle.system.plugin.XapiBasePlugin;
 import net.wti.gradle.publish.api.PublishedModule;
 import net.wti.gradle.publish.task.XapiPublish;
 import net.wti.gradle.system.tools.GradleMessages;
@@ -36,6 +37,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        project.getPlugins().apply(XapiBasePlugin.class);
         final ProjectView p = ProjectView.fromProject(project);
 
 

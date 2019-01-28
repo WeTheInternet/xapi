@@ -1,6 +1,6 @@
 package net.wti.gradle.internal.api
 
-import net.wti.gradle.schema.plugin.XapiSchemaPlugin
+import net.wti.gradle.system.plugin.XapiBasePlugin
 import net.wti.gradle.test.AbstractMultiBuildTest
 import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
@@ -124,13 +124,40 @@ rootProject.name = 'gwt1'
         res.output.contains "$rootDir/$proj/src/main/java"
     }
 
+    def "Cross-module imports work sanely"() {
+        given:
+        String proj = setupSimpleGwt('crossMod', 'xapi-require')
+        getProject(proj).buildFile << '''
+xapiRequire.gwt.api.internal('main:main')
+'''
+        // now, src/gwtApi can see src/main
+        getProject(proj).withSource('gwtApi') {
+            'ApiMain.java'("""
+class ApiMain {
+  public static void main(String ... a) {
+    com.foo.${proj}.Main.main(a);
+  }
+}
+""")
+        }
+
+        when:
+        // We use -Pxapi.debug=true to get results printed to stdOut.  We could / should also check the report file.
+        BuildResult res = runSucceed('compileGwtJava', ":$proj:xapiReport", '-Pxapi.debug=true')
+        then:
+        res.task(":$proj:compileGwtApiJava").outcome == TaskOutcome.SUCCESS
+        res.task(":$proj:compileGwtJava").outcome == TaskOutcome.SUCCESS
+        res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
+        res.output.contains "$rootDir/$proj/src/main/java"
+    }
+
     def "Plugin is compatible with java plugin"() {
         given:
         String proj = setupSimpleGwt()
 
         when : "Set gradle property to tell xapi to apply java plugin"
         String was = getProject(proj).propertiesFile.text
-        getProject(proj).propertiesFile << "$XapiSchemaPlugin.PROP_SCHEMA_APPLIES_JAVA=true"
+        getProject(proj).propertiesFile << "$XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA=true"
         BuildResult res = runSucceed('compileGwtJava')
 
         then:
@@ -159,7 +186,7 @@ apply plugin: 'java'"""
 
         when : "Set gradle property to tell xapi to apply java library plugin"
         String was = getProject(proj).propertiesFile.text
-        getProject(proj).propertiesFile << "$XapiSchemaPlugin.PROP_SCHEMA_APPLIES_JAVA_LIBRARY=true"
+        getProject(proj).propertiesFile << "$XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_LIBRARY=true"
         BuildResult res = runSucceed('compileGwtJava')
 
         then:
@@ -198,8 +225,8 @@ xapiSchema {
     }
   }
   archives {
-    main
     api
+    main.require api
   }
 }
 """

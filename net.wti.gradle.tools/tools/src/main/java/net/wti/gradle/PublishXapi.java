@@ -22,6 +22,7 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import java.io.File;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class PublishXapi {
 
     public static final String MAIN_PUBLICATION = "xapiMain";

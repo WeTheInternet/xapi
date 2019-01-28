@@ -1,7 +1,10 @@
 package net.wti.gradle.schema.tasks;
 
-import net.wti.gradle.schema.api.PlatformConfig;
+import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.ArchiveGraph;
+import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.schema.api.XapiSchema;
+import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.artifacts.*;
@@ -71,10 +74,13 @@ public class XapiReport extends DefaultTask {
     }
 
     public void record(XapiSchema schema) {
-        for (PlatformConfig platform : schema.getPlatforms()) {
-
-            sourceSets.add(platform.getName());
-        }
+        final ProjectGraph graph = ProjectView.fromProject(getProject()).getProjectGraph();
+        schema.getPlatforms().all(platformConfig->{
+            platformConfig.getArchives().all(archiveConfig -> {
+                final ArchiveGraph module = ((ArchiveConfigInternal) archiveConfig).findGraph(graph);
+                sourceSets.add(module.getSrcName());
+            });
+        });
     }
 
     public void generate() {
@@ -90,7 +96,7 @@ public class XapiReport extends DefaultTask {
         for (String platform : sourceSets.get()) {
             final SourceSet src = srcs.findByName(platform);
             b
-                .append("\n")
+                .append("\nSource set ")
                 .append(platform);
             if (src == null) {
                 b.append(": <no source>\n\t\t");

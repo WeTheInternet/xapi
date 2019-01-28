@@ -138,6 +138,7 @@ public interface ArchiveGraph extends Named {
             withAttributes(apiElements)
                 .attribute(USAGE_ATTRIBUTE, project().usageApi());
 
+
         });
     }
 
@@ -162,6 +163,7 @@ public interface ArchiveGraph extends Named {
 //            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
         return config("ExportRuntime", runtimeElements -> {
             runtimeElements.extendsFrom(configInternal());
+            runtimeElements.extendsFrom(configAssembled());
             runtimeElements.setVisible(false);
             runtimeElements.setCanBeResolved(false);
             runtimeElements.setCanBeConsumed(true);

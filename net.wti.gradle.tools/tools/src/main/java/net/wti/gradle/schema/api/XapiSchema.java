@@ -10,8 +10,8 @@ import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
@@ -142,12 +142,12 @@ public class XapiSchema {
         platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, instantiator, archives);
 
         final ProjectView root = XapiSchemaPlugin.schemaRootProject(pv);
-        if (root != pv) {
-            initialize(root.getSchema());
-        }
         platforms.configureEach(plat -> {
             plat.getAllArchives().addCollection(archives);
         });
+        if (root != pv) {
+            initialize(root.getSchema());
+        }
         pv.whenReady(p->{
             platforms.configureEach(plat -> {
                 plat.getAllArchives().configureEach(arch -> {
@@ -185,7 +185,6 @@ public class XapiSchema {
             final ArchiveGraph parentArch = parent.archive(archGraph.getName());
             // Here is where we want to add inheritance points from child to parent platforms.
 
-
             final Configuration importApi = archGraph.configImportApi(archGraph.configTransitive());
             importApi.extendsFrom(parentArch.configExportedApi());
 
@@ -200,12 +199,15 @@ public class XapiSchema {
             deps.add(
                 archGraph.configAssembled().getName(),
                 // The assembled configuration is where we'll put the sourceset outputs.
+                // We should consider making this a jar-variant instead of dependency...
                 meta.getSrc().getOutput()
             );
 
-            // Registers build tasks
-            archGraph.getJarTask();
-            archGraph.getJavacTask();
+            view.getPlugins().withType(JavaPlugin.class).configureEach(makesArchives->{
+                // Registers build tasks
+                archGraph.getJarTask();
+                archGraph.getJavacTask();
+            });
 
         }
         if (platConfig.isRequireSource() || archConfig.isSourceAllowed()) {
@@ -229,11 +231,15 @@ public class XapiSchema {
             final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
             final ArchiveGraph neededArchive = needPlat.archive(need);
 
-            Dependency dep = view.dependencyFor(neededArchive.configAssembled());
+            final Configuration intoApi = neededArchive.configImportApi(
+                only ? archGraph.configIntransitive() : archGraph.configTransitive()
+            );
+            intoApi.extendsFrom(neededArchive.configExportedApi());
 
-            deps.add(
-                only ? archGraph.configIntransitive().getName(): transitive.getName()
-                , dep);
+            final Configuration intoRuntime = neededArchive.configImportRuntime(
+                only ? archGraph.configRuntime(): archGraph.configInternal()
+            );
+            intoRuntime.extendsFrom(neededArchive.configExportedRuntime());
 
         }
 

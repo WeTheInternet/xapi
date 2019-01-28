@@ -11,8 +11,8 @@ import java.util.Objects;
 public class XapiRegistration implements Named {
 
     public enum RegistrationMode {
-        internal, external;
-        public static RegistrationMode DEFAULT = internal;
+        internal, project, external;
+        public static RegistrationMode DEFAULT = project;
     }
 
     private Object project;

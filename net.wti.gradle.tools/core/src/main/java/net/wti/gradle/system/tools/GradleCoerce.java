@@ -66,20 +66,21 @@ public class GradleCoerce {
     public static List<Object> unwrap(Object o) {
         return unwrap(o, DEFAULT_FALLBACK);
     }
+
     public static List<Object> unwrap(Object o, Function<Object, Object> fallback) {
         final List<Object> result = new ArrayList<>();
         if (o instanceof Iterable) {
             for (Object item : ((Iterable) o)) {
-                result.addAll(unwrap(item));
+                result.addAll(unwrap(item, fallback));
             }
         } else if (o instanceof Provider) {
             final Object item = ((Provider) o).get();
-            result.addAll(unwrap(item));
+            result.addAll(unwrap(item, fallback));
         } else if (o instanceof Callable) {
             final Object item;
             try {
                 item = ((Callable) o).call();
-                result.addAll(unwrap(item));
+                result.addAll(unwrap(item, fallback));
             } catch (Exception e) {
                 throw new GradleException("Unexpected exception invoking " + o, e);
             }
@@ -87,18 +88,19 @@ public class GradleCoerce {
             return result;
         } else if (o instanceof Supplier) {
             final Object item = ((Supplier) o).get();
-            result.addAll(unwrap(item));
+            result.addAll(unwrap(item, fallback));
         } else if (o.getClass().isArray()) {
             for (int i = 0, m = Array.getLength(o); i < m; i++) {
                 final Object item = Array.get(o, i);
-                result.addAll(unwrap(item));
+                result.addAll(unwrap(item, fallback));
             }
         } else {
             final Object item = fallback.apply(o);
             if (item == o) {
-                throw failure(o);
+                result.add(item);
+            } else {
+                result.addAll(unwrap(item, fallback));
             }
-            result.addAll(unwrap(item));
         }
         return result;
     }

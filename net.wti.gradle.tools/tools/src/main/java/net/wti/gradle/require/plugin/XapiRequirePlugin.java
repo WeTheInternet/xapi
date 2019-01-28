@@ -6,13 +6,14 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.XapiRequire;
+import net.wti.gradle.schema.internal.XapiRegistration;
+import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 
 import javax.inject.Inject;
@@ -44,8 +45,10 @@ public class XapiRequirePlugin implements Plugin<Project> {
     @Override
     @SuppressWarnings("unchecked")
     public void apply(Project project) {
-        project.getPlugins().apply(JavaBasePlugin.class);
+        project.getPlugins().apply(XapiSchemaPlugin.class);
         ProjectView view = ProjectView.fromProject(project);
+
+        // We let you specify a classname override of XapiRequire, which we can generate type-safe, project-specific helpers.
         String xapiRegClass = (String) project.findProperty("xapi.register.class");
         final XapiRequire reg;
         if (xapiRegClass == null) {
@@ -80,49 +83,54 @@ public class XapiRequirePlugin implements Plugin<Project> {
             final String incPlat = include.getPlatform();
             final String incArch = include.getArchive();
 
-            switch (include.getMode()) {
-                case internal:
-                    if (incArch == null) {
-                        if (incPlat == null) {
-                            // project-wide requirement; bind every platform + archive pair
-                            proj.platforms().all(plat->
-                                plat.archives().all(arch->
-                                    includeInternal(view, incProj,  plat, arch)
-                            ));
-                        } else {
-                            // platform-wide requirement. This will get sticky if we allow
-                            // subprojects to customize archive types, as we don't want to
-                            // mess around w/ evaluating the foreign project.
-                            final PlatformGraph plat = proj.platform(incPlat);
-                            plat.archives().all(arch -> includeInternal(view, incProj, plat, arch));
-                        }
-                    } else {
-                        // a single project:platform:archive selector
-                        final PlatformGraph plat = proj.platform(incPlat);
-                        final ArchiveGraph arch = plat.archive(incArch);
-                        includeInternal(view, incProj, plat, arch);
-                    }
-                    break;
-                case external:
-                    // For an external dependency, we may have metadata already available
-                    // about what project/platform/module it maps to.  If not, we can also
-                    // use lenient configurations across all modules, and add the correct naming convention to each.
-
-                    // For now, we're just going to use the lenient configuration,
-                    // and wire in the differentiation of to/from later (this complexity should be hidden from user).
+            if (incArch == null) {
+                if (incPlat == null) {
+                    // project-wide requirement; bind every platform + archive pair
                     proj.platforms().all(plat->
-                        plat.archives().all(arch->
-                            includeExternal(view, incProj, incPlat, incArch,  plat, arch)
+                        plat.archives().all(arch-> {
+                            include(view, incProj,  plat, arch, include);
+                        }
                     ));
-
-                    break;
-                default:
-                        throw new UnsupportedOperationException(include.getMode() + " was not handled");
+                } else {
+                    // platform-wide requirement. This will get sticky if we allow
+                    // subprojects to customize archive types, as we don't want to
+                    // mess around w/ evaluating the foreign project.
+                    final PlatformGraph plat = proj.platform(incPlat);
+                    plat.archives().all(arch -> include(view, incProj, plat, arch, include));
+                }
+            } else {
+                // a single project:platform:archive selector
+                final PlatformGraph plat = proj.platform(incPlat);
+                final ArchiveGraph arch = plat.archive(incArch);
+                include(view, incProj, plat, arch, include);
             }
+
         });
     }
 
-    private void includeInternal(
+    private void include(
+        ProjectView self,
+        String projId,
+        PlatformGraph plat,
+        ArchiveGraph arch,
+        XapiRegistration include
+    ) {
+        switch (include.getMode()) {
+            case project:
+                includeProject(self, projId, plat, arch);
+                return;
+            case internal:
+                includeInternal(self, projId, plat, arch);
+                return;
+            case external:
+                includeExternal(self, projId, include.getPlatform(), include.getArchive(), plat, arch);
+                return;
+            default:
+                throw new UnsupportedOperationException(include.getMode() + " was not handled");
+        }
+    }
+
+    private void includeProject(
         ProjectView self,
         String projId,
         PlatformGraph plat,
@@ -138,6 +146,25 @@ public class XapiRequirePlugin implements Plugin<Project> {
         dep = self.dependencyFor(projName, arch.configAssembled());
         target = arch.configTransitive();
         deps.add(target.getName(), dep);
+    }
+
+    private void includeInternal(
+        ProjectView self,
+        String projId,
+        PlatformGraph plat,
+        ArchiveGraph arch
+    ) {
+        String[] coords = projId.split(":");
+        assert coords.length == 2 : "Invalid coordinates " + coords + " expected `platform:module` pair";
+        final ProjectGraph graph = self.getProjectGraph();
+        final PlatformGraph reqPlatform = graph.platform(coords[0]);
+        final ArchiveGraph reqModule = reqPlatform.archive(coords[1]);
+        // TODO: make this transitivity configurable
+        final Configuration apiInto = reqModule.configImportApi(arch.configTransitive());
+        apiInto.extendsFrom(reqModule.configExportedApi());
+
+        final Configuration runtimeInto = reqModule.configImportRuntime(arch.configInternal());
+        runtimeInto.extendsFrom(reqModule.configExportedRuntime());
     }
 
     private void includeExternal(

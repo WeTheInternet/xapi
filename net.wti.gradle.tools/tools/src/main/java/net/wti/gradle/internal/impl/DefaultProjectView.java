@@ -90,6 +90,8 @@ public class DefaultProjectView implements ProjectView {
             attributesFactory,
             done-> {
                 if (project.getState().getExecuted()) {
+                    // Hm. Consider making this always-async using a higher level queue somewhere.
+                    // Note that this avoids crossing the MutationGuard in project.afterEvaluate.
                     done.execute(true);
                 } else {
                     project.afterEvaluate(p -> done.execute(false));
