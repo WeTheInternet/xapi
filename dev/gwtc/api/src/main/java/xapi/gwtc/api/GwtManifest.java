@@ -787,6 +787,8 @@ public class GwtManifest {
     if (includeGenDir) {
       cp.add(getGenDir());
     }
+    // This is where we need to do the xapi-path resolution for output files...
+    // we're currently sending both jar and src folders as -src inputs...
 //    boolean hadGwtUser = false, hadGwtDev = false, hadGwtCodeserver = !includeCodeserver;
     for (String source : sources.forEach()) {
 //      if (source.contains("gwt-user")) {

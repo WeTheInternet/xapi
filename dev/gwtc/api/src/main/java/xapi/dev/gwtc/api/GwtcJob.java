@@ -1,5 +1,7 @@
 package xapi.dev.gwtc.api;
 
+import com.github.javaparser.ParseException;
+import com.github.javaparser.SourcesHelper;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
@@ -10,8 +12,11 @@ import xapi.except.NoSuchItem;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In2.In2Unsafe;
+import xapi.fu.data.SetLike;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
+import xapi.fu.java.X_Jdk;
+import xapi.gradle.paths.AllPaths;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
@@ -26,15 +31,11 @@ import xapi.util.X_String;
 import xapi.util.api.Destroyable;
 import xapi.util.api.RemovalHandler;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -353,7 +354,7 @@ public abstract class GwtcJob implements Destroyable {
 
     public String[] toProgramArgs(GwtManifest manifest) {
 
-        Set<File> sourcePath = new LinkedHashSet<>();
+        SetLike<File> sourcePath = X_Jdk.setLinked();
         ChainBuilder<String> args = Chain.startChain();
 
         if (manifest.getUnitCacheDir() != null) {
@@ -438,8 +439,13 @@ public abstract class GwtcJob implements Destroyable {
                 }
                 if (dir.exists()) {
                     if (dir.isDirectory()) {
-                        sourcePath.add(dir);
-                        X_Log.trace(GwtcJobMonitor.class, "Adding to source path (will hot recompile): " + dir);
+                        final File xapiPaths = new File(dir, "META-INF/xapi");
+                        if (xapiPaths.exists()) {
+                            addFromPaths(manifest, dir, sourcePath);
+                        } else {
+                            sourcePath.add(dir);
+                            X_Log.trace(GwtcJobMonitor.class, "Adding to source path (will hot recompile): " + dir);
+                        }
                     }
                 } else {
                     final String error = "Gwt dependency directory " + dir + " does not exist";
@@ -527,6 +533,40 @@ public abstract class GwtcJob implements Destroyable {
         }
         args.add(moduleName);
         return args.toArray(String[]::new);
+    }
+
+    protected void addFromPaths(GwtManifest manifest, File dir, SetLike<File> sourcePath) {
+        sourcePath.add(dir);
+        // Alright, we got an output folder containing xapi path files.  load gwt variants,
+        // or at least main + sources...
+
+        final InputStream in;
+        File candidate;
+        try {
+            candidate = new File(dir, "META-INF/xapi/paths.xapi");
+            if (candidate.exists()) {
+                in = new FileInputStream(candidate);
+            } else {
+                candidate = new File(dir, "META-INF/xapi/gwt/classpath");
+                if (candidate.exists()) {
+                    in = new FileInputStream(candidate);
+                    final String cpItems = SourcesHelper.streamToString(in, "UTF-8");
+                    sourcePath.addItems(File::new, cpItems.split("[:;]"));
+                } else {
+                    X_Log.error(GwtcJob.class, "Malformed META-INF/xapi did not contain paths.xapi or gwt/classpath files:", dir);
+                }
+                return;
+            }
+        } catch (FileNotFoundException e) {
+            X_Log.error(GwtcJob.class, "Malformed META-INF/xapi did not contain paths.xapi or gwt/classpath files:", dir);
+            return;
+        }
+        try {
+            AllPaths paths = AllPaths.deserialize(candidate.getAbsolutePath(), in);
+            sourcePath.addNow(paths.getAllFiles(true));
+        } catch (ParseException e) {
+            X_Log.error(GwtcJob.class, "Malformed paths.xapi file ", candidate, e);
+        }
     }
 
     public void blockFor(long timeout, TimeUnit unit) throws TimeoutException {
