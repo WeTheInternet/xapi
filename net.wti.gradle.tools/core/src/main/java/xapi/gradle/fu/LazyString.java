@@ -1,4 +1,4 @@
-package net.wti.gradle.system.api;
+package xapi.gradle.fu;
 
 import java.util.concurrent.Callable;
 
@@ -96,5 +96,9 @@ public class LazyString implements Callable<String>, Comparable<LazyString> {
 
     public static LazyString nonNullString(Callable<? extends CharSequence> value) {
         return new LazyString(value, true);
+    }
+
+    public static LazyString lazyToString(Callable<? extends Object> value) {
+        return new LazyString(()->String.valueOf(value.call()), true);
     }
 }

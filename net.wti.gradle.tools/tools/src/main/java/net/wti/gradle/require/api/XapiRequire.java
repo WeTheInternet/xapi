@@ -14,7 +14,7 @@ import org.gradle.api.internal.DefaultNamedDomainObjectList;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/29/18 @ 10:32 PM.
  */
-public class XapiRequire implements Requirable {
+public class XapiRequire extends BaseRequire<RequirePlatform> implements Requirable {
 
     public static final String EXT_NAME = "xapiRequire";
 
@@ -32,19 +32,6 @@ public class XapiRequire implements Requirable {
         platforms = new RequirePlatformContainer(view, this);
     }
 
-    public Object propertyMissing(String name) {
-        // missing properties will get treated as "getPlatform" calls.
-        return platforms.maybeCreate(name);
-    }
-
-    public Object methodMissing(String name, Object args) {
-        final RequirePlatform platform = (RequirePlatform) propertyMissing(name);
-        if (args instanceof Object[]) {
-            platform.require((Object[]) args);
-        }
-        return platform;
-    }
-
     @Override
     public ProjectView getView() {
         return view;
@@ -53,5 +40,10 @@ public class XapiRequire implements Requirable {
     @Override
     public NamedDomainObjectList<XapiRegistration> getRegistrations() {
         return registrations;
+    }
+
+    @Override
+    protected NamedDomainObjectContainer<RequirePlatform> container() {
+        return platforms;
     }
 }

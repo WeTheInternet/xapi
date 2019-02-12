@@ -10,8 +10,6 @@ repositories {
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-dev-parent:xapi-dev-javac')
     compile project(':xapi-dev-parent:xapi-dev-javac')
     testCompile 'junit:junit:4.12'
     testCompile project(':xapi-jre-parent:xapi-jre-inject')

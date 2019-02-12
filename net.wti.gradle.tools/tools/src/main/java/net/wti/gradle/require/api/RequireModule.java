@@ -46,10 +46,6 @@ public class RequireModule implements Named, Requirable {
         return name;
     }
 
-    public void require(Object[] args) {
-
-    }
-
     @Override
     public Object getDefaultPlatform() {
         return platform.getName();
@@ -75,4 +71,8 @@ public class RequireModule implements Named, Requirable {
         Requirable.super.internal(project);
     }
 
+    @Override
+    public void external(Object project) {
+        Requirable.super.external(project);
+    }
 }

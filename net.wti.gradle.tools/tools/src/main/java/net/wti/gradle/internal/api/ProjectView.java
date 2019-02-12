@@ -150,4 +150,6 @@ public interface ProjectView extends ExtensionAware {
     }
 
     void whenReady(Action<? super ProjectView> callback);
+
+    GradleService getService();
 }

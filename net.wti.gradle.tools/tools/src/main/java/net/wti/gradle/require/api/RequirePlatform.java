@@ -5,6 +5,7 @@ import net.wti.gradle.internal.require.api.Requirable;
 import net.wti.gradle.require.impl.RequireModuleContainer;
 import net.wti.gradle.schema.internal.XapiRegistration;
 import org.gradle.api.Named;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectList;
 
 /**
@@ -23,7 +24,7 @@ import org.gradle.api.NamedDomainObjectList;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/4/19 @ 10:45 PM.
  */
-public class RequirePlatform implements Named, Requirable {
+public class RequirePlatform extends BaseRequire<RequireModule> implements Named, Requirable {
 
     private final String name;
     private final RequireModuleContainer modules;
@@ -56,25 +57,13 @@ public class RequirePlatform implements Named, Requirable {
         return name;
     }
 
-    public Object propertyMissing(String name) {
-        // missing properties will get treated as "getPlatform" calls.
-        return modules.maybeCreate(name);
-    }
-
-    public Object methodMissing(String name, Object args) {
-        final RequireModule module = (RequireModule) propertyMissing(name);
-        if (args instanceof Object[]) {
-            module.require((Object[]) args);
-        }
-        return module;
-    }
-
-    public void require(Object[] args) {
-        // Should be able to call methodMissing w/ curried args...
-    }
-
     @Override
     public NamedDomainObjectList<XapiRegistration> getRegistrations() {
         return registrations;
+    }
+
+    @Override
+    protected NamedDomainObjectContainer<RequireModule> container() {
+        return modules;
     }
 }

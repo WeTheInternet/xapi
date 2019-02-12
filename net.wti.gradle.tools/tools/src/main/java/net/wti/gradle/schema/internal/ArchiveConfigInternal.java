@@ -19,4 +19,5 @@ public interface ArchiveConfigInternal extends ArchiveConfig {
         return platformGraph.archive(getName());
     }
 
+    void fixRequires(PlatformConfig platConfig);
 }

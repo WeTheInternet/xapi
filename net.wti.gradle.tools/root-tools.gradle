@@ -5,7 +5,7 @@ This handles the basics of publishing and path manifest production.'''
 
 // child-build.gradle applies xapi-env, which sets xapiHome|xapiVersion variables for us.
 apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
-String xapiHome = extensions.getByName('xapiHome')
+String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"
 
 TaskProvider required = tasks.register('publishRequired')

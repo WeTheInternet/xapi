@@ -12,15 +12,18 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/1/19 @ 1:03 AM.
  */
-public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> implements ProjectGraph {
+public class DefaultProjectGraph extends AbstractChildGraphNode<PlatformGraph, BuildGraph> implements ProjectGraph {
+
     private final BuildGraph graph;
     private final ProjectView project;
 
     public DefaultProjectGraph(BuildGraph graph, ProjectView project) {
-        super(PlatformGraph.class, project);
+        super(PlatformGraph.class, graph, project);
         this.graph = graph;
         this.project = project;
+        graph.bindLifecycle(this);
     }
+
 
     @Override
     protected PlatformGraph createItem(String name) {
@@ -73,11 +76,6 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
     }
 
     @Override
-    public void whenFinalized(Action<? super ProjectGraph> callback) {
-        project.whenReady(p->callback.execute(this));
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
@@ -102,4 +100,5 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
             "name='" + getName() + '\'' +
             "} " + super.toString();
     }
+
 }

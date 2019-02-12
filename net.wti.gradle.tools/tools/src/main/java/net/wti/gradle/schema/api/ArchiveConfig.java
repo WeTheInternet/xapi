@@ -22,4 +22,5 @@ public interface ArchiveConfig extends Named {
     boolean isSourceAllowed();
 
     void setSourceAllowed(boolean allowed);
+
 }

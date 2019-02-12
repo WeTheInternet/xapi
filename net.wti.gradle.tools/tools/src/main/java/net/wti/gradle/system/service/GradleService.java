@@ -4,6 +4,7 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.plugins.ExtensionAware;
@@ -69,7 +70,7 @@ import java.util.function.Function;
  */
 public interface GradleService {
 
-    String EXT_NAME = "xapiGradle";
+    String EXT_NAME = "_xapiGradle";
     /**
      * Suggested usage:
      * <pre>
@@ -207,7 +208,7 @@ public interface GradleService {
 
             final File loc = gradleLoc;
             project.getLogger().trace("configuring wrapper for {} using {}", root, loc);
-            final String gradleVersion = "5.1-x-11";
+            final String gradleVersion = "5.1-x-13";
             final String zipSeg = "gradle-" + gradleVersion + ".zip";
             final File zipLoc = new File(loc.getParentFile(), zipSeg);
 
@@ -231,18 +232,20 @@ public interface GradleService {
                 }
             );
             rootTasks.named("wrapper", Wrapper.class, wrapper -> {
-                if (loc.isDirectory()) {
-                    project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", gradleVersion, zipLoc);
-                    wrapper.setGradleVersion(gradleVersion);
-                    wrapper.setDistributionType(DistributionType.ALL);
-                    project.getLogger().info("Using local gradle distribution: {}", loc);
-                    wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());
-                    if (!zipLoc.exists()) {
-                        project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
-                        wrapper.dependsOn(distZip.get());
-                    }
+                wrapper.whenSelected(selected->{
+                    if (loc.isDirectory()) {
+                        project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", gradleVersion, zipLoc);
+                        wrapper.setGradleVersion(gradleVersion);
+                        wrapper.setDistributionType(DistributionType.ALL);
+                        project.getLogger().info("Using local gradle distribution: {}", loc);
+                        wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());
+                        if (!zipLoc.exists()) {
+                            project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
+                            wrapper.dependsOn(distZip.get());
+                        }
 
-                }
+                    }
+                });
             });
             }
         );
@@ -254,5 +257,13 @@ public interface GradleService {
         final BuildGraph graph = view.getInstantiator()
             .newInstance(typeBuildGraph(), this, view);
         return graph;
+    }
+
+    default String getXapiHome() {
+        Object prop = getProject().findProperty("xapi.home");
+        if (prop == null) {
+            throw new GradleException("-Pxapi.home is not set; inherit $xapiHome/gradle/xapi-env.gradle to have it set for you");
+        }
+        return (String)prop;
     }
 }

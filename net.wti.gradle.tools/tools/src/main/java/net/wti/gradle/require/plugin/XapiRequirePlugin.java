@@ -1,6 +1,7 @@
 package net.wti.gradle.require.plugin;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
@@ -11,7 +12,6 @@ import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
@@ -82,13 +82,15 @@ public class XapiRequirePlugin implements Plugin<Project> {
             final String incProj = include.getProject();
             final String incPlat = include.getPlatform();
             final String incArch = include.getArchive();
+            final boolean only = !include.getTransitive();
+            final Boolean lenient = include.getLenient();
 
             if (incArch == null) {
                 if (incPlat == null) {
                     // project-wide requirement; bind every platform + archive pair
                     proj.platforms().all(plat->
                         plat.archives().all(arch-> {
-                            include(view, incProj,  plat, arch, include);
+                            include(view, incProj, arch, include, only, lenient == null ? true : lenient);
                         }
                     ));
                 } else {
@@ -96,13 +98,13 @@ public class XapiRequirePlugin implements Plugin<Project> {
                     // subprojects to customize archive types, as we don't want to
                     // mess around w/ evaluating the foreign project.
                     final PlatformGraph plat = proj.platform(incPlat);
-                    plat.archives().all(arch -> include(view, incProj, plat, arch, include));
+                    plat.archives().all(arch -> include(view, incProj, arch, include, only, lenient == null ? true : lenient));
                 }
             } else {
-                // a single project:platform:archive selector
+                // a single project:platform:archive selector.
                 final PlatformGraph plat = proj.platform(incPlat);
                 final ArchiveGraph arch = plat.archive(incArch);
-                include(view, incProj, plat, arch, include);
+                include(view, incProj, arch, include, only, lenient == null ? false : lenient);
             }
 
         });
@@ -111,19 +113,20 @@ public class XapiRequirePlugin implements Plugin<Project> {
     private void include(
         ProjectView self,
         String projId,
-        PlatformGraph plat,
         ArchiveGraph arch,
-        XapiRegistration include
+        XapiRegistration include,
+        boolean only,
+        boolean lenient
     ) {
         switch (include.getMode()) {
             case project:
-                includeProject(self, projId, plat, arch);
+                includeProject(self, projId, arch, only, lenient);
                 return;
             case internal:
-                includeInternal(self, projId, plat, arch);
+                includeInternal(self, projId, arch, only, lenient);
                 return;
             case external:
-                includeExternal(self, projId, include.getPlatform(), include.getArchive(), plat, arch);
+                includeExternal(self, projId, include.getPlatform(), include.getArchive(), arch, only, lenient);
                 return;
             default:
                 throw new UnsupportedOperationException(include.getMode() + " was not handled");
@@ -133,38 +136,34 @@ public class XapiRequirePlugin implements Plugin<Project> {
     private void includeProject(
         ProjectView self,
         String projId,
-        PlatformGraph plat,
-        ArchiveGraph arch
+        ArchiveGraph arch,
+        boolean only,
+        boolean lenient
     ) {
 
-        final Configuration target;
-        final DependencyHandler deps = self.getDependencies();
-        final Dependency dep;
         final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
-        final String projName = incProject.getName();
-        assert !projName.equals(self.getPath());
-        dep = self.dependencyFor(projName, arch.configAssembled());
-        target = arch.configTransitive();
-        deps.add(target.getName(), dep);
+        incProject.whenReady(ReadyState.BEFORE_READY, other->{
+            final String projName = incProject.getName();
+            arch.importGlobal(projName, only, lenient);
+        });
     }
 
     private void includeInternal(
         ProjectView self,
         String projId,
-        PlatformGraph plat,
-        ArchiveGraph arch
+        ArchiveGraph arch,
+        boolean only,
+        boolean lenient
     ) {
         String[] coords = projId.split(":");
         assert coords.length == 2 : "Invalid coordinates " + coords + " expected `platform:module` pair";
         final ProjectGraph graph = self.getProjectGraph();
-        final PlatformGraph reqPlatform = graph.platform(coords[0]);
-        final ArchiveGraph reqModule = reqPlatform.archive(coords[1]);
-        // TODO: make this transitivity configurable
-        final Configuration apiInto = reqModule.configImportApi(arch.configTransitive());
-        apiInto.extendsFrom(reqModule.configExportedApi());
+        graph.whenReady(ReadyState.BEFORE_READY, ready->{
+            final PlatformGraph reqPlatform = graph.platform(coords[0]);
+            final ArchiveGraph reqModule = reqPlatform.archive(coords[1]);
 
-        final Configuration runtimeInto = reqModule.configImportRuntime(arch.configInternal());
-        runtimeInto.extendsFrom(reqModule.configExportedRuntime());
+            arch.importLocal(reqModule, only, lenient);
+        });
     }
 
     private void includeExternal(
@@ -172,16 +171,16 @@ public class XapiRequirePlugin implements Plugin<Project> {
         String projId,
         String requestedGroup,
         String requestedName,
-        PlatformGraph plat,
-        ArchiveGraph arch
+        ArchiveGraph arch,
+        boolean only,
+        boolean lenient
     ) {
 
-        final Configuration target;
         final DependencyHandler deps = self.getDependencies();
         final Dependency dep;
         // The projId here is a g:n[:v] module identifier.
         if (projId.indexOf(':') == projId.lastIndexOf(':')) {
-            // TODO: this should be looked up from a cache somewhere...
+            // TODO: this should be looked up from a cache / service somewhere...
             projId += ":" + self.getVersion();
         }
         dep = self.getDependencies().create(projId);
@@ -196,18 +195,8 @@ public class XapiRequirePlugin implements Plugin<Project> {
         // If you have `com.foo:thing:1`, gradle will know it is variant-mapped and use our import configuration to select correctly.
         // If you have `com.foo:thing-api:1`, gradle will look for it in your local repo, and will fail if it is not found.
 
-
-        // Hm...  the transitivity here should be controllable...
-        // It's already ~too complex for a prototype, so transitive-it-is, for now.
-        target = arch.configTransitive();
-
-        // we need per-variant, on-demand inputs to the lenient config.
-        Configuration dest = arch.configImportApi(target);
-
-        // Now, make it lenient...  This will copy the attributes set from configImportApi.
-        dest = arch.configLenient(dest);
-
-        deps.add(dest.getName(), deps.create(newGroup + ":" + newName + ":" + dep.getVersion()));
+        // TODO: make lenient configurable instead of default-on
+        arch.importExternal(newGroup + ":" + newName + ":" + dep.getVersion(), only, lenient);
     }
 
 }

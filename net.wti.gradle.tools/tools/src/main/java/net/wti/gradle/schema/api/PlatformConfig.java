@@ -30,6 +30,11 @@ public interface PlatformConfig extends Named {
 
     PlatformConfig getParent();
 
+    default PlatformConfig getRoot() {
+        final PlatformConfig parent = getParent();
+        return parent == null ? this : parent;
+    }
+
     ArchiveConfigContainer getArchives();
 
     ArchiveConfig getMainArchive();

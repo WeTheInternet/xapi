@@ -39,7 +39,7 @@ public class PublishXapi {
     }
 
     private static MavenPublication createPublishXapiTask(Project p) {
-            Object home = p.getExtensions().findByName("xapiHome");
+            Object home = p.getExtensions().findByName("xapi.home");
             if (home == null) {
                 File f = new File(p.getRootDir().getParentFile(), "xapi");
                 while (f.getParentFile() != null) {
@@ -57,6 +57,11 @@ public class PublishXapi {
                 if (f.isDirectory()) {
                     final File local = new File(f, "repo");
                     home = local.getAbsolutePath();
+                }
+            } else {
+                File test = new File(String.valueOf(home), "repo");
+                if (test.isDirectory()) {
+                    home = test;
                 }
             }
             PublishingExtension publishing = p.getExtensions().getByType(PublishingExtension.class);
@@ -87,7 +92,7 @@ public class PublishXapi {
                 );
             final Action<? super PublishToMavenRepository> config =
                 (PublishToMavenRepository ptml) -> {
-                    if (ptml.getName().contains("XapiLocal")) {
+                    if (ptml.getName().contains("XapiLocal") && !ptml.getName().contains("MainPublication")) {
                         pubXapi.dependsOn(ptml);
                         ptml.dependsOn(LifecycleBasePlugin.ASSEMBLE_TASK_NAME);
                     }
@@ -100,7 +105,7 @@ public class PublishXapi {
                             + ptml.getPublication().getVersion();
                         p.getGradle().buildFinished(res->{
 
-                            ptml.getLogger().info("Published artifact to {} -> {}", ptml.getRepository().getUrl(), coords);
+                            ptml.getLogger().quiet("Published artifact to {} -> {}", ptml.getRepository().getUrl(), coords);
                             ptml.getLogger().trace("Files copied: {}", ptml.getPublication().getArtifacts().stream()
                                 .map(PublicationArtifact::getFile)
                                 .map(File::getAbsolutePath)
@@ -110,6 +115,10 @@ public class PublishXapi {
                     // perhaps also make the publish tasks wait on all project build tasks before uploading anything.
                     tasks.getByName("build").finalizedBy(ptml);
                 };
+            pubXapi.whenSelected(selected->{
+                tasks.withType(PublishToMavenRepository.class).all(config);
+            });
+
             if (eager) {
                 // eagerly realize all publish tasks, to be sure our lifecycle task actually depends on them.
                 tasks.withType(PublishToMavenRepository.class).all(config);

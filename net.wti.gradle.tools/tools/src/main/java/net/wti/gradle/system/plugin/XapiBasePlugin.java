@@ -7,7 +7,8 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.*;
 
 /**
- * This plugin is responsible for making sure basic schema wiring is setup.
+ * This plugin is responsible for making sure basic schema wiring is setup,
+ * and wires in the xapiReport task, which downstream plugins will augment with useful information.
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/28/19 @ 3:37 AM.
  */
@@ -37,11 +38,10 @@ public class XapiBasePlugin implements Plugin<Project> {
             // Making this a read-write relationship, it should be possible to declare the same
             // information in dependencies {} as xapiRequire {}, and both generate the same bom / behavior / artifacts.
             if ("true".equals(project.findProperty(XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_PLATFORM))) {
-                plugins.apply(JavaPlatformPlugin.class);
                 withJavaPlatformPlugin = true;
                 self.whenReady(this::applyPlatformPlugin);
             } else {
-                plugins.withType(JavaLibraryPlugin.class).configureEach(addedLater -> {
+                plugins.withType(JavaPlatformPlugin.class).configureEach(addedLater -> {
                     throw new IllegalStateException("You must apply the java-platform plugin before xapi-base, or set gradle property -P" + XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_PLATFORM +"=true");
                 });
                 if (project.file("src").exists()) {
@@ -90,12 +90,16 @@ public class XapiBasePlugin implements Plugin<Project> {
                 }
                 locked[0] = true;
             }
+            // TODO: add disambiguation rules to avoid api <-> runtime confusion
         }
 
     }
 
     private void applyPlatformPlugin(ProjectView view) {
-        JavaPlatformExtension ext = (JavaPlatformExtension) view.getExtensions().getByName("javaPlatform");
+        view.getPlugins().apply(JavaPlatformPlugin.class);
 
+        JavaPlatformExtension ext = (JavaPlatformExtension) view.getExtensions().getByName("javaPlatform");
+        // TODO: expose and honor the allowedDependencies() user-configuration, IF they applied the platform plugin.
+        //  otherwise, make the java-platform plugin honor our configuration of "schema project allows dependencies".
     }
 }

@@ -13,7 +13,8 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/2/19 @ 4:21 AM.
  */
-public interface ProjectGraph extends Named {
+public interface ProjectGraph extends Named, GraphNode {
+
     BuildGraph root();
 
     ProjectView project();
@@ -65,5 +66,4 @@ public interface ProjectGraph extends Named {
         return project().getObjects().named(Usage.class, usageType);
     }
 
-    void whenFinalized(Action<? super ProjectGraph> callback);
 }

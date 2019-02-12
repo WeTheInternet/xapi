@@ -1,11 +1,17 @@
 package net.wti.gradle.internal.require.impl;
 
+import net.wti.gradle.internal.impl.DefaultWorker;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.ArchiveRequest;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.internal.require.api.ModuleTasks;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.require.api.DependencyKey;
+import org.gradle.api.Action;
+import org.gradle.api.artifacts.ModuleIdentifier;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
+import org.gradle.internal.component.external.model.DefaultModuleComponentIdentifier;
 
 import java.io.File;
 import java.util.LinkedHashSet;
@@ -15,7 +21,7 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/5/19 @ 2:36 AM.
  */
-public class DefaultArchiveGraph implements ArchiveGraph {
+public class DefaultArchiveGraph extends DefaultWorker implements ArchiveGraph {
     private final PlatformGraph platform;
     private final String name;
     private final Set<ArchiveRequest> incoming;
@@ -28,6 +34,15 @@ public class DefaultArchiveGraph implements ArchiveGraph {
         incoming = new LinkedHashSet<>();
         outgoing = new LinkedHashSet<>();
         tasks = new ModuleTasks(this);
+    }
+
+    @Override
+    public boolean whenReady(int priority, Action<Integer> newItem) {
+        final boolean first = super.whenReady(priority, newItem);
+        if (first) {
+            platform.whenReady(priority, this::drainTasks);
+        }
+        return first;
     }
 
     @Override
@@ -68,6 +83,21 @@ public class DefaultArchiveGraph implements ArchiveGraph {
     }
 
     @Override
+    public ModuleComponentIdentifier getComponentId(String name) {
+        final ModuleIdentifier mid = getModuleIdentifier();
+        final DefaultModuleComponentIdentifier compId = new DefaultModuleComponentIdentifier(
+            DefaultModuleIdentifier.newId(mid.getGroup(), mid.getName() + "-" + name),
+            getView().getVersion()
+        );
+        spyId(name, compId);
+        return compId;
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    protected void spyId(String name, DefaultModuleComponentIdentifier compId) {
+    }
+
+    @Override
     public String getName() {
         return name;
     }
@@ -96,8 +126,9 @@ public class DefaultArchiveGraph implements ArchiveGraph {
     @Override
     public String toString() {
         return "DefaultArchiveGraph{" +
-            "platform=" + platform +
+            "platform='" + platform.getName() + '\''+
             ", name='" + name + '\'' +
             '}';
     }
+
 }

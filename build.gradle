@@ -11,6 +11,15 @@ import xapi.gradle.gwt.Gwt
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
+tasks.create 'publishRequired', { req ->
+    allprojects {
+        def pub = tasks.findByName('xapiPublish')
+        if (pub) {
+            req.dependsOn pub
+        }
+    }
+}
+
 plugins.apply 'xapi-root'
 
 

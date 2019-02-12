@@ -19,6 +19,8 @@ public class XapiRegistration implements Named {
     private Object platform;
     private Object archive;
     private Object into;
+    private Object transitive;
+    private Boolean lenient;
     private boolean resolved;
     private final RegistrationMode mode;
 
@@ -56,6 +58,7 @@ public class XapiRegistration implements Named {
             platform = resolvePlatform(platform);
             archive = resolveArchive(archive);
             into = resolveInto(into);
+            transitive = resolveInto(transitive);
         }
     }
 
@@ -73,6 +76,10 @@ public class XapiRegistration implements Named {
 
     protected String resolveInto(Object into) {
         return GradleCoerce.unwrapString(into);
+    }
+
+    protected boolean resolveTransitive(Object into) {
+        return "true".equals(GradleCoerce.unwrapString(into));
     }
 
     public String getProject() {
@@ -93,6 +100,16 @@ public class XapiRegistration implements Named {
     public Object getInto() {
         maybeResolve();
         return into;
+    }
+
+    public boolean getTransitive() {
+        maybeResolve();
+        return !Boolean.FALSE.equals(transitive);
+    }
+
+    public XapiRegistration withTransitive(boolean transitive) {
+        this.transitive = transitive;
+        return this;
     }
 
     @Override
@@ -136,5 +153,14 @@ public class XapiRegistration implements Named {
 
     public RegistrationMode getMode() {
         return mode;
+    }
+
+    public Boolean getLenient() {
+        return lenient;
+    }
+
+    public XapiRegistration setLenient(Boolean lenient) {
+        this.lenient = lenient;
+        return this;
     }
 }

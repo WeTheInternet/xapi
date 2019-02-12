@@ -3,19 +3,28 @@ package net.wti.gradle.schema.api;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
+import net.wti.gradle.system.api.LazyFileCollection;
+import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.artifacts.ConfigurationPublications;
+import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.SourceSetOutput;
+import org.gradle.api.tasks.TaskDependency;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 
+import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -148,7 +157,7 @@ public class XapiSchema {
         if (root != pv) {
             initialize(root.getSchema());
         }
-        pv.whenReady(p->{
+        pv.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
             platforms.configureEach(plat -> {
                 plat.getAllArchives().configureEach(arch -> {
                     final ArchiveGraph archive = pv.getProjectGraph()
@@ -172,12 +181,7 @@ public class XapiSchema {
         ArchiveGraph archGraph
     ) {
 
-        final Configuration
-            transitive = archGraph.configTransitive();
-
         final PlatformGraph platGraph = archGraph.platform();
-
-        final DependencyHandler deps = view.getDependencies();
 
         if (!platConfig.isRoot()) {
             final PlatformGraph parent = platGraph.project().platform(platConfig.getParent().getName());
@@ -185,26 +189,36 @@ public class XapiSchema {
             final ArchiveGraph parentArch = parent.archive(archGraph.getName());
             // Here is where we want to add inheritance points from child to parent platforms.
 
-            final Configuration importApi = archGraph.configImportApi(archGraph.configTransitive());
-            importApi.extendsFrom(parentArch.configExportedApi());
+            archGraph.importLocal(parentArch, false, false);
 
-            final Configuration importRuntime = archGraph.configImportRuntime(archGraph.configRuntime());
-            importRuntime.extendsFrom(parentArch.configExportedRuntime());
+            platGraph.project().whenReady(ReadyState.BEFORE_READY, ready->{
+                // Need to rebase our .required names.
+                ((ArchiveConfigInternal)archConfig).fixRequires(platConfig);
+            });
 
         }
 
         if (archGraph.srcExists()) {
             SourceMeta meta = archGraph.getSource();
 
-            deps.add(
-                archGraph.configAssembled().getName(),
-                // The assembled configuration is where we'll put the sourceset outputs.
-                // We should consider making this a jar-variant instead of dependency...
-                meta.getSrc().getOutput()
-            );
+            // The assembled configuration is where we'll put the sourceset outputs.
+            // We should consider making this a jar-variant instead of dependency...
+            final Configuration assembled = archGraph.configAssembled();
+            final ConfigurationPublications publications = assembled.getOutgoing();
+            final Property<SourceSetOutput> output = view.getObjects().property(SourceSetOutput.class);
+            output.convention(view.lazyProvider(()-> meta.getSrc().getOutput()));
+            final SourceSetOutput out = output.get();
+            final String name = archGraph.getModuleName() + "-assembled";
+            final Provider<Set<File>> files = view.lazyProvider(out::getFiles);
+            final Provider<TaskDependency> tasks = view.lazyProvider(out::getBuildDependencies);
+            LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
+            // TODO: subclass our own dependency type, so it can be detected later.
+            assembled.getDependencies().add(new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles));
+            // experiment to see if we can safely defer this further, by using .withDependencies:
+//            assembled.withDependencies(deps->{});
 
             view.getPlugins().withType(JavaPlugin.class).configureEach(makesArchives->{
-                // Registers build tasks
+                // Register build-java tasks if the java plugin is applied.
                 archGraph.getJarTask();
                 archGraph.getJavacTask();
             });
@@ -212,8 +226,11 @@ public class XapiSchema {
         }
         if (platConfig.isRequireSource() || archConfig.isSourceAllowed()) {
             // Instead of isSourceAllowed, we may want to allow platform source
-            // requirements to trigger source creation of super-platforms.
-            transitive.extendsFrom(archGraph.configSource());
+            // requirements to trigger inclusion of super-platforms,
+            // without forcing those super-platforms to transitively inherit them.
+            // ...would need an intermediate configuration that is transitive only to the sub-platform,
+            // (and included in the compileOnly / runtimeOnly configurations).
+            archGraph.configTransitive().extendsFrom(archGraph.configSource());
         }
 
         final Set<String> needed = archConfig.required();
@@ -223,23 +240,20 @@ public class XapiSchema {
             if (only) {
                 need = need.substring(0, need.length()-1);
             }
+            boolean lenient = need.endsWith("?");
+            if (lenient) {
+                need = need.substring(0, need.length()-1);
+            }
             PlatformConfigInternal conf = view.getSchema().findPlatform(need);
             if (conf == null) {
-                conf = view.getSchema().getMainPlatform();
+                conf = (PlatformConfigInternal) platConfig;//view.getSchema().getMainPlatform();
             }
             need = GUtil.toLowerCamelCase(need.replace(conf.getName(), ""));
             final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
             final ArchiveGraph neededArchive = needPlat.archive(need);
 
-            final Configuration intoApi = neededArchive.configImportApi(
-                only ? archGraph.configIntransitive() : archGraph.configTransitive()
-            );
-            intoApi.extendsFrom(neededArchive.configExportedApi());
-
-            final Configuration intoRuntime = neededArchive.configImportRuntime(
-                only ? archGraph.configRuntime(): archGraph.configInternal()
-            );
-            intoRuntime.extendsFrom(neededArchive.configExportedRuntime());
+            // Hm... perhaps we should put this in a BEFORE_READY callback?
+            archGraph.importLocal(neededArchive, only, lenient);
 
         }
 
@@ -279,7 +293,7 @@ public class XapiSchema {
             if (check == 0) {
                 return null;
             }
-            need = need.substring(0, --check);
+            need = need.substring(0, check);
             plat = platforms.findByName(need);
         }
         return (PlatformConfigInternal) plat;

@@ -26,16 +26,16 @@ public class DefaultLazyFileCollection extends AbstractFileCollection implements
     }
 
     public DefaultLazyFileCollection(ProjectView view, Configuration config) {
-        this(view, config.getName(), view.getProviders().provider(config::getFiles), view.getProviders().provider(config::getBuildDependencies));
+        this(view, config.getName(), view.lazyProvider(config::getFiles), view.lazyProvider(config::getBuildDependencies));
     }
 
     public DefaultLazyFileCollection(ProjectView view, Configuration config, boolean lenient) {
-        this(view, config.getName(), view.getProviders().provider(()->{
+        this(view, config.getName(), view.lazyProvider(()->{
             if (lenient) {
                 return config.getResolvedConfiguration().getLenientConfiguration().getFiles();
             }
             return config.getFiles();
-        }), view.getProviders().provider(config::getBuildDependencies));
+        }), view.lazyProvider(config::getBuildDependencies));
     }
 
     @Override

@@ -1,6 +1,9 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.schema.api.ArchiveConfig;
+import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.system.tools.GradleCoerce;
+import org.gradle.util.GUtil;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -98,5 +101,15 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     public PlatformConfigInternal getPlatform() {
         return platform;
+    }
+
+    @Override
+    public void fixRequires(PlatformConfig platConfig) {
+        required.clear();
+        final ArchiveConfig target = platConfig.getRoot().getArchive(getName());
+        for (String require : target.required()) {
+            required.add(platConfig.getName() + GUtil.toCamelCase(require));
+        }
+
     }
 }

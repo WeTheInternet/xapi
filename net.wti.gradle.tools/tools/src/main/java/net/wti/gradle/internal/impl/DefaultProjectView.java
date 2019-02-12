@@ -2,7 +2,10 @@ package net.wti.gradle.internal.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
+import net.wti.gradle.system.service.GradleService;
+import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.api.Action;
+import org.gradle.api.Incubating;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
@@ -29,8 +32,18 @@ import xapi.gradle.java.Java;
 import java.util.function.Function;
 
 /**
+ * An upgraded "veneer around a {@link Project} object,
+ * exposing many populate fields from Project, as well as some internal gradle / xapi tools,
+ * so we can have easy, traceable access to such things,
+ * without explicitly requiring an instance of Project
+ * (handy for testing, room for daring / crazy developers to play around with).
+ *
+ * These are attached to the Project#getExtensions as "_xapiProject",
+ * to warn you that you are using an internal service.
+ *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/31/18 @ 12:50 AM.
  */
+@Incubating
 @SuppressWarnings("UnstableApiUsage")
 public class DefaultProjectView implements ProjectView {
 
@@ -59,6 +72,7 @@ public class DefaultProjectView implements ProjectView {
     private final SoftwareComponentContainer components;
     private final Action<Action<? super Boolean>> whenReady;
     private final PluginContainer plugins;
+    private final Provider<GradleService> service;
 
     public DefaultProjectView(
         Project project,
@@ -91,12 +105,14 @@ public class DefaultProjectView implements ProjectView {
             done-> {
                 if (project.getState().getExecuted()) {
                     // Hm. Consider making this always-async using a higher level queue somewhere.
-                    // Note that this avoids crossing the MutationGuard in project.afterEvaluate.
+                    // Note that this avoids crossing the MutationGuard in project.afterEvaluate,
+                    // so it's safe to call generically / after the mutable Project has been finalized.
                     done.execute(true);
                 } else {
                     project.afterEvaluate(p -> done.execute(false));
                 }
             },
+            project.getProviders().provider(()-> GradleServiceFinder.getService(project)),
             project.getProviders().provider(project::getGroup),
             project.getProviders().provider(project::getName),
             project.getProviders().provider(project::getVersion),
@@ -126,6 +142,7 @@ public class DefaultProjectView implements ProjectView {
         ProjectFinder projectFinder,
         ImmutableAttributesFactory attributesFactory,
         Action<Action<? super Boolean>> whenReady,
+        Provider<GradleService> service,
         Provider<Object> group,
         Provider<Object> name,
         Provider<Object> version,
@@ -150,9 +167,10 @@ public class DefaultProjectView implements ProjectView {
         this.decorator = decorator;
         this.projectFinder = projectFinder;
         this.attributesFactory = attributesFactory;
-        this.whenReady = whenReady;
         this.buildGraph = buildGraph;
+        this.whenReady = whenReady;
         this.layout = layout;
+        this.service = service;
         this.group = group;
         this.name = name;
         this.version = version;
@@ -299,6 +317,10 @@ public class DefaultProjectView implements ProjectView {
         return String.valueOf(v);
     }
 
+    @Override
+    public GradleService getService() {
+        return service.get();
+    }
 
     @Override
     public String toString() {

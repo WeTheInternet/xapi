@@ -11,7 +11,7 @@ import xapi.fu.data.MapLike;
 import xapi.fu.data.SetLike;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.gradle.api.AllPaths;
+import xapi.gradle.paths.AllPaths;
 import xapi.gradle.api.ArchiveType;
 import xapi.gradle.api.SourceConfig;
 import xapi.gradle.plugin.XapiExtension;

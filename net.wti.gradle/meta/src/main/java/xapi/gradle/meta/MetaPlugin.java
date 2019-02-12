@@ -1,11 +1,6 @@
 package xapi.gradle.meta;
 
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
-import com.github.javaparser.SourcesHelper;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -13,18 +8,19 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.Sync;
-import org.gradle.internal.io.IoUtils;
 import xapi.fu.Do;
 import xapi.fu.In1;
-import xapi.fu.In2;
 import xapi.fu.data.SetLike;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.fu.log.Log.LogLevel;
 import xapi.gradle.java.Java;
+import xapi.gradle.paths.AllPaths;
 import xapi.gradle.tools.Ensure;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedHashSet;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -32,7 +28,6 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 import static xapi.fu.itr.MappedIterable.mapped;
-import static xapi.fu.java.X_Jdk.set;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/19/18 @ 1:05 AM.
@@ -160,74 +155,12 @@ public class MetaPlugin implements Plugin<Project> {
     }
 
     private void loadXapi(String loc, InputStream in, SetLike<String> results) {
-        String src = SourcesHelper.streamToString(in);
         try {
-            final UiContainerExpr el = JavaParser.parseUiContainer(
-                loc,
-                src,
-                LogLevel.ERROR
-            );
-            final ComposableXapiVisitor<MetaPlugin> visitor = ComposableXapiVisitor.onMissingLog(
-                MetaPlugin.class,
-                false
-            );
-            String[] modName = {null};
-            String[] type = {"main"};
-            SetLike<String> provides = set();
-            SetLike<String> includes = set();
-            SetLike<String> inherits = set();
-            SetLike<String>[] current = new SetLike[]{null};
-            visitor.withUiContainerTerminal(In2.ignoreAll())
-                   .withUiAttrTerminal((attr, arg)->{
-                switch(attr.getNameString().toLowerCase()) {
-                    case "sources":
-                    case "resources":
-                    case "outputs":
-                        // TODO: differentiate sources and outputs better....
-                        results.add(attr.getStringExpression(false));
-                        break;
-                    case "provides":
-                        // calculate "provides" exclusions
-                        current[0] = provides;
-                        attr.getExpression().accept(visitor, arg);
-                        break;
-                    case "includes":
-                        // automatically include these based on current location?
-                        current[0] = includes;
-                        attr.getExpression().accept(visitor, arg);
-                        break;
-                    case "inherits":
-                        // load foreign inherits from our a given classpath?
-                        // perhaps we can have "rootProject.configurations.xapiMeta" with all local paths in it
-                        current[0] = inherits;
-                        attr.getExpression().accept(visitor, arg);
-                        break;
-                    case "type":
-                        type[0] = attr.getStringExpression(false);
-                        break;
-                    case "module":
-                        modName[0] = attr.getStringExpression(false);
-                        break;
-                }
-            })
-            .withTemplateLiteralTerminal((str, arg)->
-                current[0].add(str.getValueWithoutTicks())
-            )
-            .withStringLiteralTerminal((str, arg)->
-                current[0].add(str.getValue())
-            )
-            .withQualifiedNameTerminal((name, arg)->
-                current[0].add(name.getQualifiedName())
-            )
-            .withNameTerminal((name, arg)->
-                current[0].add(name.getQualifiedName())
-            )
-            ;
-
-            el.accept(visitor, this);
+            AllPaths paths = AllPaths.deserialize(loc, in);
+            results.addNow(paths.getAllFiles(true).map(File::getAbsolutePath));
         } catch (ParseException e) {
-            logger.error("Invalid xapi source {}", src, e);
-            throw new GradleException("Invalid xapi source " + src, e);
+            logger.error("Invalid xapi source at {}", loc, e);
+            throw new GradleException("Invalid xapi source at " + loc);
         }
     }
 

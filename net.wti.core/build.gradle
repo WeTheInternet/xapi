@@ -8,7 +8,7 @@ plugins {
 }
 
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
-String xapiHome = extensions.getByName('xapiHome')
+String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"
 
 TaskProvider required = tasks.register('publishRequired')

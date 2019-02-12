@@ -12,7 +12,7 @@ repositories {
 dependencies {
     compile project(':xapi-core-parent:xapi-core-api')
     compile project(':xapi-dev-parent:xapi-dev')
-    implementation ('de.mocra.cy:wti-shared:0.1') {
+    implementation ('de.mocra.cy:wti-shared:0.5.1') {
         exclude group: 'net.wetheinter'
     }
     compile project(':xapi-gwt3')

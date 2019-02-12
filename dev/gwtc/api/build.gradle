@@ -18,8 +18,9 @@ apply from: "$rootDir/gradle/processor.gradle"
 
 dependencies {
 
-    annotationProcessor 'net.wti.gradle:xapi-dev-mirror:0.5.1'
+    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
 
+    compile "net.wti.gradle:xapi-gradle-api:$version"
     compile project(':xapi-dev-parent:xapi-dev-source')
     compile project(':xapi-core-parent:xapi-core-model')
     compile project(':xapi-core-parent:xapi-core-process')

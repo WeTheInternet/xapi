@@ -1,6 +1,8 @@
 package xapi.fu.data;
 
+import xapi.fu.In1Out1;
 import xapi.fu.api.Ignore;
+import xapi.fu.itr.ArrayIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.
@@ -19,6 +21,15 @@ public interface SetLike <V> extends CollectionLike<V> {
 
     default SetLike<V> addNow(Iterable<? extends V> items) {
         CollectionLike.super.addNow(items);
+        return this;
+    }
+
+    default <T> SetLike<V> addItems(In1Out1<T, V> mapper, T ... items) {
+        return addNow(ArrayIterable.iterate(items).map(mapper));
+    }
+
+    default SetLike<V> addItems(V ... items) {
+        CollectionLike.super.addNow(ArrayIterable.iterate(items));
         return this;
     }
 

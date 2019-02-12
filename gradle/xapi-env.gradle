@@ -12,12 +12,12 @@ import java.util.function.Function
 
 // Find xapiHome, and set it as an extension.
 
-def xapiHome = findProperty('xapiHome')
+def xapiHome = findProperty('xapi.home')
 if (!xapiHome) {
     // look in the root project, to avoid expensive horsing around.
-    def root = rootProject.findProperty('xapiHome')
+    def root = rootProject.findProperty('xapi.home')
     if (root) {
-        extensions.add('xapiHome', xapiHome = root)
+        extensions.add('xapi.home', xapiHome = root)
     } else {
         Set<File> maybe = [xapiHome = rootDir]
         while (!maybe.isEmpty()) {
@@ -38,10 +38,10 @@ if (!xapiHome) {
                 search = search.parentFile
             }
         }
-        extensions.add('xapiHome', xapiHome.absolutePath)
+        extensions.add('xapi.home', xapiHome.absolutePath)
         // if rootProject already had it, we would never get to this block of code
         if (project != rootProject) {
-            rootProject.extensions.add('xapiHome', xapiHome.absolutePath)
+            rootProject.extensions.add('xapi.home', xapiHome.absolutePath)
         }
     }
 }

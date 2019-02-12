@@ -12,7 +12,7 @@ def ensure = {
         Path full = root.resolve(p)
         if (!Files.exists(full)) {
             Files.createDirectories(full.parent)
-            String xapiHome = findProperty('xapiHome')
+            String xapiHome = findProperty('xapi.home')
             if (!xapiHome) {
                 throw new GradleException("You must apply xapi-env.gradle before child-build.gradle")
             }

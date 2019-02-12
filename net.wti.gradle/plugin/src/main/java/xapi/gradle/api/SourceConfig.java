@@ -1,5 +1,6 @@
 package xapi.gradle.api;
 
+import net.wti.gradle.internal.api.HasSourceSet;
 import org.gradle.api.Named;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -11,14 +12,13 @@ import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import xapi.fu.itr.EmptyIterator;
-import xapi.gradle.plugin.XapiExtension;
 
 import java.util.Set;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/26/18 @ 6:03 AM.
  */
-public class SourceConfig implements Named {
+public class SourceConfig implements Named, HasSourceSet {
 
     public static final String EXT_NAME = "xapi";
     private final SourceSet sources;
@@ -59,6 +59,7 @@ public class SourceConfig implements Named {
         this.publish = publish;
     }
 
+    @Override
     public SourceSet getSources() {
         return sources;
     }

@@ -13,6 +13,8 @@ import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
@@ -24,10 +26,10 @@ import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.internal.Actions;
-import org.gradle.internal.component.external.model.DefaultModuleComponentIdentifier;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.util.GUtil;
 
+import javax.inject.Provider;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +42,7 @@ import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
  * Created by James X. Nelson (James@WeTheInter.net) on 1/2/19 @ 4:23 AM.
  */
 @SuppressWarnings("UnstableApiUsage")
-public interface ArchiveGraph extends Named {
+public interface ArchiveGraph extends Named, GraphNode {
     PlatformGraph platform();
 
     default ProjectGraph project() {
@@ -123,6 +125,15 @@ public interface ArchiveGraph extends Named {
         return config("Runtime", runtime-> {
             runtime.extendsFrom(configAssembled());
             runtime.setVisible(false);
+        });
+    }
+
+    default Configuration configRuntimeOnly() {
+        return config("RuntimeOnly", runtime-> {
+            configRuntime().extendsFrom(runtime);
+            runtime.setVisible(false);
+            runtime.setCanBeConsumed(false);
+            runtime.setCanBeResolved(false);
         });
     }
 
@@ -224,6 +235,7 @@ public interface ArchiveGraph extends Named {
             if (srcExists()) {
                 configApi().extendsFrom(transitive);
             }
+//            withAttributes(transitive);
         });
     }
 
@@ -354,38 +366,49 @@ public interface ArchiveGraph extends Named {
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    default Configuration configLenient(Configuration from) {
-        return config(from.getName() + "Lenient", lenient -> {
-            final ModuleIdentifier mid = getModuleIdentifier();
-            final DefaultModuleComponentIdentifier compId = new DefaultModuleComponentIdentifier(
-                DefaultModuleIdentifier.newId(mid.getGroup(), mid.getName() + "-" + from.getName().toLowerCase()),
-                getView().getVersion()
-            );
+    default Configuration configImport(
+        String name,
+        Provider<AttributeContainer> attrs,
+        UsageType type,
+        boolean only,
+        boolean lenient
+    ) {
+        return config(name + (lenient ? "Lenient" : "Strict"), conf -> {
+            ModuleComponentIdentifier compId = getComponentId(name);
+
             // We don't add the lenient configuration directly to the parent; instead we add a dependency
             // which lets us route through a lazy, lenient file collection:
-            LazyFileCollection lazy = new DefaultLazyFileCollection(getView(), lenient, true);
+            LazyFileCollection lazy = new DefaultLazyFileCollection(getView(), conf, lenient);
             // We might want a more specific subtype for this self resolving dependency, so we are detectable externally.
-            configTransitive().getDependencies().add(new DefaultSelfResolvingDependency(compId, lazy));
+
+            Configuration into = type.findConfig(this, only);
+            into.getDependencies().add(new DefaultSelfResolvingDependency(compId, lazy));
             // The configuration object can be used for resolving dependencies, in a lazy fashion.
-            lenient.setVisible(false);
-            lenient.setCanBeConsumed(false);
-            lenient.setCanBeResolved(true);
-            final AttributeContainer fromAttrs = from.getAttributes();
+            conf.setVisible(false);
+            conf.setCanBeConsumed(false);
+            conf.setCanBeResolved(true);
+            final AttributeContainer fromAttrs = attrs.get();
             for (Attribute attribute : fromAttrs.keySet()) {
-                lenient.getAttributes().attribute(attribute, fromAttrs.getAttribute(attribute));
+                conf.getAttributes().attribute(attribute, fromAttrs.getAttribute(attribute));
             }
 
         });
     }
+
+    ModuleComponentIdentifier getComponentId(String name);
 
     default Configuration config(String suffix) {
         return config(suffix, Actions.doNothing());
     }
 
     default Configuration config(String suffix, Action<? super Configuration> whenCreated) {
-        final ConfigurationContainer configs = getConfigurations();
         final String srcName = getSrcName();
         String name = "main".equals(srcName) || srcName.equals(suffix) || suffix.startsWith(srcName) ? GUtil.toLowerCamelCase(suffix) : srcName + GUtil.toCamelCase(suffix);
+        return configNamed(name, whenCreated);
+    }
+
+    default Configuration configNamed(String name, Action<? super Configuration> whenCreated) {
+        final ConfigurationContainer configs = getConfigurations();
         Configuration existing = configs.findByName(name);
         if (existing == null) {
             existing = configs.create(name);
@@ -422,9 +445,12 @@ public interface ArchiveGraph extends Named {
     default Configuration configImport(Configuration target, String suffix, Action<? super AttributeContainer> attrCallback) {
         String targetName = target.getName();
         String myName = getSrcName();
-        String name = myName.equals(targetName) ? myName + "Import" + suffix : targetName + "Import" + suffix +
-            (targetName.startsWith(myName) ? "" : GUtil.toCamelCase(getConfigName()));
-        return config(name, conf->{
+        String name = /*myName.equals(targetName) ? myName + "Import" + suffix : */targetName + "Import" +
+//            (targetName.startsWith(myName) ? "" :
+                GUtil.toCamelCase(getConfigName())
+//            )
+            + suffix;
+        return configNamed(name, conf->{
             target.extendsFrom(conf);
             // set platform/archive attributes on the configuration
             final AttributeContainer attrs = withAttributes(conf);
@@ -435,7 +461,13 @@ public interface ArchiveGraph extends Named {
         });
     }
     default Configuration configImportApi(Configuration target) {
-        return configImport(target, "Api", attributes->
+//        return configImport(target, "Compile", attributes->
+//            // gradle's PreferJavaRuntimeVariant defaults to runtime in order to maintain backwards compatibility
+//            // with maven-repo users, who expect runtime transitive dependencies.
+//            // We do not need to maintain any backwards compatibility, so we'll use api for now, and make configurable later.
+//            attributes.attribute(USAGE_ATTRIBUTE, project().usageApi())
+//        );
+        return configImport(target, "Compile", attributes->
             // gradle's PreferJavaRuntimeVariant defaults to runtime in order to maintain backwards compatibility
             // with maven-repo users, who expect runtime transitive dependencies.
             // We do not need to maintain any backwards compatibility, so we'll use api for now, and make configurable later.
@@ -443,8 +475,83 @@ public interface ArchiveGraph extends Named {
         );
     }
     default Configuration configImportRuntime(Configuration target) {
+        // The "Runtime" suffix here seems redundant atm...
         return configImport(target, "Runtime", attributes->
             attributes.attribute(USAGE_ATTRIBUTE, project().usageRuntime())
         );
+    }
+
+    default void importLocal(ArchiveGraph neededArchive, boolean only, boolean lenient) {
+        // TODO: instead create an ArchiveRequest here,
+        //  so we can avoid doing this wiring if we don't need to;
+        //  i.e. modules w/out sources or outputs could be "ghosted", with only a minimal presence,
+        //  by creating a request whose needsCompletion is never set to true.
+
+//        final Configuration intoApi = neededArchive.configImportApi(
+//            only ? configIntransitive() : configTransitive()
+//        );
+//        intoApi.extendsFrom(neededArchive.configExportedApi());
+//
+//        final Configuration intoRuntime = neededArchive.configImportRuntime(
+//            only ? configRuntimeOnly(): configRuntime()
+//        );
+//        intoRuntime.extendsFrom(neededArchive.configExportedRuntime());
+
+        Configuration target = DefaultUsageType.Api.findConfig(this, only);
+        final DependencyHandler deps = getView().getDependencies();
+        Configuration dest = neededArchive.configImportApi(target);
+//        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Api, only, lenient);
+
+//        LazyFileCollection files = new DefaultLazyFileCollection(getView(), neededArchive.configExportedApi(), lenient);
+//        deps.add(dest.getName(), files);
+        deps.add(dest.getName(), neededArchive.configExportedApi());
+
+        target = DefaultUsageType.Runtime.findConfig(this, only);
+        dest = neededArchive.configImportRuntime(target);
+//        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Runtime, only, lenient);
+
+//        files = new DefaultLazyFileCollection(getView(), neededArchive.configExportedRuntime(), lenient);
+//        deps.add(dest.getName(), files);
+        deps.add(dest.getName(), neededArchive.configExportedRuntime());
+
+    }
+
+    default void importGlobal(
+        String projName,
+        boolean only,
+        boolean lenient
+    ) {
+        final ProjectView self = getView();
+        assert !projName.equals(self.getPath());
+        final DependencyHandler deps = self.getDependencies();
+        Configuration target;
+        Dependency dep;
+
+        dep = self.dependencyFor(projName, configExportedApi());
+        target = DefaultUsageType.Api.findConfig(this, only);
+        target = configImportApi(target);
+        deps.add(target.getName(), dep);
+
+        dep = self.dependencyFor(projName, configExportedRuntime());
+        target = DefaultUsageType.Runtime.findConfig(this, only);
+        target = configImportRuntime(target);
+        deps.add(target.getName(), dep);
+    }
+
+    default void importExternal(Object dependency, boolean only, boolean lenient) {
+
+        final DependencyHandler deps = getView().getDependencies();
+
+        Configuration target = DefaultUsageType.Api.findConfig(this, only);
+        // create variant-aware, on-demand inputs to the lenient config.
+
+        Configuration dest = configImportApi(target);
+        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Api, only, lenient);
+        deps.add(dest.getName(), dependency);
+
+        target = DefaultUsageType.Runtime.findConfig(this, only);
+        dest = configImportRuntime(target);
+        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Runtime, only, lenient);
+        deps.add(dest.getName(), dependency);
     }
 }

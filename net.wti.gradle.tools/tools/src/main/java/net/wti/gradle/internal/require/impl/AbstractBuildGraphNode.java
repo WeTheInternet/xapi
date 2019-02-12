@@ -1,6 +1,10 @@
 package net.wti.gradle.internal.require.impl;
 
+import net.wti.gradle.internal.api.HasWork;
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
+import net.wti.gradle.internal.impl.DefaultWorker;
+import net.wti.gradle.internal.require.api.GraphNode;
 import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import net.wti.gradle.system.impl.DefaultRealizableNamedObjectContainer;
 import org.gradle.api.Action;
@@ -9,6 +13,7 @@ import org.gradle.api.Namer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.internal.reflect.Instantiator;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -16,7 +21,7 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/1/19 @ 2:07 AM.
  */
-public abstract class AbstractBuildGraphNode <T> {
+public abstract class AbstractBuildGraphNode <T extends HasWork> extends DefaultWorker implements GraphNode {
     private final Set<String> registeredItems, realizedItems;
     private final RealizableNamedObjectContainer<T> items;
 
@@ -29,6 +34,9 @@ public abstract class AbstractBuildGraphNode <T> {
             CollectionCallbackActionDecorator callbackDecorator
         ) {
             super(type, instantiator, namer, callbackDecorator);
+            configureEach(known->
+                known.drainTasks(ReadyState.CREATED)
+            );
         }
 
         protected GraphNodeContainer(
@@ -37,12 +45,28 @@ public abstract class AbstractBuildGraphNode <T> {
             CollectionCallbackActionDecorator callbackActionDecorator
         ) {
             super(type, instantiator, callbackActionDecorator);
+            configureEach(known->
+                known.drainTasks(ReadyState.CREATED)
+            );
         }
 
         @Override
-        protected T doCreate(String name) {
+        protected final T doCreate(String name) {
             realizedItems.add(name);
-            return createItem(name);
+            final T item = createItem(name);
+            item.drainTasks(ReadyState.BEFORE_CREATED);
+            return item;
+        }
+
+        @Override
+        protected NamedDomainObjectProvider<T> createDomainObjectProvider(
+            String name, @Nullable Action<? super T> configurationAction
+        ) {
+            final NamedDomainObjectProvider<T> provider = super.createDomainObjectProvider(name, configurationAction);
+            provider.configure(realized->{
+                realized.drainTasks(ReadyState.AFTER_CREATED);
+            });
+            return provider;
         }
     }
 
@@ -81,4 +105,5 @@ public abstract class AbstractBuildGraphNode <T> {
     protected Set<String> registeredItems() {
         return Collections.unmodifiableSet(registeredItems);
     }
+
 }

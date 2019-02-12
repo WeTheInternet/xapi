@@ -101,13 +101,9 @@ public class ModuleTasks {
             }
             jarTask.configure(jar->{
                 jar.setGroup(source.getGroup());
-//                jar.getArchiveBaseName().convention(
-//                    view().lazyProvider(source::getModuleName)
-//                );
                 jar.getArchiveBaseName().set(
                     view().lazyProvider(source::getModuleName)
                 );
-
             });
             final Configuration config = source.configExportedRuntime();
             final ConfigurationPublications publications = config.getOutgoing();

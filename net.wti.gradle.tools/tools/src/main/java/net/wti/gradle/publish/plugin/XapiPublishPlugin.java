@@ -1,6 +1,7 @@
 package net.wti.gradle.publish.plugin;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.api.XapiLibrary;
 import net.wti.gradle.internal.api.XapiPlatform;
 import net.wti.gradle.internal.impl.DefaultXapiUsageContext;
@@ -94,7 +95,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
             });
 
         });
-        project.whenFinalized(p-> {
+        project.whenReady(ReadyState.AFTER_READY, p-> {
             finalizeLibrary(view, lib, xapiPublish);
             canMutate[0] = false;
         });
@@ -148,26 +149,29 @@ public class XapiPublishPlugin implements Plugin<Project> {
         }
 
         final PublicationContainer publications = publishing.getPublications();
-        lib.getPlatforms().all(p->{
-            p.getModules().all(m->{
-//                if ("main".equals(p.getName()) && "main".equals(m.))
+        // TODO: add some levers/knobs to dial-back this eager initialization of complete build graph:
+        //  user is likely to want to limit publishing to certain platforms at once, at the very least.
+        //  Also; try getting this moved inside the whenSelected block below; it was pulled out due to timing issues.
+        lib.getPlatforms().all(p->
+            p.getModules().all(m->
                     publications.create(p.getName()+"_"+m.getName(), MavenPublication.class, pub->{
                         pub.from(m);
                         pub.setGroupId(m.getGroup());
                         pub.setArtifactId(m.getModuleName());
-                    });
+                    })
 
-            });
-        });
-        // publish the main artifact
-        publications.create("xapi", MavenPublication.class)
-            .from(lib);
+            )
+        );
+        // publish the main artifact.  All items above are "children" / variants of the XapiLibrary, lib
+        publications.create("xapi", MavenPublication.class).from(lib);
 
+        // avoid creating the task.
         xapiPublish.configure(pub->
+            // Only run this code when the task has actually been selected.
             pub.whenSelected(selected->
                 {
                     // publish task was selected, eagerly realize all publishing tasks
-                    // TODO: be able to filter these, in case user is other publications.
+                    // TODO: be able to filter these, in case user has other publications.
                     view.getTasks().withType(PublishToMavenRepository.class)
                         .all(pub::dependsOn);
 

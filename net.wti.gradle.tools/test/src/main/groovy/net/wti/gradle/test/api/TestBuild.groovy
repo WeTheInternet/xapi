@@ -11,7 +11,7 @@ import static groovy.lang.Closure.OWNER_FIRST
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/12/19 @ 10:49 PM.
  */
-trait TestBuild implements Named, HasWork, HasBuildFiles {
+trait TestBuild implements Named, Flushable, HasBuildFiles {
 
     private String name
 
@@ -66,7 +66,7 @@ trait TestBuild implements Named, HasWork, HasBuildFiles {
 
     @Override
     void flush() {
-        doFlush()
+        super.flush()
         realizeProjects().each {
             name, proj ->
                 String path = proj.path

@@ -1,4 +1,4 @@
-package net.wti.gradle.system.api;
+package xapi.gradle.fu;
 
 import java.util.concurrent.Callable;
 

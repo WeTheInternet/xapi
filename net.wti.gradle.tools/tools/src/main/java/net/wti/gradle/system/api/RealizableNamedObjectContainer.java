@@ -3,6 +3,7 @@ package net.wti.gradle.system.api;
 import org.gradle.api.NamedDomainObjectContainer;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/14/19 @ 2:31 AM.
@@ -34,5 +35,25 @@ public interface RealizableNamedObjectContainer <T> extends NamedDomainObjectCon
         whenObjectAdded(into::add);
         whenObjectRemoved(into::remove);
         return this;
+    }
+
+    default boolean anyMatch(Predicate<? super T> test) {
+        realize();
+        for (T item : this) {
+            if (test.test(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean allMatch(Predicate<? super T> test) {
+        realize();
+        for (T item : this) {
+            if (!test.test(item)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

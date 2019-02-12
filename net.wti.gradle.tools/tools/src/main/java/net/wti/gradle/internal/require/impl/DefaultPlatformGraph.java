@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/1/19 @ 2:20 AM.
  */
-public class DefaultPlatformGraph extends AbstractBuildGraphNode<ArchiveGraph> implements PlatformGraph {
+public class DefaultPlatformGraph extends AbstractChildGraphNode<ArchiveGraph, ProjectGraph> implements PlatformGraph {
 
     private final ProjectGraph project;
     private final String name;
@@ -25,7 +25,7 @@ public class DefaultPlatformGraph extends AbstractBuildGraphNode<ArchiveGraph> i
     private PlatformGraph parent;
 
     public DefaultPlatformGraph(ProjectGraph parent, String name) {
-        super(ArchiveGraph.class, parent.project());
+        super(ArchiveGraph.class, parent, parent.project());
         this.project = parent;
         this.name = name;
     }
@@ -155,9 +155,9 @@ public class DefaultPlatformGraph extends AbstractBuildGraphNode<ArchiveGraph> i
     @Override
     public String toString() {
         return "DefaultPlatformGraph{" +
-            "project=" + project +
+            "project=" + project.getPath() +
             ", name='" + name + '\'' +
-            ", parent=" + parent +
+            ", parent=" + (parent == null ? "null" : parent.getName()) +
             "} ";
     }
 }

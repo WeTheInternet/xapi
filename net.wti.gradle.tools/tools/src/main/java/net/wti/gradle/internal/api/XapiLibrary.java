@@ -10,7 +10,6 @@ import org.gradle.api.internal.component.UsageContext;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -142,12 +141,10 @@ public class XapiLibrary implements SoftwareComponentInternal, ComponentWithVari
 
     @Override
     public Set<? extends UsageContext> getUsages() {
-        // It's not obvious whether we should return the main archive usages or not.
-        // My guess is ...probably?  but will have to write some java-library integration tests to be sure.
-        // For now, an empty set seems to work.
+        // It's not obvious whether we should return the main archive usages or something else (like all possible usages).
+        // For now, we'll return only the main module, as it is necessary to adapt standard java-library projects.
 
-//        main.finalizeValue();
-//        return main.get().getModule("main").getUsages();
-        return Collections.emptySet();
+        main.finalizeValue();
+        return main.get().getModule("main").getUsages();
     }
 }

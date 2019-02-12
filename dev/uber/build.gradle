@@ -24,8 +24,9 @@ tasks.jar.configure {
     classifier = 'default'
 }
 
-tasks.shadowJar.configure {
+tasks.named('shadowJar').configure {
     classifier = null
+    zip64=true
 }
 artifacts {
     archives shadowJar

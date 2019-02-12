@@ -25,7 +25,7 @@ import java.util.Set;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/31/18 @ 3:25 AM.
  */
-public interface BuildGraph {
+public interface BuildGraph extends GraphNode {
 
     String EXT_NAME = "xapiBuild";
 

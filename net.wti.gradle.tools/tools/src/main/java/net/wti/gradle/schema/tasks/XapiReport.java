@@ -36,11 +36,11 @@ public class XapiReport extends DefaultTask {
 
     public static final String TASK_NAME = "xapiReport";
 
-    private Property<String> report;
-    private SetProperty<String> sourceSets;
-    private Property<Boolean> log;
+    private final Property<String> report;
+    private final SetProperty<String> sourceSets;
+    private final Property<Boolean> log;
 
-    private RegularFileProperty location;
+    private final RegularFileProperty location;
 
     @Inject
     public XapiReport() {
@@ -53,11 +53,18 @@ public class XapiReport extends DefaultTask {
         report.convention("Xapi Report " + getProject().getPath() + " -> <empty>");
         log.convention("true".equals(getProject().findProperty("xapi.debug")));
         location.convention(getProject().getLayout().getBuildDirectory().file(loc));
-        getProject().getTasks().withType(JavaCompile.class)
-            .configureEach(javac-> javac.shouldRunAfter(this));
-        getProject().getGradle().getTaskGraph().whenReady(g->{
-                generate();
+
+        whenSelected(selected-> {
+            getProject().getTasks().withType(JavaCompile.class)
+                .configureEach(javac-> javac.shouldRunAfter(this));
+            // generate() is expensive, so we only do it if the task is selected.
+            // We do it during configuration phase, however, since we can
+            // currently, sadly, run into deadlocks if we wait until configurations can be resolved in parallel
+            // i.e. during task execution.
+            generate();
         });
+
+
     }
 
     @TaskAction
@@ -75,8 +82,8 @@ public class XapiReport extends DefaultTask {
 
     public void record(XapiSchema schema) {
         final ProjectGraph graph = ProjectView.fromProject(getProject()).getProjectGraph();
-        schema.getPlatforms().all(platformConfig->{
-            platformConfig.getArchives().all(archiveConfig -> {
+        schema.getPlatforms().configureEach(platformConfig->{
+            platformConfig.getArchives().configureEach(archiveConfig -> {
                 final ArchiveGraph module = ((ArchiveConfigInternal) archiveConfig).findGraph(graph);
                 sourceSets.add(module.getSrcName());
             });

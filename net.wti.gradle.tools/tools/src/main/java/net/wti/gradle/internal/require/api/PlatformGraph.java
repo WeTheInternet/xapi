@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.require.api;
 
+import net.wti.gradle.internal.api.HasWork;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
@@ -15,7 +16,7 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 1/2/19 @ 4:23 AM.
  */
-public interface PlatformGraph extends Named {
+public interface PlatformGraph extends Named, HasWork {
     ProjectGraph project();
 
     PlatformGraph parent();
