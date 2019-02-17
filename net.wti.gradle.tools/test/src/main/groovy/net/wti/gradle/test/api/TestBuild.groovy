@@ -52,8 +52,14 @@ trait TestBuild implements Named, Flushable, HasBuildFiles {
                 k, v ->
                     String key = GradleCoerce.unwrapString(k)
                     TestProject proj
+                    File dir
+                    if (key == ':') {
 
-                    File dir = key == ':' ? rootDir : folder(key.split(':'))
+                        dir = rootDir
+                    } else {
+                        key = key.startsWith(':') ? key.substring(1) : key
+                        dir = folder(key.split(':'))
+                    }
                     proj = realizedProjects.computeIfAbsent(key, {
                         new TestProject(key, dir)
                     })

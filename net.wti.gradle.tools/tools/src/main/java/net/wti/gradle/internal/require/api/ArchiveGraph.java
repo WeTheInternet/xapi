@@ -7,6 +7,7 @@ import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
+import net.wti.gradle.schema.internal.XapiModuleDependency;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.api.LazyFileCollection;
 import net.wti.gradle.system.impl.DefaultLazyFileCollection;
@@ -167,6 +168,23 @@ public interface ArchiveGraph extends Named, GraphNode {
 //        return config(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
         return config("ExportCompile", apiElements -> {
             apiElements.extendsFrom(configAssembled());
+            configAssembled().getDependencies().configureEach(dep -> {
+                if (dep instanceof XapiModuleDependency) {
+                    XapiModuleDependency self = (XapiModuleDependency) dep;
+                    final ArchiveGraph mod = self.getModule();
+                    if (mod != this) {
+                        apiElements.getDependencies().add(
+                            getView().getDependencies().project(
+                                GUtil.map(
+                                    "path", self.getPath(),
+                                    "configuration", self.getModule().configExportedApi().getName()
+                                )
+                            )
+                        );
+                    }
+
+                }
+            });
             apiElements.setVisible(true);
             apiElements.setDescription("The transitive compile-time classpath for " + getConfigName());
             apiElements.setCanBeResolved(true);
@@ -425,11 +443,12 @@ public interface ArchiveGraph extends Named, GraphNode {
             // which lets us route through a lazy, optionally-lenient file collection:
             LazyFileCollection lazy = new DefaultLazyFileCollection(getView(), conf, lenient);
             // We might want a more specific subtype for this self resolving dependency, so we are detectable externally.
-
+            // XapiModuleDependency won't work for external dependencies, unless we get a registry of some kind....
             into.getDependencies().add(new DefaultSelfResolvingDependency(compId, lazy));
+
             // The configuration object can be used for resolving dependencies, in a lazy fashion.
             conf.setVisible(false);
-            conf.setCanBeConsumed(false);
+            conf.setCanBeConsumed(true);
             conf.setCanBeResolved(true);
             final AttributeContainer fromAttrs = attrs.get();
             for (Attribute attribute : fromAttrs.keySet()) {
@@ -551,6 +570,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             only,
             lenient
         );
+
         acceptor.setCanBeConsumed(true);
         deps.add(acceptor.getName(), from);
 

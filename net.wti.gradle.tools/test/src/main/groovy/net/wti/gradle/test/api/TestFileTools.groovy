@@ -53,7 +53,8 @@ trait TestFileTools implements HasTestFiles {
 
     File withSource(String srcSet = '', @DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure src) {
         File root = srcSet ? folder("src/$srcSet/java") : rootDir
-        new FileTreeBuilder(root).call(src)
+        FileTreeBuilder builder = new FileTreeBuilder(root)
+        builder.call(src)
         return root
     }
 

@@ -31,7 +31,7 @@ xapiSchema {
 
     def setup() {
         withComposite('comp', {
-            propertiesFile << """xapi.home=${System.getProperty("xapi.home")}"""
+            propertiesFile << """xapi.home=$topDir"""
             withProject(':', {
                 buildFile << """
 $BUILD_HEADER
@@ -44,10 +44,11 @@ version = '1.0'
                 withSource( 'main' ) {
                     'Comp.java'('class Comp implements Is{}')
                 }
-            })
-        })
+            }) // end project ':'
+
+        }) // end composite 'comp'
         withProject(':consumer', {
-            propertiesFile << """xapi.home=${System.getProperty("xapi.home")}"""
+            propertiesFile << """xapi.home=$topDir"""
             buildFile << """
 $BUILD_HEADER
 group = 'com.consumer'
@@ -56,28 +57,17 @@ xapiRequire {
   external 'com.producer:comp:1.0'
 }
 
-PublishingExtension publishing = extensions.getByType(PublishingExtension.class);
-publishing.repositories( {repos -> 
-        repos.maven( { maven ->
-                maven.setName("xapiLocal");
-                maven.url = '$xapiRepo'
-                maven.metadataSources( { gradleMetadata() });
-            }
-        );
-    }
-);
-
 """
         })
     }
 
     protected def withConsumerSource() {
-        withProject('consumer') {
+        withProject(':consumer') {
             withSource('api') {
-                'interface Is2 extends Is {}'
+                'Is2.java'('interface Is2 extends Is {}')
             }
             withSource('main') {
-                'interface Comp2 extends Comp implements Is2 {}'
+                'Comp2.java'('class Comp2 extends Comp implements Is2 {}')
             }
         }
     }
@@ -103,14 +93,30 @@ publishing.repositories( {repos ->
         result.task(':consumer:apiJar').outcome == TaskOutcome.SUCCESS
     }
 
-    def "compile dependencies are correct when publishing is invoked"() {
+    def "compile dependencies are correct when publishing is invoked without client source"() {
         given:
-        IncludedTestBuild comp = getComposite("comp")
-        def result = runSucceed(LogLevel.INFO, comp.rootDir, 'xapiPublish')
+        def result = runSucceed('xapiPublish')
 
         expect:
-        result.task(':compileJava').outcome == TaskOutcome.SUCCESS
-        result.task(':xapiPublish').outcome == TaskOutcome.SUCCESS
+        result.task(':comp:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':compileJava') == null // there was no source, so we should not have compiled.
+        result.task(':consumer:xapiPublish').outcome == TaskOutcome.SUCCESS
+        result.task(':comp:xapiPublish').outcome == TaskOutcome.SUCCESS
+    }
+
+    def "compile dependencies are correct when publishing is invoked with client source"() {
+        given:
+        withConsumerSource()
+        def result = runSucceed('xapiPublish')
+
+        expect:
+        result.task(':comp:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':consumer:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':consumer:xapiPublish').outcome == TaskOutcome.SUCCESS
+        result.task(':comp:xapiPublish').outcome == TaskOutcome.SUCCESS
+
+        cleanup:
+        println "Test directory: file://$rootDir"
     }
 
     def "compile dependencies are correct when publishing is not invoked"() {

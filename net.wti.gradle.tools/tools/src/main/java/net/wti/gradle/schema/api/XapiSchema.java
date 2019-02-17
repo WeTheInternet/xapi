@@ -13,7 +13,6 @@ import net.wti.gradle.system.api.LazyFileCollection;
 import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.internal.tasks.DefaultTaskDependency;
 import org.gradle.api.internal.tasks.TaskResolver;
 import org.gradle.api.plugins.JavaPlugin;
@@ -217,11 +216,10 @@ public class XapiSchema {
                         output.get().getBuildDependencies(),
                         archGraph.configCompile().getBuildDependencies()
                     )
-
             );
             LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
-            // TODO: subclass our own dependency type, so it can be detected later.
-            assembled.getDependencies().add(new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles));
+            assembled.getDependencies().add(new XapiModuleDependency(archGraph, name, lazyFiles));
+
             // experiment to see if we can safely defer this further, by using .withDependencies:
 //            assembled.withDependencies(deps->{});
 
