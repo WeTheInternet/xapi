@@ -5,6 +5,7 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Incubating;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ConfigurationContainer;
@@ -24,6 +25,7 @@ import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
@@ -57,21 +59,24 @@ public class DefaultProjectView implements ProjectView {
     private final RepositoryHandler repositories;
     private final DependencyHandler dependencies;
     private final ArtifactHandler artifacts;
-    private final Provider<SourceSetContainer> sourceSets;
     private final Function<String, Object> propFinder;
     private final ExtensionContainer extensions;
     private final CollectionCallbackActionDecorator decorator;
-    private final Provider<BuildGraph> buildGraph;
     private final ProjectFinder projectFinder;
     private final ProjectLayout layout;
     private final ImmutableAttributesFactory attributesFactory;
     private final Gradle gradle;
+    private final SoftwareComponentContainer components;
+    private final PluginContainer plugins;
+
+    private final Action<Action<? super Boolean>> whenReady;
+
+    private final Provider<BuildGraph> buildGraph;
+    private final Provider<SourceSetContainer> sourceSets;
     private final Provider<Object> group;
     private final Provider<Object> name;
     private final Provider<Object> version;
-    private final SoftwareComponentContainer components;
-    private final Action<Action<? super Boolean>> whenReady;
-    private final PluginContainer plugins;
+    private final Provider<PublishingExtension> publishing;
     private final Provider<GradleService> service;
 
     public DefaultProjectView(
@@ -113,6 +118,14 @@ public class DefaultProjectView implements ProjectView {
                 }
             },
             project.getProviders().provider(()-> GradleServiceFinder.getService(project)),
+            project.getProviders().provider(()-> {
+
+                final PublishingExtension result = project.getExtensions().findByType(PublishingExtension.class);
+                if (result == null) {
+                    throw new GradleException("You must add a publishing plugin like maven-publish, or call Project.extensions.add('publishing', new DefaultPublishingExtension())");
+                }
+                return result;
+            }),
             project.getProviders().provider(project::getGroup),
             project.getProviders().provider(project::getName),
             project.getProviders().provider(project::getVersion),
@@ -141,8 +154,12 @@ public class DefaultProjectView implements ProjectView {
         CollectionCallbackActionDecorator decorator,
         ProjectFinder projectFinder,
         ImmutableAttributesFactory attributesFactory,
+        // All "okay to resolve immediately" final values, above.
+
         Action<Action<? super Boolean>> whenReady,
+        // All new providers should go here, at the end
         Provider<GradleService> service,
+        Provider<PublishingExtension> publishing,
         Provider<Object> group,
         Provider<Object> name,
         Provider<Object> version,
@@ -162,18 +179,21 @@ public class DefaultProjectView implements ProjectView {
         this.dependencies = dependencies;
         this.artifacts = artifacts;
         this.components = components;
-        this.sourceSets = sourceSets;
         this.propFinder = propFinder;
         this.decorator = decorator;
         this.projectFinder = projectFinder;
         this.attributesFactory = attributesFactory;
-        this.buildGraph = buildGraph;
         this.whenReady = whenReady;
         this.layout = layout;
-        this.service = service;
-        this.group = group;
-        this.name = name;
-        this.version = version;
+
+        // The rest are providers.  Make them lazy.
+        this.sourceSets = lazyProvider(sourceSets);
+        this.buildGraph = lazyProvider(buildGraph);
+        this.service = lazyProvider(service);
+        this.group = lazyProvider(group, true);
+        this.name = lazyProvider(name, true);
+        this.version = lazyProvider(version, true);
+        this.publishing = lazyProvider(publishing);
     }
 
     @Override
@@ -286,6 +306,11 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public ImmutableAttributesFactory getAttributesFactory() {
         return attributesFactory;
+    }
+
+    @Override
+    public PublishingExtension getPublishing() {
+        return publishing.get();
     }
 
     @Override

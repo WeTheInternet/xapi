@@ -21,8 +21,14 @@ public enum DefaultUsageType implements UsageType {
      */
     Api {
         @Override
-        public Configuration findConfig(ArchiveGraph module, boolean only) {
-            return only ? module.configIntransitive() : module.configTransitive();
+        public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
+//            return only ? module.configIntransitive() : module.configTransitive();
+            return only ? module.configCompileOnly() : module.configCompile();
+        }
+
+        @Override
+        public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
+            return module.configExportedApi();
         }
     },
     /**
@@ -30,8 +36,13 @@ public enum DefaultUsageType implements UsageType {
      */
     Runtime {
         @Override
-        public Configuration findConfig(ArchiveGraph module, boolean only) {
+        public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
             return only ? module.configRuntimeOnly() : module.configRuntime();
+        }
+
+        @Override
+        public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
+            return module.configExportedRuntime();
         }
     },
     /**
@@ -54,8 +65,12 @@ public enum DefaultUsageType implements UsageType {
     }
 
     @Override
-    public Configuration findConfig(ArchiveGraph module, boolean only) {
+    public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
         throw new UnsupportedOperationException(this + " not yet supported");
+    }
 
+    @Override
+    public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
+        throw new UnsupportedOperationException(this + " not yet supported");
     }
 }

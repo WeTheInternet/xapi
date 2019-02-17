@@ -13,8 +13,9 @@ import net.wti.gradle.system.api.LazyFileCollection;
 import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ConfigurationPublications;
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
+import org.gradle.api.internal.tasks.DefaultTaskDependency;
+import org.gradle.api.internal.tasks.TaskResolver;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
@@ -204,13 +205,20 @@ public class XapiSchema {
             // The assembled configuration is where we'll put the sourceset outputs.
             // We should consider making this a jar-variant instead of dependency...
             final Configuration assembled = archGraph.configAssembled();
-            final ConfigurationPublications publications = assembled.getOutgoing();
             final Property<SourceSetOutput> output = view.getObjects().property(SourceSetOutput.class);
             output.convention(view.lazyProvider(()-> meta.getSrc().getOutput()));
-            final SourceSetOutput out = output.get();
             final String name = archGraph.getModuleName() + "-assembled";
-            final Provider<Set<File>> files = view.lazyProvider(out::getFiles);
-            final Provider<TaskDependency> tasks = view.lazyProvider(out::getBuildDependencies);
+            final Provider<Set<File>> files = view.lazyProvider(()->
+                output.get().plus(archGraph.configCompile()).getFiles()
+            );
+            final Provider<TaskDependency> tasks = view.lazyProvider(()->
+                new DefaultTaskDependency((TaskResolver) view.getTasks())
+                    .add(
+                        output.get().getBuildDependencies(),
+                        archGraph.configCompile().getBuildDependencies()
+                    )
+
+            );
             LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
             // TODO: subclass our own dependency type, so it can be detected later.
             assembled.getDependencies().add(new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles));

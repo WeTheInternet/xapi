@@ -4,4 +4,6 @@ plugins {
 
 dependencies {
     compileOnly gradleApi()
+    api "net.wti.core:xapi-lang-core:$version"
+    api "net.wti.gradle.tools:xapi-gradle-tools:$version"
 }

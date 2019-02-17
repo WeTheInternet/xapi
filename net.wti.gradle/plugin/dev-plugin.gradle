@@ -36,3 +36,8 @@ depend 'compileOnly', [
 depend('testCompile', [
         module("net.wti.gradle.tools:xapi-gradle-test:$version".toString())
 ])
+
+tasks.withType(Test).configureEach({
+    Test t ->
+        t.systemProperty 'xapi.home', xapiHome
+})

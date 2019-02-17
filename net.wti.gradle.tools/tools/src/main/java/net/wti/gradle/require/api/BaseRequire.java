@@ -40,6 +40,10 @@ public abstract class BaseRequire<T> implements PropertyMixIn, MethodMixIn {
 
     protected abstract NamedDomainObjectContainer<T> container();
 
+    public T getProperty(String name) {
+        return container().maybeCreate(name);
+    }
+
     private class ContainerElementsDynamicObject extends AbstractDynamicObject {
         @Override
         public String getDisplayName() {

@@ -21,6 +21,7 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
+import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
@@ -84,10 +85,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         String platName = platform().getName();
         return
             "main".equals(platName)
-                //            ||
-                //            getName().equals(platName)
-                ?
-                getName() : platName + GUtil.toCamelCase(getName());
+                ? getName() : platName + GUtil.toCamelCase(getName());
 
     }
 
@@ -123,7 +121,7 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default Configuration configRuntime() {
         return config("Runtime", runtime-> {
-            runtime.extendsFrom(configAssembled());
+            runtime.extendsFrom(configPackaged());
             runtime.setVisible(false);
         });
     }
@@ -136,20 +134,58 @@ public interface ArchiveGraph extends Named, GraphNode {
             runtime.setCanBeResolved(false);
         });
     }
+    default Configuration configCompileOnly() {
+        return config("CompileOnly", compOnly -> {
+            configCompile().extendsFrom(compOnly);
+//            configRuntime().extendsFrom(runtime);
+//            runtime.setVisible(false);
+//            runtime.setCanBeConsumed(false);
+//            runtime.setCanBeResolved(false);
+        });
+    }
+
+    default Configuration configCompile() {
+        // nasty... if we try to use built-in compile or api configurations,
+        // then the implicit `runtime.extendsFrom compile` entry will mess up
+        // our (current, ugly) resolution rules.
+        // So, instead, we directly attach our srcSetCP to the srcSetCompileClasspath,
+        // and do not interface directly with java plugin's transitive configurations.
+        // If the user wants to attach our configurations to standard java, it is up to them
+        // to decide on a case-by-case basis where they want an arbitrary xapi dependency inserted.
+        return config("CP", comp -> {
+            config("CompileClasspath").extendsFrom(comp);
+            // these match java plugin's defaults for CompileClasspath, but we want to be explicit here,
+            // as we intend to operate w/out the java plugin at all.
+            comp.setVisible(true);
+            comp.setCanBeConsumed(true);
+            comp.setCanBeResolved(true);
+        });
+    }
 
     @SuppressWarnings("deprecation")
     default Configuration configExportedApi() {
 //        return config(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
         return config("ExportCompile", apiElements -> {
             apiElements.extendsFrom(configAssembled());
-            apiElements.setVisible(false);
-            apiElements.setCanBeResolved(false);
+            apiElements.setVisible(true);
+            apiElements.setDescription("The transitive compile-time classpath for " + getConfigName());
+            apiElements.setCanBeResolved(true);
             apiElements.setCanBeConsumed(true);
             apiElements.getOutgoing().capability(getCapability());
             withAttributes(apiElements)
                 .attribute(USAGE_ATTRIBUTE, project().usageApi());
-
-
+        });
+    }
+    default Configuration configExportedInternal() {
+        return config("ExportInternal", internal -> {
+            internal.extendsFrom(configAssembled());
+            internal.extendsFrom(configInternal());
+            internal.setVisible(true);
+            internal.setCanBeResolved(true);
+            internal.setCanBeConsumed(true);
+            internal.getOutgoing().capability(getCapability("internal"));
+            withAttributes(internal)
+                .attribute(USAGE_ATTRIBUTE, project().usageInternal());
         });
     }
 
@@ -170,11 +206,16 @@ public interface ArchiveGraph extends Named, GraphNode {
         return getGroup() + ":" + getModuleName() + ":" + getView().getVersion();
     }
 
+    default String getCapability(String suffix) {
+        assert suffix != null;
+        return getGroup() + ":" + getModuleName() + suffix + ":" + getView().getVersion();
+    }
+
     default Configuration configExportedRuntime() {
 //            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
         return config("ExportRuntime", runtimeElements -> {
             runtimeElements.extendsFrom(configInternal());
-            runtimeElements.extendsFrom(configAssembled());
+            runtimeElements.extendsFrom(configPackaged());
             runtimeElements.setVisible(false);
             runtimeElements.setCanBeResolved(false);
             runtimeElements.setCanBeConsumed(true);
@@ -185,8 +226,11 @@ public interface ArchiveGraph extends Named, GraphNode {
     }
 
     default AttributeContainer withAttributes(Configuration conf) {
-        return conf.getAttributes()
-                .attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, platform().getName())
+        return withAttributes(conf.getAttributes());
+    }
+
+    default AttributeContainer withAttributes(AttributeContainer attrs) {
+        return attrs.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, platform().getName())
                 .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName());
     }
 
@@ -200,7 +244,9 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default Configuration configPackaged() {
         return config("Packaged", assembled -> {
-            assembled.extendsFrom(configAssembled());
+            assembled.extendsFrom(configTransitive());
+            assembled.extendsFrom(configApi());
+            assembled.extendsFrom(configInternal());
         });
     }
 
@@ -233,7 +279,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             transitive.setCanBeConsumed(false);
             transitive.setCanBeResolved(false);
             if (srcExists()) {
-                configApi().extendsFrom(transitive);
+                configCompile().extendsFrom(transitive);
             }
 //            withAttributes(transitive);
         });
@@ -253,7 +299,7 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default String asModuleName(String projName) {
         String name = getName();
-        return "main".equals(name) ? projName : projName + "-" + name;
+        return "main".equals(name) || name.equals(projName) ? projName : projName + "-" + name;
     }
 
     default String getModuleName() {
@@ -269,7 +315,7 @@ public interface ArchiveGraph extends Named, GraphNode {
                 intransitive.setCanBeConsumed(false);
                 intransitive.setVisible(false);
                 if (srcExists()) {
-                    config("CompileOnly").extendsFrom(intransitive);
+                    configCompileOnly().extendsFrom(intransitive);
                 }
             }
         );
@@ -359,14 +405,13 @@ public interface ArchiveGraph extends Named, GraphNode {
             internal.setCanBeConsumed(false);
             internal.setCanBeResolved(false);
             internal.extendsFrom(configTransitive());
-            if (srcExists()) {
-                config("Implementation").extendsFrom(internal);
-            }
+            configCompile().extendsFrom(internal);
         });
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     default Configuration configImport(
+        Configuration into,
         String name,
         Provider<AttributeContainer> attrs,
         UsageType type,
@@ -377,11 +422,10 @@ public interface ArchiveGraph extends Named, GraphNode {
             ModuleComponentIdentifier compId = getComponentId(name);
 
             // We don't add the lenient configuration directly to the parent; instead we add a dependency
-            // which lets us route through a lazy, lenient file collection:
+            // which lets us route through a lazy, optionally-lenient file collection:
             LazyFileCollection lazy = new DefaultLazyFileCollection(getView(), conf, lenient);
             // We might want a more specific subtype for this self resolving dependency, so we are detectable externally.
 
-            Configuration into = type.findConfig(this, only);
             into.getDependencies().add(new DefaultSelfResolvingDependency(compId, lazy));
             // The configuration object can be used for resolving dependencies, in a lazy fashion.
             conf.setVisible(false);
@@ -442,14 +486,10 @@ public interface ArchiveGraph extends Named, GraphNode {
         return getTasks().getJavacTask();
     }
 
+    // This should return a different type, like CrossModuleConsumerConfiguration
     default Configuration configImport(Configuration target, String suffix, Action<? super AttributeContainer> attrCallback) {
         String targetName = target.getName();
-        String myName = getSrcName();
-        String name = /*myName.equals(targetName) ? myName + "Import" + suffix : */targetName + "Import" +
-//            (targetName.startsWith(myName) ? "" :
-                GUtil.toCamelCase(getConfigName())
-//            )
-            + suffix;
+        String name = targetName + "Import" + GUtil.toCamelCase(getConfigName()) + suffix;
         return configNamed(name, conf->{
             target.extendsFrom(conf);
             // set platform/archive attributes on the configuration
@@ -496,23 +536,44 @@ public interface ArchiveGraph extends Named, GraphNode {
 //            only ? configRuntimeOnly(): configRuntime()
 //        );
 //        intoRuntime.extendsFrom(neededArchive.configExportedRuntime());
-
-        Configuration target = DefaultUsageType.Api.findConfig(this, only);
         final DependencyHandler deps = getView().getDependencies();
-        Configuration dest = neededArchive.configImportApi(target);
-//        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Api, only, lenient);
+
+        final Configuration from = DefaultUsageType.Api.findProducerConfig(neededArchive, only);
+        Configuration into = DefaultUsageType.Api.findConsumerConfig(this, only);
+        Configuration dest = neededArchive.configImportApi(into);
+        dest.setCanBeResolved(true);
+        Configuration acceptor = configImport(
+            dest,
+            into.getName() + "From" + GUtil.toCamelCase(neededArchive.getConfigName()),
+            ()-> ImmutableAttributes.EMPTY,
+//            dest::getAttributes,
+            DefaultUsageType.Api,
+            only,
+            lenient
+        );
+        acceptor.setCanBeConsumed(true);
+        deps.add(acceptor.getName(), from);
 
 //        LazyFileCollection files = new DefaultLazyFileCollection(getView(), neededArchive.configExportedApi(), lenient);
 //        deps.add(dest.getName(), files);
-        deps.add(dest.getName(), neededArchive.configExportedApi());
 
-        target = DefaultUsageType.Runtime.findConfig(this, only);
-        dest = neededArchive.configImportRuntime(target);
-//        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Runtime, only, lenient);
-
+        Configuration from2 = DefaultUsageType.Runtime.findProducerConfig(neededArchive, only);
+        into = DefaultUsageType.Runtime.findConsumerConfig(this, only);
+        dest = neededArchive.configImportRuntime(into);
+        acceptor = configImport(dest,
+            into.getName() + "From" + GUtil.toCamelCase(neededArchive.getConfigName()),
+            ()-> ImmutableAttributes.EMPTY,
+//            dest::getAttributes,
+            DefaultUsageType.Runtime,
+            only,
+            lenient);
+        acceptor.setCanBeConsumed(true);
+        deps.add(acceptor.getName(), from2);
+        // we shouldn't _have_ to do this:
+        final Configuration runtimeClasspath = getView().getConfigurations().getByName(getSource().getSrc().getRuntimeClasspathConfigurationName());
+        runtimeClasspath.extendsFrom(acceptor);
 //        files = new DefaultLazyFileCollection(getView(), neededArchive.configExportedRuntime(), lenient);
 //        deps.add(dest.getName(), files);
-        deps.add(dest.getName(), neededArchive.configExportedRuntime());
 
     }
 
@@ -528,12 +589,12 @@ public interface ArchiveGraph extends Named, GraphNode {
         Dependency dep;
 
         dep = self.dependencyFor(projName, configExportedApi());
-        target = DefaultUsageType.Api.findConfig(this, only);
+        target = DefaultUsageType.Api.findConsumerConfig(this, only);
         target = configImportApi(target);
         deps.add(target.getName(), dep);
 
         dep = self.dependencyFor(projName, configExportedRuntime());
-        target = DefaultUsageType.Runtime.findConfig(this, only);
+        target = DefaultUsageType.Runtime.findConsumerConfig(this, only);
         target = configImportRuntime(target);
         deps.add(target.getName(), dep);
     }
@@ -542,16 +603,17 @@ public interface ArchiveGraph extends Named, GraphNode {
 
         final DependencyHandler deps = getView().getDependencies();
 
-        Configuration target = DefaultUsageType.Api.findConfig(this, only);
+        Configuration target = DefaultUsageType.Api.findConsumerConfig(this, only);
         // create variant-aware, on-demand inputs to the lenient config.
 
         Configuration dest = configImportApi(target);
-        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Api, only, lenient);
+
+        dest = configImport(target, dest.getName(), dest::getAttributes, DefaultUsageType.Api, only, lenient);
         deps.add(dest.getName(), dependency);
 
-        target = DefaultUsageType.Runtime.findConfig(this, only);
+        target = DefaultUsageType.Runtime.findConsumerConfig(this, only);
         dest = configImportRuntime(target);
-        dest = configImport(dest.getName(), dest::getAttributes, DefaultUsageType.Runtime, only, lenient);
+        dest = configImport(target, dest.getName(), dest::getAttributes, DefaultUsageType.Runtime, only, lenient);
         deps.add(dest.getName(), dependency);
     }
 }

@@ -21,4 +21,5 @@ public interface XapiUsage extends Usage {
     String MAIN_TEST = "xapi-test";
     String MAIN_TEST_SOURCE = "xapi-test-source";
 
+    String INTERNAL = "xapi-internal";
 }

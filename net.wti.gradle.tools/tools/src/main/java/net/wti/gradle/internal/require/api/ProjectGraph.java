@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.require.api;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.XapiUsage;
 import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
@@ -56,6 +57,10 @@ public interface ProjectGraph extends Named, GraphNode {
 
     default Usage usageApi() {
         return usage(Usage.JAVA_API);
+    }
+
+    default Usage usageInternal() {
+        return usage(XapiUsage.INTERNAL);
     }
 
     default Usage usageRuntime() {

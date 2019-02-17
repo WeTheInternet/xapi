@@ -27,6 +27,7 @@ import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
@@ -64,6 +65,7 @@ public interface ProjectView extends ExtensionAware {
     Object findProperty(String named);
     ProjectView findProject(String named);
     ImmutableAttributesFactory getAttributesFactory();
+    PublishingExtension getPublishing();
     String getGroup();
     String getName();
     String getVersion();
@@ -138,13 +140,32 @@ public interface ProjectView extends ExtensionAware {
     }
 
     default <T> Provider<T> lazyProvider(Provider<T> items) {
+        return lazyProvider(items, false);
+    }
+
+    /**
+     * Wraps the provider in run-once semantics.
+     *
+     * @param items Your provider.
+     * @param strict if true, we will add an assert, ensuring your provider does not change after it has been read.
+     * @param <T> The type of provider you are supplying / want returned.
+     * @return A provider which will only run once.
+     */
+    @SuppressWarnings({"unchecked", "AssertWithSideEffects"})
+    default <T> Provider<T> lazyProvider(Provider<T> items, boolean strict) {
         Object[] result = {null};
         return getProviders().provider(()->{
+            final Object is;
             synchronized (result) {
-                if (result[0] == null) {
+                is = result[0];
+                if (is == null) {
                     result[0] = items.get();
+                } else if (strict){
+                    Object tmp;
+                    assert is == (tmp=items.get()) : "Cannot reassign " + is + " to " + tmp;
                 }
             }
+
             return (T)result[0];
         });
     }

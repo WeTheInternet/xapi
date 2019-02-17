@@ -5,6 +5,7 @@ import net.wti.gradle.require.api.RequirePlatform;
 import net.wti.gradle.require.api.XapiRequire;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
+import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 
 /**
@@ -29,7 +30,8 @@ public class RequirePlatformContainer extends AbstractNamedDomainObjectContainer
             throw new IllegalArgumentException("Platform " + name + " not found in schema: " + schema);
         }
         // Create a platform-scoped XapiRequire
-        return new RequirePlatform(view, require, name);
+        assert GradleMessages.noOpForAssertion(()->new RequirePlatform(view, require, name));
+        return view.getInstantiator().newInstance(RequirePlatform.class, view, require, name);
     }
 
 }

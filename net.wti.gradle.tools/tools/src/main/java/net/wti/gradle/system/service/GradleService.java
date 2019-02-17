@@ -14,6 +14,7 @@ import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.api.tasks.wrapper.Wrapper.DistributionType;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -259,8 +260,12 @@ public interface GradleService {
         return graph;
     }
 
+    @Nonnull
     default String getXapiHome() {
-        Object prop = getProject().findProperty("xapi.home");
+        Object prop = System.getProperty("xapi.home");
+        if (prop == null) {
+            prop = getProject().findProperty("xapi.home");
+        }
         if (prop == null) {
             throw new GradleException("-Pxapi.home is not set; inherit $xapiHome/gradle/xapi-env.gradle to have it set for you");
         }

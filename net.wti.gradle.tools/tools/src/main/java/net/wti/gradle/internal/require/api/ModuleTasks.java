@@ -6,7 +6,10 @@ import net.wti.gradle.schema.internal.SourceMeta;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationPublications;
 import org.gradle.api.artifacts.ConfigurationVariant;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
+import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.internal.tasks.AbstractTaskDependency;
@@ -107,14 +110,18 @@ public class ModuleTasks {
             });
             final Configuration config = source.configExportedRuntime();
             final ConfigurationPublications publications = config.getOutgoing();
-            final LazyPublishArtifact artifact = new LazyPublishArtifact(jarTask);
+            final LazyPublishArtifact artifact = new LazyPublishArtifact(jarTask, view().getVersion());
             publications.artifact(artifact);
             final ConfigurationVariant runtimeVariant = publications.getVariants().maybeCreate(
                 "runtime");
             runtimeVariant.artifact(artifact);
-            runtimeVariant.getAttributes().attribute(
+            final AttributeContainer attrs = runtimeVariant.getAttributes();
+            source.withAttributes(attrs);
+            attrs.attribute(
                 Usage.USAGE_ATTRIBUTE, view().getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
             );
+
+            publications.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
 
             view().getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
 

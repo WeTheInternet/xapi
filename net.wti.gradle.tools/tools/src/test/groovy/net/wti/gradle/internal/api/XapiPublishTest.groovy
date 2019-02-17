@@ -31,25 +31,12 @@ xapiSchema {
 
     def setup() {
         withComposite('comp', {
+            propertiesFile << """xapi.home=${System.getProperty("xapi.home")}"""
             withProject(':', {
                 buildFile << """
 $BUILD_HEADER
 group = 'com.producer'
 version = '1.0'
-//net.wti.gradle.PublishXapi.getPublishXapiTask(project)
-
-PublishingExtension publishing = extensions.getByType(PublishingExtension.class);
-publishing.repositories( {repos -> 
-        repos.maven( { maven ->
-                maven.setName("xapiLocal");
-                maven.url = '$xapiRepo'
-                maven.metadataSources( { gradleMetadata() });
-            }
-        );
-    }
-);
-
-
 """
                 withSource( 'api' ) {
                     'Is.java'('interface Is {}')
@@ -60,6 +47,7 @@ publishing.repositories( {repos ->
             })
         })
         withProject(':consumer', {
+            propertiesFile << """xapi.home=${System.getProperty("xapi.home")}"""
             buildFile << """
 $BUILD_HEADER
 group = 'com.consumer'

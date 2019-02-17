@@ -8,13 +8,15 @@ import net.wti.gradle.internal.impl.DefaultXapiUsageContext;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
-import net.wti.gradle.system.plugin.XapiBasePlugin;
 import net.wti.gradle.publish.api.PublishedModule;
 import net.wti.gradle.publish.task.XapiPublish;
+import net.wti.gradle.system.plugin.XapiBasePlugin;
 import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.internal.GradleInternal;
@@ -28,25 +30,30 @@ import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.TaskReference;
 
+import java.io.File;
+
 /**
  * Sets up publishing layer,
  * and adds the xapiPublish {} extension.
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/22/19 @ 3:51 AM.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class XapiPublishPlugin implements Plugin<Project> {
+
+    public static final String XAPI_LOCAL = "xapiLocal";
 
     @Override
     public void apply(Project project) {
         project.getPlugins().apply(XapiBasePlugin.class);
         final ProjectView p = ProjectView.fromProject(project);
 
-
         // enable IDE to find where we create this object.
         assert GradleMessages.noOpForAssertion(()-> new XapiLibrary(p));
         final XapiLibrary lib = p.getInstantiator().newInstance(XapiLibrary.class, p);
 
         final TaskProvider<XapiPublish> publishProvider = configureLibrary(p, lib);
+        configureRepo(p, lib);
 
         if (((GradleInternal)p.getGradle()).getRoot() == p.getGradle()) {
             publishProvider.configure(publish->{
@@ -62,6 +69,31 @@ public class XapiPublishPlugin implements Plugin<Project> {
         }
     }
 
+    private void configureRepo(ProjectView view, XapiLibrary lib) {
+
+        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED, created -> {
+            String repo = (String) view.findProperty("xapi.mvn.repo");
+            final RepositoryHandler repos = view.getPublishing().getRepositories();
+            if (repo == null) {
+                final boolean addRepo = repos.stream().noneMatch(r->XAPI_LOCAL.equals(r.getName()));
+                if (addRepo) {
+                    String xapiHome = (String) view.findProperty("xapi.home");
+                    if (xapiHome == null) {
+                        xapiHome = view.getService().getXapiHome();
+                    }
+                    repo = new File(xapiHome , "repo").toURI().toString();
+                } else {
+                    return;
+                }
+            }
+            String xapiRepo = repo;
+            repos.maven(mvn -> {
+                mvn.setUrl(xapiRepo);
+                mvn.setName("xapiLocal");
+                mvn.metadataSources(MetadataSources::gradleMetadata);
+            });
+        });
+    }
 
     private TaskProvider<XapiPublish> configureLibrary(ProjectView view, XapiLibrary lib) {
         // Create a xapiPublish lifecycle task which, when selected,

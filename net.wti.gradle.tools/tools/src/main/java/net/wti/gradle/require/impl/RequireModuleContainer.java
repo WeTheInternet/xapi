@@ -4,6 +4,7 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.require.api.RequireModule;
 import net.wti.gradle.require.api.RequirePlatform;
 import net.wti.gradle.require.api.XapiRequire;
+import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 
 /**
@@ -29,6 +30,7 @@ public class RequireModuleContainer extends AbstractNamedDomainObjectContainer<R
     @Override
     protected RequireModule doCreate(String name) {
         // Create a module-scoped XapiRequire
-        return new RequireModule(view, require, platform, name);
+        assert GradleMessages.noOpForAssertion(()->new RequireModule(view, require, platform, name));
+        return view.getInstantiator().newInstance(RequireModule.class, view, require, platform, name);
     }
 }

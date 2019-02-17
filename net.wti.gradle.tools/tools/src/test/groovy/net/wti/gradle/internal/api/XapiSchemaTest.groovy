@@ -29,6 +29,7 @@ ${simpleSchema()}
 version = $version
 group = '${rootProject == ':' ? 'testgroup' : rootProject}'
 """
+            propertiesFile << "xapi.home=${System.getProperty("xapi.home")}"
             addSource("com.foo.$name", 'Main', """
 package com.foo.$name;
 
@@ -73,6 +74,39 @@ xapiRequire.project 'gwt1'
         then:
         res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
+        res.output.contains "$rootDir/gwt1/src/main/java"
+        res.output.contains "$rootDir/gwt2/src/main/java"
+
+    }
+
+    def "Intra-build dependencies correctly inherit transitive platform+archive dependencies"() {
+        given:
+        setupSimpleGwt('gwt0')
+        setupSimpleGwt('gwt1', 'xapi-require')
+        getProject('gwt1').buildFile << '''
+xapiRequire.project 'gwt0'
+'''
+        setupSimpleGwt('gwt2', 'xapi-require')
+        getProject('gwt2').buildFile << '''
+xapiRequire.project 'gwt1'
+//apply plugin: 'maven-publish'
+//apply plugin: 'xapi-publish'
+'''
+
+        when:
+        BuildResult res
+        res = runSucceed(':gwt2:xapiReport', // ':gwt2:xapiPublish',
+                ':gwt2:compileGwtJava', '-Pxapi.debug=true')
+        then:
+        res.task(':gwt2:compileGwtJava').outcome == TaskOutcome.SUCCESS
+        res.task(':gwt2:compileJava').outcome == TaskOutcome.SUCCESS
+        res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
+        res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
+        res.task(':gwt0:compileGwtJava').outcome == TaskOutcome.SUCCESS
+        res.task(':gwt0:compileJava').outcome == TaskOutcome.SUCCESS
+        res.output.contains "$rootDir/gwt1/build/classes/java/main"
+        res.output.contains "$rootDir/gwt0/build/classes/java/main"
+        res.output.contains "$rootDir/gwt0/src/main/java"
         res.output.contains "$rootDir/gwt1/src/main/java"
         res.output.contains "$rootDir/gwt2/src/main/java"
 

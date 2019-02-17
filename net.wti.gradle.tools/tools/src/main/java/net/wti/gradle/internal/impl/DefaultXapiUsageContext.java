@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.impl;
 
+import net.wti.gradle.internal.api.XapiUsage;
 import net.wti.gradle.internal.api.XapiUsageContext;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
@@ -52,6 +53,11 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
                 // or else gradle metadata will blow up trying to generate json (size check presumes file).
                 // This is likely intended but simply undocumented.
                 this.configuration = archive.configExportedApi();
+                break;
+
+            // internal
+            case XapiUsage.INTERNAL:
+                this.configuration = archive.configExportedInternal();
                 break;
 
             // runtime

@@ -8,6 +8,8 @@ import org.gradle.api.artifacts.Configuration;
  */
 public interface UsageType extends Named {
 
-    Configuration findConfig(ArchiveGraph module, boolean only);
+    Configuration findConsumerConfig(ArchiveGraph module, boolean only);
+
+    Configuration findProducerConfig(ArchiveGraph module, boolean only);
 
 }
