@@ -22,7 +22,7 @@ class XapiSchemaTest extends AbstractMultiBuildTest<XapiSchemaTest> {
             def use = plugin ?: defaultPlugin
             buildFile << """
 plugins {
-    id 'java'
+//    id 'java'
     ${use.startsWith('id') ? use : "id '$use'"}
 }
 ${simpleSchema()}
@@ -199,8 +199,10 @@ class ApiMain {
         res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
 
         when: "Explicitly apply java plugin and re-run"
-        getProject(proj).buildFile << """
-apply plugin: 'java'"""
+        getProject(proj).buildFile.text = getProject(proj).buildFile.text.replace 'plugins {',
+                '''plugins {
+id 'java'
+'''
         res = runSucceed('compileGwtJava')
         then:
         res.task(":$proj:compileGwtJava").outcome == TaskOutcome.UP_TO_DATE

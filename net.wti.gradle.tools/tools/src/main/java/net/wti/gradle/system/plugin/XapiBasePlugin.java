@@ -86,7 +86,8 @@ public class XapiBasePlugin implements Plugin<Project> {
                     // User has not added any java plugin yet.
                     // In the future, we'll likely replace the guts of JavaPlugin here.
                     // For now, we'll just apply it ourselves.
-                    plugins.apply(JavaPlugin.class);
+//                    plugins.apply(JavaPlugin.class);
+                    plugins.apply(XapiJavaPlugin.class);
                 }
                 locked[0] = true;
             }

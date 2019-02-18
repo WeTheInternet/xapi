@@ -91,7 +91,7 @@ public class ModuleTasks {
     public TaskProvider<Jar> getJarTask() {
         if (jarTask == null) {
             final String name = meta().getSrc().getJarTaskName();
-            if ("jar".equals(name)) {
+            if ("jar".equals(name) && view().isJavaCompatibility()) {
                 // main jar needs special casing.
                 jarTask = view().getTasks().named(name, Jar.class);
             } else {

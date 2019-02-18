@@ -84,7 +84,8 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
     @Override
     public Set<? extends ModuleDependency> getDependencies() {
         if (dependencies == null) {
-            dependencies = configuration.getIncoming().getDependencies().withType(ModuleDependency.class);
+            final DependencySet deps = configuration.getIncoming().getDependencies();
+            dependencies = deps.withType(ModuleDependency.class);
         }
         return dependencies;
     }

@@ -608,12 +608,14 @@ public interface ArchiveGraph extends Named, GraphNode {
         Configuration target;
         Dependency dep;
 
-        dep = self.dependencyFor(projName, configExportedApi());
+        final ProjectGraph targetProject = self.getBuildGraph().getProject(projName);
+        final ArchiveGraph into = targetProject.platform(platform().getName()).archive(getName());
+        dep = self.dependencyFor(projName, into.configExportedApi());
         target = DefaultUsageType.Api.findConsumerConfig(this, only);
         target = configImportApi(target);
         deps.add(target.getName(), dep);
 
-        dep = self.dependencyFor(projName, configExportedRuntime());
+        dep = self.dependencyFor(projName, into.configExportedRuntime());
         target = DefaultUsageType.Runtime.findConsumerConfig(this, only);
         target = configImportRuntime(target);
         deps.add(target.getName(), dep);

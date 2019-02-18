@@ -149,8 +149,10 @@ public class XapiPublishPlugin implements Plugin<Project> {
         // but we need to realize the tasks for them to run callbacks and hook themselves up.
         // So, we make the lifecycle task depend on the assembled configuration.
         xapiPublish.configure(publish -> {
-            publish.dependsOn(select.getJavacTask().get());
-            publish.dependsOn(select.getJarTask().get());
+            publish.whenSelected(selected-> {
+                publish.dependsOn(select.getJavacTask().get());
+                publish.dependsOn(select.getJarTask().get());
+            });
         });
     }
 

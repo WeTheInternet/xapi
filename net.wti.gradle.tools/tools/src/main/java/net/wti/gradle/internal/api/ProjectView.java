@@ -24,6 +24,7 @@ import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
@@ -173,4 +174,8 @@ public interface ProjectView extends ExtensionAware {
     void whenReady(Action<? super ProjectView> callback);
 
     GradleService getService();
+
+    default boolean isJavaCompatibility() {
+        return getPlugins().hasPlugin(JavaPlugin.class);
+    }
 }
