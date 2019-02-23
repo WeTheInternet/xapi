@@ -5,9 +5,11 @@ import net.wti.gradle.internal.api.XapiUsageContext;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import org.gradle.api.artifacts.*;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.capabilities.Capability;
+import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.artifacts.configurations.Configurations;
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
@@ -42,17 +44,19 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
             .attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, archive.platform().getName())
             .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, archive.getName())
         ;
-        attributes = mutable.asImmutable();
         // For java-library compatibility, we want to support JAVA_API|RUNTIME.
         // We may add more dynamic contexts later as we diverge further down the road.
         switch (usage) {
 
             // compile
             case Usage.JAVA_API:
+            case Usage.JAVA_API_CLASSES:
                 // hm...  these configurations must only export archives, not directories,
                 // or else gradle metadata will blow up trying to generate json (size check presumes file).
                 // This is likely intended but simply undocumented.
                 this.configuration = archive.configExportedApi();
+                mutable.attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JVM_CLASS_DIRECTORY);
+//                mutable.attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
                 break;
 
             // internal
@@ -62,12 +66,16 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
 
             // runtime
             case Usage.JAVA_RUNTIME:
+            case Usage.JAVA_RUNTIME_JARS:
                 this.configuration = archive.configExportedRuntime();
+                mutable.attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
                 break;
 
             default:
                 throw new UnsupportedOperationException("Usage context " + usage + " not yet supported");
         }
+
+        attributes = mutable.asImmutable();
 
     }
 

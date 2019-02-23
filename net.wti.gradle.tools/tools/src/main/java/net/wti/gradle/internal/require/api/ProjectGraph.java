@@ -71,6 +71,14 @@ public interface ProjectGraph extends Named, GraphNode {
         return usage(Usage.JAVA_RUNTIME);
     }
 
+    default Usage usageRuntimeJars() {
+        return usage(Usage.JAVA_RUNTIME_JARS);
+    }
+
+    default Usage usageRuntimeClasses() {
+        return usage(Usage.JAVA_RUNTIME_CLASSES);
+    }
+
     default Usage usage(String usageType) {
         return project().getObjects().named(Usage.class, usageType);
     }

@@ -14,13 +14,10 @@ import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
-import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
-import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
@@ -119,7 +116,7 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default Configuration configRuntime() {
         return config("Runtime", runtime-> {
-            runtime.extendsFrom(configPackaged());
+            runtime.extendsFrom(configInternal());
             runtime.setVisible(false);
         });
     }
@@ -163,31 +160,14 @@ public interface ArchiveGraph extends Named, GraphNode {
     @SuppressWarnings("deprecation")
     default Configuration configExportedApi() {
 //        return config(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, apiElements -> {
-        return config("ExportCompile", apiElements -> {
-            apiElements.extendsFrom(configAssembled());
-//            configAssembled().getDependencies().configureEach(dep -> {
-//                if (dep instanceof XapiModuleDependency) {
-//                    XapiModuleDependency self = (XapiModuleDependency) dep;
-//                    if (self.isDifferent(this)) {
-//                        apiElements.getDependencies().add(
-//                            getView().getDependencies().project(
-//                                GUtil.map(
-//                                    "path", self.getProjectPath(),
-//                                    "configuration", self.getExportedApi()
-//                                )
-//                            )
-//                        );
-//                    }
-//
-//                }
-//            });
-
-            apiElements.setVisible(true);
-            apiElements.setDescription("The compile output and transitive dependencies for " + getConfigName());
-            apiElements.setCanBeResolved(true);
-            apiElements.setCanBeConsumed(true);
-            apiElements.getOutgoing().capability(getCapability("compile"));
-            withAttributes(apiElements)
+        return config("ExportCompile", exportCompile -> {
+            exportCompile.extendsFrom(configTransitive());
+            exportCompile.setVisible(true);
+            exportCompile.setDescription("The compile output and transitive dependencies for " + getConfigName());
+            exportCompile.setCanBeResolved(true);
+            exportCompile.setCanBeConsumed(true);
+//            exportCompile.getOutgoing().capability(getCapability("compile"));
+            withAttributes(exportCompile)
 //                .attribute(USAGE_ATTRIBUTE, project().usageApi())
             ;
         });
@@ -199,14 +179,27 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default Configuration configExportedInternal() {
         return config("ExportInternal", internal -> {
-            internal.extendsFrom(configAssembled());
-            internal.extendsFrom(configInternal());
             internal.setVisible(true);
             internal.setCanBeResolved(true);
             internal.setCanBeConsumed(true);
-            internal.getOutgoing().capability(getCapability("internal"));
+//            internal.getOutgoing().capability(getCapability("internal"));
             withAttributes(internal)
                 .attribute(USAGE_ATTRIBUTE, project().usageInternal());
+        });
+    }
+
+    default Configuration configExportedRuntime() {
+//            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
+        return config("ExportRuntime", runtimeElements -> {
+            runtimeElements.extendsFrom(configInternal());
+            runtimeElements.setVisible(false);
+            runtimeElements.setCanBeConsumed(true);
+            runtimeElements.setCanBeResolved(false);
+//            runtimeElements.getOutgoing().capability(getCapability());
+
+            withAttributes(runtimeElements)
+                .attribute(USAGE_ATTRIBUTE, project().usageRuntime())
+            ;
         });
     }
 
@@ -219,7 +212,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             exported.setVisible(true);
             exported.setCanBeResolved(true);
             exported.setCanBeConsumed(true);
-            exported.getOutgoing().capability(getCapability());
+//            exported.getOutgoing().capability(getCapability("all"));
         });
     }
 
@@ -242,20 +235,6 @@ public interface ArchiveGraph extends Named, GraphNode {
             (withVersion ? ":" + getVersion() : "");
     }
 
-    default Configuration configExportedRuntime() {
-//            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
-        return config("ExportRuntime", runtimeElements -> {
-            runtimeElements.extendsFrom(configInternal());
-            runtimeElements.extendsFrom(configPackaged());
-            runtimeElements.setVisible(false);
-            runtimeElements.setCanBeResolved(false);
-            runtimeElements.setCanBeConsumed(true);
-            runtimeElements.getOutgoing().capability(getCapability());
-            withAttributes(runtimeElements)
-                .attribute(USAGE_ATTRIBUTE, project().usageRuntime());
-        });
-    }
-
     default AttributeContainer withAttributes(Configuration conf) {
         return withAttributes(conf.getAttributes());
     }
@@ -263,42 +242,6 @@ public interface ArchiveGraph extends Named, GraphNode {
     default AttributeContainer withAttributes(AttributeContainer attrs) {
         return attrs.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, platform().getName())
                 .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName());
-    }
-
-    @SuppressWarnings("deprecation")
-    default Configuration configAssembled() {
-        return config("Assembled", assembled -> {
-            assembled.extendsFrom(configTransitive());
-            assembled.extendsFrom(configApi());
-        });
-    }
-
-    default Configuration configPackaged() {
-        return config("Packaged", assembled -> {
-            assembled.extendsFrom(configTransitive());
-            assembled.extendsFrom(configApi());
-            assembled.extendsFrom(configInternal());
-        });
-    }
-
-    /**
-     * @return the java-plugin-compatible "api" configuration to use for declared dependencies.
-     *
-     * This is deprecated since you should use {@link #configTransitive()} instead.
-     * It's just here so we can make sure we are compatible w/ java and java-library plugins.
-     */
-    @Deprecated
-    default Configuration configApi() {
-        String key = getSrcName() + "Api";
-        if ("mainApi".equals(key)) {
-            key = "api";
-        }
-        final Configuration api = getView().getConfigurations().findByName(key);
-        if (api == null) {
-            return config("Compile");
-        } else {
-            return config("Api");
-        }
     }
 
     @SuppressWarnings("deprecation") // configApi() is deprecated only for external use cases
@@ -488,41 +431,6 @@ public interface ArchiveGraph extends Named, GraphNode {
         return getTasks().getJavacTask();
     }
 
-    // This should return a different type, like CrossModuleConsumerConfiguration
-    default Configuration configImport(Configuration target, String suffix, Action<? super AttributeContainer> attrCallback) {
-        String targetName = target.getName();
-        String name = targetName + "Import" + GUtil.toCamelCase(getConfigName()) + suffix;
-        return configNamed(name, conf->{
-            target.extendsFrom(conf);
-            // set platform/archive attributes on the configuration
-            final AttributeContainer attrs = withAttributes(conf);
-            conf.setCanBeResolved(true);
-            conf.setCanBeConsumed(false);
-            conf.setVisible(false);
-            attrCallback.execute(attrs);
-        });
-    }
-    default Configuration configImportApi(Configuration target, boolean withAttrs) {
-        return configImport(target, "Compile", attributes-> {
-            // gradle's PreferJavaRuntimeVariant defaults to runtime in order to maintain backwards compatibility
-            // with maven-repo users, who expect runtime transitive dependencies.
-            // We do not need to maintain any backwards compatibility, so we'll use api for now, and make configurable later.
-            if (withAttrs) {
-                withAttributes(attributes);
-            }
-            attributes.attribute(USAGE_ATTRIBUTE, project().usageApi());
-        });
-    }
-    default Configuration configImportRuntime(Configuration target, boolean withAttrs) {
-        // The "Runtime" suffix here seems redundant atm...
-        return configImport(target, "Runtime", attributes-> {
-            if (withAttrs) {
-                withAttributes(attributes);
-            }
-            attributes.attribute(USAGE_ATTRIBUTE, project().usageRuntime());
-        });
-    }
-
     default void importLocal(ArchiveGraph neededArchive, boolean only, boolean lenient) {
         importLocal(neededArchive, DefaultUsageType.Api, only, lenient);
         importLocal(neededArchive, DefaultUsageType.Runtime, only, lenient);
@@ -535,22 +443,9 @@ public interface ArchiveGraph extends Named, GraphNode {
         //  by creating a request whose needsCompletion is never set to true.
 
         final ProjectGraph project = project();
-        final ProjectView view = project.project();
 
-        final Configuration producer = type.findProducerConfig(neededArchive, only);
         final Configuration consumer = type.findConsumerConfig(this, only);
         final ModuleDependency md = type.newDependency(project, this, neededArchive, only);
-        final Usage usage = type.findUsage(project(), consumer, producer);
-
-        final ImmutableAttributes add = neededArchive.config().getAttributes(view);
-        final Set<Attribute<?>> keys = add.getAttributes().keySet();
-        md.attributes(attrs->{
-            for (Attribute attr : keys) {
-                //noinspection unchecked,ConstantConditions (the keys are from the add attributes; totally safe...)
-                attrs.attribute(attr, add.getAttribute(attr));
-            }
-            attrs.attribute(USAGE_ATTRIBUTE, usage);
-        });
 
         consumer.getDependencies().add(md);
     }
@@ -584,26 +479,15 @@ public interface ArchiveGraph extends Named, GraphNode {
         boolean lenient
     ) {
 
-        // At long last!  The secret sauce...
-        // To correctly create inter-variant wiring, we need to do a little gymnastics.
-        // This method can be heavily cleaned up, but this was good enough to make tests pass again,
-        // so it lives until the next commit (where we apply this strategy everywhere else).;
-
         final DependencyHandler deps = getView().getDependencies();
         final XapiSchema schema = getView().getSchema();
+        final AttributeContainer attrs = schema.getAttributes(dep, newGroup, newName);
 
         // create variant-aware, on-demand inputs to the lenient config.
         Configuration target = DefaultUsageType.Api.findConsumerConfig(this, only);
-        // try commenting this out
-        Configuration dest = configImportApi(target, false);
-        AttributeContainer attrs = schema.getAttributes(dep, newGroup, newName);
-        for (Attribute attribute : attrs.keySet()) {
-            dest.getAttributes().attribute(attribute, attrs.getAttribute(attribute));
-        }
-        dest.setVisible(true);
-        // sigh... wish we could actually resolve a "will-be-declared, I promise" capability
         final String path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
-        ModuleDependency mod = (ModuleDependency) deps.module(path);
+        ModuleDependency mod = (ModuleDependency) deps.create(path);
+
         String base = attrs.getAttribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
         if ("main".equals(base)) {
             base = attrs.getAttribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE);
@@ -616,31 +500,14 @@ public interface ArchiveGraph extends Named, GraphNode {
         mod.setTargetConfiguration(
             "main".equals(base) ? "exportCompile" : base + "ExportCompile"
         );
-        final AttributeContainer apiAttrs = dest.getAttributes();
-        mod.attributes(cont->{
-            for (Attribute attribute : apiAttrs.keySet()) {
-                cont.attribute(attribute, apiAttrs.getAttribute(attribute));
-            }
-        });
+        target.getDependencies().add(mod);
 
-        deps.add(dest.getName(), mod);
-//
+
         target = DefaultUsageType.Runtime.findConsumerConfig(this, only);
-        dest = configImportRuntime(target, false);
-        for (Attribute attribute : attrs.keySet()) {
-            dest.getAttributes().attribute(attribute, attrs.getAttribute(attribute));
-        }
-        mod = (ModuleDependency) deps.module(path);
+        mod = (ModuleDependency) deps.create(path);
         mod.setTargetConfiguration(
             "main".equals(base) ? "exportRuntime" : base + "ExportRuntime"
         );
-        final AttributeContainer runtimeAttrs = dest.getAttributes();
-        mod.attributes(cont->{
-            for (Attribute attribute : runtimeAttrs.keySet()) {
-                cont.attribute(attribute, runtimeAttrs.getAttribute(attribute));
-            }
-        });
-
-        deps.add(dest.getName(), mod);
+        deps.add(target.getName(), mod);
     }
 }

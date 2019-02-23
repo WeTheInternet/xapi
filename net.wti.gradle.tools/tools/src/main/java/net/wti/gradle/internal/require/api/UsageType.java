@@ -4,8 +4,8 @@ import net.wti.gradle.internal.api.XapiUsage;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ModuleDependency;
+import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.attributes.Usage;
-import org.gradle.util.GUtil;
 
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 
@@ -72,10 +72,9 @@ public interface UsageType extends Named {
     }
 
     default ModuleDependency newDependency(ProjectGraph project, ArchiveGraph consumer, ArchiveGraph producer, boolean only) {
-        final ModuleDependency dep = (ModuleDependency) consumer.getView().getDependencies().project(
-            GUtil.map("path", producer.getView().getPath()
-                                ,"configuration", findProducerConfig(producer, only).getName()
-            ));
+        final DependencyHandler deps = consumer.getView().getDependencies();
+        final ModuleDependency dep = (ModuleDependency) deps.create(producer.getView().getService().getProject());
+        dep.setTargetConfiguration(findProducerConfig(producer, only).getName());
         return dep;
     }
 }

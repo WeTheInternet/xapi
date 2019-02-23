@@ -12,18 +12,15 @@ import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.ConfigurationPublications;
+import org.gradle.api.artifacts.ConfigurationVariant;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
-import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.internal.artifacts.ArtifactAttributes;
+import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
-import org.gradle.api.internal.tasks.DefaultTaskDependency;
-import org.gradle.api.internal.tasks.TaskResolver;
-import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.SourceSetOutput;
-import org.gradle.api.tasks.TaskDependency;
+import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
@@ -208,59 +205,10 @@ public class XapiSchema {
 
         }
 
+        final ConfigurationPublications exportedApi = archGraph.configExportedApi().getOutgoing();
+        final ConfigurationPublications exportedRuntime = archGraph.configExportedRuntime().getOutgoing();
         if (archGraph.srcExists()) {
-            SourceMeta meta = archGraph.getSource();
 
-            // The assembled configuration is where we'll put the sourceset outputs.
-            // We should consider making this a jar-variant instead of dependency...
-
-            final Property<SourceSetOutput> output = view.getObjects().property(SourceSetOutput.class);
-            output.convention(view.lazyProvider(()-> meta.getSrc().getOutput()));
-            final String name = archGraph.getModuleName() + "-assembled";
-            final Provider<Set<File>> files = view.lazyProvider(()->
-                output.get().plus(archGraph.configCompile()).getFiles()
-            );
-            final Provider<TaskDependency> tasks = view.lazyProvider(()->
-                new DefaultTaskDependency((TaskResolver) view.getTasks())
-                    .add(
-                        output.get().getBuildDependencies(),
-                        archGraph.configExportedApi().getBuildDependencies()
-                    )
-            );
-//            LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
-//            final DefaultSelfResolvingDependency dep = new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles);
-
-            final ConfigurationPublications pub = archGraph.configExportedApi().getOutgoing();
-//            final ConfigurationPublications pub = archGraph.configAssembled().getOutgoing();
-            pub.capability(
-                archGraph.getGroup() + ":" + name + ":" + view.getVersion()
-            );
-
-            archGraph.configExportedApi();
-//            view.getDependencies().add(archGraph.configAssembled().getName(), dep);
-
-            /*
-            Experiment which almost worked (need to be more eager about creating exportedApi configuration...:
-
-
-//            final Provider<Set<File>> files = view.lazyProvider(()->
-//                output.get().plus(archGraph.configCompile()).getFiles()
-//            );
-//            final Provider<TaskDependency> tasks = view.lazyProvider(()->
-//                new DefaultTaskDependency((TaskResolver) view.getTasks())
-//                    .add(
-//                        output.get().getBuildDependencies(),
-//                        archGraph.configCompile().getBuildDependencies()
-//                    )
-//            );
-//            LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
-//            final DefaultSelfResolvingDependency dep = new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles);
-
-*/
-//            final ConfigurationPublications pub = archGraph.configAssembled().getOutgoing();
-//            pub.capability(
-//                archGraph.getGroup() + ":" + name + ":" + view.getVersion()
-//            );
             IntermediateJavaArtifact compiled = new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask()) {
                 @Override
                 public File getFile() {
@@ -273,74 +221,55 @@ public class XapiSchema {
                     return archGraph.getJarTask().get().getArchiveFile().get().getAsFile();
                 }
             };
-//            final LazyPublishArtifact artifact = new LazyPublishArtifact(view.lazyProvider(()->
-//                archGraph.getJavacTask().get().getDestinationDir()
-//            ), view.getVersion()) {
-//
-//                @Override
-//                public String getType() {
-//                    return ArtifactTypeDefinition.JVM_CLASS_DIRECTORY;
-//                }
-//
-//                @Override
-//                public TaskDependency getBuildDependencies() {
-//                    return new AbstractTaskDependency() {
-//                        @Override
-//                        public void visitDependencies(TaskDependencyResolveContext context) {
-//                            context.add(archGraph.getJavacTask().get());
-//                            context.add(output.get().getBuildDependencies());
-//                            context.add((Buildable) () -> archGraph.getJavacTask().get().getTaskDependencies());
-//
-//                        }
-//                    };
-//                }
-//            };
-            pub.variants(variants -> {
+
+
+            final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion());
+            exportedRuntime.artifact(artifact);
+            final ConfigurationVariant runtimeVariant = exportedRuntime.getVariants().maybeCreate(
+                "runtime");
+            runtimeVariant.artifact(artifact);
+            final AttributeContainer attrs = runtimeVariant.getAttributes();
+            archGraph.withAttributes(attrs);
+            attrs.attribute(
+                Usage.USAGE_ATTRIBUTE, view.getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
+            );
+            attrs.attribute(
+                ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE
+            );
+
+            exportedRuntime.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
+
+            view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
+            exportedRuntime.artifact(artifact);
+
+
+            exportedApi.variants(variants -> {
                 variants.create("assembled", variant -> {
                     variant.artifact(compiled);
                     variant.attributes(attributes->{
-                        final AttributeContainer copy = archGraph.config().getAttributes(view).getAttributes();
-                        for (Attribute attribute : copy.keySet()) {
-                            Object val = Usage.USAGE_ATTRIBUTE.equals(attribute) ? view.getProjectGraph().usageApi() : copy.getAttribute(attribute);
-                            attributes.attribute(attribute, val);
-                        }
-                        attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageApi());
+                        archGraph.withAttributes(attributes);
+                        attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageApiClasses());
                     });
                 });
                 variants.create("packaged", variant -> {
                     variant.artifact(packaged);
                     variant.attributes(attributes->{
-                        final AttributeContainer copy = archGraph.config().getAttributes(view).getAttributes();
-                        for (Attribute attribute : copy.keySet()) {
-                            Object val = Usage.USAGE_ATTRIBUTE.equals(attribute) ? view.getProjectGraph().usageRuntime() : copy.getAttribute(attribute);
-                            attributes.attribute(attribute, val);
-                        }
+                        archGraph.withAttributes(attributes);
                         attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageRuntime());
                     });
                 });
             });
 
-
-//            pub.artifact(artifact);
-//            view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
-
-
-//            archGraph.configExportedApi().getDependencies().add(dep);
-//            archGraph.configAssembled().getDependencies().add(dep);
-//            view.getDependencies().add(archGraph.configAssembled().getName(), dep);
-//            archGraph.configAssembled().getArtifacts().add(artifact);
-/*
-            */
-
-
-
-
-
-//            view.getPlugins().withType(JavaPlugin.class).configureEach(makesArchives->{
-//                // Register build-java tasks if the java plugin is applied.
-                archGraph.getJarTask();
-                archGraph.getJavacTask();
-//            });
+//            exportedRuntime.artifact(packaged);
+            exportedRuntime.variants(variants -> {
+                variants.create("packaged", variant -> {
+                    variant.artifact(packaged);
+                    variant.attributes(attributes->{
+                        archGraph.withAttributes(attributes);
+                        attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageRuntimeJars());
+                    });
+                });
+            });
 
         }
         if (platConfig.isRequireSource() || archConfig.isSourceAllowed()) {
