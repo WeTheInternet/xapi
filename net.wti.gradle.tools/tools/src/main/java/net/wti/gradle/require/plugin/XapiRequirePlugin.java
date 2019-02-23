@@ -17,6 +17,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 
 /**
  * A plugin which adds the xapiRequire {} dsl object to your build scripts.
@@ -183,20 +184,21 @@ public class XapiRequirePlugin implements Plugin<Project> {
             // TODO: this should be looked up from a cache / service somewhere...
             projId += ":" + self.getVersion();
         }
+        final String[] items = projId.split(":");
+        assert items.length == 3 : "Malformed path " + projId + "; expected three segments, got " + Arrays.asList(items);
         dep = self.getDependencies().create(projId);
         // transform the dependency to match our platform/archive
         String newGroup =
-            dep.getGroup();
-//            arch.asGroup(requestedGroup);
+//            dep.getGroup();
+            arch.asGroup(requestedGroup == null ? items[0] : requestedGroup);
         String newName =
-            dep.getName();
-//            arch.asModuleName(requestedName);
+//            dep.getName();
+            arch.asModuleName(requestedName == null ? items[1] : requestedName);
         // Note: it's actually better to just add the plain g:n:v than it is to add the module-specific name.
         // If you have `com.foo:thing:1`, gradle will know it is variant-mapped and use our import configuration to select correctly.
         // If you have `com.foo:thing-api:1`, gradle will look for it in your local repo, and will fail if it is not found.
 
-        // TODO: make lenient configurable instead of default-on
-        arch.importExternal(newGroup + ":" + newName + ":" + dep.getVersion(), only, lenient);
+        arch.importExternal(dep, newGroup, newName, only, lenient);
     }
 
 }

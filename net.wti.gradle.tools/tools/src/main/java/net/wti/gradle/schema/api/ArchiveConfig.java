@@ -1,6 +1,8 @@
 package net.wti.gradle.schema.api;
 
+import net.wti.gradle.internal.api.ProjectView;
 import org.gradle.api.Named;
+import org.gradle.api.internal.attributes.ImmutableAttributes;
 
 import java.util.Set;
 
@@ -23,4 +25,7 @@ public interface ArchiveConfig extends Named {
 
     void setSourceAllowed(boolean allowed);
 
+    ImmutableAttributes getAttributes(ProjectView view);
+
+    PlatformConfig getPlatform();
 }

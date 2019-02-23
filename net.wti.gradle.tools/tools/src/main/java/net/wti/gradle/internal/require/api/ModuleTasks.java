@@ -12,10 +12,7 @@ import org.gradle.api.attributes.Usage;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
-import org.gradle.api.internal.tasks.AbstractTaskDependency;
-import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
 import org.gradle.api.plugins.BasePlugin;
-import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.tasks.Jar;
@@ -55,34 +52,36 @@ public class ModuleTasks {
             final String name = meta().getSrc().getCompileJavaTaskName();
             javaCompileTask = view().getTasks().named(name, JavaCompile.class);
 
-            final Configuration config = source.configExportedApi();
-            final ConfigurationPublications publications = config.getOutgoing();
-            final LazyPublishArtifact artifact = new LazyPublishArtifact(view().lazyProvider(()->
-                javaCompileTask.get().getDestinationDir())) {
-                @Override
-                public TaskDependency getBuildDependencies() {
-                    return new AbstractTaskDependency() {
-                        @Override
-                        public void visitDependencies(TaskDependencyResolveContext context) {
-                            context.add(javaCompileTask.get());
-                        }
-                    };
-                }
-            };
-            // Bleh...  cannot treat directories as published artifacts w.r.t. gradle metadata.
-            // Which makes sense... any directories would only exist locally anyway.
-            // Instead of this, we are going to remove this artifact from the publication for now.
-            // We'll leave it in the variant, since that will effect runtime dependency resolution.
-//            publications.artifact(artifact);
-
-            // Need to move the variants themselves into a lazily-initialized field as well,
-            // so we can easily lookup accessors and do one-time setup on them.
-            final ConfigurationVariant runtimeVariant = publications.getVariants().maybeCreate(
-                "classes");
-            runtimeVariant.artifact(artifact);
-            runtimeVariant.getAttributes().attribute(
-                Usage.USAGE_ATTRIBUTE, view().getProjectGraph().usage(Usage.JAVA_API_CLASSES)
-            );
+////            final Configuration config = source.configExportedApi();
+//            final Configuration config = source.configAssembled();
+//            final ConfigurationPublications publications = config.getOutgoing();
+//            final LazyPublishArtifact artifact = new LazyPublishArtifact(view().lazyProvider(()->
+//                javaCompileTask.get().getDestinationDir()), view().getVersion()) {
+//                @Override
+//                public TaskDependency getBuildDependencies() {
+//                    return new AbstractTaskDependency() {
+//                        @Override
+//                        public void visitDependencies(TaskDependencyResolveContext context) {
+//                            context.add(javaCompileTask.get());
+//                        }
+//                    };
+//                }
+//            };
+//            // Bleh...  cannot treat directories as published artifacts w.r.t. gradle metadata.
+//            // Which makes sense... any directories would only exist locally anyway.
+//            // Instead of this, we are going to remove this artifact from the publication for now.
+//            // We'll leave it in the variant, since that will effect runtime dependency resolution.
+////            publications.artifact(artifact);
+//
+//            // Need to move the variants themselves into a lazily-initialized field as well,
+//            // so we can easily lookup accessors and do one-time setup on them.
+//            final ConfigurationVariant runtimeVariant = publications.getVariants().maybeCreate(
+//                "classes");
+//            runtimeVariant.artifact(artifact);
+//            source.withAttributes(runtimeVariant.getAttributes());
+//            runtimeVariant.getAttributes().attribute(
+//                Usage.USAGE_ATTRIBUTE, view().getProjectGraph().usage(Usage.JAVA_API_CLASSES)
+//            );
 
         }
         return javaCompileTask;
@@ -108,6 +107,7 @@ public class ModuleTasks {
                     view().lazyProvider(source::getModuleName)
                 );
             });
+            // Hm... should probably be wiring up all N consumers instead of just runtime...
             final Configuration config = source.configExportedRuntime();
             final ConfigurationPublications publications = config.getOutgoing();
             final LazyPublishArtifact artifact = new LazyPublishArtifact(jarTask, view().getVersion());
@@ -120,12 +120,15 @@ public class ModuleTasks {
             attrs.attribute(
                 Usage.USAGE_ATTRIBUTE, view().getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
             );
+            attrs.attribute(
+                ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE
+            );
 
             publications.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
 
             view().getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
 
-            source.configAssembled();
+            source.configExportedApi();
 
             return jarTask;
 

@@ -54,6 +54,7 @@ public abstract class AbstractBuildGraphNode <T extends HasWork> extends Default
         protected final T doCreate(String name) {
             realizedItems.add(name);
             final T item = createItem(name);
+            registeredItems.add(name);
             item.drainTasks(ReadyState.BEFORE_CREATED);
             return item;
         }

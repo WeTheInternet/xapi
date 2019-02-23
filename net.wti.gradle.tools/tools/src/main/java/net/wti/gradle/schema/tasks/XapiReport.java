@@ -21,6 +21,7 @@ import xapi.gradle.java.Java;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -164,48 +165,7 @@ public class XapiReport extends DefaultTask {
             final DependencySet deps = config.getDependencies();
             b.append(deps.size()).append(" dependencies");
             if (!deps.isEmpty()) {
-                b.append("(");
-                boolean nl = deps.size() > 2;
-                for (Dependency dep : deps) {
-                    b.append(nl ? "\n" + indent + "\t" : " ");
-                    if (dep instanceof ProjectDependency) {
-                        b.append("project(path: '")
-                         .append(((ProjectDependency) dep).getDependencyProject().getPath())
-                         .append("', configuration: '")
-                         .append(((ProjectDependency) dep).getTargetConfiguration())
-                         .append("'");
-                    }
-                    else if (dep instanceof DefaultSelfResolvingDependency) {
-                        final TaskDependency buildDep = ((DefaultSelfResolvingDependency) dep).getBuildDependencies();
-                        final FileCollection resolved = ((DefaultSelfResolvingDependency) dep).getFiles();
-                        b.append("self resolving: ").append(buildDep);
-                        if (resolved.isEmpty()) {
-                            b.append(" <empty>");
-                        } else {
-                            b.append(": ");
-                            final Set<File> all = resolved.getFiles();
-                            for (File file : all) {
-                                b.append(file).append( " and ")
-                                    .append(all.size()-1).append(" more");
-                                break;
-                            }
-
-                        }
-                    } else if (dep.getGroup() == null) {
-                        b.append(dep);
-                    } else {
-                        b
-                            .append(dep.getGroup())
-                            .append(":")
-                            .append(dep.getName())
-                            .append(":")
-                            .append(dep.getVersion())
-                            .append(" ")
-                            .append(dep)
-                        ;
-                    }
-                }
-                b.append(" )");
+                appendDeps(b, deps, indent);
             }
             b.append("\n").append(indent);
 
@@ -221,6 +181,57 @@ public class XapiReport extends DefaultTask {
         }
         b.append("\n").append(indent);
 
+    }
+
+    private void appendDeps(StringBuilder b, Collection<? extends Dependency> deps, String indent) {
+        b.append("(");
+        boolean nl = deps.size() > 2;
+        for (Dependency dep : deps) {
+            b.append(nl ? "\n" + indent + "\t" : " ");
+            if (dep instanceof ProjectDependency) {
+                b.append("project(path: '")
+                    .append(((ProjectDependency) dep).getDependencyProject().getPath())
+                    .append("', configuration: '")
+                    .append(((ProjectDependency) dep).getTargetConfiguration())
+                    .append("'");
+            }
+            else if (dep instanceof DefaultSelfResolvingDependency) {
+                final TaskDependency buildDep = ((DefaultSelfResolvingDependency) dep).getBuildDependencies();
+                final FileCollection resolved = ((DefaultSelfResolvingDependency) dep).getFiles();
+                b.append("self resolving: ").append(buildDep);
+                if (resolved.isEmpty()) {
+                    b.append(" <empty>");
+                } else {
+                    b.append(": ");
+                    final Set<File> all = resolved.getFiles();
+                    for (File file : all) {
+                        b.append(file).append( " and ")
+                            .append(all.size()-1).append(" more");
+                        break;
+                    }
+
+                }
+            } else if (dep.getGroup() == null) {
+                b.append(dep);
+            } else {
+                b
+                    .append(dep.getGroup())
+                    .append(":")
+                    .append(dep.getName())
+                    .append(":")
+                    .append(dep.getVersion())
+                    .append(" ")
+                    .append(dep)
+                ;
+                if (dep instanceof ClientModule) {
+                    b.append(dep.getReason())
+                     .append(" ->\n")
+                        .append(indent);
+                    appendDeps(b, ((ClientModule) dep).getDependencies(), indent + "\t");
+                }
+            }
+        }
+        b.append(" )");
     }
 
     private String fixPath(String src) {

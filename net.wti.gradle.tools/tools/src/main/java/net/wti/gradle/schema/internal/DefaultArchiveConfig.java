@@ -1,8 +1,12 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.schema.api.PlatformConfig;
+import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.tools.GradleCoerce;
+import org.gradle.api.internal.attributes.ImmutableAttributes;
+import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.util.GUtil;
 
 import java.util.Arrays;
@@ -97,6 +101,15 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     @Override
     public void setSourceAllowed(boolean sourceAllowed) {
         this.sourceAllowed = sourceAllowed;
+    }
+
+    @Override
+    public ImmutableAttributes getAttributes(ProjectView view) {
+        final ImmutableAttributesFactory factory = view.getAttributesFactory();
+        return factory.concat(
+            factory.of(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, getPlatform().getName()),
+            factory.of(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName())
+        );
     }
 
     public PlatformConfigInternal getPlatform() {

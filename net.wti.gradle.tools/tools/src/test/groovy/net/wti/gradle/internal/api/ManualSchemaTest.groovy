@@ -18,9 +18,13 @@ class ManualSchemaTest extends AbstractMultiBuildTest<ManualSchemaTest> {
 
     String getAttributes() {
         return """
-Attribute platform = Attribute.of('xapi-platform', String)
-Attribute archive = Attribute.of('xapi-archive', String)
-Attribute mode = Attribute.of('xapi-mode', String)
+class Attrs {
+  String group;
+  String module;
+}
+Attribute producer = Attribute.of('xapi-producer', Attrs)
+Attribute consumer = Attribute.of('xapi-consumer', Attrs)
+Attribute adapter = Attribute.of('xapi-adapter', Attrs)
 """
     }
 
@@ -33,9 +37,9 @@ allprojects {
     
    dependencies {
        attributesSchema {
-          attribute(platform)
-          attribute(archive)
-          attribute(mode)
+          attribute(producer)
+          attribute(consumer)
+          attribute(adapter)
        }
    }
    

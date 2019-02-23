@@ -4,18 +4,22 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
+import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
-import net.wti.gradle.system.api.LazyFileCollection;
-import net.wti.gradle.system.impl.DefaultLazyFileCollection;
 import org.gradle.api.Action;
-import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationPublications;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
+import org.gradle.api.attributes.Attribute;
+import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.attributes.Usage;
+import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.tasks.DefaultTaskDependency;
 import org.gradle.api.internal.tasks.TaskResolver;
-import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSetOutput;
@@ -141,6 +145,7 @@ public class XapiSchema {
     public static final String EXT_NAME = "xapiSchema";
     private final PlatformConfigContainerInternal platforms;
     private final ArchiveConfigContainerInternal archives;
+    private final ProjectView view;
 
     public XapiSchema(ProjectView pv) {
         final Instantiator instantiator = pv.getInstantiator();
@@ -152,7 +157,11 @@ public class XapiSchema {
 
         final ProjectView root = XapiSchemaPlugin.schemaRootProject(pv);
         platforms.configureEach(plat -> {
-            plat.getAllArchives().addCollection(archives);
+            archives.configureEach(arch-> {
+                final ArchiveConfig specific = plat.getArchive(arch.getName());
+                specific.require(arch.required().toArray());
+            });
+//            plat.getAllArchives().addCollection(archives.matching(conf->conf.getPlatform().getName().equals(plat.getName())));
         });
         if (root != pv) {
             initialize(root.getSchema());
@@ -172,6 +181,7 @@ public class XapiSchema {
         pv.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
             report.record(pv.getSchema())
         );
+        this.view = pv;
     }
 
     protected void configureArchive(
@@ -203,7 +213,7 @@ public class XapiSchema {
 
             // The assembled configuration is where we'll put the sourceset outputs.
             // We should consider making this a jar-variant instead of dependency...
-            final Configuration assembled = archGraph.configAssembled();
+
             final Property<SourceSetOutput> output = view.getObjects().property(SourceSetOutput.class);
             output.convention(view.lazyProvider(()-> meta.getSrc().getOutput()));
             final String name = archGraph.getModuleName() + "-assembled";
@@ -214,20 +224,123 @@ public class XapiSchema {
                 new DefaultTaskDependency((TaskResolver) view.getTasks())
                     .add(
                         output.get().getBuildDependencies(),
-                        archGraph.configCompile().getBuildDependencies()
+                        archGraph.configExportedApi().getBuildDependencies()
                     )
             );
-            LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
-            assembled.getDependencies().add(new XapiModuleDependency(archGraph, name, lazyFiles));
+//            LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
+//            final DefaultSelfResolvingDependency dep = new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles);
 
-            // experiment to see if we can safely defer this further, by using .withDependencies:
-//            assembled.withDependencies(deps->{});
+            final ConfigurationPublications pub = archGraph.configExportedApi().getOutgoing();
+//            final ConfigurationPublications pub = archGraph.configAssembled().getOutgoing();
+            pub.capability(
+                archGraph.getGroup() + ":" + name + ":" + view.getVersion()
+            );
 
-            view.getPlugins().withType(JavaPlugin.class).configureEach(makesArchives->{
-                // Register build-java tasks if the java plugin is applied.
+            archGraph.configExportedApi();
+//            view.getDependencies().add(archGraph.configAssembled().getName(), dep);
+
+            /*
+            Experiment which almost worked (need to be more eager about creating exportedApi configuration...:
+
+
+//            final Provider<Set<File>> files = view.lazyProvider(()->
+//                output.get().plus(archGraph.configCompile()).getFiles()
+//            );
+//            final Provider<TaskDependency> tasks = view.lazyProvider(()->
+//                new DefaultTaskDependency((TaskResolver) view.getTasks())
+//                    .add(
+//                        output.get().getBuildDependencies(),
+//                        archGraph.configCompile().getBuildDependencies()
+//                    )
+//            );
+//            LazyFileCollection lazyFiles = new DefaultLazyFileCollection(view, name, files, tasks);
+//            final DefaultSelfResolvingDependency dep = new DefaultSelfResolvingDependency(archGraph.getComponentId(name), lazyFiles);
+
+*/
+//            final ConfigurationPublications pub = archGraph.configAssembled().getOutgoing();
+//            pub.capability(
+//                archGraph.getGroup() + ":" + name + ":" + view.getVersion()
+//            );
+            IntermediateJavaArtifact compiled = new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask()) {
+                @Override
+                public File getFile() {
+                    return archGraph.getJavacTask().get().getDestinationDir();
+                }
+            };
+            IntermediateJavaArtifact packaged = new IntermediateJavaArtifact(ArtifactTypeDefinition.JAR_TYPE, archGraph.getJarTask()) {
+                @Override
+                public File getFile() {
+                    return archGraph.getJarTask().get().getArchiveFile().get().getAsFile();
+                }
+            };
+//            final LazyPublishArtifact artifact = new LazyPublishArtifact(view.lazyProvider(()->
+//                archGraph.getJavacTask().get().getDestinationDir()
+//            ), view.getVersion()) {
+//
+//                @Override
+//                public String getType() {
+//                    return ArtifactTypeDefinition.JVM_CLASS_DIRECTORY;
+//                }
+//
+//                @Override
+//                public TaskDependency getBuildDependencies() {
+//                    return new AbstractTaskDependency() {
+//                        @Override
+//                        public void visitDependencies(TaskDependencyResolveContext context) {
+//                            context.add(archGraph.getJavacTask().get());
+//                            context.add(output.get().getBuildDependencies());
+//                            context.add((Buildable) () -> archGraph.getJavacTask().get().getTaskDependencies());
+//
+//                        }
+//                    };
+//                }
+//            };
+            pub.variants(variants -> {
+                variants.create("assembled", variant -> {
+                    variant.artifact(compiled);
+                    variant.attributes(attributes->{
+                        final AttributeContainer copy = archGraph.config().getAttributes(view).getAttributes();
+                        for (Attribute attribute : copy.keySet()) {
+                            Object val = Usage.USAGE_ATTRIBUTE.equals(attribute) ? view.getProjectGraph().usageApi() : copy.getAttribute(attribute);
+                            attributes.attribute(attribute, val);
+                        }
+                        attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageApi());
+                    });
+                });
+                variants.create("packaged", variant -> {
+                    variant.artifact(packaged);
+                    variant.attributes(attributes->{
+                        final AttributeContainer copy = archGraph.config().getAttributes(view).getAttributes();
+                        for (Attribute attribute : copy.keySet()) {
+                            Object val = Usage.USAGE_ATTRIBUTE.equals(attribute) ? view.getProjectGraph().usageRuntime() : copy.getAttribute(attribute);
+                            attributes.attribute(attribute, val);
+                        }
+                        attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageRuntime());
+                    });
+                });
+            });
+
+
+//            pub.artifact(artifact);
+//            view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
+
+
+//            archGraph.configExportedApi().getDependencies().add(dep);
+//            archGraph.configAssembled().getDependencies().add(dep);
+//            view.getDependencies().add(archGraph.configAssembled().getName(), dep);
+//            archGraph.configAssembled().getArtifacts().add(artifact);
+/*
+            */
+
+
+
+
+
+//            view.getPlugins().withType(JavaPlugin.class).configureEach(makesArchives->{
+//                // Register build-java tasks if the java plugin is applied.
                 archGraph.getJarTask();
                 archGraph.getJavacTask();
-            });
+//            });
 
         }
         if (platConfig.isRequireSource() || archConfig.isSourceAllowed()) {
@@ -316,5 +429,38 @@ public class XapiSchema {
 
     public PlatformConfigInternal getMainPlatform() {
         return platforms.maybeCreate("main");
+    }
+
+    public ImmutableAttributes getAttributes(Dependency dep, String newGroup, String newName) {
+        // TODO: consult a registry before relying on naming conventions...
+        int lastDot = newGroup.lastIndexOf('.');
+        PlatformConfig plat = null;
+        if (lastDot != -1) {
+            String suffix = newGroup.substring(lastDot+1);
+            if (platforms.hasWithName(suffix)) {
+                plat = platforms.getByName(suffix);
+            }
+        }
+        String[] bits = newName.split("-");
+        String suffix = bits[bits.length-1];
+        if (plat == null) {
+            plat = findPlatform(suffix);
+            if (plat == null) {
+                plat = getMainPlatform();
+            }
+        }
+        String left;
+        if (bits.length == 1) {
+            // There is no suffix.  assume main.
+            left = "main";
+        } else {
+            left = GUtil.toLowerCamelCase(suffix.replace(plat.getName(), ""));
+            if (!plat.getArchives().hasWithName(left)) {
+                // Hm... should probably log or throw here, and enforce registrations...
+                left = "main";
+            }
+        }
+        final ArchiveConfig arch = plat.getArchive(left);
+        return arch.getAttributes(view);
     }
 }

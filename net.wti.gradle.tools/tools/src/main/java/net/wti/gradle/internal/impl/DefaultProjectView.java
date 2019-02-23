@@ -15,6 +15,7 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.api.internal.project.ProjectInternal;
@@ -78,6 +79,7 @@ public class DefaultProjectView implements ProjectView {
     private final Provider<Object> version;
     private final Provider<PublishingExtension> publishing;
     private final Provider<GradleService> service;
+    private final DefaultComponentMetadataHandler componentMetadata;
 
     public DefaultProjectView(
         Project project,
@@ -102,11 +104,13 @@ public class DefaultProjectView implements ProjectView {
             project.getArtifacts(),
             project.getLayout(),
             project.getComponents(),
-            project.getProviders().provider(()->Java.sources(project)),
             project::findProperty,
             dec,
             finder,
             attributesFactory,
+            (DefaultComponentMetadataHandler) project.getDependencies().getComponents(),
+
+            // only immutable values should go above here.
             done-> {
                 if (project.getState().getExecuted()) {
                     // Hm. Consider making this always-async using a higher level queue somewhere.
@@ -117,6 +121,9 @@ public class DefaultProjectView implements ProjectView {
                     project.afterEvaluate(p -> done.execute(false));
                 }
             },
+            // only providers should go below here
+
+            project.getProviders().provider(()->Java.sources(project)),
             project.getProviders().provider(()-> GradleServiceFinder.getService(project)),
             project.getProviders().provider(()-> {
 
@@ -149,15 +156,16 @@ public class DefaultProjectView implements ProjectView {
         ArtifactHandler artifacts,
         ProjectLayout layout,
         SoftwareComponentContainer components,
-        Provider<SourceSetContainer> sourceSets,
         Function<String, Object> propFinder,
         CollectionCallbackActionDecorator decorator,
         ProjectFinder projectFinder,
         ImmutableAttributesFactory attributesFactory,
         // All "okay to resolve immediately" final values, above.
 
+        DefaultComponentMetadataHandler componentMetadata,
         Action<Action<? super Boolean>> whenReady,
         // All new providers should go here, at the end
+        Provider<SourceSetContainer> sourceSets,
         Provider<GradleService> service,
         Provider<PublishingExtension> publishing,
         Provider<Object> group,
@@ -183,6 +191,7 @@ public class DefaultProjectView implements ProjectView {
         this.decorator = decorator;
         this.projectFinder = projectFinder;
         this.attributesFactory = attributesFactory;
+        this.componentMetadata = componentMetadata;
         this.whenReady = whenReady;
         this.layout = layout;
 
@@ -345,6 +354,11 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public GradleService getService() {
         return service.get();
+    }
+
+    @Override
+    public DefaultComponentMetadataHandler getComponentMetadata() {
+        return componentMetadata;
     }
 
     @Override

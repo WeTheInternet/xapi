@@ -17,6 +17,7 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.api.internal.project.ProjectInternal;
@@ -120,10 +121,6 @@ public interface ProjectView extends ExtensionAware {
         return new File(getProjectDir(), path);
     }
 
-    default Dependency dependencyFor(Configuration config) {
-        return dependencyFor(getPath(), config);
-    }
-
     default Dependency dependencyFor(String path, Configuration config) {
         final DependencyHandler deps = getDependencies();
         return deps.project(GUtil.map(
@@ -178,4 +175,6 @@ public interface ProjectView extends ExtensionAware {
     default boolean isJavaCompatibility() {
         return getPlugins().hasPlugin(JavaPlugin.class);
     }
+
+    DefaultComponentMetadataHandler getComponentMetadata();
 }

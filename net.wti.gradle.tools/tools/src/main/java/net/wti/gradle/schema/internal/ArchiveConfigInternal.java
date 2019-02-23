@@ -11,8 +11,6 @@ import net.wti.gradle.schema.api.PlatformConfig;
  */
 public interface ArchiveConfigInternal extends ArchiveConfig {
 
-    PlatformConfig getPlatform();
-
     default ArchiveGraph findGraph(ProjectGraph graph) {
         final PlatformConfig platform = getPlatform();
         final PlatformGraph platformGraph = graph.platform(platform.getName());

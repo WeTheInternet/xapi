@@ -1,8 +1,7 @@
 package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.schema.api.ArchiveConfig;
-import net.wti.gradle.schema.api.ArchiveConfigContainer;
-import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
+import net.wti.gradle.system.impl.DefaultRealizableNamedObjectContainer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.internal.reflect.Instantiator;
 
@@ -11,7 +10,7 @@ import java.util.concurrent.Callable;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 1:47 PM.
  */
-public class DefaultArchiveConfigContainer extends AbstractNamedDomainObjectContainer<ArchiveConfig> implements
+public class DefaultArchiveConfigContainer extends DefaultRealizableNamedObjectContainer<ArchiveConfig> implements
     ArchiveConfigContainerInternal {
 
     private final Callable<PlatformConfigInternal> platform;

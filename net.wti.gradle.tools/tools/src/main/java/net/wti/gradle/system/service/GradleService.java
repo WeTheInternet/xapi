@@ -3,11 +3,13 @@ package net.wti.gradle.system.service;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
+import net.wti.gradle.internal.system.InternalProjectCache;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
@@ -170,21 +172,20 @@ public interface GradleService {
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends ExtensionAware, O> O buildOnce(Class<? super O> publicType, T ext, String key, BiFunction<? super T, String, ? extends O> factory) {
-        final Object val = ext.getExtensions().findByName(key);
-        if (val == null) {
-            final O created = factory.apply(ext, key);
-            if (null == ext.getExtensions().findByName(key)) {
-                // In case the user code already installed the object, we don't want to double-add...
-                if (publicType == null) {
-                    ext.getExtensions().add(key, created);
-                } else {
-                    ext.getExtensions().add(publicType, key, created);
-                }
-            }
-            return created;
+    static <T extends ExtensionAware, O> O buildOnce(Class<? super O> publicType, T source, String key, BiFunction<? super T, String, ? extends O> factory) {
+        InternalProjectCache<T> cache = getCache(source);
+        return cache.buildOnce(publicType, source, key, factory);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends ExtensionAware> InternalProjectCache<T> getCache(T ext) {
+        final ExtensionContainer extensions = ext.getExtensions();
+        InternalProjectCache<T> cache = (InternalProjectCache) extensions.findByName(InternalProjectCache.EXT_NAME);
+        if (cache == null || !cache.isFrom(ext)) {
+            cache = new InternalProjectCache<>(ext);
+            extensions.add(InternalProjectCache.EXT_NAME, cache);
         }
-        return (O) val;
+        return cache;
     }
 
     default void configureWrapper(Project project) {

@@ -1,11 +1,11 @@
 package net.wti.gradle.internal.api
 
+
 import net.wti.gradle.system.plugin.XapiBasePlugin
 import net.wti.gradle.test.AbstractMultiBuildTest
 import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
-
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/17/18 @ 4:42 AM.
  */
@@ -22,10 +22,16 @@ class XapiSchemaTest extends AbstractMultiBuildTest<XapiSchemaTest> {
             def use = plugin ?: defaultPlugin
             buildFile << """
 plugins {
-//    id 'java'
     ${use.startsWith('id') ? use : "id '$use'"}
 }
 ${simpleSchema()}
+repositories {
+  maven {
+    name = 'xapiLocal'
+    url = '$xapiRepo'
+    metadataSources { gradleMetadata() }
+  }
+}
 version = $version
 group = '${rootProject == ':' ? 'testgroup' : rootProject}'
 """
@@ -83,15 +89,17 @@ xapiRequire.project 'gwt1'
         given:
         setupSimpleGwt('gwt0')
         setupSimpleGwt('gwt1', 'xapi-require')
-        getProject('gwt1').buildFile << '''
-xapiRequire.project 'gwt0'
-'''
+        getProject('gwt1').buildFile << "xapiRequire.project 'gwt0'"
         setupSimpleGwt('gwt2', 'xapi-require')
-        getProject('gwt2').buildFile << '''
+        getProject('gwt2').buildFile << """
 xapiRequire.project 'gwt1'
-//apply plugin: 'maven-publish'
-//apply plugin: 'xapi-publish'
-'''
+import net.wti.gradle.schema.plugin.XapiSchemaPlugin
+dependencies {
+    attributesSchema.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE)
+    attributesSchema.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE)
+}
+"""
+//        AttributesSchema attributesSchema; attributesSchema.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE)
 
         when:
         BuildResult res
@@ -138,6 +146,7 @@ rootProject.name = 'gwt1'
         when:
         BuildResult res = runSucceed(LogLevel.QUIET, folder('gwt2'),':xapiReport', ':compileGwtJava', '-Pxapi.debug=true')
         then:
+        res.task(':compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
         res.output.contains "$rootDir/gwt1/src/main/java"

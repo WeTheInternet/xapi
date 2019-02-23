@@ -51,7 +51,12 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
         allArchives = CompositeDomainObjectSet.create(ArchiveConfig.class, archives);
         allArchives.addCollection(archives);
 
-        schemaArchives.configureEach(archives::add);
+        schemaArchives.configureEach(item ->{
+
+            if (item.getPlatform().getName().equals(name)) {
+                archives.add(item);
+            }
+        });
         this.parent = parent;
         this.container = container;
         requireSource = NEED_SOURCES.matcher(name).find();

@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.require.api;
 
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.attributes.Usage;
 
 /**
  * An enumerated set of standard {@link UsageType};
@@ -22,13 +23,20 @@ public enum DefaultUsageType implements UsageType {
     Api {
         @Override
         public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
-//            return only ? module.configIntransitive() : module.configTransitive();
-            return only ? module.configCompileOnly() : module.configCompile();
+            return only ? module.configIntransitive() : module.configTransitive();
+//            return only ? module.configCompileOnly() : module.configCompile(); // hm, we should accept lenient here as well...
         }
 
         @Override
         public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
             return module.configExportedApi();
+        }
+
+        @Override
+        public Usage findUsage(
+            ProjectGraph project, Configuration consumer, Configuration producer
+        ) {
+            return project.usageApiClasses();
         }
     },
     /**
@@ -43,6 +51,11 @@ public enum DefaultUsageType implements UsageType {
         @Override
         public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
             return module.configExportedRuntime();
+        }
+
+        @Override
+        public Usage findUsage(ProjectGraph project, Configuration consumer, Configuration producer) {
+            return project.usageRuntime();
         }
     },
     /**

@@ -10,7 +10,7 @@ import org.gradle.testkit.runner.TaskOutcome
  */
 class XapiPublishTest extends AbstractMultiBuildTest<XapiPublishTest> {
 
-    static final String BUILD_HEADER = """
+    final String BUILD_HEADER = """
 plugins {
   id 'xapi-schema'
   id 'xapi-require'
@@ -25,6 +25,13 @@ xapiSchema {
   archives { 
     main
     api
+  }
+}
+repositories {
+  maven {
+    name = 'xapiLocal'
+    url = '$xapiRepo'
+    metadataSources { gradleMetadata() }
   }
 }
 """

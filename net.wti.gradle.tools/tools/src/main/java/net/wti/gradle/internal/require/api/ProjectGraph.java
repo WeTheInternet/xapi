@@ -59,6 +59,10 @@ public interface ProjectGraph extends Named, GraphNode {
         return usage(Usage.JAVA_API);
     }
 
+    default Usage usageApiClasses() {
+        return usage(Usage.JAVA_API_CLASSES);
+    }
+
     default Usage usageInternal() {
         return usage(XapiUsage.INTERNAL);
     }
@@ -71,4 +75,7 @@ public interface ProjectGraph extends Named, GraphNode {
         return project().getObjects().named(Usage.class, usageType);
     }
 
+    default String getVersion() {
+         return project().getVersion();
+    }
 }

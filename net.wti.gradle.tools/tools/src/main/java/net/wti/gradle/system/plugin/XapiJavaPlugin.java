@@ -1,5 +1,6 @@
 package net.wti.gradle.system.plugin;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import org.gradle.api.*;
 import org.gradle.api.artifacts.Configuration;
@@ -25,6 +26,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.cleanup.BuildOutputCleanupRegistry;
+import org.gradle.internal.component.external.model.JavaEcosystemVariantDerivationStrategy;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 import javax.inject.Inject;
@@ -58,7 +60,10 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
     public void apply(ProjectInternal project) {
         project.getPlugins().apply(JavaBasePlugin.class);
         project.getPlugins().withType(JavaPlugin.class).all(illegal-> {
-            throw new GradleException("Do not apply java plugin and XapiJavaPlugin at the same time");
+            throw new GradleException("Do not apply java plugin and XapiJavaPlugin at the same time.\n" +
+                "Really, just don't apply XapiJavaPlugin, it will be applied for you through XapiBasePlugin.");
+                // There is not a registered plugin id for this class for this exact reason.
+                // It's where we're putting our "running without java plugin" shims (that are mutually exclusive w/ java plugin).
         });
         JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
         BuildOutputCleanupRegistry buildOutputCleanupRegistry = project.getServices().get(BuildOutputCleanupRegistry.class);
@@ -69,6 +74,10 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         configureTest(project, javaConvention);
 //        configureArchivesAndComponent(project, javaConvention);
         configureBuild(project);
+
+        final ProjectView view = ProjectView.fromProject(project);
+        // we will probably want to create our own strategy and abandon this one...
+        view.getComponentMetadata().setVariantDerivationStrategy(new JavaEcosystemVariantDerivationStrategy());
     }
 
     private void configureSourceSets(JavaPluginConvention pluginConvention, final BuildOutputCleanupRegistry buildOutputCleanupRegistry) {

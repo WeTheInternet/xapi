@@ -192,6 +192,8 @@ public class XapiPublishPlugin implements Plugin<Project> {
                         pub.from(m);
                         pub.setGroupId(m.getGroup());
                         pub.setArtifactId(m.getModuleName());
+                        // "generatePomFileFor" + capitalize(publicationName) + "Publication"
+
                     })
 
             )
