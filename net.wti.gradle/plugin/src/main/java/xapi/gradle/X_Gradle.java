@@ -2,14 +2,12 @@ package xapi.gradle;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.ArtifactRepository;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.plugins.ide.idea.IdeaPlugin;
-import org.gradle.plugins.ide.idea.model.IdeaModel;
 import xapi.gradle.plugin.XapiExtension;
 
 import java.io.File;
-import java.util.Set;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/11/18 @ 2:15 AM.
@@ -41,6 +39,9 @@ public class X_Gradle {
             p.getRepositories().maven(repo->{
                 repo.setName("xapiLocal");
                 repo.setUrl(new File(loc, "repo"));
+                if (!"true".equals(System.getProperty("no.metadata"))) {
+                    repo.metadataSources(MetadataSources::gradleMetadata);
+                }
             });
         }
         // TODO: remove the need for both of these, by priming our xapiLocal repo...

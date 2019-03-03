@@ -12,6 +12,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.*;
@@ -57,7 +58,9 @@ public class XapiReport extends DefaultTask {
 
         whenSelected(selected-> {
             getProject().getTasks().withType(JavaCompile.class)
-                .configureEach(javac-> javac.shouldRunAfter(this));
+                .configureEach(javac-> {
+                    javac.shouldRunAfter(this);
+                });
             // generate() is expensive, so we only do it if the task is selected.
             // We do it during configuration phase, however, since we can
             // currently, sadly, run into deadlocks if we wait until configurations can be resolved in parallel
@@ -100,38 +103,42 @@ public class XapiReport extends DefaultTask {
                             c.getExtendsFrom().stream().map(Configuration::getName).collect(Collectors.joining(","))
                     + "]")
                     .collect(Collectors.joining("\n")));
-        final SourceSetContainer srcs = Java.sources(getProject());
-        for (String platform : sourceSets.get()) {
-            final SourceSet src = srcs.findByName(platform);
-            b
-                .append("\nSource set ")
-                .append(platform);
-            if (src == null) {
-                b.append(": <no source>\n\t\t");
-            } else {
+        if (getProject().getConvention().findPlugin(JavaPluginConvention.class) == null) {
+            b.append("\nSkipping sourcesets as ").append(getProject().getPath()).append(" does not have any valid java plugin");
+        } else {
+            final SourceSetContainer srcs = Java.sources(getProject());
+            for (String platform : sourceSets.get()) {
+                final SourceSet src = srcs.findByName(platform);
                 b
-                    .append("\n\tCompile classpath of ")
+                    .append("\nSource set ")
+                    .append(platform);
+                if (src == null) {
+                    b.append(": <no source>\n\t\t");
+                } else {
+                    b
+                        .append("\n\tCompile classpath of ")
+                        .append(getProject().getPath())
+                        .append(":")
+                        .append(platform)
+                        .append(" ->\n\t\t")
+                        .append(fixPath(src.getCompileClasspath().getAsPath()))
+                        .append("\n\tRuntime classpath of ")
+                        .append(getProject().getPath())
+                        .append(":")
+                        .append(platform)
+                        .append(" ->\n\t\t")
+                        .append(fixPath(src.getRuntimeClasspath().getAsPath()))
+                    ;
+                }
+                b.append(":\n\tConfigurations of ")
                     .append(getProject().getPath())
-                    .append(":")
-                    .append(platform)
-                    .append(" ->\n\t\t")
-                    .append(fixPath(src.getCompileClasspath().getAsPath()))
-                    .append("\n\tRuntime classpath of ")
-                    .append(getProject().getPath())
-                    .append(":")
-                    .append(platform)
-                    .append(" ->\n\t\t")
-                    .append(fixPath(src.getRuntimeClasspath().getAsPath()))
-                ;
-            }
-            b.append(":\n\tConfigurations of ")
-                .append(getProject().getPath())
-                .append(":\n\t\t");
-            final ConfigurationContainer configs = getProject().getConfigurations();
-            Set<String> seen = new HashSet<>();
-            printConfigs(platform + "Assembled", "\t\t", configs, b, seen);
-            printConfigs(platform + "CompileClasspath", "\t\t", configs, b, seen);
+                    .append(":\n\t\t");
+                final ConfigurationContainer configs = getProject().getConfigurations();
+                Set<String> seen = new HashSet<>();
+                printConfigs(platform + "Assembled", "\t\t", configs, b, seen);
+                printConfigs(platform + "CompileClasspath", "\t\t", configs, b, seen);
 
+            }
         }
         String is = b.toString();
         if (report.isPresent()) {
