@@ -12,6 +12,7 @@ class IncludedTestBuild implements TestBuild, TestFileTools, TestBuildDir {
         setName(name)
         this.parent = parent
         GFileUtils.touch(settingsFile)
+        initSettings(settingsFile)
     }
 
     @Override

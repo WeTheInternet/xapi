@@ -16,6 +16,7 @@ import static org.gradle.api.logging.LogLevel.*
  */
 abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools {
 
+
     LogLevel LOG_LEVEL = QUIET
     Boolean DEBUG = true// Boolean.getBoolean("xapi.debug")
 
@@ -23,7 +24,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
     private File rootDir
     private String rootProjectName
-    private boolean printedProjectName
+    private boolean initializedSettings
 
     File getRootDir() {
         this.@rootDir ?: (this.@rootDir = newTmpDir())
@@ -37,10 +38,10 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
             LogLevel logLevel = LOG_LEVEL,
             File projectDir = getRootDir(),
             Boolean debug = DEBUG,
-            String ... task
+            String ... tasksOrFlags
     ) {
         flush()
-        List<String> args = [*task, '--stacktrace', toFlag(logLevel)]
+        List<String> args = [toFlag(logLevel), '--stacktrace', *tasksOrFlags]
 
         GradleRunner.create()
                 .withProjectDir(projectDir)
@@ -94,14 +95,18 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
     @Override
     Boolean hasWorkRemaining() {
-        return TestBuild.super.hasWorkRemaining() || !printedProjectName
+        return TestBuild.super.hasWorkRemaining() || !initializedSettings
     }
 
     @Override
     void doWork() {
-        if (!printedProjectName) {
-            printedProjectName = true
-            settingsFile << "rootProject.name='${getRootProjectName()}'\n"
+        if (!initializedSettings) {
+            initializedSettings = true
+            initSettings(settingsFile)
+            settingsFile << """
+// from ${getClass().simpleName} ($name)
+rootProject.name='${getRootProjectName()}'
+"""
         }
         TestBuild.super.doWork()
     }

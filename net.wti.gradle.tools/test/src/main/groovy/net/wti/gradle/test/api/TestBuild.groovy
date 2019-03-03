@@ -26,6 +26,15 @@ trait TestBuild implements Named, Flushable, HasBuildFiles {
         insert(pendingProjects, name, a)
     }
 
+    void initSettings(File settings) {
+        settings.text += """
+// from ${getClass().simpleName} ($name)
+if (System.getProperty('${HasBuildFiles.SKIP_METADATA_SYS_PROP}') != 'true') {
+    enableFeaturePreview('GRADLE_METADATA')
+}
+"""
+    }
+
     @Override
     String getName() {
         return name ?: ':'
@@ -61,7 +70,11 @@ trait TestBuild implements Named, Flushable, HasBuildFiles {
                         dir = folder(key.split(':'))
                     }
                     proj = realizedProjects.computeIfAbsent(key, {
-                        new TestProject(key, dir)
+                        TestProject p = new TestProject(key, dir)
+                        if (p.path != ':') {
+                            settingsFile << "include('$p.path')\n"
+                        }
+                        return p
                     })
                     v.execute(proj)
             }
@@ -73,13 +86,6 @@ trait TestBuild implements Named, Flushable, HasBuildFiles {
     @Override
     void flush() {
         super.flush()
-        realizeProjects().each {
-            name, proj ->
-                String path = proj.path
-                if (path != ':') {
-                    settingsFile << "include('$path')\n"
-                }
-        }
         if (!buildFile.text) {
             buildFile.text = "plugins { id 'base' }"
         }

@@ -9,6 +9,7 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.SelfResolvingDependency;
+import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
 import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.publish.PublicationArtifact;
@@ -21,6 +22,8 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 import java.io.File;
 import java.util.stream.Collectors;
+
+import static net.wti.gradle.system.plugin.XapiBasePlugin.XAPI_LOCAL;
 
 @Deprecated
 public class PublishXapi {
@@ -68,10 +71,17 @@ public class PublishXapi {
 
             File xapiHome = new File(String.valueOf(home));
             publishing.repositories( repos -> {
-                    repos.maven( maven -> {
-                            maven.setName("xapiLocal");
+                for (ArtifactRepository repo : repos) {
+                    if (XAPI_LOCAL.equals(repo.getName())) {
+                        return;
+                    }
+                }
+                repos.maven( maven -> {
+                            maven.setName(XAPI_LOCAL);
                             maven.setUrl(xapiHome);
-                            maven.metadataSources(MetadataSources::gradleMetadata);
+                            if (!"true".equals(System.getProperty("no.metadata"))) {
+                                maven.metadataSources(MetadataSources::gradleMetadata);
+                            }
                         }
                     );
                 }

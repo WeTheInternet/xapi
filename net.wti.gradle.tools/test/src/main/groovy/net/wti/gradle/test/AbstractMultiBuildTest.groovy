@@ -16,6 +16,7 @@ import static groovy.lang.Closure.OWNER_FIRST
  */
 abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> extends AbstractMultiProjectTest<S> implements TestBuild, TestBuildDir {
 
+
     private final LinkedHashMap<Object, Action<? super IncludedTestBuild>> pendingBuilds = [:]
     private final LinkedHashMap<String, IncludedTestBuild> realizedBuilds = [:]
 
@@ -57,8 +58,13 @@ abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> exten
         realizeBuilds().each {
             name, build ->
                 String path = build.name
-                settingsFile << "includeBuild('$path')\n"
-
+                settingsFile << """
+if (System.getProperty('${SKIP_COMPOSITE_SYS_PROP}') != 'true') {
+  // prevent included builds from trying to do any inclusions themselves.
+  System.setProperty('${SKIP_COMPOSITE_SYS_PROP}', 'true')
+  includeBuild('$path')
+}
+"""
         }
     }
 
