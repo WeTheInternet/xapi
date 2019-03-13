@@ -3,6 +3,7 @@ package net.wti.gradle.internal.require.api;
 import net.wti.gradle.internal.api.XapiUsage;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleDependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.attributes.Usage;
@@ -77,4 +78,12 @@ public interface UsageType extends Named {
         dep.setTargetConfiguration(findProducerConfig(producer, only).getName());
         return dep;
     }
+
+    String deriveConfiguration(
+        String base,
+        Dependency dep,
+        boolean isLocal,
+        boolean only,
+        boolean lenient
+    );
 }

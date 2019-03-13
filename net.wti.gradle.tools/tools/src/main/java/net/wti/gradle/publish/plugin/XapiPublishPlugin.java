@@ -15,11 +15,10 @@ import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.artifacts.dsl.RepositoryHandler;
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.internal.GradleInternal;
+import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.publish.PublicationContainer;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.ivy.tasks.PublishToIvyRepository;
@@ -30,7 +29,9 @@ import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.TaskReference;
 
-import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Sets up publishing layer,
@@ -41,58 +42,32 @@ import java.io.File;
 @SuppressWarnings("UnstableApiUsage")
 public class XapiPublishPlugin implements Plugin<Project> {
 
-    public static final String XAPI_LOCAL = "xapiLocal";
-
     @Override
     public void apply(Project project) {
-        project.getPlugins().apply(XapiBasePlugin.class);
-        final ProjectView p = ProjectView.fromProject(project);
+        final XapiBasePlugin base = project.getPlugins().apply(XapiBasePlugin.class);
+
+        final ProjectView view = ProjectView.fromProject(project);
 
         // enable IDE to find where we create this object.
-        assert GradleMessages.noOpForAssertion(()-> new XapiLibrary(p));
-        final XapiLibrary lib = p.getInstantiator().newInstance(XapiLibrary.class, p);
+        assert GradleMessages.noOpForAssertion(()-> new XapiLibrary(view));
+        final XapiLibrary lib = view.getInstantiator().newInstance(XapiLibrary.class, view);
 
-        final TaskProvider<XapiPublish> publishProvider = configureLibrary(p, lib);
-        configureRepo(p, lib);
+        final TaskProvider<XapiPublish> publishProvider = configureLibrary(view, lib);
 
-        if (((GradleInternal)p.getGradle()).getRoot() == p.getGradle()) {
+        if (((GradleInternal) view.getGradle()).getRoot() == view.getGradle()) {
             publishProvider.configure(publish->{
-                for (IncludedBuild inc : p.getGradle().getIncludedBuilds()) {
+                for (IncludedBuild inc : view.getGradle().getIncludedBuilds()) {
                     final TaskReference childPublish = inc.task(":publishRequired");
                     publish.dependsOn(childPublish);
                 }
             });
         } else {
-            final TaskContainer rootTasks = p.getRootProject().getTasks();
+            final TaskContainer rootTasks = view.getRootProject().getTasks();
             final Task required = rootTasks.maybeCreate("publishRequired");
             required.whenSelected(publishRequired->publishRequired.dependsOn(publishProvider));
         }
-    }
 
-    private void configureRepo(ProjectView view, XapiLibrary lib) {
-
-        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED, created -> {
-            String repo = (String) view.findProperty("xapi.mvn.repo");
-            final RepositoryHandler repos = view.getPublishing().getRepositories();
-            if (repo == null) {
-                final boolean addRepo = repos.stream().noneMatch(r->XAPI_LOCAL.equals(r.getName()));
-                if (addRepo) {
-                    String xapiHome = (String) view.findProperty("xapi.home");
-                    if (xapiHome == null) {
-                        xapiHome = view.getService().getXapiHome();
-                    }
-                    repo = new File(xapiHome , "repo").toURI().toString();
-                } else {
-                    return;
-                }
-            }
-            String xapiRepo = repo;
-            repos.maven(mvn -> {
-                mvn.setUrl(xapiRepo);
-                mvn.setName("xapiLocal");
-                mvn.metadataSources(MetadataSources::gradleMetadata);
-            });
-        });
+        base.configureRepo(view.getPublishing().getRepositories(), project);
     }
 
     private TaskProvider<XapiPublish> configureLibrary(ProjectView view, XapiLibrary lib) {
@@ -119,6 +94,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
             platformGraph.archives().configureEach(module -> {
                 if (canMutate[0]) {
                     if (shouldSelect(module)) {
+                        // TODO: defer this to "just before we need it for publishing"
                         selectModule(view, lib, xapiPublish, module);
                     }
                 } else {
@@ -139,8 +115,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
         final PlatformGraph platformGraph = select.platform();
         final XapiPlatform platform = lib.getPlatform(platformGraph.getName());
         PublishedModule module = platform.getModule(select.getName());
-        // This stuff is happening too late.
-        // Needs to occur right away / be build on demand...
+
         final DefaultXapiUsageContext compileCtx = new DefaultXapiUsageContext(select, Usage.JAVA_API);
         final DefaultXapiUsageContext runtimeCtx = new DefaultXapiUsageContext(select, Usage.JAVA_RUNTIME);
         module.getUsages().add(compileCtx);
@@ -186,20 +161,37 @@ public class XapiPublishPlugin implements Plugin<Project> {
         // TODO: add some levers/knobs to dial-back this eager initialization of complete build graph:
         //  user is likely to want to limit publishing to certain platforms at once, at the very least.
         //  Also; try getting this moved inside the whenSelected block below; it was pulled out due to timing issues.
+        List<MavenPublication> pubs = new ArrayList<>();
+        LinkedHashMap<String, PublishedModule> allMods = new LinkedHashMap<>();
         lib.getPlatforms().all(p->
             p.getModules().all(m->
-                    publications.create(p.getName()+"_"+m.getName(), MavenPublication.class, pub->{
+                    pubs.add(publications.create("_" + p.getName()+"_"+m.getName(), MavenPublication.class, pub->{
                         pub.from(m);
                         pub.setGroupId(m.getGroup());
                         pub.setArtifactId(m.getModuleName());
+                        allMods.put(m.getGroup() + ":" + m.getName(), m);
                         // "generatePomFileFor" + capitalize(publicationName) + "Publication"
-
-                    })
-
+                        ((ExtensionAware)pub).getExtensions().add("xapiModule", m);
+                    }))
             )
         );
-        // publish the main artifact.  All items above are "children" / variants of the XapiLibrary, lib
-        publications.create("xapi", MavenPublication.class).from(lib);
+//        // publish the main artifact.  All items above are child modules (~variants) of the XapiLibrary
+//        MavenPublication mainPub = publications.create("xapi", MavenPublication.class);
+//        mainPub.from(lib);
+
+        view.getTasks().configureEach(task-> {
+            if (task instanceof PublishToMavenRepository) {
+                PublishToMavenRepository pub = (PublishToMavenRepository) task;
+                final MavenPublication source = pub.getPublication();
+
+                final Object module = ((ExtensionAware) source).getExtensions().findByName("xapiModule");
+                if (module != null) {
+                    PublishedModule mod = (PublishedModule) module;
+                    final ArchiveGraph graph = mod.getModule();
+                    task.dependsOn(graph.getJarTask());
+                }
+            }
+        });
 
         // avoid creating the task.
         xapiPublish.configure(pub->

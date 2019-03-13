@@ -224,6 +224,7 @@ public class XapiSchema {
 
 
             final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion());
+            view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
             exportedRuntime.artifact(artifact);
             final ConfigurationVariant runtimeVariant = exportedRuntime.getVariants().maybeCreate(
                 "runtime");
@@ -300,8 +301,14 @@ public class XapiSchema {
             final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
             final ArchiveGraph neededArchive = needPlat.archive(need);
 
-            // Hm... perhaps we should put this in a BEFORE_READY callback?
-            archGraph.importLocal(neededArchive, only, lenient);
+            if (neededArchive.srcExists()) {
+                // Hm... perhaps we should put this in a BEFORE_READY callback?
+                archGraph.importLocal(neededArchive, only, lenient);
+            } else {
+                // we should still depend on transitive dependencies of missing-src modules.
+                // however, right now, we don't care about inheriting-through-gaps,
+                // since we don't even have production modules inheriting-when-src-exists
+            }
 
         }
 

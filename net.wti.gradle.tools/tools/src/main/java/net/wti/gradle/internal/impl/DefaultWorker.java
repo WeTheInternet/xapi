@@ -91,7 +91,9 @@ public class DefaultWorker implements HasWork {
         final Action<Integer> result = callbacks.compute(priority, (key, oldItem) ->
             // TODO: use a multimap instead of compositing actions together,
             //  so we can honor prioritized callback ordering
-            oldItem == null ? newItem : Actions.composite(oldItem, newItem)
+            oldItem == null ?
+                newItem :
+                Actions.composite(oldItem, newItem)
         );
         return result == newItem;
     }

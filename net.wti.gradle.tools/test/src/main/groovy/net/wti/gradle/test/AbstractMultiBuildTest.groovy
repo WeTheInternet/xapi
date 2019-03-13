@@ -59,10 +59,16 @@ abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> exten
             name, build ->
                 String path = build.name
                 settingsFile << """
-if (System.getProperty('${SKIP_COMPOSITE_SYS_PROP}') != 'true') {
+if (System.getProperty('${SKIP_COMPOSITE_SYS_PROP}') != 'true' && System.getProperty('${SKIP_COMPOSITE_SYS_PROP}.recurse') != 'true') {
   // prevent included builds from trying to do any inclusions themselves.
-  System.setProperty('${SKIP_COMPOSITE_SYS_PROP}', 'true')
+  System.setProperty('${SKIP_COMPOSITE_SYS_PROP}.recurse', 'true')
+  
   includeBuild('$path')
+
+  gradle.buildFinished {
+    System.clearProperty('$SKIP_COMPOSITE_SYS_PROP')
+    System.clearProperty('${SKIP_COMPOSITE_SYS_PROP}.recurse')
+  }
 }
 """
         }

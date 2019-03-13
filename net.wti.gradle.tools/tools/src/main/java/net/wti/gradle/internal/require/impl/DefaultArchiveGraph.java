@@ -86,8 +86,14 @@ public class DefaultArchiveGraph extends DefaultWorker implements ArchiveGraph {
     public ModuleComponentIdentifier getComponentId(String name) {
         final ModuleIdentifier mid = getModuleIdentifier();
         final DefaultModuleComponentIdentifier compId = new DefaultModuleComponentIdentifier(
-            DefaultModuleIdentifier.newId(mid.getGroup(), name.startsWith(mid.getName()) ? name : mid.getName() + "-" + name),
-            getView().getVersion()
+            DefaultModuleIdentifier.newId(mid.getGroup(),
+                name.startsWith(mid.getName()) ?
+                    name :
+                    mid.getName() +
+                    (name.startsWith("-") ? "" : "-") +
+                    name
+            ),
+            getVersion()
         );
         spyId(name, compId);
         return compId;

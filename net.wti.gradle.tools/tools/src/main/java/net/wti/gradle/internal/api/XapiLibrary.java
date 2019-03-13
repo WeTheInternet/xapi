@@ -107,7 +107,7 @@ public class XapiLibrary implements SoftwareComponentInternal, ComponentWithVari
      *
      */
     @Override
-    public CompositeDomainObjectSet<PublishedModule> getVariants() {
+    public Set<PublishedModule> getVariants() {
         // Return the various XapiPlatform that exist for this module / library
         return platforms.getAllVariants();
     }

@@ -50,9 +50,9 @@ public interface ArchiveRequest extends Named {
         }
     }
 
-    ArchiveGraph from();
+    ProducerConfiguration from();
 
-    ArchiveGraph to();
+    ConsumerConfiguration to();
 
     ArchiveRequestType type();
 
@@ -62,6 +62,6 @@ public interface ArchiveRequest extends Named {
     }
 
     default boolean isSelectable() {
-        return from().isSelectable() || to().isSelectable();
+        return from().getModule().isSelectable() || to().getModule().isSelectable();
     }
 }

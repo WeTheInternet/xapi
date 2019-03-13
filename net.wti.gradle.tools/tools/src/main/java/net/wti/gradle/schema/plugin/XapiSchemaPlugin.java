@@ -132,6 +132,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         String path = schemaRootPath(project);
         final ProjectView root = path == null ? project.getRootProject() : project.findProject(path);
         if (project != root) {
+            root.getPlugins().apply(XapiSchemaPlugin.class);
             GradleService.buildOnce(root, XapiSchema.EXT_NAME, XapiSchema::new);
         }
         return root;

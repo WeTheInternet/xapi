@@ -2,9 +2,15 @@ package net.wti.gradle.system.plugin;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
+import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
+import org.gradle.api.attributes.AttributesSchema;
 import org.gradle.api.plugins.*;
+
+import java.io.File;
 
 /**
  * This plugin is responsible for making sure basic schema wiring is setup,
@@ -15,16 +21,27 @@ import org.gradle.api.plugins.*;
 @SuppressWarnings("UnstableApiUsage")
 public class XapiBasePlugin implements Plugin<Project> {
 
+    public static final String XAPI_LOCAL = "xapiLocal";
+
     public static final String PROP_SCHEMA_APPLIES_JAVA = "xapi.apply.java";
     public static final String PROP_SCHEMA_APPLIES_JAVA_LIBRARY = "xapi.apply.java-library";
     public static final String PROP_SCHEMA_APPLIES_JAVA_PLATFORM = "xapi.apply.java-platform";
 
     private boolean withJavaPlugin, withJavaLibraryPlugin, withJavaPlatformPlugin;
+    private String repo;
 
     @Override
     public void apply(Project project) {
         final PluginContainer plugins = project.getPlugins();
         plugins.apply(JavaBasePlugin.class);
+
+        configureRepo(project.getRepositories(), project);
+
+        final AttributesSchema attrSchema = project.getDependencies().getAttributesSchema();
+        attrSchema.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, strat->{
+        });
+        attrSchema.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, strat->{
+        });
 
         final ProjectView self = ProjectView.fromProject(project);
         final ProjectView root = XapiSchemaPlugin.schemaRootProject(self);
@@ -93,6 +110,40 @@ public class XapiBasePlugin implements Plugin<Project> {
             }
             // TODO: add disambiguation rules to avoid api <-> runtime confusion
         }
+
+    }
+
+    public void configureRepo(RepositoryHandler repos, Project view) {
+        final boolean addRepo = repos.stream().noneMatch(r->XAPI_LOCAL.equals(r.getName()));
+        if (!addRepo) {
+            view.getLogger().warn("xapiLocal already found in " + repos);
+            return;
+        }
+
+        if (repo == null) {
+            repo = (String) view.findProperty("xapi.mvn.repo");
+        }
+        if (repo == null) {
+            String xapiHome = (String) view.findProperty("xapi.home");
+            if (xapiHome == null) {
+                xapiHome = GradleServiceFinder.getService(view).findXapiHome();
+            }
+            if (xapiHome == null) {
+                view.getLogger().quiet("No xapi.home found; setting xapiLocal repo to {}/repo", view.getRootDir());
+                xapiHome = view.getRootDir().getAbsolutePath();
+            } else {
+                view.getLogger().trace("Using repo from xapi.home {}/repo", xapiHome);
+            }
+            repo = new File(xapiHome , "repo").toURI().toString();
+        }
+
+        repos.maven(mvn -> {
+            mvn.setUrl(repo);
+            mvn.setName("xapiLocal");
+            if (!"true".equals(System.getProperty("no.metadata"))) {
+                mvn.metadataSources(MetadataSources::gradleMetadata);
+            }
+        });
 
     }
 

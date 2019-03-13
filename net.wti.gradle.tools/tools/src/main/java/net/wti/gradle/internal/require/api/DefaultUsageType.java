@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.require.api;
 
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.attributes.Usage;
 
 /**
@@ -38,6 +39,17 @@ public enum DefaultUsageType implements UsageType {
         ) {
             return project.usageApiClasses();
         }
+
+        @Override
+        public String deriveConfiguration(
+            String base,
+            Dependency dep,
+            boolean isLocal,
+            boolean only,
+            boolean lenient
+        ) {
+            return isLocal ? "compile" : "main".equals(base) ? "exportCompile" : base + "ExportCompile";
+        }
     },
     /**
      * The transitive runtime scope of your module
@@ -56,6 +68,16 @@ public enum DefaultUsageType implements UsageType {
         @Override
         public Usage findUsage(ProjectGraph project, Configuration consumer, Configuration producer) {
             return project.usageRuntime();
+        }
+
+        @Override
+        public String deriveConfiguration(
+            String base,
+            Dependency dep,
+            boolean isLocal, boolean only,
+            boolean lenient
+        ) {
+            return isLocal ? "runtime" : "main".equals(base) ? "exportRuntime" : base + "ExportRuntime";
         }
     },
     /**
@@ -86,4 +108,10 @@ public enum DefaultUsageType implements UsageType {
     public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
         throw new UnsupportedOperationException(this + " not yet supported");
     }
-}
+
+    @Override
+    public String deriveConfiguration(
+        String base, Dependency dep, boolean isLocal, boolean only, boolean lenient
+    ) {
+        throw new UnsupportedOperationException(this + " not yet supported");
+    }}

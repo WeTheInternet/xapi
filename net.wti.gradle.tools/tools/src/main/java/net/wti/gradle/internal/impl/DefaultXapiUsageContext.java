@@ -85,6 +85,16 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
     }
 
     @Override
+    public ArchiveGraph getModule() {
+        return archive;
+    }
+
+    @Override
+    public String getConfigurationName() {
+        return configuration.getName();
+    }
+
+    @Override
     public Set<? extends PublishArtifact> getArtifacts() {
         return configuration.getOutgoing().getArtifacts();
     }

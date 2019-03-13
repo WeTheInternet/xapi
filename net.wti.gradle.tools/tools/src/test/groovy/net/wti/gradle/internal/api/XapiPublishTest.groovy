@@ -3,6 +3,7 @@ package net.wti.gradle.internal.api
 import net.wti.gradle.test.AbstractMultiBuildTest
 import net.wti.gradle.test.api.IncludedTestBuild
 import org.gradle.api.logging.LogLevel
+import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 
 /**
@@ -25,13 +26,6 @@ xapiSchema {
   archives { 
     main
     api
-  }
-}
-repositories {
-  maven {
-    name = 'xapiLocal'
-    url = '$xapiRepo'
-    metadataSources { gradleMetadata() }
   }
 }
 """
@@ -109,9 +103,10 @@ xapiRequire {
         result.task(':compileJava') == null // there was no source, so we should not have compiled.
         result.task(':consumer:xapiPublish').outcome == TaskOutcome.SUCCESS
         result.task(':comp:xapiPublish').outcome == TaskOutcome.SUCCESS
+
     }
 
-    def "compile dependencies are correct when publishing is invoked with client source"() {
+    def "compile dependencies are correct when composite publishing is invoked with client source"() {
         given:
         withConsumerSource()
         def result = runSucceed('xapiPublish')
@@ -123,6 +118,31 @@ xapiRequire {
         result.task(':comp:xapiPublish').outcome == TaskOutcome.SUCCESS
 
         cleanup:
+        println "Test directory: file://$rootDir"
+    }
+
+    def "compile dependencies are correct when non-composite publishing is invoked with client source"() {
+        given:
+        withConsumerSource()
+        BuildResult result
+        when: 'Publish the producer project'
+        result = runSucceed(LogLevel.INFO, folder('comp'),'xapiPublish')
+        then: 'Only the producer project is published'
+        result.task(':compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':xapiPublish').outcome == TaskOutcome.SUCCESS
+        result.task(':consumer:compileJava') == null
+
+        when: 'Publish the consumer project'
+        result = runSucceed('xapiPublish', DISABLE_COMPOSITE)
+
+        then: "The consumer compiles and publishes correctly against the producer's published sources"
+        result.task(':comp:compileJava') == null
+        result.task(':comp:xapiPublish') == null
+        result.task(':consumer:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':consumer:xapiPublish').outcome == TaskOutcome.SUCCESS
+
+        cleanup:
+        System.err.flush()
         println "Test directory: file://$rootDir"
     }
 

@@ -17,8 +17,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
-import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
-import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
+import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -166,10 +165,11 @@ public interface ArchiveGraph extends Named, GraphNode {
             exportCompile.setDescription("The compile output and transitive dependencies for " + getConfigName());
             exportCompile.setCanBeResolved(true);
             exportCompile.setCanBeConsumed(true);
-//            exportCompile.getOutgoing().capability(getCapability("compile"));
+            exportCompile.getOutgoing().capability(getCapability("compile"));
             withAttributes(exportCompile)
 //                .attribute(USAGE_ATTRIBUTE, project().usageApi())
             ;
+            configNamed("default", def->def.extendsFrom(exportCompile));
         });
     }
 
@@ -190,16 +190,17 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default Configuration configExportedRuntime() {
 //            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
-        return config("ExportRuntime", runtimeElements -> {
-            runtimeElements.extendsFrom(configInternal());
-            runtimeElements.setVisible(false);
-            runtimeElements.setCanBeConsumed(true);
-            runtimeElements.setCanBeResolved(false);
-//            runtimeElements.getOutgoing().capability(getCapability());
+        return config("ExportRuntime", exportRuntime -> {
+            exportRuntime.extendsFrom(configInternal());
+            exportRuntime.setVisible(false);
+            exportRuntime.setCanBeConsumed(true);
+            exportRuntime.setCanBeResolved(false);
+            exportRuntime.getOutgoing().capability(getCapability());
 
-            withAttributes(runtimeElements)
+            withAttributes(exportRuntime)
                 .attribute(USAGE_ATTRIBUTE, project().usageRuntime())
             ;
+            configNamed("default", def->def.extendsFrom(exportRuntime));
         });
     }
 
@@ -325,8 +326,8 @@ public interface ArchiveGraph extends Named, GraphNode {
 
         final ConfigurationPublications outgoing = config.getOutgoing();
 
-        PublishArtifact jarArtifact = new LazyPublishArtifact(jarTask);
-        view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(jarArtifact);
+//        PublishArtifact jarArtifact = new LazyPublishArtifact(jarTask, getVersion());
+//        view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(jarArtifact);
 
         // Now that we have the rest of variants working, we should be able to reinstate this...
         //        outgoing.variants(variants->{
@@ -353,9 +354,13 @@ public interface ArchiveGraph extends Named, GraphNode {
         configExportedApi().extendsFrom(config);
 
         if (srcExists()) {
+            final FileCollectionInternal srcDirs = (FileCollectionInternal) allSourceDirs().getSourceDirectories();
+//            final ComponentIdentifier srcId = getComponentId("source");
+//            final DefaultSelfResolvingDependency dep = new DefaultSelfResolvingDependency(srcId, srcDirs);
             view.getDependencies().add(
                 name,
-                allSourceDirs().getSourceDirectories()
+                srcDirs
+//                dep
             );
         }
         final PlatformGraph platform = platform();
@@ -470,9 +475,20 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     }
 
+    default void importExternal(
+        Dependency dep,
+        String newGroup,
+        String newName,
+        boolean only,
+        boolean lenient
+    ) {
+        importExternal(dep, DefaultUsageType.Api, newGroup, newName, only, lenient);
+        importExternal(dep, DefaultUsageType.Runtime, newGroup, newName, only, lenient);
+    }
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     default void importExternal(
         Dependency dep,
+        UsageType type,
         String newGroup,
         String newName,
         boolean only,
@@ -484,8 +500,27 @@ public interface ArchiveGraph extends Named, GraphNode {
         final AttributeContainer attrs = schema.getAttributes(dep, newGroup, newName);
 
         // create variant-aware, on-demand inputs to the lenient config.
-        Configuration target = DefaultUsageType.Api.findConsumerConfig(this, only);
-        final String path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
+        Configuration target = type.findConsumerConfig(this, only);
+
+        // TODO: properly figure out how to differentiate whether this is a composite-findable dependency,
+        //  or if we're going to need to rely on poms instead of .module.
+        //  for now, we're preserving the works-in-composite logic separately,
+        boolean isLocal =
+//            true;
+             "true".equals(System.getProperty("no.composite"));
+        boolean isMaven =
+            !isLocal;
+//            isLocal;
+        // TODO: get the right magic to be able to make the isLocal variable work when manually set by tests.
+        //  To do this, we will need to create resolvable "attribute-based" importable nodes,
+        //  so we can use a null target configuration in dependency, and get "global attribute-based matching" working.
+
+        final String path;
+        if (isMaven) {
+            path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
+        } else {
+            path = newGroup + ":" + newName + ":" + dep.getVersion();
+        }
         ModuleDependency mod = (ModuleDependency) deps.create(path);
 
         String base = attrs.getAttribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
@@ -498,16 +533,8 @@ public interface ArchiveGraph extends Named, GraphNode {
             }
         }
         mod.setTargetConfiguration(
-            "main".equals(base) ? "exportCompile" : base + "ExportCompile"
+            type.deriveConfiguration(base, dep, isLocal, only, lenient)
         );
         target.getDependencies().add(mod);
-
-
-        target = DefaultUsageType.Runtime.findConsumerConfig(this, only);
-        mod = (ModuleDependency) deps.create(path);
-        mod.setTargetConfiguration(
-            "main".equals(base) ? "exportRuntime" : base + "ExportRuntime"
-        );
-        deps.add(target.getName(), mod);
     }
 }
