@@ -505,21 +505,14 @@ public interface ArchiveGraph extends Named, GraphNode {
         // TODO: properly figure out how to differentiate whether this is a composite-findable dependency,
         //  or if we're going to need to rely on poms instead of .module.
         //  for now, we're preserving the works-in-composite logic separately,
-        boolean isLocal =
-//            true;
-             "true".equals(System.getProperty("no.composite"));
-        boolean isMaven =
-            !isLocal;
-//            isLocal;
-        // TODO: get the right magic to be able to make the isLocal variable work when manually set by tests.
-        //  To do this, we will need to create resolvable "attribute-based" importable nodes,
-        //  so we can use a null target configuration in dependency, and get "global attribute-based matching" working.
+        //  and forcing the caller to tell us if they expect composite-friendly module:idents (and targetConfigurations)
+        boolean isLocal = "true".equals(System.getProperty("no.composite"));
 
         final String path;
-        if (isMaven) {
-            path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
-        } else {
+        if (isLocal) {
             path = newGroup + ":" + newName + ":" + dep.getVersion();
+        } else {
+            path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
         }
         ModuleDependency mod = (ModuleDependency) deps.create(path);
 
