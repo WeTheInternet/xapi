@@ -5,6 +5,7 @@ plugins {
 }
 
 
+
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
 import xapi.gradle.gwt.Gwt 
@@ -91,8 +92,11 @@ subprojects {
         }
         Gwt.maybeInstall(p)
 
-        p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
-                p.files(Jvm.current().toolsJar)
+        File tools = Jvm.current().toolsJar
+        if (tools) {
+            p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
+                    p.files(tools)
+        }
 
         p.tasks.withType(Test).all {
             Test test ->

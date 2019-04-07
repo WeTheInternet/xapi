@@ -12,8 +12,11 @@ dependencies {
     compile project(':xapi-dev-parent:xapi-dev-maven')
     compile "net.wti.core:xapi-gen:$version"
     compile project(':xapi-server-parent:xapi-server-gen')
-    compileOnly files(Jvm.current().toolsJar)
-    testCompile files(Jvm.current().toolsJar)
+    File tools = Jvm.current().toolsJar
+    if (tools) {
+        compileOnly files(tools)
+        testCompile files(tools)
+    }
     testCompile project(':xapi-core-parent:xapi-core-test')
 }
 

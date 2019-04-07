@@ -33,7 +33,7 @@ depend 'compileOnly', [
         module('org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1'),
         module('com.github.jengelman.gradle.plugins:shadow:4.0.4')
 ]
-depend('testCompile', [
+depend('testImplementation', [
         module("net.wti.gradle.tools:xapi-gradle-test:$version".toString())
 ])
 

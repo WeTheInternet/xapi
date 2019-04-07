@@ -19,9 +19,12 @@ dependencies {
     compile project(':xapi-jre-parent:xapi-jre-inject')
     compile project(':xapi-dev-parent:xapi-dev-file')
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
-    compileOnly files(Jvm.current().toolsJar)
+    File tools = Jvm.current().toolsJar
+    if (tools) {
+        compileOnly files(tools)
+        testCompile files(tools)
+    }
     testCompile'net.wetheinter:gwt-dev:2.8.0'
-    testCompile files(Jvm.current().toolsJar)
     testCompile 'net.wetheinter:gwt-user:2.8.0'
     testCompile 'net.wetheinter:gwt-elemental:2.8.0'
     testCompile project(':xapi-core-parent:xapi-core-test')

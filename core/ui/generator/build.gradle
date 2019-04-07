@@ -15,8 +15,11 @@ dependencies {
     testCompile project(':xapi-jre-parent:xapi-jre-inject')
     testCompile project(':xapi-core-parent:xapi-core-test')
     testCompile 'org.assertj:assertj-core:3.2.0'
-    compileOnly files(Jvm.current().toolsJar)
-    testCompile files(Jvm.current().toolsJar)
+    File tools = Jvm.current().toolsJar
+    if (tools) {
+        compileOnly files(tools)
+        testCompile files(tools)
+    }
 
 }
 

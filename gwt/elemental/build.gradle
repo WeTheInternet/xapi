@@ -23,8 +23,11 @@ dependencies {
     testCompile 'info.cukes:cucumber-junit:1.2.5'
     testCompile 'org.hamcrest:hamcrest-library:1.1'
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
-    compileOnly files(Jvm.current().toolsJar)
-    testCompile files(Jvm.current().toolsJar)
+    File tools = Jvm.current().toolsJar
+    if (tools) {
+        compileOnly files(tools)
+        testCompile files(tools)
+    }
 }
 
 description = 'XApi - Elemental Implementations'
