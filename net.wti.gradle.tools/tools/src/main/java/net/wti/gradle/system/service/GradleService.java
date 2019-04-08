@@ -92,6 +92,8 @@ public interface GradleService {
      */
     String CUSTOM_GRADLE_ZIP_TASK = "gradleZip";
 
+    String GRADLE_VERSION = "5.1-x-19";
+
     Project getProject();
 
     default ProjectView getView() {
@@ -211,8 +213,8 @@ public interface GradleService {
 
             final File loc = gradleLoc;
             project.getLogger().trace("configuring wrapper for {} using {}", root, loc);
-            final String gradleVersion = "5.1-x-18";
-            final String zipSeg = "gradle-" + gradleVersion + ".zip";
+
+            final String zipSeg = "gradle-" + GRADLE_VERSION + ".zip";
             final File zipLoc = new File(loc.getParentFile(), zipSeg);
 
             // Need to also make a task to zip the current contents of the directory,
@@ -226,19 +228,19 @@ public interface GradleService {
                 zip -> {
                     zipLoc.getParentFile().mkdirs();
                     zip.from(project.files(loc), spec->{
-                        spec.into("gradle-" + gradleVersion);
+                        spec.into("gradle-" + GRADLE_VERSION);
                     });
                     zip.getDestinationDirectory().set(zipLoc.getParentFile());
                     zip.getArchiveFileName().set(zipLoc.getName());
-                    zip.getInputs().property("gradleVersion", gradleVersion);
+                    zip.getInputs().property("gradleVersion", GRADLE_VERSION);
                     zip.onlyIf(t->!zipLoc.isFile());
                 }
             );
             rootTasks.named("wrapper", Wrapper.class, wrapper -> {
                 wrapper.whenSelected(selected->{
                     if (loc.isDirectory()) {
-                        project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", gradleVersion, zipLoc);
-                        wrapper.setGradleVersion(gradleVersion);
+                        project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", GRADLE_VERSION, zipLoc);
+                        wrapper.setGradleVersion(GRADLE_VERSION);
                         wrapper.setDistributionType(DistributionType.ALL);
                         project.getLogger().info("Using local gradle distribution: {}", loc);
                         wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());

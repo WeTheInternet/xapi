@@ -14,7 +14,8 @@ plugins.withType(XapiBasePlugin).configureEach({ p->
 dependencies {
     xapiApi "net.wti.core:xapi-fu:${->version}"
     // TODO: delete/reduce this dependency
-    xapiApi "net.wetheinter:xapi-core-api:${->version}"
+//    xapiApi "net.wetheinter:xapi-core-api:${->version}"
+    xapiApi project(':xapi-core-parent:xapi-core-api')
 }
 
 components['java']

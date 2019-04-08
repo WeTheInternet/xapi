@@ -40,4 +40,5 @@ depend('testImplementation', [
 tasks.withType(Test).configureEach({
     Test t ->
         t.systemProperty 'xapi.home', xapiHome
+        t.useJUnit()
 })

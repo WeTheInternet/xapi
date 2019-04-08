@@ -14,7 +14,7 @@ compileJavacc.outputDirectory = file('src/main/gen')
 sourceSets.main.java.srcDirs = ['src/main/java', 'src/main/gen']
 
 dependencies {
-    api project(':xapi-fu'), project(':xapi-gen')
+    compile project(':xapi-fu'), project(':xapi-gen')
     javacc 'net.java.dev.javacc:javacc:7.0.4'
 }
 

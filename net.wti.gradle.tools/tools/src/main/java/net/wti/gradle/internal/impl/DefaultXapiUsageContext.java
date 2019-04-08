@@ -80,6 +80,7 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
     }
 
     @Override
+    @SuppressWarnings("deprecated")
     public Usage getUsage() {
         return usage;
     }
