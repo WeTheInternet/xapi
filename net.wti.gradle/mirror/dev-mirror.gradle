@@ -8,6 +8,7 @@ repositories {
 }
 
 dependencies {
-    api "net.wti.core:xapi-gen:$version",
+    compile "net.wti.core:xapi-gen:$version",
+        "net.wti.core:xapi-fu:$version", // blech... transitive dependencies not working right.  This should not be necessary
         "net.wti.core:xapi-annotations:$version"
 }

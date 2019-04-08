@@ -1,14 +1,12 @@
 plugins {
     id 'groovy'
     id 'idea'
-    id 'xapi-root'
 }
 
 
 
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
-import xapi.gradle.gwt.Gwt 
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
@@ -19,14 +17,6 @@ tasks.create 'publishRequired', { req ->
             req.dependsOn pub
         }
     }
-}
-
-plugins.apply 'xapi-root'
-
-
-xapi {
-    preload('javax.validation:validation-api:1.0.0.GA')
-    preload('javax.validation:validation-api:1.0.0.GA:sources')
 }
 
 File mvnRepo = new File(rootDir, 'repo')
@@ -44,20 +34,19 @@ allprojects {
     group = 'net.wetheinter'
     version = findProperty('xapiVersion')
 
-    plugins.apply 'maven'
     plugins.apply 'idea'
-    repositories.jcenter()
+
     repositories.maven {
         name = 'xapiLocal'
         url = mvnRepo.toURI()
     }
+    // TODO: remove this by priming xapiLocal repo with all external dependencies
+    repositories.jcenter()
+
     // we want all projects to have xapi plugin,
     // but we'll wait until they are resolved,
     // to give each project a chance to pick a more specific plugin.
     afterEvaluate {
-        if (shouldApply(project)) {
-            plugins.apply 'xapi-base'
-        }
         test {
             if (!maxHeapSize) {
                 maxHeapSize = '1G'
@@ -69,57 +58,60 @@ allprojects {
 gradle.beforeProject {
     Project p ->
         if (p.buildscript.repositories.empty) {
-            p.buildscript.repositories.jcenter()
             p.buildscript.repositories.maven {
                 name = 'xapiLocal'
                 url = new File(rootDir, 'repo')
             }
+            // TODO make this obsolete by priming all external dependencies to xapiLocal
+            p.buildscript.repositories.jcenter()
         }
 }
 
 subprojects {
     Project p ->
-    if (!shouldApply(p)) {
-        return
-    }
-    p.with {
-        plugins.apply 'java-library'
 
-        tasks.create 'testJar', Jar, {
-            Jar jar ->
-                jar.classifier = 'test'
-                jar.from sourceSets.test.output
-        }
-        Gwt.maybeInstall(p)
+        p.with {
+            sourceCompatibility = '1.8'
+            targetCompatibility = '1.8'
 
-        File tools = Jvm.current().toolsJar
-        if (tools) {
-            p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
-                    p.files(tools)
-        }
 
-        p.tasks.withType(Test).all {
-            Test test ->
-                test.systemProperty('xapi.mvn.repo', mvnRepo.absolutePath)
-        }
-
-        p.tasks.withType(JavaCompile).all {
-            JavaCompile javac ->
+            tasks.withType(JavaCompile) {
+                options.encoding = 'UTF-8'
                 // explicitly empty sourcepath.
                 // If we want to recompile anything that isn't ours, we'll do so explicitly.
-                javac.options.sourcepath = files()
-        }
+                options.sourcepath = files()
+            }
 
-        artifacts {
-            testRuntime testJar
-        }
+            tasks.withType(Test).all {
+                Test test ->
+                    test.systemProperty('xapi.mvn.repo', mvnRepo.absolutePath)
+            }
 
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
+            if (p.path != ':schema') {
+                plugins.apply 'java-library'
+                plugins.apply 'maven-publish'
+                plugins.apply 'xapi-publish'
 
-        tasks.withType(JavaCompile) {
-            options.encoding = 'UTF-8'
-        }
+
+                tasks.create 'testJar', Jar, {
+                    Jar jar ->
+                        jar.archiveClassifier.set 'test'
+                        jar.from sourceSets.test.output
+                }
+
+//        Gwt.maybeInstall(p)
+
+                File tools = Jvm.current().toolsJar
+                if (tools) {
+                    p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
+                            p.files(tools)
+                }
+
+                artifacts {
+                    testRuntime testJar
+                }
+            }
+            
     }
 }
 

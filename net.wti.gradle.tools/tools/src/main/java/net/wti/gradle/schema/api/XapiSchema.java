@@ -399,4 +399,11 @@ public class XapiSchema {
         final ArchiveConfig arch = plat.getArchive(left);
         return arch.getAttributes(view);
     }
+
+    @Override
+    public String toString() {
+        return "XapiSchema{" +
+            "platforms=" + platforms +
+            '}';
+    }
 }

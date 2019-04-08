@@ -1,5 +1,3 @@
-plugins { id 'xapi' }
-
 dependencies {
     compile project(':xapi-server-parent:xapi-server-gen')
     compile project(':xapi-server-parent:xapi-server-api')

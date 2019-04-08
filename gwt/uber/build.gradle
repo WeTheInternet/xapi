@@ -14,7 +14,6 @@ buildscript {
 
 plugins {
     id 'java-library'
-    id 'xapi'
 }
 plugins.apply 'xapi.meta'
 plugins.apply 'com.github.johnrengelman.shadow'

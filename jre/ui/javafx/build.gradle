@@ -1,5 +1,3 @@
-plugins { id 'xapi' }
-
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')

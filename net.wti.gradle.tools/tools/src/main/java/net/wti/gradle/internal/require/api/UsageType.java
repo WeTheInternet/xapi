@@ -75,6 +75,7 @@ public interface UsageType extends Named {
     default ModuleDependency newDependency(ProjectGraph project, ArchiveGraph consumer, ArchiveGraph producer, boolean only) {
         final DependencyHandler deps = consumer.getView().getDependencies();
         final ModuleDependency dep = (ModuleDependency) deps.create(producer.getView().getService().getProject());
+        // TODO: add validation that target configuration exists.
         dep.setTargetConfiguration(findProducerConfig(producer, only).getName());
         return dep;
     }

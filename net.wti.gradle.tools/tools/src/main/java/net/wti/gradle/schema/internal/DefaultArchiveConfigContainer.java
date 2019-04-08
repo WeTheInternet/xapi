@@ -67,4 +67,14 @@ public class DefaultArchiveConfigContainer extends DefaultRealizableNamedObjectC
     public void setWithSourceJar(boolean withSourceJar) {
         this.withSourceJar = withSourceJar;
     }
+
+    @Override
+    public String toString() {
+        return "\nDefaultArchiveConfigContainer{" +
+            "withClassifier=" + withClassifier +
+            ", withCoordinate=" + withCoordinate +
+            ", withSourceJar=" + withSourceJar +
+            ", items=" + getAsMap() +
+            "}\n";
+    }
 }

@@ -1,6 +1,5 @@
 
 evaluationDependsOn ':xapi-core-parent'
-apply plugin: 'xapi'
 import xapi.gradle.tools.Depend
 Depend depend = new Depend(project)
 

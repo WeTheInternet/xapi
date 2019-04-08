@@ -1,4 +1,3 @@
-plugins { id 'xapi' }
 apply from: "$rootDir/gradle/xapi-env.gradle"
 import org.gradle.internal.jvm.Jvm
 

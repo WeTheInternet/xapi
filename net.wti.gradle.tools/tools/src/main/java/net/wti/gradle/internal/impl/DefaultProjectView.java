@@ -277,6 +277,12 @@ public class DefaultProjectView implements ProjectView {
         }
         final ProjectInternal proj = projectFinder.findProject(named);
         if (proj == null) {
+            if (":schema".equals(named) || ":xapi-schema".equals(named)) {
+                // TODO use a boolean parameter instead of ugly hardcoded "quieter failure" code here
+                getLogger().debug("Unable to find project {}", named);
+            } else {
+                getLogger().error("Unable to find project {}", named);
+            }
             return null;
         }
         return ProjectView.fromProject(proj);

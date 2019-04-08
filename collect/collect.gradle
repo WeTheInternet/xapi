@@ -1,21 +1,25 @@
-import xapi.gradle.plugin.XapiBasePlugin
-
 buildscript({
     dependencies {
-        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+        classpath group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: version, changing: true
     }
 })
+plugins { id 'xapi-require' }
+evaluationDependsOn(':schema')
 
-plugins { id 'xapi' }
-plugins.withType(XapiBasePlugin).configureEach({ p->
-    p.addTypes project, 'api', 'spi', 'main', 'gwt', 'jre'
-})
-
-dependencies {
-    xapiApi "net.wti.core:xapi-fu:${->version}"
-    // TODO: delete/reduce this dependency
-//    xapiApi "net.wetheinter:xapi-core-api:${->version}"
-    xapiApi project(':xapi-core-parent:xapi-core-api')
+String v = version
+xapiRequire {
+    main.api.external "net.wti.core:xapi-fu:$v"
+    
+    // blech... this should work, but it winds up trying to suck in the apiExportCompile,
+    // so we'll want to extend string path support + add map path support.
+//    main.api.project ':xapi-core-parent:xapi-core-api'
+    // so, instead, we do this:
+    main.api.internal ':xapi-core-parent:xapi-core-api:main:main'
 }
 
-components['java']
+//dependencies {
+//    xapiApi "net.wti.core:xapi-fu:${->version}"
+//    // TODO: delete/reduce this dependency
+////    xapiApi "net.wetheinter:xapi-core-api:${->version}"
+//    xapiApi project(':xapi-core-parent:xapi-core-api')
+//}

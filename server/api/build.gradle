@@ -1,5 +1,3 @@
-apply plugin: 'xapi'
-
 dependencies {
     compile project(':xapi-dev-parent:xapi-dev-api')
     compile project(':xapi-core-parent:xapi-core-process')

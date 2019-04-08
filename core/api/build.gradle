@@ -1,4 +1,4 @@
-plugins { id 'xapi' }
+plugins { id 'xapi-schema' }
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
 

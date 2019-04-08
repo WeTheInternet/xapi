@@ -8,6 +8,7 @@ repositories {
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-core-parent:xapi-core-event') // should not be necessary, but IntelliJ fails w/out this
     testCompile 'junit:junit:4.12'
     testCompile project(':xapi-jre-parent:xapi-jre-inject')
     testCompile project(':xapi-core-parent:xapi-core-test')

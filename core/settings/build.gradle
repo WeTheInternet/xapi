@@ -1,8 +1,6 @@
 buildscript.dependencies.add 'classpath',
         'net.wti.gradle:xapi-gradle-plugin:0.5.1'
 
-apply plugin: 'xapi'
-
 dependencies {
     compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-core-parent:xapi-core-io')

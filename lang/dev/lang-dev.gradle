@@ -1,5 +1,3 @@
-plugins { id 'xapi' }
-
 dependencies {
     api project(':xapi-core-parent:xapi-core-collect')
     api project(':xapi-core-parent:xapi-core-reflect')

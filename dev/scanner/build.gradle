@@ -1,5 +1,3 @@
-plugins { id 'xapi' }
-
 dependencies {
     compile project(':xapi-core-parent:xapi-core-collect')
     compile project(':xapi-dev-parent:xapi-dev-api')

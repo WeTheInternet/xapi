@@ -1,5 +1,3 @@
-plugins { id 'xapi' }
-
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile project(':xapi-server-parent:xapi-server-api')

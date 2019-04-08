@@ -145,6 +145,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
         incProject.whenReady(ReadyState.BEFORE_READY, other->{
             final String projName = incProject.getName();
+            self.getLogger().quiet("Including project {} into arch {}", projName, arch.getPath());
             arch.importGlobal(projName, only, lenient);
         });
     }
@@ -157,11 +158,18 @@ public class XapiRequirePlugin implements Plugin<Project> {
         boolean lenient
     ) {
         String[] coords = projId.split(":");
-        assert coords.length == 2 : "Invalid coordinates " + coords + " expected `platform:module` pair";
-        final ProjectGraph graph = self.getProjectGraph();
+        assert coords.length >= 2 : "Invalid coordinates " + projId + " expected `platform:module` pair";
+        final ProjectGraph graph;
+        String platName = coords[coords.length - 2];
+        String archName = coords[coords.length -1];
+        if (coords.length == 2) {
+            graph = self.getProjectGraph();
+        } else {
+            graph = self.getBuildGraph().getProject(projId.substring(0, projId.length() - platName.length() - archName.length() - 2));
+        }
         graph.whenReady(ReadyState.BEFORE_READY, ready->{
-            final PlatformGraph reqPlatform = graph.platform(coords[0]);
-            final ArchiveGraph reqModule = reqPlatform.archive(coords[1]);
+            final PlatformGraph reqPlatform = graph.platform(platName);
+            final ArchiveGraph reqModule = reqPlatform.archive(archName);
 
             arch.importLocal(reqModule, only, lenient);
         });

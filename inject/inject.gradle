@@ -1,21 +1,23 @@
-import xapi.gradle.plugin.XapiBasePlugin
-
 buildscript({
 
     dependencies {
-        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
 })
-plugins { id 'xapi' }
+plugins { id 'xapi-require' }
 evaluationDependsOn(':xapi-collect')
-plugins.withType(XapiBasePlugin).configureEach({ p->
-    p.addTypes project, 'api', 'spi', 'main', 'gwt', 'jre'
-})
 
-dependencies {
-    xapiSpi "net.wti.core:xapi-fu:${->version}"
-    xapiSpi "net.wetheinter:xapi-core-api:${->version}"
-    xapiSpi "net.wetheinter:xapi-collect-api:${->version}"
-    // non-maven-mapped configurations don't work.  TODO: try publishing w/ ivy? :-/
-//    xapiSpi group: 'net.wetheinter', name: 'xapi-collect-api', version: version, configuration: 'xapiApi'
+String v = version
+xapiRequire {
+    main.spi.external "net.wti.core:xapi-fu:$v"
+    main.spi.project ':xapi-core-parent:xapi-core-api'
+    main.spi.internal ':xapi-collect:main:api'
 }
+
+//dependencies {
+//    xapiSpi "net.wti.core:xapi-fu:${->version}"
+//    xapiSpi "net.wetheinter:xapi-core-api:${->version}"
+//    xapiSpi "net.wetheinter:xapi-collect-api:${->version}"
+//    // non-maven-mapped configurations don't work.  TODO: try publishing w/ ivy? :-/
+////    xapiSpi group: 'net.wetheinter', name: 'xapi-collect-api', version: version, configuration: 'xapiApi'
+//}

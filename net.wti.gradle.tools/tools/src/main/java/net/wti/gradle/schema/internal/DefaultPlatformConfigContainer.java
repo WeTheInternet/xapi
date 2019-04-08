@@ -28,4 +28,11 @@ public class DefaultPlatformConfigContainer extends DefaultRealizableNamedObject
     public PlatformConfigInternal maybeCreate(String name) {
         return (PlatformConfigInternal) super.maybeCreate(name);
     }
+
+    @Override
+    public String toString() {
+        return "DefaultPlatformConfigContainer{" +
+            getAsMap() +
+            "} ";
+    }
 }
