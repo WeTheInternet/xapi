@@ -3,10 +3,10 @@ plugins {
 }
 
 dependencies {
-    api "org.spockframework:spock-core:1.2-groovy-2.5"
-    api project(':xapi-core-parent:xapi-core-collect')
+    compile "org.spockframework:spock-core:1.2-groovy-2.5"
+    compile project(':xapi-core-parent:xapi-core-collect')
     implementation project(':xapi-core-parent:xapi-core-reflect')
-    api "net.wti.core:xapi-fu:${->version}"
-    api "net.wti.core:xapi-lang-core:${->version}"
+    compile "net.wti.core:xapi-fu:${->version}"
+    compile "net.wti.core:xapi-lang-core:${->version}"
     runtime project(':xapi-jre-parent:xapi-jre-collect')
 }

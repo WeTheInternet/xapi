@@ -30,7 +30,6 @@ allprojects {
 subprojects {
     Project p ->
 
-    p.apply plugin: 'java-library'
     p.apply plugin: 'xapi-schema'
     p.apply plugin: 'maven-publish'
     p.apply plugin: 'xapi-publish'

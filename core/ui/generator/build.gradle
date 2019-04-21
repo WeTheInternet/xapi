@@ -1,9 +1,5 @@
 import org.gradle.internal.jvm.Jvm
 
-plugins {
-    id 'java-library'
-}
-
 repositories {
     jcenter()
 }

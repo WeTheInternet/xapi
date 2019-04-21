@@ -1,6 +1,3 @@
-plugins {
-    id 'java-library'
-}
 
 repositories {
     maven {
@@ -39,6 +36,6 @@ description = 'XApi - Web Component Implementation'
 
 gradle.projectsEvaluated {
     test {
-        maxHeapSize = '2G'
+        maxHeapSize = '5G'
     }
 }

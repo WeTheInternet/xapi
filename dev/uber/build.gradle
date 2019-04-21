@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.internal.DependencyFilter
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 buildscript {
     repositories {
         jcenter()
@@ -12,20 +15,44 @@ buildscript {
     }
 }
 
-plugins {
-    id 'java-library'
-}
 plugins.apply 'com.github.johnrengelman.shadow'
 setProperty('xapi.main.component', 'shadow')
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
-tasks.jar.configure {
-    classifier = 'default'
-}
+(tasks.jar as Jar).archiveClassifier.set 'default'
 
 tasks.named('shadowJar').configure {
-    classifier = null
-    zip64=true
+    ShadowJar jar ->
+        jar.classifier = null
+        jar.zip64=true
+        jar.minimize {
+            DependencyFilter filter ->
+                filter.exclude {
+                    ResolvedDependency res ->
+                        if (res.moduleGroup =~ '(' +
+                                'org.assert|' +
+                                'junit|' +
+                                'org.junit|' +
+                                'org.hamcrest|' +
+                                'javax.enterprise|' +
+                                'javax.servlet|' +
+                                'commons-coded|' +
+                                'com.google.guava' +
+                                ').*') {
+                            return false
+                        }
+                        switch(res.moduleName) {
+                            case 'gwt-dev':
+                            case 'gwt-user':
+                            case 'elemental':
+                                return false
+                        }
+                        println ""
+                        println res.name
+                        println res.moduleName
+                        return true
+                }
+        }
 }
 artifacts {
     archives shadowJar
@@ -36,6 +63,7 @@ dependencies {
     compile project(':xapi-server-parent:xapi-server-vertx')
     compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
     compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-jre-parent:xapi-jre-process')
     compile project(':xapi-dev-parent:xapi-dev-file')
     compile project(':xapi-dev-parent:xapi-dev-shell')
     compile project(':xapi-dev-parent:xapi-dev-scanner')

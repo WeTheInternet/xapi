@@ -6,7 +6,9 @@
 //plugins {
 //    id 'xapi-base'
 //}
-
+plugins {
+    id 'xapi-require'
+}
 apply from: "$rootDir/gradle/xapi-env.gradle"
 String xapiVersion = findProperty('xapiVersion')
 
@@ -14,11 +16,14 @@ repositories {
     jcenter()
 }
 
+xapiRequire {
+    main.main.project ':xapi-common'
+}
+
 dependencies {
     compile 'com.google.elemental2:elemental2-core:1.0.0-RC1'
     compile project(':xapi-dev-parent:xapi-dev-source')
     compile "net.wti.core:xapi-fu:$xapiVersion"
-    compile project(':xapi-core-parent:xapi-core-api')
     compile project(':xapi-core-parent:xapi-core-inject')
     compile project(':xapi-core-parent:xapi-core-reflect')
     compile project(':xapi-core-parent:xapi-core-util')

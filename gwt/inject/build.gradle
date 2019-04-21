@@ -1,7 +1,3 @@
-plugins {
-    id 'java-library'
-}
-
 apply from: "$rootDir/gradle/xapi-env.gradle"
 String xapiVersion = findProperty('xapiVersion')
 

@@ -1,5 +1,5 @@
 plugins {
-    id 'java-library'
+    id 'java'
 }
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 
@@ -10,5 +10,5 @@ repositories {
 dependencies {
     compile "net.wti.core:xapi-gen:$version",
         "net.wti.core:xapi-fu:$version", // blech... transitive dependencies not working right.  This should not be necessary
-        "net.wti.core:xapi-annotations:$version"
+        "net.wti.core:xapi-anno:$version"
 }

@@ -12,9 +12,6 @@ buildscript {
     }
 }
 
-plugins {
-    id 'java-library'
-}
 plugins.apply 'xapi.meta'
 plugins.apply 'com.github.johnrengelman.shadow'
 setProperty('xapi.main.component', 'shadow')

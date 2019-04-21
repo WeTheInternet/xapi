@@ -9,6 +9,7 @@ import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
+import net.wti.gradle.system.service.GradleService;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
@@ -18,6 +19,7 @@ import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.file.FileCollectionInternal;
+import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -153,6 +155,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             comp.setVisible(true);
             comp.setCanBeConsumed(true);
             comp.setCanBeResolved(true);
+            config("CompileTest", test->test.extendsFrom(comp));
         });
     }
 
@@ -255,6 +258,8 @@ public interface ArchiveGraph extends Named, GraphNode {
             transitive.setCanBeResolved(false);
             if (srcExists()) {
                 configCompile().extendsFrom(transitive);
+                config("compile", transitive::extendsFrom);
+                config("api", transitive::extendsFrom);
             }
 //            withAttributes(transitive);
         });
@@ -406,7 +411,18 @@ public interface ArchiveGraph extends Named, GraphNode {
         Configuration existing = configs.findByName(name);
         if (existing == null) {
             existing = configs.create(name);
-            whenCreated.execute(existing);
+        }
+        if (existing instanceof ExtensionAware){
+            // we want some else-ish semantics where we detect already-existing configurations.
+            // since we'll also want those for items we do create, we take liberal advantage of ExtensionAware
+            // to tag each Configuration with a per-ArchiveGraph key to decide when to run the given callback.
+            // We may eventually route this key to a method parameter, in case we want to give run-once-by-key
+            // semantics to calling code.
+            Configuration item = existing;
+            GradleService.buildOnce((ExtensionAware)existing, "runOnce" + getSrcName(), ignored->{
+                whenCreated.execute(item);
+                return "";
+            });
         }
         return existing;
     }

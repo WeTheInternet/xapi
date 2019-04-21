@@ -38,6 +38,8 @@ public class XapiBasePlugin implements Plugin<Project> {
         configureRepo(project.getRepositories(), project);
 
         final AttributesSchema attrSchema = project.getDependencies().getAttributesSchema();
+        // Hm... should probably merge both of these into a single compositable value?
+        // This could be necessary when disambiguation comes into play...
         attrSchema.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, strat->{
         });
         attrSchema.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, strat->{
@@ -74,9 +76,11 @@ public class XapiBasePlugin implements Plugin<Project> {
                 withJavaPlatformPlugin = true;
             } else if ("true".equals(project.findProperty(XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_LIBRARY))) {
                 plugins.apply(JavaLibraryPlugin.class);
+                removeJavaComponent(project);
                 withJavaLibraryPlugin = true;
             } else if ("true".equals(project.findProperty(XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA))) {
                 plugins.apply(JavaPlugin.class);
+                removeJavaComponent(project);
                 withJavaPlugin = true;
             } else {
                 // user did not explicitly request either java of java-library integration.  Setup boobytraps:
@@ -85,6 +89,9 @@ public class XapiBasePlugin implements Plugin<Project> {
                     if (locked[0]) {
                         throw new IllegalStateException("You must apply the java plugin before xapi-base, or set gradle property -P" + XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA +"=true");
                     }
+                    // Need to remove the java plugin's component, so it doesn't stomp our own,
+                    // which provides the same functionality and more.
+                    removeJavaComponent(project);
                     withJavaPlugin = true;
                 }).isEmpty();
                 has |= !plugins.withType(JavaLibraryPlugin.class, p->{
@@ -92,6 +99,7 @@ public class XapiBasePlugin implements Plugin<Project> {
                         throw new IllegalStateException("You must apply the java-library plugin before xapi-base, or set gradle property -P" + XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_LIBRARY +"=true");
                     }
                     withJavaLibraryPlugin = true;
+                    // also hookup `api` to transitive...
                 }).isEmpty();
                 has |= !plugins.withType(JavaPlatformPlugin.class, p->{
                     if (locked[0]) {
@@ -111,6 +119,10 @@ public class XapiBasePlugin implements Plugin<Project> {
             // TODO: add disambiguation rules to avoid api <-> runtime confusion
         }
 
+    }
+
+    private void removeJavaComponent(Project project) {
+        project.getComponents().removeIf(comp -> "java".equals(comp.getName()));
     }
 
     public void configureRepo(RepositoryHandler repos, Project view) {

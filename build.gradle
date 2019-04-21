@@ -85,10 +85,18 @@ subprojects {
             tasks.withType(Test).all {
                 Test test ->
                     test.systemProperty('xapi.mvn.repo', mvnRepo.absolutePath)
+                    File metaDir = (tasks.compileTestJava as JavaCompile).destinationDir
+                    test.systemProperty('xapi.meta', metaDir.absolutePath)
+//                    test.systemProperty('xapi.injector.cache', metaDir.absolutePath)
+                    test.doFirst {
+                        new File(metaDir, 'META-INF/singletons').mkdirs()
+                        new File(metaDir, 'META-INF/instances').mkdirs()
+                    }
             }
 
             if (p.path != ':schema') {
-                plugins.apply 'java-library'
+//                plugins.apply 'java'
+                plugins.apply 'xapi-schema'
                 plugins.apply 'maven-publish'
                 plugins.apply 'xapi-publish'
 
@@ -111,7 +119,7 @@ subprojects {
                     testRuntime testJar
                 }
             }
-            
+
     }
 }
 

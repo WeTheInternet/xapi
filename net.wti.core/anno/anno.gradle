@@ -1,4 +1,3 @@
 plugins {
-    id 'java-library'
+    id 'xapi-schema'
 }
-jar.baseName = 'xapi-annotations'

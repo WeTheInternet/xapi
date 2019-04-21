@@ -1,6 +1,6 @@
 dependencies {
-    api project(':xapi-core-parent:xapi-core-collect')
-    api project(':xapi-core-parent:xapi-core-reflect')
-    api "net.wti.core:xapi-fu:${->version}"
-    api "net.wti.core:xapi-lang-core:${->version}"
+    compile project(':xapi-core-parent:xapi-core-collect')
+    compile project(':xapi-core-parent:xapi-core-reflect')
+    compile "net.wti.core:xapi-fu:${->version}"
+    compile "net.wti.core:xapi-lang-core:${->version}"
 }

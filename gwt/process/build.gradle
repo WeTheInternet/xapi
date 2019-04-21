@@ -1,12 +1,4 @@
-plugins {
-    id 'java-library'
-}
-
 repositories {
-    maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
-    }
     jcenter()
 }
 

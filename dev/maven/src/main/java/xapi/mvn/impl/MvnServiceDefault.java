@@ -41,10 +41,10 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.file.X_File;
-import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
-import xapi.fu.itr.*;
+import xapi.fu.*;
 import xapi.fu.Out1.Out1Unsafe;
+import xapi.fu.itr.*;
 import xapi.fu.java.X_Jdk;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
@@ -60,14 +60,9 @@ import xapi.time.api.Moment;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
-import xapi.util.X_String;
 import xapi.util.X_Util;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -125,9 +120,16 @@ public class MvnServiceDefault implements MvnService {
         // TODO: add a flag to cache any missed resources into the xapiBuild cache.
         return repoSystem.resolveArtifact(session, request);
       } catch (ArtifactResolutionException e) {
-        X_Log.log(getClass(), getLogLevel(), "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
-        X_Log.log(getClass(), getLogLevel(), "Could not download " + artifact, e);
-        throw X_Debug.rethrow(e);
+          boolean forPom = "pom".equals(artifact.getExtension());
+          final LogLevel level = forPom ? LogLevel.TRACE : getLogLevel();
+          X_Log.log(MvnServiceDefault.class, level, "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
+          X_Log.log(MvnServiceDefault.class, level, "Could not download " + artifact, e);
+          if (forPom) {
+              // we'll ignore missing-pom failures for now...
+              return null;
+          } else {
+              throw X_Debug.rethrow(e);
+          }
       } finally {
         if (X_Log.loggable(LogLevel.DEBUG)) {
           X_Log.debug("Resolved: " + artifact.toString() + " in "
@@ -623,11 +625,18 @@ public class MvnServiceDefault implements MvnService {
           // try looking at parents until we encounter "repository".
           ChainBuilder<String> gId = startChain();
           while (lastGroupId != null) {
-            if ("repository".equals(lastGroupId.getFileName().toString())) {
+            if (lastGroupId.getFileName() == null) {
               groupId = gId.join(".");
+              X_Log.error(MvnServiceDefault.class, "Null filename on path ", lastGroupId, " using ", groupId, " for dependency ", dependency);
               break;
+            } else {
+                String last = lastGroupId.getFileName().toString();
+                if ("repository".equals(last) || "repo".equals(last)) {
+                  groupId = gId.join(".");
+                  break;
+                }
+                gId.insert(lastGroupId.getFileName().toString());
             }
-            gId.insert(lastGroupId.getFileName().toString());
             lastGroupId = lastGroupId.getParent();
           }
         }
@@ -835,6 +844,9 @@ public class MvnServiceDefault implements MvnService {
                 dep.getPackaging(),
                 dep.getVersion()
             );
+            if (result == null) {
+                return EmptyIterator.none();
+            }
             artifact = result.getArtifact();
           }
           return MappedIterable.mapped(loadDependencies(artifact, this::shouldLoad));
@@ -990,7 +1002,7 @@ public class MvnServiceDefault implements MvnService {
           "pom",
           parent.getVersion()
       );
-      final Model parentPom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
+      final Model parentPom = parentArtifact == null ? null : loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
       // If we have a parent, push a provider onto the search stack
       loadParent(stack, parentPom.getParent());
       return parentPom;
@@ -1022,7 +1034,7 @@ public class MvnServiceDefault implements MvnService {
           "pom",
           resolveProperties(parentPom, dep.getVersion())
       );
-      final Model pom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
+      final Model pom = parentArtifact == null ? null : loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
       // we won't load the parent of an import, as that is not the correct semantics
       return pom;
     });

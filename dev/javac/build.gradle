@@ -1,13 +1,6 @@
-plugins {
-    id 'java-library'
-}
 import org.gradle.internal.jvm.Jvm
 
 repositories {
-    maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
-    }
     jcenter()
 }
 

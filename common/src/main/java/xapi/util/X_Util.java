@@ -86,8 +86,7 @@ public final class X_Util{
       Thread.currentThread().interrupt();
     }
     // throw unchecked. we only claim to return so you can (choose to) write: `throw rethrow(e);`
-    throw new RuntimeException(e);
-    // TODO: consider using sneakyThrow semantics instead?
+    throw X_Fu.rethrow(e);
   }
 
   public static int zeroSafeInt(final Integer i) {

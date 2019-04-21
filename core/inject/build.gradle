@@ -1,8 +1,3 @@
-plugins {
-    id 'java-library'
-}
-evaluationDependsOn ':'
-
 repositories {
     maven {
         name = 'xapiLocal'
@@ -14,9 +9,9 @@ repositories {
 dependencies {
     compile project(':xapi-core-parent:xapi-core-log')
     compile 'javax.inject:javax.inject:1'
-    api "net.wetheinter:xapi-inject-api:${->version}"
-    api "net.wetheinter:xapi-inject-spi:${->version}"
-    api "net.wetheinter:xapi-collect-api:${->version}"
+    compile "net.wetheinter:xapi-inject-api:${->version}"
+    compile "net.wetheinter:xapi-inject-spi:${->version}"
+    compile "net.wetheinter:xapi-collect-api:${->version}"
 //    api project(path:':xapi-collect', configuration: 'xapiApi')
     testCompile 'junit:junit:4.12'
 }

@@ -1,5 +1,5 @@
 plugins {
-    id 'java-library'
+    id 'xapi-schema'
     id "ca.coglinc.javacc" version "2.4.0"
 }
 

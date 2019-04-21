@@ -388,7 +388,7 @@ public class JreInjector implements Injector {
 
     private void scanClasspath() {
         runtimeInjector.out1().in(
-            System.getProperty(PROPERTY_RUNTIME_META, "target/classes"), checker
+            System.getProperty(PROPERTY_RUNTIME_META, "build/classes/java/main"), checker
         );
     }
 

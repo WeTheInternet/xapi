@@ -10,10 +10,11 @@ apply from: "$rootDir/gradle/processor.gradle"
 
 
 dependencies {
-    api "net.wti.core:xapi-fu:$version"
-    api "net.wti.core:xapi-annotations:$version"
-    api "net.wti.core:xapi-gen:$version"
-    api 'javax.inject:javax.inject:1'
+    compile project(':xapi-common')
+    compile "net.wti.core:xapi-fu:$version"
+    compile "net.wti.core:xapi-anno:$version"
+    compile "net.wti.core:xapi-gen:$version"
+    compile 'javax.inject:javax.inject:1'
     implementation 'javax.annotation:javax.annotation-api:1.2'
     annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
     testCompile 'junit:junit:4.12'

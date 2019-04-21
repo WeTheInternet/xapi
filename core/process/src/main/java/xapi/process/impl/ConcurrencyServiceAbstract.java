@@ -254,6 +254,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   protected <T> void callback(Future<T> future, In1<T> receiver) {
+    // TODO: force this to also take In1<Throwable>, so we can route failures back to calling code and fail it.
     try {
       receiver.in(future.get());
       return;

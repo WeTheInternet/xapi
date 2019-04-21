@@ -4,14 +4,15 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/27/17.
@@ -21,6 +22,7 @@ public class MavenLoaderThread extends Thread {
     final IntTo<String> pendingCoords;
     final StringTo<String[]> results;
     private long maxTtl;
+    private boolean failed;
 
     public MavenLoaderThread() {
         super("ReflectiveMavenLoader");
@@ -29,13 +31,17 @@ public class MavenLoaderThread extends Thread {
         setDaemon(true);
     }
 
-    public String[] blockOnResult(String coords) throws InterruptedException {
+    public String[] blockOnResult(String coords) throws InterruptedException, TimeoutException {
         String[] paths;
+        long deadline = System.currentTimeMillis() - getMaxTtl();
         while ((paths = results.get(coords)) == null) {
             synchronized (results) {
                 paths = results.get(coords);
-                if (paths == null) {
-                    results.wait(getMaxTtl());
+                long wait = deadline - System.currentTimeMillis();
+                if (wait < 0) {
+                    throw new TimeoutException("Unable to load results within " + getMaxTtl() + " ms");
+                } else if (paths == null) {
+                    results.wait(wait);
                 } else {
                     return paths;
                 }
@@ -65,9 +71,11 @@ public class MavenLoaderThread extends Thread {
                     X_Process.flush((int) (deadline - now)/2 + 1);
                 }
             } catch (InterruptedException e) {
+                failed = true;
                 X_Log.error(ReflectiveMavenLoader.class, "ReflectiveMavenLoader interrupted; returning immediately");
                 return;
             } catch (Exception e) {
+                failed = true;
                 X_Log.error(ReflectiveMavenLoader.class, "Error draining maven downloads", e);
             }
         }

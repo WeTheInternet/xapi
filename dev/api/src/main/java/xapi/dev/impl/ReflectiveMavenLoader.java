@@ -5,6 +5,8 @@ import xapi.fu.Lazy;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
@@ -14,11 +16,9 @@ import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
@@ -97,17 +97,33 @@ public class ReflectiveMavenLoader implements MavenLoader {
     }
 
     private static final Lazy<MavenLoaderChannel> devJar = Lazy.deferred1Unsafe(()-> {
-        String repo = System.getProperty("xapi.maven.repo", System.getenv("xapi.maven.repo"));
+        String repo = System.getProperty("xapi.mvn.repo", System.getenv("xapi.mvn.repo"));
         URL jarUrl;
         if (repo == null) {
             jarUrl = mavenLocalFromUserHome();
         } else {
-            jarUrl = new URL(repo.contains(":") ? repo : "file:" + repo);
+            File f = new File(repo, "net/wetheinter/xapi-dev/" + X_Namespace.XAPI_VERSION);
+            if (f.exists()) {
+                f = new File(f, "xapi-dev-" + X_Namespace.XAPI_VERSION + ".jar");
+                jarUrl = f.toURI().toURL();
+            } else {
+                jarUrl = new URL(repo.contains(":") ? repo : "file:" + repo);
+            }
         }
         assert jarUrl != null : "No jar url...";
 
+        ChainBuilder<URL> paths = Chain.startChain();
+        paths.add(jarUrl);
+        String injector = System.getProperty("xapi.injector.cache", System.getenv("xapi.injector.cache"));
+        if (injector != null) {
+            if (!injector.contains(":")) {
+                injector = "file:" + injector;
+            }
+            paths.add(new URL(injector));
+        }
+
         // set the classloader with xapi-dev artifact...
-        URLClassLoader loader = new URLClassLoader(new URL[]{jarUrl}, null);
+        URLClassLoader loader = new URLClassLoader(paths.toArray(URL.class), null);
         final Class<?> threadClass = loader.loadClass(MavenLoaderThread.class.getName());
         final Class<?> out1Class = loader.loadClass(Out1.class.getName());
 

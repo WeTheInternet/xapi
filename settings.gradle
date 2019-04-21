@@ -21,6 +21,7 @@ def singleProject = [
         // on the classpath and available to browse and debug.
         'inject': ['gwt', 'jre'],
         'collect': ['gwt', 'jre'],
+        'common': ['gwt', 'jre'],
         // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc
         // Specific projects can be realized via -Pxapi.${projName}.${platform}=true
         // So, -Pxapi.inject.gwt=true would realize only a ':inject-gwt' project,

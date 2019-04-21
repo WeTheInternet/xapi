@@ -12,10 +12,8 @@ import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.ConfigurationPublications;
-import org.gradle.api.artifacts.ConfigurationVariant;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
-import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
@@ -226,17 +224,17 @@ public class XapiSchema {
             final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion());
             view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
             exportedRuntime.artifact(artifact);
-            final ConfigurationVariant runtimeVariant = exportedRuntime.getVariants().maybeCreate(
-                "runtime");
-            runtimeVariant.artifact(artifact);
-            final AttributeContainer attrs = runtimeVariant.getAttributes();
-            archGraph.withAttributes(attrs);
-            attrs.attribute(
-                Usage.USAGE_ATTRIBUTE, view.getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
-            );
-            attrs.attribute(
-                ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE
-            );
+//            final ConfigurationVariant runtimeVariant = exportedRuntime.getVariants().maybeCreate(
+//                "runtime");
+//            runtimeVariant.artifact(artifact);
+//            final AttributeContainer attrs = runtimeVariant.getAttributes();
+//            archGraph.withAttributes(attrs);
+//            attrs.attribute(
+//                Usage.USAGE_ATTRIBUTE, view.getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
+//            );
+//            attrs.attribute(
+//                ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE
+//            );
 
             exportedRuntime.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
 

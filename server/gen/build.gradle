@@ -1,6 +1,3 @@
-plugins {
-    id 'java-library'
-}
 import xapi.gradle.X_Gradle
 X_Gradle.init project
 

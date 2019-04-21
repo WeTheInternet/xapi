@@ -1,13 +1,16 @@
 plugins {
-    id 'java-library'
+    id 'xapi-require'
 }
 
 repositories {
     jcenter()
 }
 
+xapiRequire {
+    main.main.project ':xapi-common'
+}
+
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-api')
     compile project(':xapi-dev-parent:xapi-dev-source')
     testCompile 'junit:junit:4.12'
 }

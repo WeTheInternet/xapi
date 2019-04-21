@@ -67,6 +67,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
             required.whenSelected(publishRequired->publishRequired.dependsOn(publishProvider));
         }
 
+        // Add xapiLocal to the *publishing* repositories.
         base.configureRepo(view.getPublishing().getRepositories(), project);
     }
 

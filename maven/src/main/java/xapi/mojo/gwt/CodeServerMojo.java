@@ -35,18 +35,14 @@ import xapi.util.api.Pair;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.PairBuilder;
 
-import com.google.gwt.core.shared.GWT;
-
 import javax.swing.*;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
+
+import com.google.gwt.core.shared.GWT;
 
 /**
  * Goal which launches a gui which runs the gwt 2.5 codeserver from maven
@@ -512,7 +508,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 
     protected String locateArtifact(String cp, String artifact, String cpSep) {
       ArtifactResult location = X_Maven.loadArtifact("com.google.gwt", artifact, guessVersion("com.google.gwt", "2.6.1"));
-      if (location.isResolved()) {
+      if (location != null && location.isResolved()) {
         return location.getArtifact().getFile().getAbsolutePath();
       }
       return null;

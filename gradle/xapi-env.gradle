@@ -69,7 +69,7 @@ if (!extensions.findByName('installRebuild')) {
             if (!xapiChanging) {
                 return null
             }
-            if (!rootDir.name == 'buildSrc') {
+            if (rootDir.name != 'buildSrc') {
                 logger.error "installRebuild tasks should only be installed into buildSrc, not $rootDir"
             }
             plugins.apply 'java'

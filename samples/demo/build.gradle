@@ -1,5 +1,5 @@
 plugins {
-    id 'java-library'
+    id 'xapi-require'
 }
 
 repositories {
@@ -9,8 +9,11 @@ repositories {
     }
 }
 
+xapiRequire {
+    main.main.project ':xapi-common'
+}
+
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-api')
     compile project(':xapi-dev-parent:xapi-dev')
     implementation ('de.mocra.cy:wti-shared:0.5.1-SNAPSHOT') {
         exclude group: 'net.wetheinter'

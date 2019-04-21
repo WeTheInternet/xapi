@@ -97,7 +97,6 @@ public class GwtcSteps {
     X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "INFO");
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
     X_Log.logLevel(LogLevel.INFO);
-    System.setProperty("xapi.injector.cache", X_Reflect.getSourceLoc(GwtcSteps.class));
   }
 
   private StringTo<CompiledComponent> compiledComponents;

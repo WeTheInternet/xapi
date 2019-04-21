@@ -3,9 +3,8 @@ buildscript {
         classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
     }
 }
-
 plugins {
-    id 'java-library'
+    id 'xapi-schema'
 }
 
 apply from: "$rootDir/gradle/xapi-env.gradle"

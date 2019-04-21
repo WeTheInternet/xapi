@@ -10,7 +10,7 @@ evaluationDependsOn(':xapi-collect')
 String v = version
 xapiRequire {
     main.spi.external "net.wti.core:xapi-fu:$v"
-    main.spi.project ':xapi-core-parent:xapi-core-api'
+    main.spi.internal ':xapi-common:main:main'
     main.spi.internal ':xapi-collect:main:api'
 }
 

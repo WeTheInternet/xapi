@@ -3,10 +3,7 @@ package net.wti.gradle.system.plugin;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import org.gradle.api.*;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ConfigurationPublications;
-import org.gradle.api.artifacts.ConfigurationVariant;
-import org.gradle.api.artifacts.PublishArtifact;
+import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
@@ -69,6 +66,7 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         BuildOutputCleanupRegistry buildOutputCleanupRegistry = project.getServices().get(BuildOutputCleanupRegistry.class);
 
         configureSourceSets(javaConvention, buildOutputCleanupRegistry);
+        configureConfigurations(project, javaConvention);
 
         configureJavaDoc(javaConvention);
         configureTest(project, javaConvention);
@@ -91,6 +89,25 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
 
         // Register the project's source set output directories
         pluginConvention.getSourceSets().all(sourceSet -> buildOutputCleanupRegistry.registerOutputs(sourceSet.getOutput()));
+    }
+
+    private void configureConfigurations(ProjectInternal project, JavaPluginConvention javaConvention) {
+        ConfigurationContainer configurations = project.getConfigurations();
+
+        Configuration compileConfiguration = configurations.getByName(COMPILE_CONFIGURATION_NAME);
+        Configuration implementationConfiguration = configurations.getByName(IMPLEMENTATION_CONFIGURATION_NAME);
+        Configuration runtimeConfiguration = configurations.getByName(RUNTIME_CONFIGURATION_NAME);
+        Configuration runtimeOnlyConfiguration = configurations.getByName(RUNTIME_ONLY_CONFIGURATION_NAME);
+        Configuration compileTestsConfiguration = configurations.getByName(TEST_COMPILE_CONFIGURATION_NAME);
+        Configuration testImplementationConfiguration = configurations.getByName(TEST_IMPLEMENTATION_CONFIGURATION_NAME);
+        Configuration testRuntimeConfiguration = configurations.getByName(TEST_RUNTIME_CONFIGURATION_NAME);
+        Configuration testRuntimeOnlyConfiguration = configurations.getByName(TEST_RUNTIME_ONLY_CONFIGURATION_NAME);
+
+        compileTestsConfiguration.extendsFrom(compileConfiguration);
+        testImplementationConfiguration.extendsFrom(implementationConfiguration);
+        testRuntimeConfiguration.extendsFrom(runtimeConfiguration);
+        testRuntimeOnlyConfiguration.extendsFrom(runtimeOnlyConfiguration);
+
     }
 
     private void configureJavaDoc(final JavaPluginConvention pluginConvention) {
@@ -118,7 +135,7 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         });
         // TODO: Allow this to be added lazily
         PublishArtifact jarArtifact = new LazyPublishArtifact(jar);
-        Configuration apiElementConfiguration = project.getConfigurations().getByName(API_ELEMENTS_CONFIGURATION_NAME);
+//        Configuration apiElementConfiguration = project.getConfigurations().getByName(API_ELEMENTS_CONFIGURATION_NAME);
         Configuration runtimeConfiguration = project.getConfigurations().getByName(RUNTIME_CONFIGURATION_NAME);
         Configuration runtimeElementsConfiguration = project.getConfigurations().getByName(RUNTIME_ELEMENTS_CONFIGURATION_NAME);
 
@@ -127,7 +144,7 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         Provider<JavaCompile> javaCompile = project.getTasks().named(COMPILE_JAVA_TASK_NAME, JavaCompile.class);
         Provider<ProcessResources> processResources = project.getTasks().named(PROCESS_RESOURCES_TASK_NAME, ProcessResources.class);
 
-        addJar(apiElementConfiguration, jarArtifact);
+//        addJar(apiElementConfiguration, jarArtifact);
         addJar(runtimeConfiguration, jarArtifact);
         addRuntimeVariants(runtimeElementsConfiguration, jarArtifact, javaCompile, processResources);
 
