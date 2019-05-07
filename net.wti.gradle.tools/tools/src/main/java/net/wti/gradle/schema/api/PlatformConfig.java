@@ -2,7 +2,6 @@ package net.wti.gradle.schema.api;
 
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Named;
-import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.internal.HasInternalProtocol;
 
 /**
@@ -63,6 +62,8 @@ public interface PlatformConfig extends Named {
      */
     void setRequireSource(boolean requires);
 
+    boolean isTest();
+
     void setTest(boolean test);
 
     void replace(CharSequence named);
@@ -77,5 +78,4 @@ public interface PlatformConfig extends Named {
 
     boolean isRequireSource();
 
-    CompositeDomainObjectSet<ArchiveConfig> getAllArchives();
 }

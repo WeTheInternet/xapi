@@ -7,6 +7,7 @@ import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
+import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
@@ -145,28 +146,32 @@ public class XapiSchema {
     private final ArchiveConfigContainerInternal archives;
     private final ProjectView view;
 
-    public XapiSchema(ProjectView pv) {
-        final Instantiator instantiator = pv.getInstantiator();
+    public XapiSchema(ProjectView self) {
+        final Instantiator instantiator = self.getInstantiator();
         // There's a nasty diamond problem around the main platform, and the schema containers
         // for platform and archive types.  We work around it by sending deferred "provide main platform" logic.
         Callable<PlatformConfigInternal> getMain = this::getMainPlatform;
 
-        assert GradleMessages.noOpForAssertion(()->new DefaultArchiveConfigContainer(getMain, pv));
-        archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, getMain, pv);
+        assert GradleMessages.noOpForAssertion(()->new DefaultArchiveConfigContainer(getMain, self));
+        archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, getMain, self);
 
-        assert GradleMessages.noOpForAssertion(()->new DefaultPlatformConfigContainer(pv, archives));
-        platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, pv, archives);
+        assert GradleMessages.noOpForAssertion(()->new DefaultPlatformConfigContainer(self, archives));
+        platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, self, archives);
 
-        final ProjectView root = XapiSchemaPlugin.schemaRootProject(pv);
-        if (root == pv) {
+        final ProjectView root = XapiSchemaPlugin.schemaRootProject(self);
+        final ProjectGraph rpg = root.getProjectGraph();
+        final ProjectGraph spg = self.getProjectGraph();
+        if (root == self) {
             // When we are the schema root, we must wait until we are evaluated before we let other XapiSchema instances
             // read from our values.
-            root.getProjectGraph().whenReady(ReadyState.RUN_FINALLY + 1, ready->{
+            rpg.whenReady(ReadyState.RUN_FINALLY + 1, ready->{
                     platforms.configureEach(plat ->
                         archives.configureEach(arch-> {
-                            final ArchiveConfig inst = plat.getArchive(arch.getName());
-                            pv.getLogger().quiet("root schema ({}~{}) declared {}", ((GradleInternal)pv.getGradle()).findIdentityPath(), pv.getPath(), inst);
-                            final PlatformConfig rootPlat = plat.getRoot();
+                            rpg.whenReady(ReadyState.RUN_FINALLY + 2, allReady->{
+                                final ArchiveConfig inst = plat.getArchive(arch.getName());
+                                self.getLogger().quiet("root schema ({}~{}) declared {}", ((GradleInternal) self.getGradle()).findIdentityPath(), self.getPath(), inst);
+                                final PlatformConfig rootPlat = plat.getRoot();
+                            });
 
                         })
                     );
@@ -174,49 +179,51 @@ public class XapiSchema {
         } else {
             root.whenReady(evaluated->{
                 // We must further wait for the schema root to be in a state of task-flushing before we try to read from it.
-                root.getProjectGraph().whenReady(ReadyState.BEFORE_CREATED, ready -> {
-                    pv.getProjectGraph().whenReady(ReadyState.BEFORE_CREATED, alsoReady -> {
+                final XapiSchema rootSchema = root.getSchema();
+                rootSchema.platforms.configureEach(rooted->{
+                    final PlatformConfigInternal myPlat = platforms.maybeCreate(rooted.getName());
+                    myPlat.baseOn(rooted);
+                    if (rooted.getParent() != null) {
+                        final PlatformConfigInternal myParent = platforms.maybeCreate(rooted.getParent().getName());
+                        myParent.baseOn(rooted.getParent());
+                        myPlat.setParent(myParent);
+                    }
+                });
+                rootSchema.archives.configureEach(rooted->{
+                    final ArchiveConfigInternal myArch = archives.maybeCreate(rooted.getName());
+                    myArch.baseOn(rooted);
+                });
+                rpg.whenReady(ReadyState.BEFORE_CREATED, ready -> {
+                    spg.whenReady(ReadyState.BEFORE_CREATED, alsoReady -> {
                         platforms.configureEach(plat -> {
-                            plat.getArchives().configureEach(arch-> {
-                                final PlatformConfigInternal rootPlat = root.getSchema().platforms.findByName(plat.getName());
-                                if (rootPlat != null) {
-                                    final ArchiveConfigInternal specific = rootPlat.findArchive(arch.getName());
-                                    if (specific != null && specific != arch) {
-                                        arch.required().addAll(specific.required());
-                                        // TODO: record a xapiReport entry for this state...
-                                        pv.getLogger().quiet("{}.{} requires {}", specific, plat.getName(), arch.required());
-                                    }
-                                }
-                            });
                             if (plat.getParent() != null) {
-
-                                plat.getRoot().getArchives().configureEach(parentArch ->
-                                    plat.getArchive(parentArch.getName())
-                                );
+                                archives.configureEach(arch -> {
+                                    final ArchiveConfig local = plat.getArchive(arch.getName());
+                                    ((ArchiveConfigInternal)local).baseOn(arch);
+                                });
                             }
-                //            plat.getAllArchives().addCollection(archives.matching(conf->conf.getPlatform().getName().equals(plat.getName())));
                         });
-                        initialize(root.getSchema());
+                        initialize(rootSchema);
                     });
                 });
             });
         }
-        pv.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
+        self.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
             platforms.configureEach(plat -> {
                 plat.getArchives().configureEach(arch -> {
-                    final ArchiveGraph archive = pv.getProjectGraph()
+                    final ArchiveGraph archive = self.getProjectGraph()
                         .platform(plat.getName())
                         .archive(arch.getName());
 
-                    configureArchive(pv, plat, arch, archive);
+                    configureArchive(self, plat, arch, archive);
 
                 });
             });
         });
-        pv.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
-            report.record(pv.getSchema())
+        self.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
+            report.record(self.getSchema())
         );
-        this.view = pv;
+        this.view = self;
     }
 
     protected void configureArchive(
@@ -385,25 +392,31 @@ public class XapiSchema {
         configure.execute(platforms);
     }
 
-    public PlatformConfigInternal findPlatform(String need) {
+    public PlatformConfigInternal findPlatform(final String orig) {
+        String need = orig;
         PlatformConfig plat = platforms.findByName(need);
         while (plat == null) {
             int check = need.length();
-            while (check > 0 && Character.isLowerCase(need.charAt(--check))) {
+            do {
+                if (check == 0) {
+                    return orig.isEmpty() ? getMainPlatform() : null;
+                }
+            }
+            while (
+                Character.isLowerCase(need.charAt(--check)) &&
+                Character.isJavaIdentifierPart(need.charAt(check))
+            );
 
-            }
-            if (check == 0) {
-                return null;
-            }
-            need = need.substring(0, check);
+            need = Character.toLowerCase(need.charAt(0)) + (
+                need.length() == 1 ? "" :
+                    need.substring(1, check)
+            );
             plat = platforms.findByName(need);
         }
         return (PlatformConfigInternal) plat;
     }
 
     public void initialize(XapiSchema rootSchema) {
-        rootSchema.platforms.configureEach(platforms::add);
-        rootSchema.archives.configureEach(archives::add);
         archives.setWithClassifier(rootSchema.archives.isWithClassifier());
         archives.setWithCoordinate(rootSchema.archives.isWithCoordinate());
         archives.setWithSourceJar(rootSchema.archives.isWithSourceJar());

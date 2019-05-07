@@ -3,24 +3,7 @@
  */
 package xapi.test.gwt.io;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.JavaScriptException;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestBuilder.Method;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
-import com.google.gwt.http.client.RequestPermissionException;
-import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.json.client.JSONParser;
-import com.google.gwt.json.client.JSONValue;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.xhr.client.ReadyStateChangeHandler;
-import com.google.gwt.xhr.client.XMLHttpRequest;
-
 import org.junit.Ignore;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
 import xapi.gwt.io.IOServiceGwt;
@@ -32,6 +15,18 @@ import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Util;
 import xapi.util.api.Pointer;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JavaScriptException;
+import com.google.gwt.http.client.*;
+import com.google.gwt.http.client.RequestBuilder.Method;
+import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
+import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.xhr.client.ReadyStateChangeHandler;
+import com.google.gwt.xhr.client.XMLHttpRequest;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)

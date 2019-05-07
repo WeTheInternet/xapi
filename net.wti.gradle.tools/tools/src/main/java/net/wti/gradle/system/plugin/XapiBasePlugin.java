@@ -1,6 +1,7 @@
 package net.wti.gradle.system.plugin;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.api.Plugin;
@@ -117,6 +118,13 @@ public class XapiBasePlugin implements Plugin<Project> {
                 locked[0] = true;
             }
             // TODO: add disambiguation rules to avoid api <-> runtime confusion
+            //  for now, we'll just hide configurations which get in the way (dirty!)
+            self.getBuildGraph().whenReady(ReadyState.RUN_FINALLY+1, ready-> {
+                if (withJavaPlugin) {
+                    self.getConfigurations().getByName(JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME).setCanBeConsumed(false);
+                    self.getConfigurations().getByName(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).setCanBeConsumed(false);
+                }
+            });
         }
 
     }

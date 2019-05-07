@@ -1,11 +1,9 @@
 package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.schema.api.ArchiveConfigContainer;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.PlatformConfigContainer;
-import org.gradle.api.internal.CompositeDomainObjectSet;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -20,7 +18,6 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
 
     private final String name;
     private final DefaultArchiveConfigContainer archives;
-    private final CompositeDomainObjectSet<ArchiveConfig> allArchives;
 
     private final PlatformConfigContainer container;
     private PlatformConfigInternal parent;
@@ -48,13 +45,10 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
         // TODO: A smart delegate where we can check the platform for archives first,
         // then default to the schema itself.
         archives = new DefaultArchiveConfigContainer(()->this, view);
-        allArchives = CompositeDomainObjectSet.create(ArchiveConfig.class, schemaArchives);
-        allArchives.addCollection(archives);
 
         schemaArchives.configureEach(item ->{
-
             if (item.getPlatform().getName().equals(name)) {
-                archives.add(item);
+                archives.maybeCreate(item.getName()).baseOn(item);
             }
         });
         this.parent = parent;
@@ -88,17 +82,13 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     }
 
     @Override
-    public CompositeDomainObjectSet<ArchiveConfig> getAllArchives() {
-        return allArchives;
-    }
-
-    @Override
     public void setRequireSource(boolean requires) {
         this.requireSource = requires;
     }
 
     @Override
     public void replace(CharSequence named) {
+
         replace(container.getByName(String.valueOf(named)));
     }
 
@@ -113,6 +103,17 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     public void addChild(PlatformConfig platform) {
         assert this != platform;
         children.put(platform, platform);
+    }
+
+    @Override
+    public void setParent(PlatformConfigInternal parent) {
+        this.parent = parent;
+    }
+
+    @Override
+    public void baseOn(PlatformConfig rooted) {
+        this.requireSource = rooted.isRequireSource();
+        this.test = rooted.isTest();
     }
 
     @Override

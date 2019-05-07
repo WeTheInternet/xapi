@@ -93,7 +93,8 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     public String toString() {
         return "DefaultArchiveConfig{" +
             "name='" + name + '\'' +
-            ", required=" + requires +
+            // hm...  finalizing any providers for these requires during .toString() could lead to nasty debugging sessions
+            ", required=" + requires.get() +
             ", path=" + getPath() +
             '}';
     }
@@ -123,6 +124,12 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     public PlatformConfigInternal getPlatform() {
         return platform;
+    }
+
+    @Override
+    public void baseOn(ArchiveConfig rooted) {
+        this.sourceAllowed = rooted.isSourceAllowed();
+        this.requires.addAll(rooted.required());
     }
 
     @Override

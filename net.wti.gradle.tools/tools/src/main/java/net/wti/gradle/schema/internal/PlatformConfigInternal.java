@@ -21,10 +21,12 @@ public interface PlatformConfigInternal extends PlatformConfig {
         return getParent() == null;
     }
 
-    boolean isTest();
-
     @Override
     default ArchiveConfigInternal findArchive(Object named) {
         return (ArchiveConfigInternal)PlatformConfig.super.findArchive(named);
     }
+
+    void baseOn(PlatformConfig rooted);
+
+    void setParent(PlatformConfigInternal myParent);
 }

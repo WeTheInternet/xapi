@@ -468,6 +468,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         final Configuration consumer = type.findConsumerConfig(this, only);
         final ModuleDependency md = type.newDependency(project, this, neededArchive, only);
 
+        getView().getLogger().quiet("{} adding dependency {} to {}", getModuleName(), md, consumer.getName());
         consumer.getDependencies().add(md);
     }
 

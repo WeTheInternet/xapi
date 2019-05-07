@@ -95,6 +95,7 @@ subprojects {
             }
 
             if (p.path != ':schema') {
+                // we don't actually need the java plugin, so we leave it out, and just turn it on once in a while for manual verification
 //                plugins.apply 'java'
                 plugins.apply 'xapi-schema'
                 plugins.apply 'maven-publish'
@@ -124,3 +125,10 @@ subprojects {
 }
 
 GradleServiceFinder.getService(project).configureWrapper(project)
+
+
+idea {
+    module {
+        excludeDirs += mvnRepo
+    }
+}

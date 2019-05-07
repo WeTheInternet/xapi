@@ -9,4 +9,5 @@ pushd net.wti.gradle.tools > /dev/null
 ./gradlew $args -x test
 popd > /dev/null
 
-./gradlew $args -Dxapi.composite=true -Pxapi.changing=true -x test --parallel --build-cache -Pxapi.debug=false
+shadow=${shadow:-"-x shadowJar"}
+./gradlew $args -Dxapi.composite=true -Pxapi.changing=true -x test --parallel --build-cache -Pxapi.debug=false $shadow

@@ -12,9 +12,9 @@ plugins {
 xapiSchema {
     platforms {
         main
-//        gwt {
-//            replace main
-//        }
+        gwt {
+            replace 'main'
+        }
 //        jre {
 //            replace main
 //        }
@@ -33,7 +33,8 @@ xapiSchema {
         spi
         main.require api, spi
         sample.require 'main'
-        test.require 'sample'
+        test.require 'sample', 'main' // hm. transitivity isn't really working, we have to redeclare require()d dependencies
+                                      // highly likely to be related to callers of net.wti.gradle.internal.require.api.ArchiveGraph.srcExists
     }
 }
 tasks.create 'testSchema', {

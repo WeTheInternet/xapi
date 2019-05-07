@@ -1,5 +1,6 @@
 plugins {
     id 'xapi-schema'
+    id 'idea'
 }
 
 repositories {
@@ -11,10 +12,32 @@ dependencies {
     compile project(':xapi-gwt-collect')
     implementation 'net.wetheinter:gwt-user:2.8.0'
     compile 'net.wetheinter:jsinterop-annotations:2.8.0'
-    testCompile 'net.wetheinter:gwt-dev:2.8.0'
-    testCompile 'net.wetheinter:gwt-codeserver:2.8.0'
-    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
-    testCompile 'junit:junit:4.12'
+}
+
+xapiSchema.whenReady {
+    dependencies {
+        gwtTestCompile 'net.wetheinter:gwt-user:2.8.0'
+        gwtTestCompile 'net.wetheinter:gwt-dev:2.8.0'
+        gwtTestCompile 'net.wetheinter:gwt-codeserver:2.8.0'
+        gwtTestCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+        gwtTestCompile 'junit:junit:4.12'
+
+    }
+    
+    // temporary for now... need to have this driven by isTest property on ArchiveConfig
+    idea {
+        module  {
+            testSourceDirs = sourceSets.gwtTest.java.srcDirs
+            testResourceDirs = sourceSets.gwtTest.resources.srcDirs
+        }
+    }
+    tasks.create 'testGwt', Test, {
+        Test t ->
+            t.classpath = configurations.gwtTestRuntimeClasspath + sourceSets.gwtTest.output
+            t.testClassesDirs = sourceSets.gwtTest.output.classesDirs
+            t.useJUnit()
+        
+    }
 }
 
 task packageTests(type: Jar) {
@@ -24,3 +47,4 @@ task packageTests(type: Jar) {
 
 description = 'XApi - Gwt IO implementation'
 artifacts.archives(tasks.packageTests)
+
