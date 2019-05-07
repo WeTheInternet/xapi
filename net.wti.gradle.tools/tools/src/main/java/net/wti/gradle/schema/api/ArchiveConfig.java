@@ -3,8 +3,8 @@ package net.wti.gradle.schema.api;
 import net.wti.gradle.internal.api.ProjectView;
 import org.gradle.api.Named;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
-
-import java.util.Set;
+import org.gradle.api.provider.SetProperty;
+import xapi.gradle.fu.LazyString;
 
 /**
  * A ArchiveConfig describes a single archive-producer within a multi-part project build.
@@ -19,7 +19,7 @@ public interface ArchiveConfig extends Named {
 
     void require(Object ... units);
 
-    Set<String> required();
+    SetProperty<LazyString> required();
 
     boolean isSourceAllowed();
 

@@ -10,21 +10,24 @@ import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
+import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.ConfigurationPublications;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
+import xapi.gradle.fu.LazyString;
 
 import java.io.File;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -147,23 +150,60 @@ public class XapiSchema {
         // There's a nasty diamond problem around the main platform, and the schema containers
         // for platform and archive types.  We work around it by sending deferred "provide main platform" logic.
         Callable<PlatformConfigInternal> getMain = this::getMainPlatform;
-        archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, getMain, instantiator);
-        platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, instantiator, archives);
+
+        assert GradleMessages.noOpForAssertion(()->new DefaultArchiveConfigContainer(getMain, pv));
+        archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, getMain, pv);
+
+        assert GradleMessages.noOpForAssertion(()->new DefaultPlatformConfigContainer(pv, archives));
+        platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, pv, archives);
 
         final ProjectView root = XapiSchemaPlugin.schemaRootProject(pv);
-        platforms.configureEach(plat -> {
-            archives.configureEach(arch-> {
-                final ArchiveConfig specific = plat.getArchive(arch.getName());
-                specific.require(arch.required().toArray());
+        if (root == pv) {
+            // When we are the schema root, we must wait until we are evaluated before we let other XapiSchema instances
+            // read from our values.
+            root.getProjectGraph().whenReady(ReadyState.RUN_FINALLY + 1, ready->{
+                    platforms.configureEach(plat ->
+                        archives.configureEach(arch-> {
+                            final ArchiveConfig inst = plat.getArchive(arch.getName());
+                            pv.getLogger().quiet("root schema ({}~{}) declared {}", ((GradleInternal)pv.getGradle()).findIdentityPath(), pv.getPath(), inst);
+                            final PlatformConfig rootPlat = plat.getRoot();
+
+                        })
+                    );
             });
-//            plat.getAllArchives().addCollection(archives.matching(conf->conf.getPlatform().getName().equals(plat.getName())));
-        });
-        if (root != pv) {
-            initialize(root.getSchema());
+        } else {
+            root.whenReady(evaluated->{
+                // We must further wait for the schema root to be in a state of task-flushing before we try to read from it.
+                root.getProjectGraph().whenReady(ReadyState.BEFORE_CREATED, ready -> {
+                    pv.getProjectGraph().whenReady(ReadyState.BEFORE_CREATED, alsoReady -> {
+                        platforms.configureEach(plat -> {
+                            plat.getArchives().configureEach(arch-> {
+                                final PlatformConfigInternal rootPlat = root.getSchema().platforms.findByName(plat.getName());
+                                if (rootPlat != null) {
+                                    final ArchiveConfigInternal specific = rootPlat.findArchive(arch.getName());
+                                    if (specific != null && specific != arch) {
+                                        arch.required().addAll(specific.required());
+                                        // TODO: record a xapiReport entry for this state...
+                                        pv.getLogger().quiet("{}.{} requires {}", specific, plat.getName(), arch.required());
+                                    }
+                                }
+                            });
+                            if (plat.getParent() != null) {
+
+                                plat.getRoot().getArchives().configureEach(parentArch ->
+                                    plat.getArchive(parentArch.getName())
+                                );
+                            }
+                //            plat.getAllArchives().addCollection(archives.matching(conf->conf.getPlatform().getName().equals(plat.getName())));
+                        });
+                        initialize(root.getSchema());
+                    });
+                });
+            });
         }
         pv.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
             platforms.configureEach(plat -> {
-                plat.getAllArchives().configureEach(arch -> {
+                plat.getArchives().configureEach(arch -> {
                     final ArchiveGraph archive = pv.getProjectGraph()
                         .platform(plat.getName())
                         .archive(arch.getName());
@@ -196,9 +236,9 @@ public class XapiSchema {
 
             archGraph.importLocal(parentArch, false, false);
 
-            platGraph.project().whenReady(ReadyState.BEFORE_READY, ready->{
+            platGraph.project().whenReady(ReadyState.AFTER_CREATED, ready->{
                 // Need to rebase our .required names.
-                ((ArchiveConfigInternal)archConfig).fixRequires(platConfig);
+//                ((ArchiveConfigInternal)archConfig).fixRequires(platConfig);
             });
 
         }
@@ -280,35 +320,44 @@ public class XapiSchema {
             archGraph.configTransitive().extendsFrom(archGraph.configSource());
         }
 
-        final Set<String> needed = archConfig.required();
-        // We should actually defer this until later...
-        for (String need : needed) {
-            boolean only = need.endsWith("*");
-            if (only) {
-                need = need.substring(0, need.length()-1);
-            }
-            boolean lenient = need.endsWith("?");
-            if (lenient) {
-                need = need.substring(0, need.length()-1);
-            }
-            PlatformConfigInternal conf = view.getSchema().findPlatform(need);
-            if (conf == null) {
-                conf = (PlatformConfigInternal) platConfig;//view.getSchema().getMainPlatform();
-            }
-            need = GUtil.toLowerCamelCase(need.replace(conf.getName(), ""));
-            final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
-            final ArchiveGraph neededArchive = needPlat.archive(need);
+        platGraph.project().whenReady(ReadyState.BEFORE_READY+1, ready->{
 
-            if (neededArchive.srcExists()) {
-                // Hm... perhaps we should put this in a BEFORE_READY callback?
-                archGraph.importLocal(neededArchive, only, lenient);
-            } else {
-                // we should still depend on transitive dependencies of missing-src modules.
-                // however, right now, we don't care about inheriting-through-gaps,
-                // since we don't even have production modules inheriting-when-src-exists
-            }
+            final SetProperty<LazyString> needed = archConfig.required();
+            view.getLogger().quiet("{} requires {}", archGraph.getModuleName(), needed.get());
 
-        }
+            for (LazyString needs : needed.get()) {
+                String need = needs.toString();
+                boolean only = need.endsWith("*");
+                if (only) {
+                    need = need.substring(0, need.length()-1);
+                }
+                boolean lenient = need.endsWith("?");
+                if (lenient) {
+                    need = need.substring(0, need.length()-1);
+                }
+                PlatformConfigInternal conf = view.getSchema().findPlatform(need);
+                if (conf == null) {
+                    conf = (PlatformConfigInternal) platConfig;//view.getSchema().getMainPlatform();
+                }
+                final String confName = conf.getName();
+                if (!confName.equals(need)) {
+                    need = GUtil.toLowerCamelCase(need.replace(confName, ""));
+                }
+                final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
+                final ArchiveGraph neededArchive = needPlat.archive(need);
+
+                if (neededArchive.srcExists()) {
+                    // Hm... perhaps we should put this in a BEFORE_READY callback?
+                    archGraph.importLocal(neededArchive, only, lenient);
+                } else {
+                    // we should still depend on transitive dependencies of missing-src modules.
+                    // however, right now, we don't care about inheriting-through-gaps,
+                    // since we don't even have production modules inheriting-when-src-exists
+                    view.getLogger().quiet("{}.{} ignoring no-source module {}", archGraph.getModuleName(), archGraph.getSrcName(), neededArchive.getSrcName());
+                }
+
+            }
+        });
 
     }
 
@@ -403,5 +452,11 @@ public class XapiSchema {
         return "XapiSchema{" +
             "platforms=" + platforms +
             '}';
+    }
+
+    public void whenReady(Action<? super XapiSchema> o) {
+        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED+1, ready->
+            o.execute(this)
+        );
     }
 }

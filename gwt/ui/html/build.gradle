@@ -1,5 +1,14 @@
+plugins {
+    id 'xapi-require'
+}
+evaluationDependsOn ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+
 repositories {
     jcenter()
+}
+
+xapiRequire {
+    main.test.internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui:main:sample'
 }
 
 dependencies {
@@ -8,13 +17,13 @@ dependencies {
     compile project(':xapi-gwt-ui-parent:xapi-gwt-ui-autoui')
     compile 'net.wetheinter:gwt-elemental:2.8.0'
     compile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
-    testCompile project(path: ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', configuration: 'testRuntime')
-    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
-    testCompile project(':xapi-core-parent:xapi-core-test')
+
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     compileOnly 'net.wetheinter:gwt-codeserver:2.8.0'
     compileOnly 'net.wetheinter:gwt-user:2.8.0'
+
+    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+    testCompile project(':xapi-core-parent:xapi-core-test')
     testRuntime 'net.wetheinter:gwt-dev:2.8.0'
     testRuntime 'net.wetheinter:gwt-codeserver:2.8.0'
 }

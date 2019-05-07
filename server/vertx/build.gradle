@@ -1,3 +1,11 @@
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire {
+    main.test.internal ':xapi-server-parent:xapi-server-gen:main:sample'
+}
+
 dependencies {
     compile project(':xapi-server-parent:xapi-server-gen')
     compile project(':xapi-server-parent:xapi-server-api')
@@ -11,11 +19,8 @@ dependencies {
     compile 'io.vertx:vertx-hazelcast:3.5.3'
     compile 'io.vertx:vertx-auth-oauth2:3.5.3'
     testCompile project(':xapi-dev-parent:xapi-dev-scanner')
-    testCompile project(path: ':xapi-dev-parent:xapi-dev-scanner', configuration: 'testRuntime')
     testCompile project(':xapi-server-parent:xapi-server-gen')
-    testCompile project(path: ':xapi-server-parent:xapi-server-gen', configuration: 'testRuntime')
     testCompile project(':xapi-dev-parent:xapi-dev-javac')
-    testCompile project(path: ':xapi-dev-parent:xapi-dev-javac', configuration: 'testRuntime')
     testCompile 'info.cukes:cucumber-java:1.2.5'
     testCompile 'info.cukes:cucumber-junit:1.2.5'
 }

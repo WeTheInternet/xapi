@@ -1,11 +1,11 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.schema.api.ArchiveConfigContainer;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.PlatformConfigContainer;
 import org.gradle.api.internal.CompositeDomainObjectSet;
-import org.gradle.internal.reflect.Instantiator;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -31,24 +31,24 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     public DefaultPlatformConfig(
         String name,
         PlatformConfigContainer container,
-        Instantiator instantiator,
+        ProjectView view,
         ArchiveConfigContainer schemaArchives
     ) {
-        this(null, name, container, instantiator, schemaArchives);
+        this(null, name, container, view, schemaArchives);
     }
 
     protected DefaultPlatformConfig(
         PlatformConfigInternal parent,
         String name,
         PlatformConfigContainer container,
-        Instantiator instantiator,
+        ProjectView view,
         ArchiveConfigContainer schemaArchives
     ) {
         this.name = name;
         // TODO: A smart delegate where we can check the platform for archives first,
         // then default to the schema itself.
-        archives = new DefaultArchiveConfigContainer(()->this, instantiator);
-        allArchives = CompositeDomainObjectSet.create(ArchiveConfig.class, archives);
+        archives = new DefaultArchiveConfigContainer(()->this, view);
+        allArchives = CompositeDomainObjectSet.create(ArchiveConfig.class, schemaArchives);
         allArchives.addCollection(archives);
 
         schemaArchives.configureEach(item ->{
@@ -131,7 +131,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
             "name='" + name + '\'' +
             ", archives=" + archives +
             ", parent=" + (parent == null ? "null" : parent.getName()) +
-            ", children=" + children +
+            ", children=" + children.keySet() +
             ", requireSource=" + requireSource +
             ", test=" + test +
             '}';

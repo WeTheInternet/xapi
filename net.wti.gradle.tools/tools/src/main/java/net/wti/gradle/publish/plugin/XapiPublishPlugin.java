@@ -187,9 +187,11 @@ public class XapiPublishPlugin implements Plugin<Project> {
 
                 final Object module = ((ExtensionAware) source).getExtensions().findByName("xapiModule");
                 if (module != null) {
-                    PublishedModule mod = (PublishedModule) module;
-                    final ArchiveGraph graph = mod.getModule();
-                    task.dependsOn(graph.getJarTask());
+                    task.whenSelected(selected->{
+                        PublishedModule mod = (PublishedModule) module;
+                        final ArchiveGraph graph = mod.getModule();
+                        task.dependsOn(graph.getJarTask());
+                    });
                 }
             }
         });

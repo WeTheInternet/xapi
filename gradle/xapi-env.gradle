@@ -112,10 +112,13 @@ if (version == 'unspecified') {
     version = findProperty('xapiVersion')
 }
 
-if (repositories.empty) {
-    repositories.maven {
-        name = 'xapiLocal'
-        url = new File(xapiHome.toString(), 'repo')
+RepositoryHandler repos = repositories
+afterEvaluate {
+    if (!repos.findAll({ it.name == 'xapiLocal'})) {
+        repos.maven {
+            name = 'xapiLocal'
+            url = new File(xapiHome.toString(), 'repo')
+        }
     }
 }
 

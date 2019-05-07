@@ -258,7 +258,7 @@ public interface GradleService {
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     default BuildGraph createBuildGraph() {
-        final ProjectView view = getView();
+        final ProjectView view = getView().getRootProject();
         final BuildGraph graph = view.getInstantiator()
             .newInstance(typeBuildGraph(), this, view);
         return graph;

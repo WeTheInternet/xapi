@@ -7,11 +7,12 @@ import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.util.GUtil;
+import xapi.gradle.fu.LazyString;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 1:45 PM.
@@ -19,14 +20,49 @@ import java.util.Set;
 public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     private final String name;
-    private final Set<Object> required;
     private final PlatformConfigInternal platform;
+    private final SetProperty<LazyString> requires;
+    private final ProjectView view;
     private boolean sourceAllowed;
 
-    public DefaultArchiveConfig(PlatformConfigInternal platform, String name) {
+    public DefaultArchiveConfig(
+        PlatformConfigInternal platform,
+        ProjectView view,
+        String name
+    ) {
         this.name = name;
         this.platform = platform;
-        required = new LinkedHashSet<>();
+        this.view = view;
+        requires = view.getObjects().setProperty(LazyString.class);
+        requires.convention(view.lazyProvider(()->{
+            // Nothing set?  apply convention.
+            List<LazyString> result = new ArrayList<>();
+            switch (name) {
+                case "main":
+                    result.add(new LazyString("api"));
+                    result.add(new LazyString("spi"));
+                    break;
+                case "mainSource":
+                    result.add(new LazyString("apiSource"));
+                    result.add(new LazyString("spiSource"));
+                    break;
+                case "stub":
+                    result.add(new LazyString("main"));
+                    break;
+                case "stubSource":
+                    result.add(new LazyString("mainSource"));
+                    break;
+                case "impl":
+                    result.add(new LazyString("main"));
+                    result.add(new LazyString("stub*"));
+                    break;
+                case "implSource":
+                    result.add(new LazyString("mainSource"));
+                    result.add(new LazyString("stubSource*"));
+                    break;
+            }
+            return result;
+        }));
         sourceAllowed = true;
 
     }
@@ -34,45 +70,18 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     @Override
     public void require(Object ... units) {
         if (units != null && units.length > 0) {
-            required.addAll(Arrays.asList(units));
+            requires.addAll(
+                // TODO: wire in some pre-built version of xapi-fu
+                Arrays.stream(units)
+                    .map(require->
+                        new LazyString(()->GradleCoerce.unwrapString(require))
+                    ).collect(Collectors.toList()));
         }
     }
 
     @Override
-    public Set<String> required() {
-        final LinkedHashSet<String> result = new LinkedHashSet<>();
-        if (required.isEmpty()) {
-            // Nothing set?  apply convention.
-            switch (name) {
-                case "main":
-                    result.add("api");
-                    result.add("spi");
-                    break;
-                case "mainSource":
-                    result.add("apiSource");
-                    result.add("spiSource");
-                    break;
-                case "stub":
-                    result.add("main");
-                    break;
-                case "stubSource":
-                    result.add("mainSource");
-                    break;
-                case "impl":
-                    result.add("main");
-                    result.add("stub*");
-                    break;
-                case "implSource":
-                    result.add("mainSource");
-                    result.add("stubSource*");
-                    break;
-            }
-        } else {
-            for (Object require : required) {
-                result.addAll(GradleCoerce.unwrapStrings(require));
-            }
-        }
-        return result;
+    public SetProperty<LazyString> required() {
+        return requires;
     }
 
     @Override
@@ -84,7 +93,7 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     public String toString() {
         return "DefaultArchiveConfig{" +
             "name='" + name + '\'' +
-            ", required=" + required +
+            ", required=" + requires +
             ", path=" + getPath() +
             '}';
     }
@@ -118,11 +127,26 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     @Override
     public void fixRequires(PlatformConfig platConfig) {
-        required.clear();
-        final ArchiveConfig target = platConfig.getRoot().getArchive(getName());
-        for (String require : target.required()) {
-            required.add(platConfig.getName() + GUtil.toCamelCase(require));
+        final PlatformConfig rootPlatform = platConfig.getRoot();
+        if (platConfig != rootPlatform) {
+            final ArchiveConfig target = platConfig.getRoot().getArchive(getName());
+            requires.addAll(
+                // add a provider of an iterable of mapped LazyString
+                target.required().flatMap(sourceProvider ->
+                    // convert each of the root platform's required() Set<LazyString>
+                    view.lazyProvider(()->{
+                        final ArrayList<LazyString> items = new ArrayList<>(sourceProvider);
+                        items.replaceAll(str -> str.map(parentRequire ->
+                                    // immediately create a new LazyString which does not compute anything until toString()d
+                                    new LazyString(() -> platConfig.getName() + GUtil.toCamelCase(parentRequire))
+                                ));
+                        return items;
+                        }
+                    )
+                )
+            );
         }
+
 
     }
 }

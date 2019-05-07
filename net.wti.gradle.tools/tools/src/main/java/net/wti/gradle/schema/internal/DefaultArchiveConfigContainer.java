@@ -1,9 +1,10 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.api.ArchiveConfig;
+import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.system.impl.DefaultRealizableNamedObjectContainer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
-import org.gradle.internal.reflect.Instantiator;
 
 import java.util.concurrent.Callable;
 
@@ -14,20 +15,28 @@ public class DefaultArchiveConfigContainer extends DefaultRealizableNamedObjectC
     ArchiveConfigContainerInternal {
 
     private final Callable<PlatformConfigInternal> platform;
+    private final ProjectView view;
 
     private boolean withClassifier, withCoordinate, withSourceJar;
 
     public DefaultArchiveConfigContainer(
-        Callable<PlatformConfigInternal> platform, Instantiator instantiator
+        Callable<PlatformConfigInternal> platform, ProjectView view
     ) {
-        super(ArchiveConfig.class, instantiator, CollectionCallbackActionDecorator.NOOP);
+        super(ArchiveConfig.class, view.getInstantiator(), CollectionCallbackActionDecorator.NOOP);
+        this.view = view;
         this.platform = platform;
     }
 
     @Override
     protected ArchiveConfigInternal doCreate(String name) {
         try {
-            return new DefaultArchiveConfig(platform.call(), name);
+            final PlatformConfigInternal plat = platform.call();
+            final PlatformConfig platRoot = plat.getRoot();
+            final DefaultArchiveConfig arch = new DefaultArchiveConfig(plat, view, name);
+            if (plat != platRoot) {
+                arch.fixRequires(platRoot);
+            }
+            return arch;
         } catch (Exception e) {
             throw new UnsupportedOperationException("Could not create " + name, e);
         }

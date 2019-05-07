@@ -6,8 +6,10 @@ import org.gradle.internal.Actions;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+
+import static net.wti.gradle.internal.api.ReadyState.RUN_FINALLY;
 
 /**
  * A generic work-beast for executing integer-ordered tasks.
@@ -22,7 +24,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class DefaultWorker implements HasWork {
 
-    private final NavigableMap<Integer, Action<Integer>> callbacks;
+    private final ConcurrentNavigableMap<Integer, StartCallback> callbacks;
 
     public DefaultWorker() {
         // we prefer a skip list map, since we use .firstKey() a lot, and that's much faster
@@ -45,7 +47,7 @@ public class DefaultWorker implements HasWork {
     public Entry<Integer, HasWork> findWork(int upTo) {
         Entry<Integer, HasWork> candidate = null;
         if (!callbacks.isEmpty()) {
-            final Entry<Integer, Action<Integer>> check = callbacks.firstEntry();
+            final Entry<Integer, StartCallback> check = callbacks.firstEntry();
             if (check.getKey() <= upTo) {
                 candidate = new SimpleImmutableEntry<>(check.getKey(), this);
             }
@@ -63,39 +65,91 @@ public class DefaultWorker implements HasWork {
      */
     @Override
     public boolean drainTasks(int upTo) {
-        boolean hasWork = hasWork(upTo);
-        if (!hasWork) {
-            return false;
-        }
+        boolean hasWork = false;
         Entry<Integer, HasWork> work;
         while ((work = findWork(upTo)) != null) {
+            hasWork = true;
             work.getValue().doWork();
         }
-        return true;
+        return hasWork;
     }
 
     @Override
     public void doWork() {
-        final Entry<Integer, Action<Integer>> entry;
-        entry = callbacks.pollFirstEntry();
-        if (entry == null) {
-            return;
+        final Entry<Integer, StartCallback> entry = callbacks.pollFirstEntry();
+        if (entry != null) {
+            final StartCallback callback = entry.getValue();
+            callback.execute(entry.getKey());
         }
-        final Action<Integer> callback = entry.getValue();
-        callback.execute(entry.getKey());
     }
 
     @Override
     @SuppressWarnings({"unchecked"})
     public boolean whenReady(int priority, Action<Integer> newItem) {
-        final Action<Integer> result = callbacks.compute(priority, (key, oldItem) ->
-            // TODO: use a multimap instead of compositing actions together,
-            //  so we can honor prioritized callback ordering
+        return callbacks.compute(priority, (key, oldItem) ->
             oldItem == null ?
-                newItem :
-                Actions.composite(oldItem, newItem)
-        );
-        return result == newItem;
+                firstCallback(priority, newItem) :
+                oldItem.append(newItem)
+        ).first;
+    }
+
+    protected StartCallback firstCallback(int priority, Action<Integer> newItem) {
+        return new StartCallback(priority, newItem);
+    }
+
+    protected class StartCallback implements Action<Integer> {
+
+        private final Action<Integer> delegate;
+        private final int priority;
+        private final boolean first;
+        private volatile StartCallback after;
+
+        public StartCallback(int priority, Action<Integer> delegate) {
+            this.delegate = Actions.composite(this::firstRun, delegate);
+            this.priority = priority;
+            first = true;
+        }
+
+        public StartCallback(StartCallback before, Action<Integer> after) {
+            this.delegate = Actions.composite(before, after);
+            this.priority = before.priority;
+            before.after = this;
+            first = false;
+        }
+
+        protected void firstRun(Integer priority) {
+            callbacks.computeIfPresent(priority, (key, cb)->
+                cb == StartCallback.this ? null : cb
+            );
+        }
+        protected void lastRun(Integer priority) {
+
+        }
+
+        @Override
+        public void execute(Integer priority) {
+            delegate.execute(priority);
+            if (this.priority < RUN_FINALLY) {
+                // Any task before RUN_FINALLY will always run anything lower priority that itself, when it's the next queued item (no batching)
+                if (this.priority > Integer.MIN_VALUE) {
+                    // Any task at Integer.MIN_VALUE will be getting drained in a loop, so no need to do here (and get an overflow...)
+                    drainTasks(this.priority - 1);
+                }
+            } else if (this.priority != RUN_FINALLY){
+                // Any task that's after RUN_FINALLY will clear all RUN_FINALLY between each item in a batch
+                drainTasks(RUN_FINALLY);
+            }
+            // Note, Any task *at* RUN_FINALLY will be getting drained in a loop, so no need to recurse here, between items.
+
+            if (after == null) {
+                // let any subclasses know we are the last run
+                lastRun(priority);
+            }
+        }
+
+        protected StartCallback append(Action<Integer> newItem) {
+            return new StartCallback(this, newItem);
+        }
     }
 
 }

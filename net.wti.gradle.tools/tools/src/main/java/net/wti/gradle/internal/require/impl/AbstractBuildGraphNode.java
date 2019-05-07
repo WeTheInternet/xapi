@@ -8,6 +8,7 @@ import net.wti.gradle.internal.require.api.GraphNode;
 import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import net.wti.gradle.system.impl.DefaultRealizableNamedObjectContainer;
 import org.gradle.api.Action;
+import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Namer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
@@ -52,6 +53,11 @@ public abstract class AbstractBuildGraphNode <T extends HasWork> extends Default
 
         @Override
         protected final T doCreate(String name) {
+            if (name.isEmpty()) {
+                throw new IllegalArgumentException("empty name in " +
+                    (this instanceof Named ? ((Named) this).getName() : getDisplayName())
+                    +" {" + getNames() + "}");
+            }
             realizedItems.add(name);
             final T item = createItem(name);
             registeredItems.add(name);

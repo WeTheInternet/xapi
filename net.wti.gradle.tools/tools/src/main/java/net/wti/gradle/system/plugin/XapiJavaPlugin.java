@@ -102,11 +102,20 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         Configuration testImplementationConfiguration = configurations.getByName(TEST_IMPLEMENTATION_CONFIGURATION_NAME);
         Configuration testRuntimeConfiguration = configurations.getByName(TEST_RUNTIME_CONFIGURATION_NAME);
         Configuration testRuntimeOnlyConfiguration = configurations.getByName(TEST_RUNTIME_ONLY_CONFIGURATION_NAME);
+        Configuration testCompileClasspathConfiguration = configurations.getByName(TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME);
+        Configuration testRuntimeClasspathConfiguration = configurations.getByName(TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME);
 
         compileTestsConfiguration.extendsFrom(compileConfiguration);
         testImplementationConfiguration.extendsFrom(implementationConfiguration);
         testRuntimeConfiguration.extendsFrom(runtimeConfiguration);
+        // blech... this causes testRuntime to try to be resolved as a configuration-with-capability,
+        // mostly because we've been lazy about isolating runtime classpaths; we should emulate the same
+        // structure as compile classpaths, where we do not add any outgoing settings until _after_
+        // the "dependency bucket" configurations, like runtimeConfiguration
+        testRuntimeConfiguration.setCanBeConsumed(false);
         testRuntimeOnlyConfiguration.extendsFrom(runtimeOnlyConfiguration);
+        testCompileClasspathConfiguration.setCanBeConsumed(false);
+        testRuntimeClasspathConfiguration.setCanBeConsumed(false);
 
     }
 

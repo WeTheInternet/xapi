@@ -53,7 +53,6 @@ package net.wti.gradle.internal.api;
 public interface ReadyState {
 
     int RUN_FINALLY = Short.MIN_VALUE - 1;
-    int EXECUTE = Short.MAX_VALUE + 1;
     short BEFORE_CREATED = -0x6000;
     short CREATED = -0x4000;
     short AFTER_CREATED = -0x2000;
@@ -63,6 +62,7 @@ public interface ReadyState {
     short BEFORE_FINISHED = 0x2000;
     short FINISHED = 0x4000;
     short AFTER_FINISHED = 0x6000;
+    int EXECUTE = Short.MAX_VALUE + 1;
 
     static int[] all() {
         return new int[]{

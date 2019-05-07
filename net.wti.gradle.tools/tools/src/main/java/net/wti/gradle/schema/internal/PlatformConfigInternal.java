@@ -23,4 +23,8 @@ public interface PlatformConfigInternal extends PlatformConfig {
 
     boolean isTest();
 
+    @Override
+    default ArchiveConfigInternal findArchive(Object named) {
+        return (ArchiveConfigInternal)PlatformConfig.super.findArchive(named);
+    }
 }

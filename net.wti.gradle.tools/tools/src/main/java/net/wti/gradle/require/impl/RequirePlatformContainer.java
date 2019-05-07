@@ -25,10 +25,13 @@ public class RequirePlatformContainer extends AbstractNamedDomainObjectContainer
     @Override
     protected RequirePlatform doCreate(String name) {
         final XapiSchema schema = view.getSchema();
-        final PlatformConfigInternal platform = schema.findPlatform(name);
-        if (platform == null) {
-            throw new IllegalArgumentException("Platform " + name + " not found in schema: " + schema);
-        }
+        schema.whenReady(ready->{
+            // Push this validation later, since we want to be able to call xapiRequire _before_ the schema callbacks are invoked.
+            final PlatformConfigInternal platform = schema.findPlatform(name);
+            if (platform == null) {
+                throw new IllegalArgumentException("Platform " + name + " not found in schema: " + schema);
+            }
+        });
         // Create a platform-scoped XapiRequire
         assert GradleMessages.noOpForAssertion(()->new RequirePlatform(view, require, name));
         return view.getInstantiator().newInstance(RequirePlatform.class, view, require, name);

@@ -5,14 +5,10 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.fu.Do;
-import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In1;
-import xapi.fu.Mutable;
-import xapi.fu.Out1;
-import xapi.fu.Rethrowable;
-import xapi.process.X_Process;
 import xapi.dev.api.Classpath;
+import xapi.fu.*;
+import xapi.fu.Do.DoUnsafe;
+import xapi.process.X_Process;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.server.gen.WebAppGenerator;
@@ -21,8 +17,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
-
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
@@ -95,7 +89,9 @@ public interface ServerTestHelper <ServerType extends XapiServer> extends Rethro
         final ServerType app = getServer(name);
 
         final Classpath rootCp = app.getWebApp().getClasspaths().get("root");
-        assertNotNull("WebApp must have a \"root\" classpath" + app, rootCp);
+        if (rootCp == null) {
+            throw new NullPointerException("WebApp must have a \"root\" classpath" + app);
+        }
         CountDownLatch latch = new CountDownLatch(1);
         final Thread thread = X_Process.newThread(() -> {
             startup(name);

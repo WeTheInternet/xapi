@@ -23,7 +23,9 @@ apply from: "$rootDir/gradle/processor.gradle"
 */
 
 xapiRequire {
+    main.test.external "net.wti.core:xapi-fu:$v"
 }
+
 dependencies {
     // TODO: make this implementation and then force alllll downstream users to add this as well.
     compile 'javax.inject:javax.inject:1'

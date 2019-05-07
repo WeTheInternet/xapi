@@ -79,6 +79,11 @@ public class PublishedModule implements XapiVariant, ComponentWithCoordinates, M
     public ModuleVersionIdentifier findCapabilityForConfiguration(
         ModuleVersionIdentifier candidate, String configurationName
     ) {
+        if (configurationName == null) {
+            // this seems kind of dirty.  We should remove this, and then wherever it's breaking,
+            // find the dependency that lacks a targetConfiguration, and fix it.
+            configurationName = "exportCompile";
+        }
         for (XapiUsageContext usage : usages) {
             final Set<? extends Capability> capabilities = usage.getCapabilities();
             for (Capability capability : capabilities) {

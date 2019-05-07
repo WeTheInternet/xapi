@@ -32,6 +32,8 @@ xapiSchema {
         api
         spi
         main.require api, spi
+        sample.require 'main'
+        test.require 'sample'
     }
 }
 tasks.create 'testSchema', {

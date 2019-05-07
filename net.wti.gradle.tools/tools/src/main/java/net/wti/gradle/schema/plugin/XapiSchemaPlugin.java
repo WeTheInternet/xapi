@@ -96,7 +96,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         if (limiter == null) {
             // If there was no platform property, we will eagerly realize all containers.
             schema.getPlatforms().all(platformConfig ->
-                platformConfig.getAllArchives().all(archConfig->{
+                platformConfig.getArchives().all(archConfig->{
                     configure.accept(platformConfig, archConfig);
                 })
             );
@@ -109,7 +109,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
                 next != null;
                 next = next.getParent() ) {
                 final PlatformConfig current = next;
-                next.getAllArchives().all(archConfig-> configure.accept(current, archConfig));
+                next.getArchives().all(archConfig-> configure.accept(current, archConfig));
             }
         }
     }

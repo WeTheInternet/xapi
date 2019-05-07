@@ -2,10 +2,6 @@ repositories {
     jcenter()
 }
 
-sourceSets.getByName('main').java {
-    srcDirs 'src/main/java'
-}
-
 apply from: "$rootDir/gradle/processor.gradle"
 
 dependencies {

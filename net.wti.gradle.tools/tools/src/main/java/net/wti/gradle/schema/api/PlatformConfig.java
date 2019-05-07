@@ -44,6 +44,11 @@ public interface PlatformConfig extends Named {
         return getArchives().maybeCreate(name);
     }
 
+    default ArchiveConfig findArchive(Object named) {
+        final String name = GradleCoerce.unwrapString(named);
+        return getArchives().findByName(name);
+    }
+
     /**
      * Set requireSource = true to cause all non-source dependencies
      * to have their source-equivalent artifacts requested.

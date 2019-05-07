@@ -8,6 +8,7 @@ import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.BuildAdapter;
+import org.gradle.BuildResult;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.internal.build.IncludedBuildState;
@@ -29,22 +30,31 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
         this.service = service;
         this.project = project;
 
-        project.whenReady(ready->drainTasks(ReadyState.BEFORE_CREATED));
+        project.whenReady(ready-> {
+            drainTasks(ReadyState.BEFORE_CREATED);
+            drainTasks(ReadyState.CREATED);
+            drainTasks(ReadyState.AFTER_CREATED);
+        });
 
         project.getGradle().projectsEvaluated(done->finalizeGraph());
 
         project.getGradle().addBuildListener(new BuildAdapter(){
             @Override
             public void projectsEvaluated(Gradle gradle) {
+                drainTasks(ReadyState.BEFORE_FINISHED);
+                drainTasks(ReadyState.FINISHED);
+                drainTasks(ReadyState.AFTER_FINISHED);
+            }
+
+            @Override
+            public void buildFinished(BuildResult result) {
                 drainTasks(Integer.MAX_VALUE);
             }
         });
     }
 
     public void finalizeGraph() {
-        drainTasks(ReadyState.BEFORE_FINISHED);
-        drainTasks(ReadyState.FINISHED);
-        drainTasks(ReadyState.AFTER_FINISHED);
+        drainTasks(ReadyState.EXECUTE - 1);
     }
 
     public RealizableNamedObjectContainer<ProjectGraph> getProjects() {

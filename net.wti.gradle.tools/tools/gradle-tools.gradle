@@ -18,11 +18,7 @@ dependencies {
     compile project(':xapi-gradle-core')
 }
 
-sourceSets {
-    main {
-        groovy.srcDirs = []
-    }
-}
+sourceSets.main.groovy.srcDirs = []
 
 gradlePlugin {
     plugins {

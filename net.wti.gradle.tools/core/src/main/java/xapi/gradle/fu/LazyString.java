@@ -1,6 +1,7 @@
 package xapi.gradle.fu;
 
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 /**
  * An efficient {@link Callable} wrapper which implements toString(),
@@ -25,12 +26,16 @@ import java.util.concurrent.Callable;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/31/19 @ 11:45 PM.
  */
-public class LazyString implements Callable<String>, Comparable<LazyString> {
+public class LazyString implements Callable<String>, Comparable<LazyString>, CharSequence {
 
     private Callable<String> source;
 
     public LazyString(Callable<? extends CharSequence> supplier) {
         this(supplier, false);
+    }
+
+    public LazyString(CharSequence supplier) {
+        this(supplier::toString, false);
     }
 
     public LazyString(Callable<? extends CharSequence> supplier, boolean nonNull) {
@@ -60,6 +65,21 @@ public class LazyString implements Callable<String>, Comparable<LazyString> {
             throw e instanceof RuntimeException ? (RuntimeException)e :
                   new RuntimeException(e);
         }
+    }
+
+    @Override
+    public int length() {
+        return call().length();
+    }
+
+    @Override
+    public char charAt(int index) {
+        return call().charAt(index);
+    }
+
+    @Override
+    public CharSequence subSequence(int start, int end) {
+        return call().subSequence(start, end);
     }
 
     @Override
@@ -100,5 +120,9 @@ public class LazyString implements Callable<String>, Comparable<LazyString> {
 
     public static LazyString lazyToString(Callable<? extends Object> value) {
         return new LazyString(()->String.valueOf(value.call()), true);
+    }
+
+    public LazyString map(Function<LazyString, LazyString> t) {
+        return new LazyString(()->t.apply(LazyString.this));
     }
 }
