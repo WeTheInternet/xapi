@@ -107,8 +107,10 @@ public class ModelUtil {
     } else if (genericType instanceof TypeVariable) {
       final Type[] bounds = ((TypeVariable) genericType).getBounds();
       if (bounds.length != 1) {
-        // throw an exception with a good message
+        // TODO: throw an exception, or at least a warning, with a good message
       }
+      // pick the first item in the type variable; even if there are additional bounds,
+      // any class, if supplied, is guaranteed to be the first element, and cannot/should not be erased .
       return getErasedTypeParameters(bounds[0]);
     } else {
       return new Class[0];
