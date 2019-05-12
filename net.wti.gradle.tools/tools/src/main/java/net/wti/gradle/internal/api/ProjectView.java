@@ -50,7 +50,7 @@ import java.util.concurrent.Callable;
  */
 public interface ProjectView extends ExtensionAware {
 
-    String EXT_NAME = "_xapiProject";
+    String EXT_NAME = System.getProperty("xapi.view", "_xapi");
 
     String getPath();
     ObjectFactory getObjects();

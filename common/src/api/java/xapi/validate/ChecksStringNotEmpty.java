@@ -1,4 +1,4 @@
-package xapi.util.validators;
+package xapi.validate;
 
 public class ChecksStringNotEmpty extends ChecksNonNull{
 

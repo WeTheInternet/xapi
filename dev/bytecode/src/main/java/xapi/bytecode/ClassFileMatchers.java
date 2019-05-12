@@ -19,14 +19,14 @@
  */
 package xapi.bytecode;
 
-import java.lang.annotation.Annotation;
-
+import xapi.fu.Filter.Filter1;
 import xapi.source.X_Source;
-import xapi.util.api.MatchesValue;
+
+import java.lang.annotation.Annotation;
 
 public class ClassFileMatchers {
 
-  public static class HasAnnotationMatcher implements MatchesValue<ClassFile>{
+  public static class HasAnnotationMatcher implements Filter1<ClassFile> {
 
     private final String[] annotations;
 
@@ -39,7 +39,7 @@ public class ClassFileMatchers {
     }
 
     @Override
-    public boolean matches(ClassFile value) {
+    public boolean filter1(ClassFile value) {
       for (String annotation : annotations) {
         if (value.getAnnotation(annotation) != null) {
           return true;

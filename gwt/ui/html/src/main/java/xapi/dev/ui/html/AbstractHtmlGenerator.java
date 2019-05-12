@@ -33,7 +33,6 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.user.server.Base64Utils;
 import com.google.gwt.util.tools.shared.Md5Utils;
 
-import javax.inject.Provider;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DateFormat;

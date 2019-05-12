@@ -2,7 +2,6 @@ package xapi.dev.model;
 
 import xapi.annotation.model.IsModel;
 import xapi.dev.api.ApiGeneratorTools;
-import xapi.fu.In1;
 import xapi.fu.api.Ignore;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;
@@ -24,7 +23,6 @@ import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.*;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
-import com.google.gwt.dev.shell.rewrite.HasAnnotation;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 

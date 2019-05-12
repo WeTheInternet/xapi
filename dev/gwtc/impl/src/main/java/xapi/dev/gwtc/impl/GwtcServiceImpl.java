@@ -25,7 +25,6 @@ import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
-import xapi.source.X_Source;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
 import xapi.time.X_Time;
@@ -34,7 +33,6 @@ import xapi.util.*;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Modifier;

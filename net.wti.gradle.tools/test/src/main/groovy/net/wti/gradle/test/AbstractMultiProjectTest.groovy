@@ -11,6 +11,7 @@ import spock.lang.Specification
 import java.nio.file.Files
 
 import static org.gradle.api.logging.LogLevel.*
+
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:04 AM.
  */
@@ -18,7 +19,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
 
     LogLevel LOG_LEVEL = QUIET
-    Boolean DEBUG = true// Boolean.getBoolean("xapi.debug")
+    Boolean XAPI_DEBUG = true// Boolean.getBoolean("xapi.debug")
 
     abstract S selfSpec()
 
@@ -37,7 +38,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
     BuildResult runSucceed(
             LogLevel logLevel = LOG_LEVEL,
             File projectDir = getRootDir(),
-            Boolean debug = DEBUG,
+            Boolean debug = XAPI_DEBUG,
             String ... tasksOrFlags
     ) {
         flush()
@@ -50,8 +51,8 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
                 .withArguments(args)
                 .with({
                     // Forward build output to std out when -Dxapi.debug=true is set.
-                    DEBUG && it.forwardStdOutput(new PrintWriter(System.out))
-                    DEBUG && it.forwardStdError(new PrintWriter(System.err))
+                    XAPI_DEBUG && it.forwardStdOutput(new PrintWriter(System.out))
+                    XAPI_DEBUG && it.forwardStdError(new PrintWriter(System.err))
                     return it
                 })
         .build()
@@ -59,7 +60,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
     BuildResult runFail(
             LogLevel logLevel = LOG_LEVEL,
-            Boolean debug = DEBUG,
+            Boolean debug = XAPI_DEBUG,
             File projectDir = getRootDir(),
             String ... task
     ) {
@@ -74,7 +75,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
                     // always forward stdErr when we expect to fail
                     it.forwardStdError(new PrintWriter(System.err))
                     // Forward build output to std out when -Dxapi.debug=true is set.
-                    DEBUG && it.forwardStdOutput(new PrintWriter(System.out))
+                    XAPI_DEBUG && it.forwardStdOutput(new PrintWriter(System.out))
                     return it
                 })
                 .buildAndFail()

@@ -9,8 +9,6 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 
 import java.lang.reflect.Modifier;
 
-import javax.inject.Provider;
-
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Import;
 import xapi.dev.source.ClassBuffer;

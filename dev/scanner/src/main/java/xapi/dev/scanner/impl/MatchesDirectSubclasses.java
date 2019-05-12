@@ -1,18 +1,18 @@
 package xapi.dev.scanner.impl;
 
 import xapi.bytecode.ClassFile;
-import xapi.util.api.MatchesValue;
+import xapi.fu.Filter.Filter1;
 
-public class MatchesDirectSubclasses implements MatchesValue<ClassFile>{
+public class MatchesDirectSubclasses implements Filter1<ClassFile> {
 
   private final String[] subclasses;
 
   public MatchesDirectSubclasses(String ... subclasses) {
     this.subclasses = subclasses;
   }
-  
+
   @Override
-  public boolean matches(ClassFile value) {
+  public boolean filter1(ClassFile value) {
     if (value.isInterface()) {
       for (String iface : value.getInterfaces()) {
         for (String subclass : subclasses) {
@@ -30,5 +30,5 @@ public class MatchesDirectSubclasses implements MatchesValue<ClassFile>{
     }
     return false;
   }
-  
+
 }

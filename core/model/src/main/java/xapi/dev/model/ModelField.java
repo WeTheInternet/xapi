@@ -15,7 +15,7 @@ import xapi.log.X_Log;
 import xapi.source.api.IsParameterizedType;
 import xapi.source.api.IsType;
 import xapi.source.api.IsTypeArgument;
-import xapi.util.api.ValidatesValue;
+import xapi.validate.ValidatesValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;

@@ -1,3 +1,15 @@
+buildscript {
+    System.setProperty("xapiIntoBuildscipt", "true")
+    apply from: "$rootDir/gradle/xapi-env.gradle"
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
+    }
+}
+plugins {
+    id 'xapi-schema'
+}
+
+
 import org.gradle.internal.jvm.Jvm
 
 repositories {
@@ -12,11 +24,26 @@ dependencies {
     compile project(':xapi-jre-parent:xapi-jre-inject')
     compile project(':xapi-dev-parent:xapi-dev-file')
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
-    File tools = Jvm.current().toolsJar
-    if (tools) {
-        compileOnly files(tools)
-        testCompile files(tools)
+    Jvm jvm = Jvm.current()
+    if (jvm.javaVersion.isJava8()) {
+        File tools = jvm.toolsJar
+        if (tools) {
+            compileOnly files(tools)
+            testCompile files(tools)
+        }
+    } else {
+        _xapi.projectGraph.platforms().configureEach({ plat ->
+            plat.archives().configureEach({ arch ->
+                if (arch.srcExists()) {
+                    arch.tasks.javacTask.configure { javac->
+                        // here is where we can set the per-archive-graph java 9+ module flags
+                        // TODO, use / upgrade chainsaw plugin?
+                    }
+                }
+            })
+        })
     }
+    
     testCompile'net.wetheinter:gwt-dev:2.8.0'
     testCompile 'net.wetheinter:gwt-user:2.8.0'
     testCompile 'net.wetheinter:gwt-elemental:2.8.0'

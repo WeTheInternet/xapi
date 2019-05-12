@@ -1,6 +1,6 @@
 package xapi.test;
 
-import xapi.util.api.MatchesValue;
+import xapi.fu.Filter.Filter1Unsafe;
 
 /**
  * Some basic assertion utilities; based on org.junit.Assert,
@@ -798,7 +798,7 @@ public class Assert {
    * @see org.hamcrest.CoreMatchers
    * @see org.junit.matchers.JUnitMatchers
    */
-  public static <T> void assertThat(T actual, MatchesValue<T> matcher) {
+  public static <T> void assertThat(T actual, Filter1Unsafe<T> matcher) {
     assertThat("", actual, matcher);
   }
 
@@ -832,8 +832,8 @@ public class Assert {
    * @see org.junit.matchers.JUnitMatchers
    */
   public static <T> void assertThat(String reason, T actual,
-      MatchesValue<T> matcher) {
-    if (!matcher.matches(actual)) {
+      Filter1Unsafe<T> matcher) {
+    if (!matcher.filter1(actual)) {
       throw new java.lang.AssertionError("Item "+actual+" does not match "+matcher
         +".  "+(reason == null ? "" : "\n["+reason+"]"));
     }

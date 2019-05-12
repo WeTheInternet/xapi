@@ -1,6 +1,4 @@
-package xapi.util.validators;
-
-import xapi.util.api.ValidatesValue;
+package xapi.validate;
 
 public class ChecksNonNull implements ValidatesValue<Object> {
 

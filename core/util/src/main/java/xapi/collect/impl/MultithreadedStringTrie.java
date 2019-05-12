@@ -25,8 +25,8 @@ import xapi.source.api.Chars;
  * during concurrent operations will only occur if the keys overlap.
  * Once one thread is ahead of another, it will stay ahead of others.
  * <p>
- * This class should NOT be used anywhere that doesn't explicitly need Trie
- * behavior in multi-threaded enviros.  It's not optimized for lookup time yet.
+ * This class should NOT be used anywhere that doesn't explicitly need many-threaded
+ * concurrent write operations.  It's not optimized for lookup time (yet).
  * <p>
  * Application-wide, java-package based keys are good candidates for StringTrie.
  * <p>

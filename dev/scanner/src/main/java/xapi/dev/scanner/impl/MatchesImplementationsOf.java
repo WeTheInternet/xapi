@@ -1,15 +1,15 @@
 package xapi.dev.scanner.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import xapi.bytecode.ClassFile;
 import xapi.collect.api.PrefixedMap;
 import xapi.dev.resource.impl.ByteCodeResource;
+import xapi.fu.Filter.Filter1;
 import xapi.log.X_Log;
-import xapi.util.api.MatchesValue;
 
-public class MatchesImplementationsOf implements MatchesValue<ClassFile> {
+import java.util.ArrayList;
+import java.util.List;
+
+public class MatchesImplementationsOf implements Filter1<ClassFile> {
 
 
   private final PrefixedMap<ByteCodeResource> bytecode;
@@ -33,7 +33,7 @@ public class MatchesImplementationsOf implements MatchesValue<ClassFile> {
   }
 
   @Override
-  public boolean matches(ClassFile value) {
+  public boolean filter1(ClassFile value) {
     for (String iface : value.getInterfaces()) {
       for (String subclass : interfaces) {
         if (iface.equals(subclass)) {

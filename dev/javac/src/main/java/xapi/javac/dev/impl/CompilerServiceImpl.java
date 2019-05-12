@@ -21,11 +21,11 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.file.X_File;
 import xapi.fu.In1;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.Rethrowable;
 import xapi.fu.X_Fu;
 import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SingletonIterator;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.api.JavacService;
@@ -40,13 +40,8 @@ import xapi.source.X_Source;
 import xapi.util.X_Debug;
 
 import javax.lang.model.element.TypeElement;
-import javax.tools.DiagnosticListener;
-import javax.tools.FileObject;
+import javax.tools.*;
 import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -216,7 +211,8 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
         .filter(pcu -> pcu.getUnit() == null)
         .forEach(missing::add);
     if (!missing.isEmpty()) {
-      Context ctx = new Context(task.getContext());
+
+      Context ctx = task.getContext();
       ctx.put(JavacService.class, service);
       MultiTaskListener tasks = MultiTaskListener.instance(ctx);
       tasks.add(getTaskListener(task));

@@ -21,7 +21,7 @@ import xapi.model.impl.ModelNameUtil;
 import xapi.model.impl.ModelUtil;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
-import xapi.util.api.ValidatesValue;
+import xapi.validate.ValidatesValue;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;

@@ -2,9 +2,9 @@ package xapi.annotation.inject;
 
 import xapi.annotation.reflect.MirroredAnnotation;
 import xapi.enviro.Enviro;
-import xapi.util.api.MatchesValue;
-import xapi.util.matchers.MatchesAll;
-import xapi.util.matchers.MatchesNone;
+import xapi.fu.Filter.Filter1;
+import xapi.fu.filter.AlwaysFalse;
+import xapi.fu.filter.AlwaysTrue;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,13 +26,13 @@ import java.lang.annotation.Target;
 @MirroredAnnotation
 public @interface XInject {
 
-  class None extends MatchesNone<Enviro>{}
-  class All extends MatchesAll<Enviro>{}
+  class None extends AlwaysFalse<Enviro>{}
+  class All extends AlwaysTrue<Enviro>{}
 
-  Class<? extends MatchesValue<Enviro>> isInstance() default All.class;
+  Class<? extends Filter1<Enviro>> isInstance() default All.class;
   int instancePriority() default Integer.MIN_VALUE;
 
-  Class<? extends MatchesValue<Enviro>> isService() default None.class;
+  Class<? extends Filter1<Enviro>> isService() default None.class;
   int servicePriority() default Integer.MIN_VALUE;
 
   Class<?> value();

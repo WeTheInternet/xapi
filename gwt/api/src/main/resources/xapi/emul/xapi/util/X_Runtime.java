@@ -1,11 +1,6 @@
 package xapi.util;
 
-import static xapi.util.X_Namespace.*;
-
 import com.google.gwt.core.client.GWT;
-
-import xapi.platform.JrePlatform;
-import xapi.util.X_Namespace;
 
 /**
  * This class is magic; there are four copies of this class.

@@ -26,6 +26,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.internal.Actions;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.util.GUtil;
+import xapi.gradle.fu.LazyString;
 
 import java.io.File;
 import java.util.Map;
@@ -468,7 +469,8 @@ public interface ArchiveGraph extends Named, GraphNode {
         final Configuration consumer = type.findConsumerConfig(this, only);
         final ModuleDependency md = type.newDependency(project, this, neededArchive, only);
 
-        getView().getLogger().quiet("{} adding dependency {} to {}", getModuleName(), md, consumer.getName());
+        getView().getLogger().trace("{} adding dependency {} to {}",
+            new LazyString(this::getModuleName), md, consumer.getName());
         consumer.getDependencies().add(md);
     }
 
@@ -531,7 +533,17 @@ public interface ArchiveGraph extends Named, GraphNode {
         } else {
             path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
         }
+//        path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
         ModuleDependency mod = (ModuleDependency) deps.create(path);
+        // We aren't actually using feature variants, we're baking in "has own published transitive classpath" modules,
+        // rather than "melt into classifiers that happen to have gradle metadata";
+        // we'll save that additional level of indirection to be layers on top of each xapi module/archive.
+//        if (isLocal &&
+//            !(newGroup.equals(dep.getGroup()) && newName.equals(dep.getName()))
+//        ) {
+//            mod.capabilities(cap->cap.requireCapabilities(newGroup + ":" + newName));
+//        }
+
 
         String base = attrs.getAttribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
         if ("main".equals(base)) {

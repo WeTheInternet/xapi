@@ -8,18 +8,18 @@ import xapi.collect.api.Fifo;
 import xapi.collect.api.HasPrefixed;
 import xapi.collect.impl.SimpleFifo;
 import xapi.dev.resource.impl.ByteCodeResource;
-import xapi.util.api.MatchesValue;
+import xapi.fu.Filter.Filter1;
 
 /**
  * Finds all classes that have any annotation.
  *
  * If you want more fine-grained search capabilities,
- * override {@link #matches(ClassFile)}.
+ * override {@link #filter1(ClassFile)}.
  *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
-class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassFile> {
+class AnnotatedClassIterator implements Iterable<ClassFile>, Filter1<ClassFile> {
 
   final Iterator<ClassFile> allClasses;
   Fifo<ClassFile> results = new SimpleFifo<ClassFile>();
@@ -95,7 +95,7 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassF
   }
 
   @Override
-  public boolean matches(final ClassFile value) {
+  public boolean filter1(final ClassFile value) {
     return value.getAnnotations().length > 0;
   }
 }

@@ -1,11 +1,6 @@
 package xapi.dev.scanner.impl;
 
-import xapi.bytecode.ClassFile;
-import xapi.bytecode.ClassPool;
-import xapi.bytecode.FieldInfo;
-import xapi.bytecode.MemberInfo;
-import xapi.bytecode.MethodInfo;
-import xapi.bytecode.NotFoundException;
+import xapi.bytecode.*;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.MultithreadedStringTrie;
 import xapi.collect.impl.SimpleFifo;
@@ -13,13 +8,13 @@ import xapi.dev.resource.api.ClasspathResource;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
+import xapi.fu.Filter.Filter1;
 import xapi.fu.Lazy;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
-import xapi.util.api.MatchesValue;
 import xapi.util.api.ProvidesValue;
 
 import java.io.File;
@@ -313,7 +308,7 @@ public class ClasspathResourceMap {
 
   @SuppressWarnings("unchecked")
   public final Iterable<ClassFile> getAllClasses(){
-    return new ClassFileIterator(MatchesValue.ANY, bytecode);
+    return new ClassFileIterator(Filter1.TRUE, bytecode);
   }
 
   public final MappedIterable<StringDataResource> getAllResources(){
@@ -321,30 +316,15 @@ public class ClasspathResourceMap {
   }
 
   public Iterable<ClassFile> findClassesInPackage(final String name) {
-    return new ClassFileIterator(new MatchesValue<ClassFile>() {
-      @Override
-      public boolean matches(final ClassFile value) {
-        return !"package-info".equals(value.getEnclosedName()) && value.getPackage().equals(name);
-      }
-    }, bytecode);
+    return new ClassFileIterator(value -> !"package-info".equals(value.getEnclosedName()) && value.getPackage().equals(name), bytecode);
   }
 
   public Iterable<ClassFile> findClassesBelowPackage(final String name) {
-    return new ClassFileIterator(new MatchesValue<ClassFile>() {
-      @Override
-      public boolean matches(final ClassFile value) {
-        return !"package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name);
-      }
-    }, bytecode);
+    return new ClassFileIterator(value -> !"package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name), bytecode);
   }
 
   public Iterable<ClassFile> findPackagesBelowPackage(final String name) {
-    return new ClassFileIterator(new MatchesValue<ClassFile>() {
-      @Override
-      public boolean matches(final ClassFile value) {
-        return "package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name+".");
-      }
-    }, bytecode);
+    return new ClassFileIterator(value -> "package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name+"."), bytecode);
   }
 
   /**
@@ -374,7 +354,7 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          if (matcher.matches(cls)) {
+          if (matcher.filter1(cls)) {
             return true;
           }
         }
@@ -414,7 +394,7 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          if (matcher.matches(cls)) {
+          if (matcher.filter1(cls)) {
             return true;
           }
         }

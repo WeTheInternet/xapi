@@ -10,10 +10,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
-import xapi.source.api.HasTypeParams;
-import xapi.source.api.IsParameterizedType;
 import xapi.source.api.IsType;
-import xapi.source.api.IsTypeArgument;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;

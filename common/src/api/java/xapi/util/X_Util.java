@@ -8,7 +8,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.ExecutionException;
 
-import static xapi.fu.X_Fu.blank;
 import static xapi.util.X_Runtime.isJavaScript;
 
 /**
@@ -139,7 +138,7 @@ public final class X_Util{
       if (items == null || items.length == 0) {
           return array;
       }
-      T[] missing = blank(items);
+      T[] missing = X_Fu.blank(items);
       int cnt = 0;
       for (int i = 0; i < items.length; i++ ) {
           final T item = items[i];

@@ -13,7 +13,7 @@ import xapi.model.api.ModelMethodType;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.ClusteringPrimitiveSerializer;
 import xapi.util.api.Digester;
-import xapi.util.api.ValidatesValue;
+import xapi.validate.ValidatesValue;
 
 import java.nio.charset.Charset;
 import java.util.Set;

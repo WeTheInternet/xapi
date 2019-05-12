@@ -29,6 +29,7 @@ import org.gradle.util.GUtil;
 import xapi.gradle.fu.LazyString;
 
 import java.io.File;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -169,7 +170,7 @@ public class XapiSchema {
                         archives.configureEach(arch-> {
                             rpg.whenReady(ReadyState.RUN_FINALLY + 2, allReady->{
                                 final ArchiveConfig inst = plat.getArchive(arch.getName());
-                                self.getLogger().quiet("root schema ({}~{}) declared {}", ((GradleInternal) self.getGradle()).findIdentityPath(), self.getPath(), inst);
+                                self.getLogger().trace("root schema ({}~{}) declared {}", ((GradleInternal) self.getGradle()).findIdentityPath(), self.getPath(), inst);
                                 final PlatformConfig rootPlat = plat.getRoot();
                             });
 
@@ -329,10 +330,10 @@ public class XapiSchema {
 
         platGraph.project().whenReady(ReadyState.BEFORE_READY+1, ready->{
 
-            final SetProperty<LazyString> needed = archConfig.required();
-            view.getLogger().quiet("{} requires {}", archGraph.getModuleName(), needed.get());
+            final Set<LazyString> needed = archConfig.required().get();
+            view.getLogger().debug("{} requires {}", archGraph.getModuleName(), needed);
 
-            for (LazyString needs : needed.get()) {
+            for (LazyString needs : needed) {
                 String need = needs.toString();
                 boolean only = need.endsWith("*");
                 if (only) {
@@ -354,13 +355,18 @@ public class XapiSchema {
                 final ArchiveGraph neededArchive = needPlat.archive(need);
 
                 if (neededArchive.srcExists()) {
-                    // Hm... perhaps we should put this in a BEFORE_READY callback?
                     archGraph.importLocal(neededArchive, only, lenient);
                 } else {
-                    // we should still depend on transitive dependencies of missing-src modules.
-                    // however, right now, we don't care about inheriting-through-gaps,
-                    // since we don't even have production modules inheriting-when-src-exists
-                    view.getLogger().quiet("{}.{} ignoring no-source module {}", archGraph.getModuleName(), archGraph.getSrcName(), neededArchive.getSrcName());
+                    // we need to depend on transitive dependencies of missing-src modules.
+                    // idea / solution: move all archGraph.import* calls behind a ModuleRequest (ArchiveRequest),
+                    // so we can register our intent to build a gradle dependency graph,
+                    // and transverse through no-source modules, including their transitive dependencies
+                    // until each branch either produces an inheritance point, or runs out of dependencies to consider.
+
+                    // This will allow us to skip through a missing sourceSet (that we avoid paying to create),
+                    // and directly inherit any existing transitive dependencies.
+
+                    view.getLogger().trace("{}.{} ignoring no-source module {}", archGraph.getModuleName(), archGraph.getSrcName(), neededArchive.getSrcName());
                 }
 
             }

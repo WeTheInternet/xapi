@@ -8,9 +8,10 @@ evaluationDependsOn(':schema')
 
 String v = version
 xapiRequire {
-    main.main.external "net.wti.core:xapi-fu:$v"
-    main.main.external "net.wti.core:xapi-anno:$v"
+    main.api.external "net.wti.core:xapi-anno:$v"
+    main.api.external "net.wti.core:xapi-fu:$v"
     main.main.external "net.wti.core:xapi-gen:$v"
+    main.test.external "net.wti.core:xapi-fu:$v"
 }
 
 /*
@@ -21,10 +22,6 @@ repositories {
 
 apply from: "$rootDir/gradle/processor.gradle"
 */
-
-xapiRequire {
-    main.test.external "net.wti.core:xapi-fu:$v"
-}
 
 dependencies {
     // TODO: make this implementation and then force alllll downstream users to add this as well.

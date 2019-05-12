@@ -1,4 +1,6 @@
-
+plugins {
+    id 'xapi-require'
+}
 repositories {
     maven {
         name = 'xapiLocal'

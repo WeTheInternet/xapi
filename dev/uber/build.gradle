@@ -47,9 +47,9 @@ tasks.named('shadowJar').configure {
                             case 'elemental':
                                 return false
                         }
-                        println ""
-                        println res.name
-                        println res.moduleName
+//                        println ""
+//                        println res.name
+//                        println res.moduleName
                         return true
                 }
         }

@@ -48,7 +48,12 @@ public enum DefaultUsageType implements UsageType {
             boolean only,
             boolean lenient
         ) {
-            return isLocal ? "compile" : "main".equals(base) ? "exportCompile" : base + "ExportCompile";
+            if ("main".equals(base)) {
+                return isLocal ? "compile" : "exportCompile";
+            }
+            return isLocal ? "compile" // base + "Compile"
+                : base + "ExportCompile";
+            // the commented out `base + "Compile"` was from an attempt to use feature variants
         }
     },
     /**

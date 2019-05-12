@@ -91,6 +91,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                     // project-wide requirement; bind every platform + archive pair
                     proj.platforms().all(plat->
                         plat.archives().all(arch-> {
+                            // hm.  another place where we should filter out modules which don't exist, to avoid creating them
                             include(view, incProj, arch, include, only, lenient == null ? true : lenient);
                         }
                     ));

@@ -9,7 +9,7 @@ import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.ServerToClient;
 import xapi.model.api.Model;
-import xapi.util.validators.ChecksStringNotEmpty;
+import xapi.validate.ChecksStringNotEmpty;
 
 @IsModel(
     modelType = "user"

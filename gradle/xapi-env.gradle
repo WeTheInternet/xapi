@@ -123,6 +123,7 @@ afterEvaluate {
 }
 
 if (extensions.findByName('buildsPresent') == null) {
+    // TODO: make this lazily resolved
     LinkedHashMap<String, IncludedBuild> buildsPresent = [:]
     gradle.includedBuilds.each {
         IncludedBuild b ->

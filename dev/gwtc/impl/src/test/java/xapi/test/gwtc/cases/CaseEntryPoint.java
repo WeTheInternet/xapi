@@ -19,7 +19,6 @@ import xapi.test.junit.JUnitUi;
 import xapi.util.X_Namespace;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 

@@ -3,7 +3,7 @@ package xapi.test.util;
 import org.junit.Assert;
 import org.junit.Test;
 
-import xapi.util.validators.ChecksValidEmail;
+import xapi.validate.ChecksValidEmail;
 
 public class ValidatorTest {
 

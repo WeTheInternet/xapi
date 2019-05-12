@@ -1,15 +1,20 @@
 package xapi.fu;
 
+import xapi.fu.filter.AlwaysFalse;
+import xapi.fu.filter.AlwaysTrue;
+import xapi.fu.filter.IfNotNull;
+import xapi.fu.filter.IfNull;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 2/14/16.
  */
 public interface Filter<T> {
 
-  Filter1 TRUE = args->true;
-  Filter1 IF_NOT_NULL = args->args!=null;
-  Filter1 IF_NULL = args->args==null;
-  Filter1 FALSE = args->false;
+  AlwaysTrue TRUE = new AlwaysTrue();
+  IfNotNull IF_NOT_NULL = new IfNotNull();
+  IfNull IF_NULL = new IfNull();
+  AlwaysFalse FALSE = new AlwaysFalse();
 
   static <T> Filter1<T> ifNotNull() {
     return IF_NOT_NULL;

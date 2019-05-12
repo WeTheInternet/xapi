@@ -6,15 +6,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import xapi.annotation.reflect.MirroredAnnotation;
-import xapi.util.api.ValidatesValue;
-import xapi.util.validators.ChecksNonNull;
+import xapi.validate.ChecksNonNull;
+import xapi.validate.ValidatesValue;
+
 import static java.lang.annotation.ElementType.TYPE;
 
 /**
  * Define the validator class used to validate this model's fields.
- * 
+ *
  * The default validator does not allow null values.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */

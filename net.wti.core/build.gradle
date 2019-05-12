@@ -1,9 +1,10 @@
-import net.wti.gradle.system.spi.GradleServiceFinder
 
 plugins {
     id 'idea'
     id 'wrapper'
     id 'groovy'
+    // try moving this up here
+//    id 'xapi-schema'
 }
 
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
@@ -11,6 +12,8 @@ String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"
 
 apply plugin: 'xapi-schema'
+
+import net.wti.gradle.system.spi.GradleServiceFinder
 
 xapiSchema {
     platforms {

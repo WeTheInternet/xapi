@@ -1,4 +1,4 @@
-package xapi.util.api;
+package xapi.validate;
 
 public interface ValidatesValue <V> {
 

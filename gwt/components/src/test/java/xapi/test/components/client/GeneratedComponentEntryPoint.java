@@ -4,8 +4,6 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.ui.UiTemplate;
-import xapi.components.api.IsWebComponent;
-import xapi.components.api.WebComponentFactory;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.ObfuscationLevel;

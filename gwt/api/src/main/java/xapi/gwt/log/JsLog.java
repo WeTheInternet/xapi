@@ -42,7 +42,6 @@ import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.AbstractLog;
 import xapi.platform.GwtPlatform;
-import xapi.util.api.Initable;
 
 import com.google.gwt.core.client.JavaScriptObject;
 

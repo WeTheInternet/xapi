@@ -1,9 +1,10 @@
 package xapi.annotation.model;
 
+import xapi.validate.ChecksNonNull;
+import xapi.validate.ValidatesValue;
+
 import java.lang.annotation.Target;
 
-import xapi.util.api.ValidatesValue;
-import xapi.util.validators.ChecksNonNull;
 import static java.lang.annotation.ElementType.PARAMETER;
 
 @Target(PARAMETER)
