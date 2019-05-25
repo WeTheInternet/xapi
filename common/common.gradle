@@ -17,6 +17,28 @@ xapiRequire {
     module('test').external "net.wti.core:xapi-fu:$v", "main"
     module('jre', 'main').internal "xapi-util:main"
     module('jre', 'test').internal "xapi-core-parent:xapi-core-test:main:main"
+    module('gwt', 'main').configure {
+        req ->
+            req.internal 'xapi-util:main'
+            req.internal 'xapi-dev-parent:xapi-dev-source:main:main'
+            req.internal 'xapi-core-parent:xapi-core-reflect:main:main'
+            req.internal 'xapi-inject:main'
+            req.external "net.wti.core:xapi-fu:$v", 'main'
+            req.external 'com.google.elemental2:elemental2-core:1.0.0-RC1'
+            req.external 'com.google.jsinterop:base:1.0.0-RC1'
+            req.external 'javax.inject:javax.inject:1'
+            req.external 'javax.inject:javax.inject:1:sources'
+            req.external 'javax.validation:validation-api:1.0.0.GA'
+            req.external 'javax.validation:validation-api:1.0.0.GA:sources'
+    }
+}
+
+xapiSchema.whenReady {
+    dependencies {
+        gwtCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
+        gwtCompileOnly 'net.wetheinter:gwt-user:2.8.0'
+    }
+
 }
 
 apply from: "$rootDir/gradle/processor.gradle"

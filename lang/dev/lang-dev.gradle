@@ -10,9 +10,6 @@ plugins {
 xapiRequire.module('main').configure {
     external "net.wti.core:xapi-fu:${->version}", 'main'
     external "net.wti.core:xapi-lang-core:${->version}", 'main'
-}
-
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-collect')
-    compile project(':xapi-core-parent:xapi-core-reflect')
+    internal 'xapi-core-parent:xapi-core-collect:main:main'
+    internal 'xapi-core-parent:xapi-core-reflect:main:main'
 }

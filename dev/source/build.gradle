@@ -1,12 +1,11 @@
-apply from: "$rootDir/gradle/xapi-env.gradle"
-String xapiVersion = findProperty('xapiVersion')
-
-import xapi.gradle.X_Gradle
-X_Gradle.init project
-
-dependencies {
-    compile "net.wti.core:xapi-fu:$xapiVersion"
-    testCompile 'junit:junit:4.12'
+plugins {
+    id 'xapi-require'
 }
+
+String v = version
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-fu:$v", 'main'
+}
+xapiRequire.module('test').external 'junit:junit:4.12'
 
 description = 'XApi - Dev mode tools for source generation'

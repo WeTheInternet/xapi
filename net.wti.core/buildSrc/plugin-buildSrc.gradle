@@ -1,14 +1,14 @@
-plugins.apply 'java'
-
-String xapiHome = rootDir.parentFile.parent
-apply from: "$xapiHome/gradle/xapi-env.gradle"
-repositories {
-    maven {
-        name = 'xapiLocal'
-        url = "file://$xapiHome/repo"
-        metadataSources {
-            gradleMetadata()
-        }
+buildscript {
+    String xapiHome = rootDir.parentFile.parent
+    System.setProperty('xapiIntoBuildscript', 'true')
+    project.extensions.add('myBuildscript', it)
+    apply from: "$xapiHome/gradle/xapi-env.gradle"
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
     }
 }
-dependencies.add('implementation', "net.wti.gradle.tools:xapi-gradle-tools:${->version}")
+plugins.apply 'xapi-require'
+
+dependencies {
+    runtime "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
+}

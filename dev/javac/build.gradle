@@ -1,24 +1,24 @@
 buildscript {
     System.setProperty("xapiIntoBuildscipt", "true")
+    project.extensions.add('myBuildscript', it)
     apply from: "$rootDir/gradle/xapi-env.gradle"
     dependencies {
         classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
 }
 plugins {
-    id 'xapi-schema'
+    id 'xapi-require'
 }
 
 
 import org.gradle.internal.jvm.Jvm
 
-repositories {
-    jcenter()
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-fu:${->version}", 'main'
 }
 
 dependencies {
     compile "net.wti.core:xapi-lang-core:${->version}"
-    compile "net.wti.core:xapi-fu:${->version}"
     compile project(':xapi-jre-parent:xapi-jre-io')
     compile project(':xapi-core-parent:xapi-core-scope')
     compile project(':xapi-jre-parent:xapi-jre-inject')

@@ -1,13 +1,6 @@
 plugins {
     id 'xapi-require'
 }
-repositories {
-    maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
-    }
-    jcenter()
-}
 
 sourceSets.getByName('main').java {
     srcDirs 'src/main/java',
@@ -15,21 +8,27 @@ sourceSets.getByName('main').java {
             'src/main/gen'
 }
 
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-lang-core:${->version}", 'main'
+    internal 'xapi-gwt3:main'
+    internal 'xapi-elemental:main'
+    internal 'xapi-jre-parent:xapi-jre-io:main:main'
+    internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator:main:main'
+    internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api:main:main'
+    external 'net.wetheinter:gwt-user:2.8.0'
+}
+
+xapiRequire.module('test').configure {
+    internal 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl:main:main'
+    internal 'xapi-dev-parent:xapi-dev-javac:main:main'
+    internal 'xapi-jre-parent:xapi-jre-inject:main:main'
+    external 'junit:junit:4.12'
+    external 'info.cukes:cucumber-java:1.2.5'
+    external 'info.cukes:cucumber-junit:1.2.5'
+    external 'org.assertj:assertj-core:3.2.0'
+}
+
 dependencies {
-    compile project(':xapi-elemental')
-    compile project(':xapi-gwt3')
-    compile project(':xapi-jre-parent:xapi-jre-io')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile 'net.wetheinter:gwt-user:2.8.0'
-    testCompile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
-    testCompile project(':xapi-dev-parent:xapi-dev-javac')
-    testRuntime project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile 'junit:junit:4.12'
-    testCompile 'info.cukes:cucumber-java:1.2.5'
-    testCompile 'info.cukes:cucumber-junit:1.2.5'
-    testCompile 'org.assertj:assertj-core:3.2.0'
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     testRuntime 'net.wetheinter:gwt-dev:2.8.0'
 }

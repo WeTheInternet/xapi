@@ -29,12 +29,10 @@ xapiRequire.main().configure {
 }
 xapiRequire.module('gwt', 'main').configure {
     Requirable req ->
-
-        req.internal 'xapi-log:api'
-        req.internal 'xapi-gwt-api:main'
+        req.internal 'xapi-log:main'
+        req.internal 'xapi-common:gwt:main'
         req.internal 'xapi-dev-parent:xapi-dev-source:main:main'
 
-        req.internal 'xapi-log:main'
 }
 
 xapiSchema.whenReady {

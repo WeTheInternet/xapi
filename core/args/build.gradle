@@ -4,19 +4,15 @@ buildscript {
     }
 }
 plugins {
-    id 'xapi-schema'
+    id 'xapi-require'
 }
 
-apply from: "$rootDir/gradle/xapi-env.gradle"
-String xapiVersion = findProperty('xapiVersion')
-
-repositories {
-    jcenter()
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-fu:$version", 'main'
 }
 
-dependencies {
-    compile "net.wti.core:xapi-fu:$xapiVersion"
-    testCompile 'junit:junit:4.12'
+xapiRequire.module('test').configure {
+    external 'junit:junit:4.12'
 }
 
 description = 'XApi - Argument Processors'

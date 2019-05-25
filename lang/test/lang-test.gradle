@@ -1,12 +1,17 @@
 plugins {
     id 'groovy'
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+
+    external "org.spockframework:spock-core:1.2-groovy-2.5"
+    internal 'xapi-core-parent:xapi-core-collect:main:main'
+    external "net.wti.core:xapi-fu:${->version}", 'main'
+    external "net.wti.core:xapi-lang-core:${->version}", 'main'
 }
 
 dependencies {
-    compile "org.spockframework:spock-core:1.2-groovy-2.5"
-    compile project(':xapi-core-parent:xapi-core-collect')
     implementation project(':xapi-core-parent:xapi-core-reflect')
-    compile "net.wti.core:xapi-fu:${->version}"
-    compile "net.wti.core:xapi-lang-core:${->version}"
     runtime project(':xapi-jre-parent:xapi-jre-collect')
 }

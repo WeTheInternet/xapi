@@ -1,29 +1,24 @@
 buildscript {
+    System.setProperty('xapiIntoBuildscript', 'true')
+    project.extensions.add('myBuildscript', it)
     apply from: "$rootDir.parent/gradle/xapi-env.gradle"
-    repositories.maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir.parent/repo".toString())
-        metadataSources {
-            meta -> meta.gradleMetadata()
-        }
-    }
     dependencies {
         classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
     }
 }
 
 plugins {
-    id 'java-library'
-    id 'groovy'
     id 'idea'
 }
+apply plugin: 'xapi-require'
 
-dependencies {
-    api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: findProperty('xapiVersion'), changing: true
-    api group: 'net.wti.gradle', name: 'xapi-gradle-api', version: findProperty('xapiVersion'), changing: true
-    api group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: findProperty('xapiVersion'), changing: true
-    api group: 'net.wti.core', name: 'xapi-lang-core', version: findProperty('xapiVersion'), changing: true
-    api group: 'net.wti.core', name: 'xapi-fu', version: findProperty('xapiVersion'), changing: true
+String v = version
+xapiRequire.main().configure {
+    external "net.wti.gradle:xapi-gradle-plugin:$v", 'main'
+    external "net.wti.gradle:xapi-gradle-api:$v", 'main'
+    external "net.wti.gradle.tools:xapi-gradle-tools:$v"
+    external "net.wti.core:xapi-lang-core:$v", 'main'
+    external "net.wti.core:xapi-fu:$v", 'main'
 }
 
 if (

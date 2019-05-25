@@ -11,7 +11,7 @@ xapiRequire.module('main').configure {
     req ->
         req.internal 'xapi-log:main:api'
         req.internal 'xapi-inject:main:main'
-        req.internal 'xapi-gwt-api:main:main'
+        req.internal 'xapi-common:gwt:main'
 }
 
 dependencies {
