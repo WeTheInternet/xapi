@@ -31,6 +31,7 @@ xapiRequire.main().configure {
     req ->
         req.internal 'xapi-util:main:main'
         req.internal 'xapi-inject:gwt:main'
+        req.internal 'xapi-collect:gwt:main'
 
 }
 
@@ -41,7 +42,6 @@ dependencies {
     compile project(':xapi-core-parent:xapi-core-reflect')
     compile project(':xapi-elemental')
     compile project(':xapi-gwt-model')
-    compile project(':xapi-gwt-collect')
     compile project(':xapi-gwt-process')
     compile project(':xapi-gwt-io')
     compile project(':xapi-dev-gwtc:xapi-gwtc-api')

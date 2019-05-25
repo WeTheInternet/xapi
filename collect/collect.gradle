@@ -15,3 +15,16 @@ xapiRequire.module('api').configure {
         req.external "net.wti.core:xapi-fu:$v", "main"
         req.internal 'xapi-common:main'
 }
+
+xapiRequire.module('gwt', 'main').configure {
+    req ->
+        req.internal 'xapi-inject:gwt:main'
+        req.internal "xapi-core-parent:xapi-core-collect:main:main"
+}
+
+xapiSchema.whenReady {
+    dependencies {
+        gwtCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
+        gwtCompileOnly 'net.wetheinter:gwt-user:2.8.0'
+    }
+}

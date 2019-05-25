@@ -1,5 +1,5 @@
 plugins {
-    id 'xapi-schema'
+    id 'xapi-require'
     id 'idea'
 }
 
@@ -7,22 +7,27 @@ repositories {
     jcenter()
 }
 
+xapiRequire.main().configure {
+    req ->
+        req.internal('xapi-core-parent:xapi-core-io:main:main')
+        req.internal 'xapi-collect:gwt:main'
+        req.external 'net.wetheinter:jsinterop-annotations:2.8.0'
+    
+}
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'net.wetheinter:gwt-user:2.8.0'
+        req.external 'net.wetheinter:gwt-dev:2.8.0'
+        req.external 'net.wetheinter:gwt-codeserver:2.8.0'
+        req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
+        req.external 'junit:junit:4.12'
+}
+
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-io')
-    compile project(':xapi-gwt-collect')
     implementation 'net.wetheinter:gwt-user:2.8.0'
-    compile 'net.wetheinter:jsinterop-annotations:2.8.0'
 }
 
 xapiSchema.whenReady {
-    dependencies {
-        gwtTestCompile 'net.wetheinter:gwt-user:2.8.0'
-        gwtTestCompile 'net.wetheinter:gwt-dev:2.8.0'
-        gwtTestCompile 'net.wetheinter:gwt-codeserver:2.8.0'
-        gwtTestCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
-        gwtTestCompile 'junit:junit:4.12'
-
-    }
     
     // temporary for now... need to have this driven by isTest property on ArchiveConfig
     idea {

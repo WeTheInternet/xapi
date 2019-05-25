@@ -5,13 +5,14 @@ apply from: "$rootDir/gradle/xapi-env.gradle"
 
 repositories.jcenter()
 
-xapiRequire {
-    main.main.internal 'xapi-common:jre:main'
+xapiRequire.main().configure {
+    req ->
+        req.internal 'xapi-common:jre:main'
+        req.internal 'xapi-collect:gwt:main'
 }
 
 dependencies {
     compile project(':xapi-gwt-io')
-    compile project(':xapi-gwt-collect')
     compile project(':xapi-core-parent:xapi-core-model')
     compile "net.wti.core:xapi-gen:$version"
     compile project(':xapi-lang-dev')
