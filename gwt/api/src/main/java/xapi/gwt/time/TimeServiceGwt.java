@@ -15,7 +15,7 @@ import com.google.gwt.i18n.shared.DateTimeFormat.PredefinedFormat;
 import java.util.Date;
 
 @GwtPlatform
-@SingletonOverride(implFor=TimeService.class, priority=Integer.MIN_VALUE+3)
+@SingletonOverride(implFor=TimeService.class, priority=Integer.MIN_VALUE+4)
 public class TimeServiceGwt extends AbstractTimeService {
 
   private static final long serialVersionUID = -7873490109878690176L;

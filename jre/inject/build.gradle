@@ -3,7 +3,7 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-inject')
+    compile project(':xapi-inject')
     compile project(':xapi-dev-parent:xapi-dev-scanner')
     testCompile project(':xapi-core-parent:xapi-core-test')
     testRuntime project(':xapi-jre-parent:xapi-jre-inject')

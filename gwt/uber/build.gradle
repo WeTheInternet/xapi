@@ -1,17 +1,20 @@
 buildscript {
     repositories {
-        jcenter()
         maven {
             name = 'xapiLocal'
             url = new URI("file://$rootDir/repo")
+            metadataSources({ m -> m.gradleMetadata() })
         }
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
         classpath 'net.wti.gradle:xapi-gradle-meta:0.5.1'
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
 }
-
+plugins {
+    id 'xapi-require'
+}
 plugins.apply 'xapi.meta'
 plugins.apply 'com.github.johnrengelman.shadow'
 setProperty('xapi.main.component', 'shadow')
@@ -24,14 +27,19 @@ tasks.shadowJar.configure {
     classifier = null
 }
 
+xapiRequire.main().configure {
+    req ->
+        req.internal 'xapi-util:main:main'
+        req.internal 'xapi-inject:gwt:main'
+
+}
+
 dependencies {
     compile project(':xapi-gwt3')
     compile project(':xapi-dev-parent:xapi-dev-source')
     compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-core-parent:xapi-core-reflect')
-    compile project(':xapi-core-parent:xapi-core-util')
     compile project(':xapi-elemental')
-    compile project(':xapi-gwt-inject')
     compile project(':xapi-gwt-model')
     compile project(':xapi-gwt-collect')
     compile project(':xapi-gwt-process')

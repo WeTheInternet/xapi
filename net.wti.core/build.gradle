@@ -1,12 +1,8 @@
-
 plugins {
     id 'idea'
     id 'wrapper'
     id 'groovy'
-    // try moving this up here
-//    id 'xapi-schema'
 }
-
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"
@@ -22,107 +18,23 @@ xapiSchema {
     archives {
         main
     }
+    archives.create('test').require 'main'
 }
 
 TaskProvider required = tasks.register('publishRequired')
 
-allprojects {
-    group 'net.wti.core'
-    version '0.5.1'
-}
-subprojects {
+group 'net.wti.core'
+version '0.5.1'
+gradle.beforeProject {
     Project p ->
+    
+    p.group 'net.wti.core'
+    p.version '0.5.1'
 
     p.apply plugin: 'xapi-schema'
     p.apply plugin: 'maven-publish'
     p.apply plugin: 'xapi-publish'
     p.apply plugin: 'idea'
-
-//    PublishingExtension publishing = p.extensions.getByType(PublishingExtension)
-//    publishing.repositories {
-//        RepositoryHandler repos ->
-//            repos.maven {
-//                MavenArtifactRepository maven ->
-//                    maven.name = 'xapiLocal'
-//                    maven.url = "$xapiHome/repo"
-//            }
-//    }
-//
-//    p.repositories.maven {
-//        name = 'xapiLocal'
-//        url = "$xapiHome/repo"
-//    }
-    p.configurations {
-        sources
-    }
-
-    Jar sourceJar = p.tasks.findByName('sourceJar') as Jar
-    if (!sourceJar) {
-        sourceJar = p.tasks.create 'sourceJar', Jar.class, {
-            Jar jar ->
-                jar.classifier = 'sources'
-                jar.from sourceSets.main.allSource
-                return
-        }
-    }
-    ConfigurationPublications publications = configurations.sources.outgoing
-
-//    PublishArtifact publish = new ArchivePublishArtifact(sourceJar)
-//    publications.getArtifacts().add(publish)
-//    publications.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, "jar")
-//
-//    ConfigurationPublications outgoing = configurations.sources.outgoing
-//    outgoing.artifact(publish)
-//
-//
-//    p.artifacts.add('sources', sourceJar)
-//    p.tasks.withType(PublishToMavenRepository).all {
-//        PublishToMavenRepository ptml ->
-//            ptml.doLast {
-//                String coords = "$ptml.publication.groupId:$ptml.publication.artifactId:$ptml.publication.version"
-//                URI url = ptml.repository.url
-//                p.gradle.buildFinished({
-//                    BuildResult b ->
-//                        if (ptml.didWork) {
-//                            p.logger.info """Published $coords to ${url}"""
-//                        }
-//                })
-//                ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file://" + i.file.absolutePath}).join('/n')}"
-//            }
-//            ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME, sourceJar)
-//            required.configure {it.dependsOn ptml}
-//            p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)
-//    }
-//    publishing.publications.create "${name}.jar", MavenPublication, {
-//        MavenPublication pub ->
-//            pub.from p.components.java
-//            // attach the sourceJar as an additional artifact (w/ classifier)
-//            pub.artifact(publish)
-//            def finish = {
-//                pub.artifactId = p.jar.baseName
-//            }
-//            if (p.state.executed) {
-//                finish()
-//            } else {
-//                p.afterEvaluate finish
-//            }
-//
-//    }
-//    // also create a "full-fledged", "has a transitive-dependency-graph" sources jar
-//    publishing.publications.create "$name-sources.jar", MavenPublication, {
-//        MavenPublication pub ->
-//
-//            pub.artifact(sourceJar).classifier = null // remove the fact that the sourceJar has a classifier
-//            def finish = {
-//                pub.artifactId = "$p.jar.baseName-sources"
-//            }
-//            if (p.state.executed) {
-//                finish()
-//            } else {
-//                p.afterEvaluate finish
-//            }
-//
-//    }
 
 }
 

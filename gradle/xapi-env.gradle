@@ -47,16 +47,24 @@ if (!xapiHome) {
 }
 
 if (System.getProperty('xapiIntoBuildscript') == 'true') {
+    System.clearProperty('xapiIntoBuildscript')
     // TODO: check into the behavior of buildSrc in composites (relative to the rootProject; can buildSrc see composite root buildSrc?)
-    if (buildscript.configurations.getByName('classpath').state != Configuration.State.UNRESOLVED) {
+    logger.quiet "Adding to xapi buildscript $project.path"
+    ScriptHandler b = project.extensions.findByName('myBuildscript') ?: project.buildscript
+    if (b.configurations.getByName('classpath').state != Configuration.State.UNRESOLVED) {
         throw new IllegalStateException("-DxapiIntoBuildscript=true, but build script already resolved when xapi-env.gradle was applied;\n" +
                 "You need to apply xapi-env within the buildscript {} closure")
     }
-    System.clearProperty('xapiIntoBuildscript')
-    buildscript.repositories.maven {
+    b.repositories.maven {
         name = 'xapiLocal'
-        url = new File(xapiHome.toString(), 'repo')
+        url = new File(xapiHome.toString(), 'repo').toURI().toURL()
+        metadataSources { sources ->
+                // The xapiLocal *for buildscript* will require 100% gradleMetadata dependencies.
+                // This is possible because our tools have zero external dependencies, and are built from this repo.
+                sources.gradleMetadata()
+        }
     }
+//    b.dependencies.add 'classpath', 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
 }
 
 if (!extensions.findByName('installRebuild')) {

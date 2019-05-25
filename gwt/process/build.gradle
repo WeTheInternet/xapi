@@ -1,9 +1,18 @@
-repositories {
-    jcenter()
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.module('main').configure {
+    req ->
+        req.internal 'xapi-inject:gwt:main'
 }
 
 dependencies {
-    compile project(':xapi-gwt-inject')
     compile project(':xapi-core-parent:xapi-core-process')
     compile project(':xapi-core-parent:xapi-core-process')
     compile project(':xapi-core-parent:xapi-core-scope')

@@ -1,7 +1,13 @@
-//plugins { id 'xapi' }
+plugins { 
+    id 'xapi-require' 
+}
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
 repositories.jcenter()
+
+xapiRequire {
+    main.main.internal 'xapi-common:jre:main'
+}
 
 dependencies {
     compile project(':xapi-gwt-io')
@@ -13,7 +19,6 @@ dependencies {
     compile project(':xapi-core-parent:xapi-core-reflect')
     compile project(':xapi-jre-parent:xapi-jre-collect')
     compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-jre-parent:xapi-jre-api')
     testCompile project(':xapi-core-parent:xapi-core-test')
     testCompile 'junit:junit:4.12'
     testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'

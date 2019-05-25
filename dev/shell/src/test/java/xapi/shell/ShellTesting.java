@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import xapi.file.X_File;
 import xapi.inject.impl.JavaInjector;
-import xapi.io.api.LineReader;
 import xapi.io.api.StringReader;
 import xapi.log.X_Log;
 import xapi.shell.api.ShellCommand;
@@ -17,7 +16,6 @@ import xapi.test.Assert;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Namespace;
-import xapi.util.api.SuccessHandler;
 
 public class ShellTesting {
 

@@ -36,6 +36,7 @@ public interface BuildGraph extends GraphNode {
     }
 
     NamedDomainObjectProvider<ProjectGraph> project(Object path);
+    boolean hasProject(Object path);
 
     default ProjectGraph getProject(Object path) {
         return project(path).get();

@@ -20,13 +20,13 @@ public class AbstractInjectionTest {
 
   @BeforeClass
   public static void setProperties() {
-    System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "target/test-classes");
+    System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "build/classes/java/test");
     System.setProperty(X_Namespace.PROPERTY_TEST, "true");
   }
 
   @Before // can't do BeforeClass because we need to call this.getClass()
   public void prepareInjector(){
-    System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "target/test-classes");
+    System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "build/classes/java/test");
     System.setProperty(X_Namespace.PROPERTY_TEST, "true");
     // but, we only want to run injection once, so we use a simple lock
     if (once.shouldRun(false)) {

@@ -18,7 +18,7 @@ public class XapiRegistration implements Named {
     private Object project;
     private Object platform;
     private Object archive;
-    private Object into;
+    private Object from;
     private Object transitive;
     private Boolean lenient;
     private boolean resolved;
@@ -28,14 +28,14 @@ public class XapiRegistration implements Named {
         this(project, platform, archive, null);
     }
 
-    public XapiRegistration(Object project, Object platform, Object archive, Object into) {
-        this(project, platform, archive, into, RegistrationMode.DEFAULT);
+    public XapiRegistration(Object project, Object platform, Object archive, Object from) {
+        this(project, platform, archive, from, RegistrationMode.DEFAULT);
     }
-    public XapiRegistration(Object project, Object platform, Object archive, Object into, RegistrationMode mode) {
+    public XapiRegistration(Object project, Object platform, Object archive, Object from, RegistrationMode mode) {
         this.project = project;
         this.platform = platform;
         this.archive = archive;
-        this.into = into;
+        this.from = from;
         this.mode = mode;
     }
 
@@ -57,7 +57,7 @@ public class XapiRegistration implements Named {
             project = resolveProject(project);
             platform = resolvePlatform(platform);
             archive = resolveArchive(archive);
-            into = resolveInto(into);
+            from = resolveInto(from);
             transitive = resolveInto(transitive);
         }
     }
@@ -97,9 +97,9 @@ public class XapiRegistration implements Named {
         return (String) platform;
     }
 
-    public Object getInto() {
+    public Object getFrom() {
         maybeResolve();
-        return into;
+        return from;
     }
 
     public boolean getTransitive() {
@@ -125,7 +125,7 @@ public class XapiRegistration implements Named {
         return project.equals(that.project)
                && Objects.equals(platform, that.platform)
                && Objects.equals(archive, that.archive)
-               && Objects.equals(into, that.into);
+               && Objects.equals(from, that.from);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class XapiRegistration implements Named {
         int result = project.hashCode();
         result = 31 * result + (platform != null ? platform.hashCode() : 0);
         result = 31 * result + (archive != null ? archive.hashCode() : 0);
-        result = 31 * result + (into != null ? into.hashCode() : 0);
+        result = 31 * result + (from != null ? from.hashCode() : 0);
         return result;
     }
 

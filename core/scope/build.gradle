@@ -1,10 +1,8 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
 }
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-util')
-    testCompile 'junit:junit:4.12'
-}
+xapiRequire.main().internal 'xapi-util:main:main'
+xapiRequire.module('test').external 'junit:junit:4.12'
 
 description = 'XApi - Scope API'

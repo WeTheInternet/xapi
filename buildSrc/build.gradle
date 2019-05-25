@@ -2,7 +2,10 @@ buildscript {
     apply from: "$rootDir.parent/gradle/xapi-env.gradle"
     repositories.maven {
         name = 'xapiLocal'
-        url = new URI("file://$rootDir.parent/repo")
+        url = new URI("file://$rootDir.parent/repo".toString())
+        metadataSources {
+            meta -> meta.gradleMetadata()
+        }
     }
     dependencies {
         classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
@@ -11,10 +14,9 @@ buildscript {
 
 plugins {
     id 'java-library'
+    id 'groovy'
     id 'idea'
 }
-import java.util.concurrent.TimeUnit
-
 
 dependencies {
     api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: findProperty('xapiVersion'), changing: true
@@ -22,14 +24,6 @@ dependencies {
     api group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: findProperty('xapiVersion'), changing: true
     api group: 'net.wti.core', name: 'xapi-lang-core', version: findProperty('xapiVersion'), changing: true
     api group: 'net.wti.core', name: 'xapi-fu', version: findProperty('xapiVersion'), changing: true
-}
-
-configurations.all {
-    Configuration c->
-        c.resolutionStrategy.cacheChangingModulesFor(
-                gradle.startParameter.rerunTasks ? 0 :
-                        (findProperty('cacheTTL') as Integer ?: 60)
-                , TimeUnit.MINUTES)
 }
 
 if (

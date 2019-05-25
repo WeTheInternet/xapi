@@ -1,36 +1,15 @@
 package xapi.demo.jre;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.expr.UiContainerExpr;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import xapi.dev.impl.DevApp;
 import xapi.dev.ui.api.UiGeneratorPlatform;
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.Mutable;
-import xapi.fu.Pointer;
-import xapi.fu.X_Fu;
-import xapi.javac.dev.api.CompilerService;
-import xapi.javac.dev.model.CompilerSettings.ImplicitMode;
-import xapi.jre.ui.impl.SelfCompilingJavaFxApp;
-import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
-import xapi.server.api.ServerManager;
-import xapi.server.api.WebApp;
-import xapi.server.api.XapiServer;
-import xapi.server.gen.VertxWebAppGenerator;
 import xapi.server.vertx.XapiVertxServer;
 import xapi.ui.api.Ui;
 import xapi.util.X_Properties;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import static xapi.inject.X_Inject.singleton;
 
 /**
  * An all-in-one(der) demo application of xapi features.

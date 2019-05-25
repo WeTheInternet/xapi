@@ -1,0 +1,8 @@
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.main().project(':xapi-core-parent:xapi-core-collect')
+xapiRequire.main().project(':xapi-core-parent:xapi-core-reflect')
+xapiRequire.module('test').external('junit:junit:4.12')
+

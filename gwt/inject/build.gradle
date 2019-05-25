@@ -1,15 +1,20 @@
-apply from: "$rootDir/gradle/xapi-env.gradle"
-String xapiVersion = findProperty('xapiVersion')
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+plugins {
+    id 'xapi-require'
+}
 
-repositories.jcenter()
+xapiRequire.module('main').configure {
+    req ->
+        req.internal 'xapi-log:main:api'
+        req.internal 'xapi-inject:main:main'
+        req.internal 'xapi-gwt-api:main:main'
+}
 
 dependencies {
-    compile "net.wti.core:xapi-fu:$xapiVersion"
-    compile project(':xapi-core-parent:xapi-core-inject')
-    compile project(':xapi-core-parent:xapi-core-inject')
-    compile project(':xapi-core-parent:xapi-core-log')
-    compile project(':xapi-gwt-api')
-    compile project(':xapi-dev-parent:xapi-dev-source')
     compile project(':xapi-dev-parent:xapi-dev-source')
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     compileOnly 'net.wetheinter:gwt-user:2.8.0'

@@ -87,4 +87,11 @@ public interface UsageType extends Named {
         boolean only,
         boolean lenient
     );
+
+    default String computeRequiredCapabilities(Dependency dep, String fromPlat, String fromMod) {
+        return dep.getGroup() +
+            ":" +
+            XapiNamer.moduleName(dep.getName(), fromPlat, fromMod)
+        ;
+    }
 }

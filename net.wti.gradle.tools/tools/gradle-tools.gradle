@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'groovy'
     id 'java-gradle-plugin'
 }
@@ -9,12 +9,17 @@ This handles the basics of publishing and path manifest production.'''
 
 repositories.jcenter()
 
+sourceCompatibility = '1.8'
+
 dependencies {
     compile gradleApi()
-    // Using external module reference for what could be a project() dependency,
-    // if the groovy+java-library plugin did not mess up groovy so badly.
-//    testCompile "net.wti.gradle.tools:xapi-gradle-test:${->version}"
     testCompile project(':xapi-gradle-test')
+    
+    // uncomment / copy+paste dependencies below to unlock class mocking in spock.
+    // you might only need one of them...  
+    // (update above comment when used next)
+//    testRuntime 'net.bytebuddy:byte-buddy:1.9.9',
+//                'org.objenesis:objenesis:3.0.1'
     compile project(':xapi-gradle-core')
 }
 

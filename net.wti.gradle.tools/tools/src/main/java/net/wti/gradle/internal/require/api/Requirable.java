@@ -3,6 +3,7 @@ package net.wti.gradle.internal.require.api;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.internal.XapiRegistration;
 import net.wti.gradle.schema.internal.XapiRegistration.RegistrationMode;
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectList;
 
 import java.util.Map;
@@ -20,10 +21,12 @@ public interface Requirable {
      * if you know that you don't need every possible permutation of every possible archive type.
      *
      * @param project An object to resolve into a :project:path when the {@link XapiRegistration} is resolved.
+     * @return
      */
-    default void project(Object project) {
-        XapiRegistration reg = XapiRegistration.from(project, getDefaultPlatform(), getDefaultModule(), getInto(), RegistrationMode.project);
+    default XapiRegistration project(Object project) {
+        XapiRegistration reg = XapiRegistration.from(project, getDefaultPlatform(), getDefaultModule(), getFrom(), RegistrationMode.project);
         getRegistrations().add(reg);
+        return reg;
     }
 
     default Object getDefaultModule() {
@@ -34,16 +37,23 @@ public interface Requirable {
         return null;
     }
 
-    default Object getInto() {
+    default Object getFrom() {
         return null;
     }
 
-    default void external(Object project) {
-        XapiRegistration reg = XapiRegistration.from(project, getDefaultPlatform(), getDefaultModule(), getInto(), RegistrationMode.external);
+    default XapiRegistration external(Object dependencyString) {
+        XapiRegistration reg = XapiRegistration.from(dependencyString, getDefaultPlatform(), getDefaultModule(), getFrom(), RegistrationMode.external);
         getRegistrations().add(reg);
+        return reg;
     }
 
-    default void internal(Object project) {
+    default XapiRegistration external(Object dependencyString, Object xapiCoord) {
+        XapiRegistration reg = XapiRegistration.from(dependencyString, getDefaultPlatform(), getDefaultModule(), xapiCoord, RegistrationMode.external);
+        getRegistrations().add(reg);
+        return reg;
+    }
+
+    default XapiRegistration internal(Object project) {
         if (project instanceof Map) {
             final Map map = (Map) project;
             project = map.get("platform") + ":" + map.get("module");
@@ -52,6 +62,7 @@ public interface Requirable {
             getDefaultPlatform(), getDefaultModule(), project, RegistrationMode.internal
         );
         getRegistrations().add(reg);
+        return reg;
     }
 
     /**
@@ -68,17 +79,22 @@ public interface Requirable {
      * When used on the root xapiRequire, we will create and bind any such sourcesets;
      * when used on a scoped xapiRequire, the target configuration is sourced from the scope,
      * with a fallback to "use same-named configurations in current project".
-     *
-     * @param project An object from which to derive a :project:path
+     *  @param project An object from which to derive a :project:path
      * @param platform An object from which to derive a platform name; null -> "main"|"test"
      * @param archive An object from which to derive the archive type; null -> "main"|"test"
+     * @return
      */
-    default void project(Object project, Object platform, Object archive) {
-        XapiRegistration reg = XapiRegistration.from(project, platform, archive, getInto());
+    default XapiRegistration project(Object project, Object platform, Object archive) {
+        XapiRegistration reg = XapiRegistration.from(project, platform, archive, getFrom());
         getRegistrations().add(reg);
+        return reg;
     }
 
     ProjectView getView();
 
     NamedDomainObjectList<XapiRegistration> getRegistrations();
+
+    default void configure(Action<? super Requirable> conf) {
+        conf.execute(this);
+    }
 }

@@ -15,6 +15,7 @@ import xapi.components.impl.WebComponentVersion;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.fu.In1Out1;
+import xapi.log.X_Log;
 import xapi.model.api.ModelKey;
 import xapi.model.service.ModelCache;
 import xapi.ui.api.component.ComponentConstructor;
@@ -82,7 +83,7 @@ public class GwtXapiSlidesComponent extends BaseXapiSlidesComponent<Element, Pot
   }
   public void created() {
     String id = getModelId(getElement());
-    xapi.log.X_Log.info("My model id is: ", id);
+    X_Log.info("My model id is: ", id);
     ModelKey key = ModelXapiSlides.newKey().withId(id).buildKey();
     ModelXapiSlides cached = (ModelXapiSlides) cache().getModel(key);
     if (cached != null) {

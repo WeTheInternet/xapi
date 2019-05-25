@@ -31,7 +31,6 @@ import javax.lang.model.element.Name;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

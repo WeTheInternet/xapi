@@ -13,8 +13,10 @@ import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.component.SoftwareComponentContainer;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
@@ -32,6 +34,7 @@ import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
 import xapi.gradle.java.Java;
 
+import java.io.File;
 import java.util.function.Function;
 
 /**
@@ -71,6 +74,8 @@ public class DefaultProjectView implements ProjectView {
     private final PluginContainer plugins;
 
     private final Action<Action<? super Boolean>> whenReady;
+    private final Function<String, File> file;
+    private final Function<Object[], ConfigurableFileCollection> files;
 
     private final Provider<BuildGraph> buildGraph;
     private final Provider<SourceSetContainer> sourceSets;
@@ -104,11 +109,15 @@ public class DefaultProjectView implements ProjectView {
             project.getArtifacts(),
             project.getLayout(),
             project.getComponents(),
-            project::findProperty,
             dec,
             finder,
             attributesFactory,
             (DefaultComponentMetadataHandler) project.getDependencies().getComponents(),
+
+            // objects above, lambdas below *~
+            project::findProperty,
+            project::file,
+            project::files,
 
             // only immutable values should go above here.
             done-> {
@@ -156,13 +165,15 @@ public class DefaultProjectView implements ProjectView {
         ArtifactHandler artifacts,
         ProjectLayout layout,
         SoftwareComponentContainer components,
-        Function<String, Object> propFinder,
         CollectionCallbackActionDecorator decorator,
         ProjectFinder projectFinder,
         ImmutableAttributesFactory attributesFactory,
-        // All "okay to resolve immediately" final values, above.
-
         DefaultComponentMetadataHandler componentMetadata,
+        // All "okay to resolve immediately" final values, above.
+        Function<String, Object> propFinder,
+        Function<String, File> file,
+        Function<Object[], ConfigurableFileCollection> files,
+
         Action<Action<? super Boolean>> whenReady,
         // All new providers should go here, at the end
         Provider<SourceSetContainer> sourceSets,
@@ -187,13 +198,16 @@ public class DefaultProjectView implements ProjectView {
         this.dependencies = dependencies;
         this.artifacts = artifacts;
         this.components = components;
-        this.propFinder = propFinder;
         this.decorator = decorator;
         this.projectFinder = projectFinder;
         this.attributesFactory = attributesFactory;
         this.componentMetadata = componentMetadata;
-        this.whenReady = whenReady;
         this.layout = layout;
+
+        this.propFinder = propFinder;
+        this.whenReady = whenReady;
+        this.file = file;
+        this.files = files;
 
         // The rest are providers.  Make them lazy.
         this.sourceSets = lazyProvider(sourceSets);
@@ -342,6 +356,16 @@ public class DefaultProjectView implements ProjectView {
     }
 
     @Override
+    public final File file(String path) {
+        return file.apply(path);
+    }
+
+    @Override
+    public final ConfigurableFileCollection files(Object... from) {
+        return files.apply(from);
+    }
+
+    @Override
     public void whenReady(Action<? super ProjectView> callback) {
         whenReady.execute(immediate->callback.execute(this));
     }
@@ -351,7 +375,7 @@ public class DefaultProjectView implements ProjectView {
         final Object v = version.get();
         if ("unspecified".equals(v)) {
             // TODO: get a decent default version
-            getLogger().warn("Version accessed but not configured in {}", getPath(), new RuntimeException());
+            getLogger().warn("Version accessed but not configured in {} of build {}", getPath(), ((GradleInternal)getGradle()).findIdentityPath(), new RuntimeException());
             return "0.0.1";
         }
         return String.valueOf(v);

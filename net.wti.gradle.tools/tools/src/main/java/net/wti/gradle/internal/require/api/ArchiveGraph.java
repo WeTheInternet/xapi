@@ -8,8 +8,10 @@ import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.SourceMeta;
+import net.wti.gradle.schema.internal.XapiRegistration;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.service.GradleService;
+import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
@@ -18,13 +20,14 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
+import org.gradle.api.internal.component.MultiCapabilitySoftwareComponent;
 import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.internal.Actions;
-import org.gradle.jvm.tasks.Jar;
 import org.gradle.util.GUtil;
 import xapi.gradle.fu.LazyString;
 
@@ -226,7 +229,11 @@ public interface ArchiveGraph extends Named, GraphNode {
     }
 
     default String getCapabilityCore() {
-        return project().getGroup() + ":" + platform().getMainModule() + ":" + getView().getVersion();
+        return project().getGroup() + ":" + getNameCore() + ":" + getView().getVersion();
+    }
+
+    default String getNameCore() {
+        return platform().getMainModule();
     }
 
     default String getCapability(String suffix) {
@@ -279,8 +286,9 @@ public interface ArchiveGraph extends Named, GraphNode {
     }
 
     default String asModuleName(String projName) {
-        String name = getName();
-        return "main".equals(name) || name.equals(projName) ? projName : projName + "-" + name;
+        final String name = getName();
+        final String platName = platform().getName();
+        return XapiNamer.moduleName(projName, platName, name);
     }
 
     default String getModuleName() {
@@ -496,23 +504,26 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default void importExternal(
         Dependency dep,
+        XapiRegistration reg,
         String newGroup,
         String newName,
         boolean only,
         boolean lenient
     ) {
-        importExternal(dep, DefaultUsageType.Api, newGroup, newName, only, lenient);
-        importExternal(dep, DefaultUsageType.Runtime, newGroup, newName, only, lenient);
+        importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, only, lenient);
+        importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, only, lenient);
     }
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     default void importExternal(
         Dependency dep,
+        XapiRegistration reg,
         UsageType type,
         String newGroup,
         String newName,
         boolean only,
         boolean lenient
     ) {
+        // TODO: move all the import* logic from ArchiveGraph, into a new class, DependencyStitcher
 
         final DependencyHandler deps = getView().getDependencies();
         final XapiSchema schema = getView().getSchema();
@@ -521,30 +532,12 @@ public interface ArchiveGraph extends Named, GraphNode {
         // create variant-aware, on-demand inputs to the lenient config.
         Configuration target = type.findConsumerConfig(this, only);
 
-        // TODO: properly figure out how to differentiate whether this is a composite-findable dependency,
-        //  or if we're going to need to rely on poms instead of .module.
-        //  for now, we're preserving the works-in-composite logic separately,
-        //  and forcing the caller to tell us if they expect composite-friendly module:idents (and targetConfigurations)
-        boolean isLocal = "true".equals(System.getProperty("no.composite"));
+        String from = GradleCoerce.unwrapString(reg.getFrom());
 
-        final String path;
-        if (isLocal) {
-            path = newGroup + ":" + newName + ":" + dep.getVersion();
-        } else {
-            path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
-        }
-//        path = dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion();
-        ModuleDependency mod = (ModuleDependency) deps.create(path);
-        // We aren't actually using feature variants, we're baking in "has own published transitive classpath" modules,
-        // rather than "melt into classifiers that happen to have gradle metadata";
-        // we'll save that additional level of indirection to be layers on top of each xapi module/archive.
-//        if (isLocal &&
-//            !(newGroup.equals(dep.getGroup()) && newName.equals(dep.getName()))
-//        ) {
-//            mod.capabilities(cap->cap.requireCapabilities(newGroup + ":" + newName));
-//        }
+        boolean isLocal = from != null;// && "true".equals(System.getProperty("no.composite"));
 
-
+        final String ident = dep.getGroup() + ":" + dep.getName();
+        final String path = ident + ":" + dep.getVersion();
         String base = attrs.getAttribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
         if ("main".equals(base)) {
             base = attrs.getAttribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE);
@@ -554,9 +547,52 @@ public interface ArchiveGraph extends Named, GraphNode {
                 base += toAdd;
             }
         }
-        mod.setTargetConfiguration(
-            type.deriveConfiguration(base, dep, isLocal, only, lenient)
-        );
+        ModuleDependency mod = (ModuleDependency) deps.create(path);
+
+        if (from != null) {
+            String[] bits = from.split(":");
+            assert bits.length <3 : "Invalid Xapi descriptor contains more than one : character -> " + from;
+            final String fromPlat = bits.length == 1 ? "main" : bits[0];
+            String fromMod = bits[bits.length-1];
+            if (fromMod.isEmpty()) {
+                fromMod = "main";
+            }
+            String require = type.computeRequiredCapabilities(dep, fromPlat, fromMod);
+            if (!require.isEmpty()
+                && !(require + ":").startsWith(ident + ":")
+            ) {
+
+                boolean isWti;
+                try {
+                    MultiCapabilitySoftwareComponent.class.getName();
+                    isWti = true;
+                } catch (NoClassDefFoundError e) {
+                    isWti = false;
+                }
+                if (isWti) {
+                    // This relies on WTI's fork of gradle.
+                    mod.setTargetConfiguration(
+                        type.deriveConfiguration(base, dep, isLocal, only, lenient)
+                    );
+                } else {
+                    // using requireCapabilities results in runtime jars instead of compiled classpaths, so it is less ideal.
+                    // also; we need to get better version information here.  This should come from whatever-is-handling schema.xapi
+                    mod.capabilities(cap->cap.requireCapabilities(require + ":" + dep.getVersion()));
+
+                }
+            }
+        }
+
+        if (from == null) {
+            mod.setTargetConfiguration(
+                type.deriveConfiguration(base, dep, false, only, lenient)
+            );
+        }
+
+//        if (":xapi-collect".equals(getView().getPath())) {
+//            System.out.println("\n\n\nFrom "+ mod.getName() + " : " + mod.getTargetConfiguration());
+//        }
+
         target.getDependencies().add(mod);
     }
 }

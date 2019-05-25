@@ -28,7 +28,7 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
   @Override
   protected UiRenderingContext[] getOptions(Class<?> type) {
     List<UiRenderingContext> options = new ArrayList<UiRenderingContext>();
-    
+
     BeanValueProvider values = getBeanProvider(type);
     // Check the package for options
     Package pkg = type.getPackage();
@@ -48,7 +48,7 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
       addAllRendererContexts(options, check, values);
       check = check.getEnclosingClass();
     }
-    
+
     for (Method m : type.getMethods()) {
       addAllRendererContexts(options, m, values);
     }
@@ -60,11 +60,11 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
       options.addAll(extractRenderingContext(element.getAnnotation(UiOptions.class), values));
     }
     if (element.isAnnotationPresent(UiRendererOptions.class)) {
-      options.addAll(extractRenderingContext(element.getAnnotation(UiRendererOptions.class), values, 
+      options.addAll(extractRenderingContext(element.getAnnotation(UiRendererOptions.class), values,
           element instanceof Method ? getNameFromMethod((Method)element) : null ));
     }
   }
-  
+
   @Override
   protected void recursiveAddBeanValues(BeanValueProvider bean, Class<?> cls,
       final ConvertsValue<Object, Object> converter, String prefix, int depth) {
@@ -79,7 +79,7 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
     for (Method m : cls.getMethods()) {
       if (
         m.getParameterTypes().length == 0
-        && m.getDeclaringClass() != Object.class 
+        && m.getDeclaringClass() != Object.class
         && m.getReturnType() != void.class
       ) {
         DoNotIndex noIndex = m.getAnnotation(DoNotIndex.class);
@@ -113,7 +113,7 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
       }
     }
   }
-  
+
 
   protected Method getRootMethod(Method m) {
     if (m.getDeclaringClass().isInterface()) {
@@ -133,8 +133,8 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
   }
 
   protected boolean isNotPrimitive(Class<?> cls) {
-    return 
-        !cls.isPrimitive() 
+    return
+        !cls.isPrimitive()
         && cls != String.class
         && cls != Boolean.class
         && cls != Byte.class
@@ -146,5 +146,5 @@ public class UserInterfaceFactoryGwt extends AbstractUserInterfaceFactory{
         && cls != Double.class
     ;
   }
-  
+
 }

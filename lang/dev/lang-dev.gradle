@@ -1,6 +1,18 @@
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.module('main').configure {
+    external "net.wti.core:xapi-fu:${->version}", 'main'
+    external "net.wti.core:xapi-lang-core:${->version}", 'main'
+}
+
 dependencies {
     compile project(':xapi-core-parent:xapi-core-collect')
     compile project(':xapi-core-parent:xapi-core-reflect')
-    compile "net.wti.core:xapi-fu:${->version}"
-    compile "net.wti.core:xapi-lang-core:${->version}"
 }

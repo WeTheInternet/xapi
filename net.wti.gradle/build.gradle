@@ -1,91 +1,47 @@
+buildscript({
+    System.setProperty('xapiIntoBuildscript', 'true')
+    ext.myBuildscript = it
+    apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+
 plugins {
     id 'idea'
     id 'wrapper'
     id 'groovy'
 }
+apply plugin: 'xapi-schema'
 
-allprojects {
-    group 'net.wti.gradle'
-    apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+xapiSchema {
+    platforms {
+        main
+    }
+    archives {
+        main
+    }
+    archives.create('test').require 'main'
+}
+gradle.beforeProject {
+    Project p ->
+        // this is only possible to do from the root build script, using .beforeProject
+        p.group = 'net.wti.gradle'
+        System.setProperty('xapiIntoBuildscript', 'true')
+        p.ext.myBuildscript = p.buildscript
+        p.apply from: "$p.rootDir.parent/gradle/xapi-env.gradle"
+
+        p.apply plugin: 'xapi-schema'
+        p.apply plugin: 'idea'
+
+        p.afterEvaluate {
+            p.apply plugin: 'maven-publish'
+            p.apply plugin: 'xapi-publish'
+        }
 }
 
 String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"
-
-TaskProvider required = tasks.register('publishRequired')
-
-subprojects {
-    Project p ->
-
-    p.apply plugin: 'java-library'
-    p.apply plugin: 'maven-publish'
-    p.apply plugin: 'idea'
-
-    PublishingExtension publishing = p.extensions.getByType(PublishingExtension)
-    publishing.repositories {
-        RepositoryHandler repos ->
-            repos.maven {
-                MavenArtifactRepository maven ->
-                    maven.name = 'xapiLocal'
-                    maven.url = "$rootDir.parentFile/repo"
-                    maven.metadataSources({it.gradleMetadata()})
-            }
-    }
-
-    p.repositories.maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir.parent/repo")
-    }
-    p.tasks.withType(PublishToMavenRepository).all {
-        PublishToMavenRepository ptml ->
-            ptml.doLast {
-                String coords = "$ptml.publication.groupId:$ptml.publication.artifactId:$ptml.publication.version"
-                URI url = ptml.repository.url
-                p.gradle.buildFinished({
-                    BuildResult b ->
-                        if (ptml.didWork) {
-                            p.logger.info """Published $coords to ${url}"""
-                        }
-                })
-                ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file:" + i.file.absolutePath}).join('/n')}"
-            }
-            ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME)
-            required.configure {it.dependsOn ptml}
-            p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)
-    }
-    publishing.publications.create 'main', MavenPublication, {
-        MavenPublication pub ->
-            pub.from p.components.java
-            def finish = {
-                pub.artifactId = p.jar.baseName
-
-//
-//                def javac = tasks.getByName(JavaPlugin.COMPILE_JAVA_TASK_NAME)
-//                def joinJar = tasks.create('joinJar')
-//                def publish = tasks.getByName(PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME)
-//                def joinPublish = tasks.create('joinPublish')
-//
-//                def condition = {
-//                    !repo.directory || gradle.taskGraph.hasTask("$path:$PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME")
-//                }
-//
-//                joinJar.onlyIf condition
-//                joinPublish.onlyIf condition
-//
-//                javac.finalizedBy(joinJar)
-//                joinJar.finalizedBy(jar)
-//                jar.finalizedBy(joinPublish)
-//                joinPublish.finalizedBy(publish)
-            }
-            if (p.state.executed) {
-                finish()
-            } else {
-                p.afterEvaluate finish
-            }
-
-    }
-
-}
 
 import net.wti.gradle.system.spi.GradleServiceFinder
 GradleServiceFinder.getService(project)

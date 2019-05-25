@@ -24,6 +24,7 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     private final SetProperty<LazyString> requires;
     private final ProjectView view;
     private boolean sourceAllowed;
+    private Boolean test;
 
     public DefaultArchiveConfig(
         PlatformConfigInternal platform,
@@ -109,8 +110,19 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     }
 
     @Override
+    public boolean isTest() {
+        return test == null ? getName().matches(".*[tT]est.*") : test;
+    }
+
+    @Override
     public void setSourceAllowed(boolean sourceAllowed) {
         this.sourceAllowed = sourceAllowed;
+    }
+
+    @Override
+    public DefaultArchiveConfig setTest(Boolean test) {
+        this.test = test;
+        return this;
     }
 
     @Override

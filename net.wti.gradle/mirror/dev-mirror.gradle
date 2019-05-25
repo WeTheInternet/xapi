@@ -1,14 +1,10 @@
 plugins {
-    id 'java'
+    id 'xapi-require'
 }
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 
-repositories {
-    jcenter()
-}
-
-dependencies {
-    compile "net.wti.core:xapi-gen:$version",
-        "net.wti.core:xapi-fu:$version", // blech... transitive dependencies not working right.  This should not be necessary
-        "net.wti.core:xapi-anno:$version"
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-gen:$version", 'main'
+    external "net.wti.core:xapi-anno:$version", 'main'
+    external "net.wti.core:xapi-fu:$version", 'main'
 }

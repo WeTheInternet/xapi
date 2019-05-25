@@ -83,4 +83,5 @@ public abstract class BaseRequire<T> implements PropertyMixIn, MethodMixIn {
             return (arguments.length == 1 && arguments[0] instanceof Closure);
         }
     }
+
 }

@@ -1,14 +1,13 @@
 plugins {
-    id 'xapi-schema'
+    id 'xapi-require'
 }
 
 repositories {
     jcenter()
 }
 
-dependencies {
-    compile project(':xapi-fu')
-    testCompile 'junit:junit:4.12'
-}
+xapiRequire.main().internal 'xapi-fu:main'
+xapiRequire.module('test').external 'junit:junit:4.12'
+
 
 description = 'XApi - Dev mode tools for source generation'

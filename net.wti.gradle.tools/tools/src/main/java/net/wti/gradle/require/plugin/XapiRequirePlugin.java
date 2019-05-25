@@ -128,7 +128,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                 includeInternal(self, projId, arch, only, lenient);
                 return;
             case external:
-                includeExternal(self, projId, include.getPlatform(), include.getArchive(), arch, only, lenient);
+                includeExternal(self, projId, include, arch, only, lenient);
                 return;
             default:
                 throw new UnsupportedOperationException(include.getMode() + " was not handled");
@@ -146,7 +146,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
         incProject.whenReady(ReadyState.BEFORE_READY, other->{
             final String projName = incProject.getName();
-            self.getLogger().quiet("Including project {} into arch {}", projName, arch.getPath());
+            self.getLogger().info("Including project {} into arch {}", projName, arch.getPath());
             arch.importGlobal(projName, only, lenient);
         });
     }
@@ -159,14 +159,27 @@ public class XapiRequirePlugin implements Plugin<Project> {
         boolean lenient
     ) {
         String[] coords = projId.split(":");
-        assert coords.length >= 2 : "Invalid coordinates " + projId + " expected `platform:module` pair";
         final ProjectGraph graph;
-        String platName = coords[coords.length - 2];
-        String archName = coords[coords.length -1];
-        if (coords.length == 2) {
+        final String platName;
+        final String archName;
+        archName = coords[coords.length -1];
+        final BuildGraph bg = self.getBuildGraph();
+        if (coords.length == 1) {
             graph = self.getProjectGraph();
+            platName = "main";
+        } else if (coords.length == 2) {
+            final String plat = coords[coords.length - 2];
+            if (bg.hasProject(plat)) {
+                platName = "main";
+                graph = bg.getProject(plat);
+            } else {
+                platName = plat;
+                graph = self.getProjectGraph();
+            }
         } else {
-            graph = self.getBuildGraph().getProject(projId.substring(0, projId.length() - platName.length() - archName.length() - 2));
+            platName = coords[coords.length - 2];
+            String proj = projId.substring(0, projId.length() - platName.length() - archName.length() - 2);
+            graph = bg.getProject(proj);
         }
         graph.whenReady(ReadyState.BEFORE_READY, ready->{
             final PlatformGraph reqPlatform = graph.platform(platName);
@@ -179,22 +192,31 @@ public class XapiRequirePlugin implements Plugin<Project> {
     private void includeExternal(
         ProjectView self,
         String projId,
-        String requestedGroup,
-        String requestedName,
+        XapiRegistration reg,
         ArchiveGraph arch,
         boolean only,
         boolean lenient
     ) {
 
-        final DependencyHandler deps = self.getDependencies();
+        String requestedGroup = reg.getPlatform();
+        String requestedName = reg.getArchive();
+
         final Dependency dep;
         // The projId here is a g:n[:v] module identifier.
-        if (projId.indexOf(':') == projId.lastIndexOf(':')) {
+        int lastColon = projId.lastIndexOf(':');
+        if (projId.indexOf(':') == lastColon || lastColon == projId.length()-1) {
+            // either no version supplied, or `empty-string:for-version:`
             // TODO: this should be looked up from a cache / service somewhere...
+            String was = projId;
             projId += ":" + self.getVersion();
+            self.getLogger().info("Replacing {} with {}", was, projId);
         }
         final String[] items = projId.split(":");
         assert items.length == 3 : "Malformed path " + projId + "; expected three segments, got " + Arrays.asList(items);
+        if ("null".equals(items[2])) {
+            self.getLogger().quiet("Replacing \"null\" with {}", projId);
+            items[2] = self.getVersion();
+        }
         dep = self.getDependencies().create(projId);
         // transform the dependency to match our platform/archive
         String newGroup =
@@ -207,7 +229,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         // If you have `com.foo:thing:1`, gradle will know it is variant-mapped and use our import configuration to select correctly.
         // If you have `com.foo:thing-api:1`, gradle will look for it in your local repo, and will fail if it is not found.
 
-        arch.importExternal(dep, newGroup, newName, only, lenient);
+        arch.importExternal(dep, reg, newGroup, newName, only, lenient);
     }
 
 }

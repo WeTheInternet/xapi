@@ -14,7 +14,7 @@ public class XapiDistTest {
 
     @Test
     public void testCoreUtil() throws Exception {
-        // Performs complete transformation of the xapi-core-util project,
+        // Performs complete transformation of the xapi-util project,
         // using our output folder as the location to dump output.
         DistGenerator generator = new DistGenerator();
         DistOpts opts = new DistOpts();

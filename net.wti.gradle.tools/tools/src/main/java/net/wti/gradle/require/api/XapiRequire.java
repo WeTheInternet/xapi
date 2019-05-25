@@ -46,4 +46,20 @@ public class XapiRequire extends BaseRequire<RequirePlatform> implements Requira
     protected NamedDomainObjectContainer<RequirePlatform> container() {
         return platforms;
     }
+
+    public RequireModule main() {
+        return module("main", "main");
+    }
+
+    public RequireModule platform(CharSequence platform) {
+        return module(platform, "main");
+    }
+
+    public RequireModule module(CharSequence platform, CharSequence module) {
+        return platforms.maybeCreate(platform.toString()).getProperty(module.toString());
+    }
+
+    public RequireModule module(CharSequence module) {
+        return module("main", module);
+    }
 }

@@ -1,15 +1,26 @@
 plugins {
-    id 'java-gradle-plugin'
+    id 'xapi-require'
     id 'groovy'
-    id 'java-library'
+    id 'maven-publish'
+    id 'xapi-publish'
 }
 String xapiHome = "$rootDir.parent"
 apply from: "$xapiHome/gradle/xapi-env.gradle"
 apply from: "$xapiHome/gradle/int-test.gradle"
 repositories.jcenter()
 
+
+// force-realize a jar task for java-gradle-plugin to configure
+xapiSchema.module('main', 'main').jarTask.get()
+xapiSchema.whenReady {
+
+    apply plugin: 'java-gradle-plugin'
+    GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
+    plugin.publishComponent = '_main_main'
+}
+
 def module = project.dependencies.&create
-def local = { path -> project.dependencies.project(path: path) }
+
 def depend = { String key, Object item ->
     if (item instanceof Iterable) {
         for (Object i : item) {
@@ -20,22 +31,24 @@ def depend = { String key, Object item ->
     }
 }
 
-depend('api', [
-        local(':xapi-gradle-api'),
-        module("net.wti.core:xapi-gen:$version".toString()),
-        module("net.wti.core:xapi-fu:$version".toString()),
-        module("net.wti.gradle.tools:xapi-gradle-tools:$version".toString())
-])
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-gen:$version", 'main'
+    external "net.wti.core:xapi-fu:$version", 'main'
+    external "net.wti.gradle.tools:xapi-gradle-tools:$version"//, 'main'
+    internal 'xapi-gradle-api:main:main'
+}
+
+xapiRequire.module('test').configure {
+        external "net.wti.gradle.tools:xapi-gradle-test:$version"
+}
+
+// we'll leave it up to scripts to decide which plugin/gradle/groovy version they want to use...
 depend 'compileOnly', [
         project.dependencies.gradleApi(),
-        // we'll leave it up to scripts to decide which plugin/version they want to use...
         module('com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0'),
         module('org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1'),
         module('com.github.jengelman.gradle.plugins:shadow:4.0.4')
 ]
-depend('testImplementation', [
-        module("net.wti.gradle.tools:xapi-gradle-test:$version".toString())
-])
 
 tasks.withType(Test).configureEach({
     Test t ->

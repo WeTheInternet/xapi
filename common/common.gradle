@@ -4,31 +4,34 @@ buildscript({
     }
 })
 plugins { id 'xapi-require' }
-evaluationDependsOn(':schema')
 
 String v = version
-xapiRequire {
-    main.api.external "net.wti.core:xapi-anno:$v"
-    main.api.external "net.wti.core:xapi-fu:$v"
-    main.main.external "net.wti.core:xapi-gen:$v"
-    main.test.external "net.wti.core:xapi-fu:$v"
-}
 
-/*
-apply from: "$rootDir/gradle/xapi-env.gradle"
-repositories {
-    jcenter()
+// alter our schema; we don't make spi depend on api by default, since it's plausible to chose dependency in either direction
+xapiSchema.archives.getByName('spi').require('api')
+
+xapiRequire {
+    main().external "net.wti.core:xapi-gen:$v", "main"
+    module('api').external "net.wti.core:xapi-anno:$v", "main"
+    module('api').external "net.wti.core:xapi-fu:$v", "main"
+    module('test').external "net.wti.core:xapi-fu:$v", "main"
+    module('jre', 'main').internal "xapi-util:main"
+    module('jre', 'test').internal "xapi-core-parent:xapi-core-test:main:main"
 }
 
 apply from: "$rootDir/gradle/processor.gradle"
-*/
 
 dependencies {
     // TODO: make this implementation and then force alllll downstream users to add this as well.
     compile 'javax.inject:javax.inject:1'
     // alternatively, make it compile-transitive from xapi-inject, so at least it's obvious consumer wants @Inject
+
     compile 'javax.annotation:javax.annotation-api:1.2'
-    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$v"
+    apiAnnotationProcessor("net.wti.gradle:xapi-dev-mirror:$v") {
+        ExternalModuleDependency dep ->
+            // TODO: set this based on static analysis of schema.xapi files
+//            dep.targetConfiguration = 'exportCompile'
+    }
     testCompile 'junit:junit:4.12'
 }
 description = 'XApi - Core Interfaces and Abstractions'

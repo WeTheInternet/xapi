@@ -1,11 +1,11 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
 }
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-util')
-    compile 'junit:junit:4.12'
-    compile 'junit:junit:4.12:sources'
+xapiRequire.main().configure {
+    project(':xapi-util')
+    external('junit:junit:4.12')
+    external('junit:junit:4.12:sources')
 }
 
 description = 'XApi - Core testing utilities'

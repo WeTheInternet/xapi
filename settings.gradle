@@ -22,6 +22,8 @@ def singleProject = [
         'inject': ['gwt', 'jre'],
         'collect': ['gwt', 'jre'],
         'common': ['gwt', 'jre'],
+        'log': ['gwt', 'jre'],
+        'util': ['gwt', 'jre'],
         // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc
         // Specific projects can be realized via -Pxapi.${projName}.${platform}=true
         // So, -Pxapi.inject.gwt=true would realize only a ':inject-gwt' project,
@@ -29,6 +31,79 @@ def singleProject = [
         // The child projects will, by default, be mounted in the build directory,
         // as a clue to you that all your changes are going to get blown away.
 ]
+
+/* in order to overcome "parallelization by project" instead of "by task",
+ we should consider a settings.gradle plugin which can "explode" each defined module into N projects:
+ 
+ src/main/.*
+ src/api/.*
+ src/jdk8/.*
+ src/jdk11/.* 
+ src/gwt/.* 
+ src/etc/.* 
+ src/projects/(main|api|jdk8|jdk11|gwt|etc).gradle
+ 
+ The projects buildfiles need not actually exist, but will override the supplied-by-settings plugin defaults.
+ Those defaults will be made available for manually-supplied buildscripts via `project.parent.initChild(project|path)`.
+ These defaults will still be applied _after_ the script is evaluated, unless you call `project.parent.skipChild(project|path)`
+
+ The root build.gradle would then just create project() dependencies for module,
+ so that each can build in parallel, and we can have simple project dependencies.
+ Heck, the root project could opt to be a pom/bom for each child,
+ though perhaps better to have the root project expose post-processed source dependencies;
+ perhaps src/impl/.* which transforms any magic-method injection on main:main and dependencies.
+ 
+ The sub-project dependencies would be used exclusively between submodules, all with sources exposed for processing.
+ The main:impl module melts post-processed versions all of main,api,spi, etc,
+ and depends on all the post-processed versions of all xapi-module dependencies.
+ 
+ Other platforms can have jdk8Impl, jdk11Impl, gwtImpl, j2clImpl, etc, which behave the same, but live in src/projects.
+ 
+ Best of all, it means we don't _have_ to muck with multi-capability-publishing.
+ We can save that for allowing variants-within-modules.
+ 
+ so... new plugin, 'xapi-settings'.
+ Have it read a shared settings.xapi file to discover schema(s),
+ create the necessary projects here,
+ and then in the build scripts, simply create project dependencies if they exist, external if they don't.
+ 
+ Since all composite builds are declared here,
+ we can also wait until settings are fully evaluated,
+ then look for the settings.xapi file in each composite build
+ to know the whole-world-schema up-front,
+ with all possible "external capabilities" known,
+ without having to try to communicate into an IncludedBuild in any way.
+ 
+ It _might_ make sense for us to be able to generate "skins" over composite build modules,
+ taking all the src/projects children as dependencies,
+ and use project-local toolset to generate new impl modules.
+ 
+ This allows a consumer project to replace generated sources with their own (just replace the groupId of the composite child).
+ The consumer would be able to expose new, higher priority services / injection rules,
+ and simply "shade" the entire project into the local build.
+ 
+ Finally, it should be possible to turn either source/impl on/off independently.
+ source can only be turned off if it has already been built/deployed once
+ (i.e. if there is no impl to speak of, we must run in source mode at least once to get generated)
+
+ This is to avoid cluttering IDE.  Knowingly having duplicated classes is annoying when searching for types by name.
+ There still should only be one actual accessible type from the correct source on your classpath (so jump to source is sane),
+ but we'd still, ideally, want to be able to toggle between only-source, only-impl and source-and-impl modes.
+ 
+ For this to work nicely, impl would likely need to have an optional group of sourcesets to turn on at-will.
+ Types with replacements would be filtered from any included sources (sync together everything but replacement files from source dirs),
+ then all *that* source is compiled together with various java compiler plugins / processors running.
+ 
+ 
+ The existing work to make multi-capability dependencies can also be used as needed;
+ for absorbed composites, it may be possible to model the entire included build in a single project;
+ for logical-variants of modules (free vs. debug, etc) (adding arbitrary dimensions of which only one is chosen);
+ to expose all platform impls from a single project location.
+ 
+ We'll decide when and how to use this as we go, and update this code-comment-design-doc ...eventually.
+ 
+ */
+
 
 String prefix = prop('xapi.prefix') ?: 'xapi'
 
@@ -80,11 +155,7 @@ singleProject.forEach({
         }
 })
 
-include(':xapi-core-parent:xapi-core-api')
-include(':xapi-core-parent:xapi-core-log')
 include(':xapi-core-parent:xapi-core-reflect')
-include(':xapi-core-parent:xapi-core-inject')
-include(':xapi-core-parent:xapi-core-util')
 include(':xapi-core-parent:xapi-core-model')
 include(':xapi-core-parent:xapi-core-io')
 include(':xapi-core-parent:xapi-core-collect')
@@ -102,7 +173,6 @@ include(':xapi-core-parent:xapi-core-settings')
 include(':xapi-core-parent:xapi-core-test')
 include(':xapi-core-parent')
 include(':xapi-gwt-api')
-include(':xapi-gwt-inject')
 include(':xapi-gwt-collect')
 include(':xapi-elemental')
 include(':xapi-gwt3')
@@ -150,11 +220,7 @@ include(':xapi-maven-plugin')
 include(':xapi-samples:xapi-demo')
 include(':xapi-samples')
 
-project(':xapi-core-parent:xapi-core-api').projectDir = file('core/api')
-project(':xapi-core-parent:xapi-core-log').projectDir = file('core/log')
 project(':xapi-core-parent:xapi-core-reflect').projectDir = file('core/reflect')
-project(':xapi-core-parent:xapi-core-inject').projectDir = file('core/inject')
-project(':xapi-core-parent:xapi-core-util').projectDir = file('core/util')
 project(':xapi-core-parent:xapi-core-model').projectDir = file('core/model')
 project(':xapi-core-parent:xapi-core-io').projectDir = file('core/io')
 project(':xapi-core-parent:xapi-core-collect').projectDir = file('core/collect')
@@ -172,7 +238,6 @@ project(':xapi-core-parent:xapi-core-settings').projectDir = file('core/settings
 project(':xapi-core-parent:xapi-core-test').projectDir = file('core/test')
 project(':xapi-core-parent').projectDir = file('core')
 project(':xapi-gwt-api').projectDir = file('gwt/api')
-project(':xapi-gwt-inject').projectDir = file('gwt/inject')
 project(':xapi-gwt-collect').projectDir = file('gwt/collect')
 project(':xapi-elemental').projectDir = file('gwt/elemental')
 project(':xapi-gwt3').projectDir = file('gwt/gwt3')

@@ -1,6 +1,8 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
 }
+
+xapiRequire.module('main').internal 'xapi-common:jre:main'
 
 dependencies {
     compile "net.wti.core:xapi-lang-core:${->version}"
@@ -9,7 +11,6 @@ dependencies {
     compile project(':xapi-dev-parent:xapi-dev-javac')
     compile project(':xapi-dev-parent:xapi-dev-scanner')
     compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-jre-parent:xapi-jre-api')
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core-java8:1.0.0m1'
 }

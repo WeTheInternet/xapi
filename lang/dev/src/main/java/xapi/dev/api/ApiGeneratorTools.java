@@ -22,7 +22,6 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
-import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.ImportSection;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
@@ -40,11 +39,6 @@ import xapi.util.X_String;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.javaparser.ast.expr.BooleanLiteralExpr.boolLiteral;
-import static com.github.javaparser.ast.expr.CharLiteralExpr.charLiteral;
-import static com.github.javaparser.ast.expr.DoubleLiteralExpr.doubleLiteral;
-import static com.github.javaparser.ast.expr.IntegerLiteralExpr.intLiteral;
-import static com.github.javaparser.ast.expr.LongLiteralExpr.longLiteral;
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
 
 /**

@@ -1,5 +1,5 @@
 plugins {
-    id 'xapi-schema'
+    id 'xapi-require'
     id "ca.coglinc.javacc" version "2.4.0"
 }
 
@@ -13,8 +13,12 @@ compileJavacc.outputDirectory = file('src/main/gen')
 
 sourceSets.main.java.srcDirs = ['src/main/java', 'src/main/gen']
 
+xapiRequire.main().configure {
+    project ':xapi-fu'
+    project ':xapi-gen'
+}
+
 dependencies {
-    compile project(':xapi-fu'), project(':xapi-gen')
     javacc 'net.java.dev.javacc:javacc:7.0.4'
 }
 

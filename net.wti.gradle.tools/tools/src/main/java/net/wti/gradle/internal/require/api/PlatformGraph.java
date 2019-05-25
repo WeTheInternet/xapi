@@ -71,11 +71,14 @@ public interface PlatformGraph extends Named, HasWork {
     }
 
     default String asGroup(String group) {
-        final String platId = getName();
-        if ("main".equals(platId)) {
+        // hm... we _may_ want platform in the group _and_ the artifactId.
+        // It _must_ be in the artifact id for default jar naming conventions (and unique project names) to play nicely,
+        // but it can be nice to actually have all of a given platform in a single directory, rather than a big, flat repo dir.
+//        final String platId = getName();
+//        if ("main".equals(platId)) {
             return group;
-        }
-        return group + "." + platId;
+//        }
+//        return group + "." + platId;
     }
 
     default String getGroup() {

@@ -130,37 +130,43 @@ public class XapiBasePlugin implements Plugin<Project> {
     }
 
     private void removeJavaComponent(Project project) {
-        project.getComponents().removeIf(comp -> "java".equals(comp.getName()));
+        if (!"false".equals(project.findProperty("skip.java.plugin"))) {
+            project.getComponents().removeIf(comp -> "java".equals(comp.getName()));
+        }
     }
 
-    public void configureRepo(RepositoryHandler repos, Project view) {
+    public void configureRepo(RepositoryHandler repos, Project project) {
         final boolean addRepo = repos.stream().noneMatch(r->XAPI_LOCAL.equals(r.getName()));
         if (!addRepo) {
-            view.getLogger().warn("xapiLocal already found in " + repos);
+            project.getLogger().warn("xapiLocal already found in " + repos);
             return;
         }
 
         if (repo == null) {
-            repo = (String) view.findProperty("xapi.mvn.repo");
+            repo = (String) project.findProperty("xapi.mvn.repo");
         }
         if (repo == null) {
-            String xapiHome = (String) view.findProperty("xapi.home");
+            String xapiHome = (String) project.findProperty("xapi.home");
             if (xapiHome == null) {
-                xapiHome = GradleServiceFinder.getService(view).findXapiHome();
+                xapiHome = GradleServiceFinder.getService(project).findXapiHome();
             }
             if (xapiHome == null) {
-                view.getLogger().quiet("No xapi.home found; setting xapiLocal repo to {}/repo", view.getRootDir());
-                xapiHome = view.getRootDir().getAbsolutePath();
+                project.getLogger().quiet("No xapi.home found; setting xapiLocal repo to {}/repo", project.getRootDir());
+                xapiHome = project.getRootDir().getAbsolutePath();
             } else {
-                view.getLogger().trace("Using repo from xapi.home {}/repo", xapiHome);
+                project.getLogger().trace("Using repo from xapi.home {}/repo", xapiHome);
             }
-            repo = new File(xapiHome , "repo").toURI().toString();
+            repo = new File(xapiHome , "repo").toString();
         }
 
         repos.maven(mvn -> {
             mvn.setUrl(repo);
             mvn.setName("xapiLocal");
-            if (!"true".equals(System.getProperty("no.metadata"))) {
+            if ("true".equals(System.getProperty("no.metadata")) || "true".equals(project.findProperty("no.metadata"))) {
+                project.getLogger().trace("Adding xapiLocal {} w/ maven|gradle metadata support in {}", repo, project.getPath());
+                mvn.metadataSources(MetadataSources::mavenPom);
+            } else {
+                project.getLogger().trace("Adding xapiLocal {} w/ only gradle metadata in {}", repo, project.getPath());
                 mvn.metadataSources(MetadataSources::gradleMetadata);
             }
         });

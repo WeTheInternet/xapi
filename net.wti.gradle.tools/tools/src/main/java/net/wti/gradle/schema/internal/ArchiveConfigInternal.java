@@ -19,5 +19,7 @@ public interface ArchiveConfigInternal extends ArchiveConfig {
 
     void fixRequires(PlatformConfig platConfig);
 
+    DefaultArchiveConfig setTest(Boolean test);
+
     void baseOn(ArchiveConfig rooted);
 }

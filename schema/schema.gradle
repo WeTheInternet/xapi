@@ -15,9 +15,9 @@ xapiSchema {
         gwt {
             replace 'main'
         }
-//        jre {
-//            replace main
-//        }
+        jre {
+            replace main
+        }
 //        server {
 //            replace jre
 //        }

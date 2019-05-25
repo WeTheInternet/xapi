@@ -6,6 +6,9 @@ import net.wti.gradle.test.AbstractMultiBuildTest
 import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
+
+import static org.gradle.api.logging.LogLevel.INFO
+
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/17/18 @ 4:42 AM.
  */
@@ -35,7 +38,7 @@ repositories {
 version = $version
 group = '${rootProject == ':' ? 'testgroup' : rootProject}'
 """
-            propertiesFile << "xapi.home=${System.getProperty("xapi.home")}"
+            propertiesFile << "xapi.home=${topDir}"
             addSource("com.foo.$name", 'Main', """
 package com.foo.$name;
 
@@ -127,7 +130,7 @@ dependencies {
         withComposite 'gwt2', {
             withProject ':', {
                 buildFile << '''
-xapiRequire.external 'gwt1:gwt1'
+xapiRequire.external 'gwt1:gwt1', 'gwt:main'
 '''
                 settingsFile << '''
 rootProject.name = 'gwt2'
@@ -144,13 +147,20 @@ rootProject.name = 'gwt1'
         }
 
         when:
-        BuildResult res = runSucceed(LogLevel.QUIET, folder('gwt2'),':xapiReport', ':compileGwtJava', '-Pxapi.debug=true')
+        // seems to be failing to properly aggregate the gwt platform; check the BuildGraph for bugs!
+        BuildResult res = runSucceed(INFO, folder('gwt2'),
+                ':xapiReport', ':compileGwtJava', '-Pxapi.debug=true')
         then:
         res.task(':compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
         res.output.contains "$rootDir/gwt1/src/main/java"
         res.output.contains "$rootDir/gwt2/src/main/java"
+        // enforce finding class folders rather than jars.  We want to keep everything directory-based as long as possible.
+        res.output.contains "$rootDir/gwt1/build/classes/java/main"
+        res.output.contains "$rootDir/gwt1/build/classes/java/gwt"
+        res.output.contains "$rootDir/gwt2/build/classes/java/main"
+        res.output.contains "$rootDir/gwt2/build/classes/java/gwt"
 
     }
 

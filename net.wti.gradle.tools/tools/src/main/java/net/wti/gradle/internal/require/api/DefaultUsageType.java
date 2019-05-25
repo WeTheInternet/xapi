@@ -48,13 +48,20 @@ public enum DefaultUsageType implements UsageType {
             boolean only,
             boolean lenient
         ) {
-            if ("main".equals(base)) {
-                return isLocal ? "compile" : "exportCompile";
-            }
-            return isLocal ? "compile" // base + "Compile"
-                : base + "ExportCompile";
-            // the commented out `base + "Compile"` was from an attempt to use feature variants
+            return isLocal ?
+                "main".equals(base) ? "exportCompile" : base + "ExportCompile"
+                :
+                "compile"
+                // TODO: get disambiguation rules working for consuming apiElements
+//                "apiElements"
+                ;
         }
+        // TODO: figure out why the -compile variant doesn't have sourceSet output exposed (yet)
+//
+//        @Override
+//        public String computeRequiredCapabilities(Dependency dep, String fromPlat, String fromMod) {
+//            return super.computeRequiredCapabilities(dep, fromPlat, fromMod.isEmpty() || "main".equals(fromMod) ? "compile" : fromMod + "-compile");
+//        }
     },
     /**
      * The transitive runtime scope of your module
@@ -82,7 +89,12 @@ public enum DefaultUsageType implements UsageType {
             boolean isLocal, boolean only,
             boolean lenient
         ) {
-            return isLocal ? "runtime" : "main".equals(base) ? "exportRuntime" : base + "ExportRuntime";
+            return isLocal ?
+                "main".equals(base) ? "exportRuntime" : base + "ExportRuntime"
+                :
+                "runtime"
+//                "runtimeElements"
+                ;
         }
     },
     /**
@@ -119,4 +131,11 @@ public enum DefaultUsageType implements UsageType {
         String base, Dependency dep, boolean isLocal, boolean only, boolean lenient
     ) {
         throw new UnsupportedOperationException(this + " not yet supported");
-    }}
+    }
+
+    @Override
+    public String computeRequiredCapabilities(Dependency dep, String fromPlat, String fromMod) {
+        // We are overriding this b/c groovy can complain when trying to find inherited default methods
+        return UsageType.super.computeRequiredCapabilities(dep, fromPlat, fromMod);
+    }
+}

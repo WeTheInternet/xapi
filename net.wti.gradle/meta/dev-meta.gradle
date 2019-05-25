@@ -1,20 +1,22 @@
 plugins {
-    id 'java'
-    id 'java-gradle-plugin'
+    id 'xapi-require'
 }
-
-repositories {
-    jcenter()
+version = '0.5.1'
+xapiRequire.main().configure {
+    external "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
+    external "net.wti.core:xapi-gen:${->version}", 'main'
+    external "net.wti.core:xapi-lang-core:${->version}", 'main'
+    internal "xapi-gradle-api:main"
+    // hm... when mixing external and internal which both have transitive dependencies on xapi-fu,
+    // we will get choice conflict errors unless we explicitly add xapi-fu here.  Investigate!
+    external "net.wti.core:xapi-fu:${->version}", 'main'
 }
 
 dependencies {
-    compile "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
-    compile "net.wti.core:xapi-gen:${->version}"
-    compile project(":xapi-gradle-api")
-    compile "net.wti.core:xapi-lang-core:${->version}"
     compileOnly gradleApi()
 }
-version = '0.5.1'
+
+
 String doc = '''The meta project converts gradle paths / git coordinates into a single "unified build".
 
 All claims below are of an idealist roadmapped version of what this presently can do.
@@ -35,27 +37,38 @@ It can also do lighter meta-work, like symlinking together various source direct
 so other build tools can simply point to one directory to get 731 modules combined.
 '''
 description = doc
-GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
-plugin.plugins.register('xapi.meta', {
-    PluginDeclaration decl->
-        decl.id = 'xapi.meta'
-        decl.displayName = "Xapi Meta Plugin"
-        decl.description = doc
-        decl.implementationClass = "xapi.gradle.meta.MetaPlugin"
-})
 
-// Add
-// plugins {
-//  id "com.gradle.plugin-publish" version "0.10.0"
-// }
-// Then uncomment:
-//pluginBundle {
-//    website = "https://wti.net/xapi"
-//    vcsUrl = "https://github.com/WeTheInternet/xapi"
-//    description = doc
-//    tags = listOf("java", "gradle", "git")
-//    mavenCoordinates {
-//        groupId = project.group.toString()
-//        artifactId = project.name
+xapiSchema.whenReady {
+    // java-gradle-plugin relies on task jar being defined.  Lets use the schema to realize it early.
+    xapiSchema.module('main', 'main').jarTask.get()
+    setProperty('skip.java.plugin', 'true')
+    setProperty('skip.java.component', 'true')
+    plugins.apply 'java-gradle-plugin'
+    GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
+    plugin.publishComponent = '_main_main'
+    plugin.plugins.register('xapi.meta', {
+        PluginDeclaration decl->
+            decl.id = 'xapi.meta'
+            decl.displayName = "Xapi Meta Plugin"
+            decl.description = doc
+            decl.implementationClass = "xapi.gradle.meta.MetaPlugin"
+    })
+
+//     To actually publish plugin:
+//     plugins {
+//      id "com.gradle.plugin-publish" version "0.10.1"
+//     }
+//     Then uncomment:
+//    pluginBundle {
+//        website = "https://wti.net/xapi"
+//        vcsUrl = "https://github.com/WeTheInternet/xapi"
+//        description = doc
+//        tags = listOf("java", "gradle", "git")
+//        mavenCoordinates {
+//            groupId = project.group.toString()
+//            artifactId = project.name
+//        }
 //    }
-//}
+
+} // end xapiSchema.whenReady{}
+

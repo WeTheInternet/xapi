@@ -11,7 +11,6 @@ import xapi.util.X_Debug;
 
 import javax.inject.Provider;
 import java.util.Iterator;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 import static xapi.process.X_Process.newThread;

@@ -1,10 +1,14 @@
+
 plugins {
-    id 'java'
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+    external "net.wti.core:xapi-lang-core:$version", 'main'
+    external "net.wti.core:xapi-fu:$version", 'main'
+    external "net.wti.gradle.tools:xapi-gradle-tools:$version", 'main'
 }
 
 dependencies {
-    compileOnly gradleApi()
-    compile "net.wti.core:xapi-lang-core:$version"
-    compile "net.wti.core:xapi-fu:$version" // should not be necessary
-    compile "net.wti.gradle.tools:xapi-gradle-tools:$version"
+    compile gradleApi()
 }

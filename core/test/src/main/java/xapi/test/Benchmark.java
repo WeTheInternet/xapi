@@ -1,17 +1,15 @@
 package xapi.test;
 
+import xapi.time.api.Clock;
+import xapi.util.api.ReceivesValue;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import static xapi.util.X_String.toMetricSuffix;
-
-import xapi.time.api.Clock;
-import xapi.util.api.ReceivesValue;
 
 public class Benchmark {
 
@@ -25,17 +23,18 @@ public class Benchmark {
 
     @Override
     public void set(List<Timing> value) {
-      if (value.size()==0) {
+      if (value.isEmpty()) {
         out.println("Zero results; zero timing.");
         return;
       }
-      out.println("Calculating timing for "+value.size()+" results.");
+      double size = value.size();//no integer math please!
+      int s = (int) size;
+      out.println("Calculating timing for " + s + " results.");
       //calculate max, min, mean and median
       double max = 0, min = Double.MAX_VALUE, avg = 0;
       double first = value.get(0).getTime();
-      double last = value.get(value.size()-1).getTime();
-      double size = value.size();//no integer math please!
-      for (Timing timing : value.toArray(new Timing[value.size()])) {
+      double last = value.get(s-1).getTime();
+      for (Timing timing : value.toArray(new Timing[s])) {
         double time = timing.getTime();
         max = Math.max(max, time);
         min = Math.min(min, time);
@@ -58,12 +57,7 @@ public class Benchmark {
       out.println("Last: "+toMetricSuffix(last));
       out.println("Mean: "+toMetricSuffix(avg));
 
-      Collections.sort(value, new Comparator<Timing>() {
-        @Override
-        public int compare(Timing o1, Timing o2) {
-          return (int)((1000000)*(o1.getTime() - o2.getTime()));
-        }
-      });
+      value.sort((o1, o2) -> (int) ((1000000) * (o1.getTime() - o2.getTime())));
       double median = value.get((value.size()/2)).getTime();
 
       out.println("Median: "+toMetricSuffix(median));
@@ -73,6 +67,7 @@ public class Benchmark {
   }
 
   public class Timing extends Clock {
+    @SuppressWarnings("WeakerAccess")
     public Timing() {
     }
     public void finish() {
@@ -88,20 +83,17 @@ public class Benchmark {
       }
     }
   }
-  final List<Timing> results;
+  public final List<Timing> results;
   private final int limit;
   private volatile int done = 0;
   private final Runnable onComplete;
 
   public Benchmark(int iterations, ReceivesValue<Timing> job, final ReceivesValue<List<Timing>> onDone) {
-    results = new ArrayList<Timing>(iterations);
+    results = new ArrayList<>(iterations);
     limit = iterations;
-    this.onComplete = new Runnable() {
-      @Override
-      public void run() {
-        onDone.set(results);
-        onComplete();
-      }
+    this.onComplete = () -> {
+      onDone.set(results);
+      onComplete();
     };
     while (iterations --> 0) {
       Timing t = new Timing();

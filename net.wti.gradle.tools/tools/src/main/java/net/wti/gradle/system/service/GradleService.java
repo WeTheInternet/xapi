@@ -92,7 +92,7 @@ public interface GradleService {
      */
     String CUSTOM_GRADLE_ZIP_TASK = "gradleZip";
 
-    String GRADLE_VERSION = "5.1-x-19";
+    String GRADLE_VERSION = "5.1-x-23";
 
     Project getProject();
 
@@ -276,9 +276,13 @@ public interface GradleService {
 
     @Nullable
     default String findXapiHome() {
+        return findXapiHome(getProject());
+    }
+
+    static String findXapiHome(Project p) {
         Object prop = System.getProperty("xapi.home");
         if (prop == null) {
-            prop = getProject().findProperty("xapi.home");
+            prop = p.findProperty("xapi.home");
         }
         return (String)prop;
     }

@@ -5,8 +5,9 @@ import net.wti.gradle.internal.require.impl.DefaultArchiveGraph;
 import net.wti.gradle.schema.internal.SourceMeta;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
-import org.gradle.jvm.tasks.Jar;
+import org.gradle.language.jvm.tasks.ProcessResources;
 
 /**
  * A centralized collection of module-wide task objects.
@@ -18,13 +19,13 @@ import org.gradle.jvm.tasks.Jar;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/21/19 @ 1:05 AM.
  */
-@SuppressWarnings("UnstableApiUsage")
 public class ModuleTasks {
 
     private final DefaultArchiveGraph source;
 
     private TaskProvider<Jar> jarTask;
     private TaskProvider<JavaCompile> javaCompileTask;
+    private TaskProvider<ProcessResources> processResourcesTask;
 
     public ModuleTasks(DefaultArchiveGraph source) {
         this.source = source;
@@ -38,6 +39,13 @@ public class ModuleTasks {
         return source.getView();
     }
 
+    public TaskProvider<ProcessResources> getProcessResourcesTask() {
+        if (processResourcesTask == null) {
+            final String name = meta().getSrc().getProcessResourcesTaskName();
+            processResourcesTask = view().getTasks().named(name, ProcessResources.class);
+        }
+        return processResourcesTask;
+    }
     public TaskProvider<JavaCompile> getJavacTask() {
         if (javaCompileTask == null) {
             final String name = meta().getSrc().getCompileJavaTaskName();
@@ -88,6 +96,8 @@ public class ModuleTasks {
                 // everything else, we create on-demand.
                 jarTask = view().getTasks().register(name, Jar.class, jar->{
                     jar.from(getJavacTask().get().getOutputs());
+                    jar.from(getProcessResourcesTask().get().getOutputs());
+
                     jar.setGroup(BasePlugin.BUILD_GROUP);
                     jar.setDescription("Assemble jar of " + source.getSrcName() + " classes.");
                 });

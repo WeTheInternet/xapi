@@ -29,5 +29,3 @@ if (composite == 'true') {
     includeBuild('../net.wti.gradle.tools')
     includeBuild('../net.wti.core')
 }
-
-enableFeaturePreview('GRADLE_METADATA')

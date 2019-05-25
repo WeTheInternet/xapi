@@ -59,7 +59,7 @@ public class X_Runtime {
       }
     } catch (Throwable e) {
       String error = "Class xapi.inject.X_Inject is not loadable." +
-        (debug?"\nEnsure your module inherits xapi-core-inject, or set system property " +
+        (debug?"\nEnsure your module inherits xapi-inject, or set system property " +
                  PROPERTY_USE_X_INJECT+" to \"false\"." : "");
       if (debug || success)
         System.err.println(error);

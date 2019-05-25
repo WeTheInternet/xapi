@@ -6,6 +6,9 @@ repositories {
     maven {
         name = 'xapiLocal'
         url = "file://$xapiHome/repo"
+        metadataSources {
+            gradleMetadata()
+        }
     }
 }
-dependencies.add('runtime', "net.wti.gradle.tools:xapi-gradle-tools:${->version}")
+dependencies.add('implementation', "net.wti.gradle.tools:xapi-gradle-tools:${->version}")

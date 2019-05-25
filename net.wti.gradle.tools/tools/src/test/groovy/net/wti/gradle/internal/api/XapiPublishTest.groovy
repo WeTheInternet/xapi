@@ -55,7 +55,7 @@ $BUILD_HEADER
 group = 'com.consumer'
 version = '1.1'
 xapiRequire {
-  external 'com.producer:comp:1.0'
+  external 'com.producer:comp:1.0', 'main'
 }
 
 """

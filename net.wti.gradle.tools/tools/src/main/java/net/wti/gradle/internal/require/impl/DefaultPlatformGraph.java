@@ -53,7 +53,7 @@ public class DefaultPlatformGraph extends AbstractChildGraphNode<ArchiveGraph, P
     @Override
     public ArchiveGraph archive(Object name) {
         final String key = GradleCoerce.unwrapString(name);
-        return getItems().maybeCreate(key);
+        return getItems().maybeCreate(key == null ? "main" : key);
     }
 
     @Override

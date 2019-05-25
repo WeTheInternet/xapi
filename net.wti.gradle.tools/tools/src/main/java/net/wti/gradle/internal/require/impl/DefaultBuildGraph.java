@@ -73,8 +73,8 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
 
     @Override
     public NamedDomainObjectProvider<ProjectGraph> project(Object path) {
-        String p = GradleCoerce.unwrapStringOr(path, ":");
-        final String projectPath = p.startsWith(":") ? p : ":" + p;
+        final String projectPath = projectPath(path);
+
         // this is a really ugly assert, but we really don't want to run any of this code in production.
         // first, check if this path exists in the root project
         assert project.getGradle().getRootProject().findProject(projectPath) != null ||
@@ -85,6 +85,17 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
                 build -> ((IncludedBuildState)build).getConfiguredBuild().getRootProject().findProject(projectPath) != null
             );
         return getOrRegister(projectPath);
+    }
+
+    @Override
+    public boolean hasProject(Object path) {
+        final String projectPath = projectPath(path);
+        return project.getGradle().getRootProject().findProject(projectPath) != null;
+    }
+
+    private String projectPath(Object path) {
+        String p = GradleCoerce.unwrapStringOr(path, ":");
+        return p.startsWith(":") ? p : ":" + p;
     }
 
     @Override

@@ -1,10 +1,11 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
 }
+
+xapiRequire.main().internal 'xapi-util:main:main'
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-reflect')
-    compile project(':xapi-core-parent:xapi-core-util')
     testCompile 'junit:junit:4.12'
 }
 

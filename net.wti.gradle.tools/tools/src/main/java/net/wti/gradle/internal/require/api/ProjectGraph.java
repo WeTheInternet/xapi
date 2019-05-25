@@ -86,4 +86,5 @@ public interface ProjectGraph extends Named, GraphNode {
     default String getVersion() {
          return project().getVersion();
     }
+
 }

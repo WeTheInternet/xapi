@@ -35,11 +35,8 @@ allprojects {
     version = findProperty('xapiVersion')
 
     plugins.apply 'idea'
+    plugins.apply 'xapi-schema'
 
-    repositories.maven {
-        name = 'xapiLocal'
-        url = mvnRepo.toURI()
-    }
     // TODO: remove this by priming xapiLocal repo with all external dependencies
     repositories.jcenter()
 
@@ -129,6 +126,6 @@ GradleServiceFinder.getService(project).configureWrapper(project)
 
 idea {
     module {
-        excludeDirs += mvnRepo
+        excludeDirs = [mvnRepo] as Set
     }
 }

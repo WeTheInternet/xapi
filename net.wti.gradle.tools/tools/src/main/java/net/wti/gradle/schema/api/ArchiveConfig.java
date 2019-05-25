@@ -23,6 +23,8 @@ public interface ArchiveConfig extends Named {
 
     boolean isSourceAllowed();
 
+    boolean isTest();
+
     void setSourceAllowed(boolean allowed);
 
     ImmutableAttributes getAttributes(ProjectView view);

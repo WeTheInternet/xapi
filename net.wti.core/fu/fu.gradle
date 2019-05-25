@@ -1,15 +1,11 @@
 plugins {
-    id 'xapi-schema'
+    id 'xapi-require'
 }
+repositories.jcenter()
 
-repositories {
-    // TODO: instead sync spock, junit and assertj into xapiLocal and just use that...
-    jcenter()
+xapiRequire.module('test').configure {
+    external 'junit:junit:4.12'
+    external 'org.assertj:assertj-core:3.2.0'
 }
-
-dependencies {
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.assertj:assertj-core:3.2.0'
-}
-
 description = 'XApi - FuJutsu: Functional objects, helpers and composers'
+

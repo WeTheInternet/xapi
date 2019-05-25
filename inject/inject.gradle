@@ -1,5 +1,6 @@
-buildscript({
+import net.wti.gradle.internal.require.api.Requirable
 
+buildscript({
     dependencies {
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
@@ -8,16 +9,37 @@ plugins { id 'xapi-require' }
 evaluationDependsOn(':xapi-collect')
 
 String v = version
-xapiRequire {
-    main.spi.external "net.wti.core:xapi-fu:$v"
-    main.spi.internal ':xapi-common:main:main'
-    main.spi.internal ':xapi-collect:main:api'
+
+xapiRequire.module('main', 'api').configure {
+    Requirable req ->
+        req.external "net.wti.core:xapi-fu:$v", 'main'
+        req.internal 'xapi-common:api'
+        req.internal 'xapi-common:spi'
 }
 
-//dependencies {
-//    xapiSpi "net.wti.core:xapi-fu:${->version}"
-//    xapiSpi "net.wetheinter:xapi-core-api:${->version}"
-//    xapiSpi "net.wetheinter:xapi-collect-api:${->version}"
-//    // non-maven-mapped configurations don't work.  TODO: try publishing w/ ivy? :-/
-////    xapiSpi group: 'net.wetheinter', name: 'xapi-collect-api', version: version, configuration: 'xapiApi'
-//}
+xapiRequire.module('main', 'spi').configure {
+    Requirable req ->
+        req.external "net.wti.core:xapi-fu:$v", 'main'
+        req.internal 'xapi-common:api'
+        req.internal 'xapi-collect:api'
+}
+xapiRequire.main().configure {
+    Requirable req ->
+        req.internal 'xapi-log:main'
+}
+xapiRequire.module('gwt', 'main').configure {
+    Requirable req ->
+
+        req.internal 'xapi-log:api'
+        req.internal 'xapi-gwt-api:main'
+        req.internal 'xapi-dev-parent:xapi-dev-source:main:main'
+
+        req.internal 'xapi-log:main'
+}
+
+xapiSchema.whenReady {
+    project.dependencies {
+        gwtCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
+        gwtCompileOnly 'net.wetheinter:gwt-user:2.8.0'
+    }
+}

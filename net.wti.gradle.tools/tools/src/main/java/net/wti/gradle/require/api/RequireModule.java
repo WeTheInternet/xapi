@@ -67,12 +67,14 @@ public class RequireModule implements Named, Requirable {
     }
 
     @Override
-    public void internal(Object project) {
-        Requirable.super.internal(project);
+    public XapiRegistration internal(Object project) {
+        // groovy doesn't like inheriting default methods
+        return Requirable.super.internal(project);
     }
 
     @Override
-    public void external(Object project) {
-        Requirable.super.external(project);
+    public XapiRegistration external(Object project) {
+        // groovy doesn't like inheriting default methods
+        return Requirable.super.external(project);
     }
 }

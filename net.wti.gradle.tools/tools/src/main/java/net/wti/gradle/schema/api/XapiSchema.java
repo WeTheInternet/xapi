@@ -11,6 +11,7 @@ import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
+import net.wti.gradle.system.tools.GradleCoerce;
 import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.ConfigurationPublications;
@@ -22,13 +23,16 @@ import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
-import org.gradle.api.provider.SetProperty;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.plugins.ide.idea.IdeaPlugin;
+import org.gradle.plugins.ide.idea.model.IdeaModule;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 import xapi.gradle.fu.LazyString;
 
 import java.io.File;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -255,6 +259,44 @@ public class XapiSchema {
         final ConfigurationPublications exportedRuntime = archGraph.configExportedRuntime().getOutgoing();
         if (archGraph.srcExists()) {
 
+            if (archConfig.isTest()) {
+                archGraph.whenReady(ReadyState.AFTER_FINISHED, done->{
+                    view.getPlugins().withType(IdeaPlugin.class).all(
+                        plugin -> {
+                            final IdeaModule module = plugin.getModel().getModule();
+                            final SourceSet srcSet = archGraph.getSource().getSrc();
+                            Set<File> items = new LinkedHashSet<>();
+                            items.addAll(
+                                srcSet.getAllJava().getSrcDirs()
+                            );
+                            Set<File> src = module.getTestSourceDirs();
+                            if (src == null) {
+                                module.setTestSourceDirs(items);
+                            } else {
+                                src.addAll(items);
+                            }
+
+                            items = new LinkedHashSet<>();
+                            // our resources job is actually "all source input" - "all java input"
+                            // this includes, but is not limited to the sourceset resources directories
+
+                            items.addAll(
+                                srcSet.getAllSource().getSourceDirectories()
+                                .minus(srcSet.getAllJava().getSourceDirectories())
+                                .getFiles()
+                            );
+                            src = module.getTestResourceDirs();
+                            if (src == null) {
+                                module.setTestResourceDirs(items);
+                            } else {
+                                src.addAll(items);
+                            }
+
+                        }
+                    );
+                });
+            }
+
             IntermediateJavaArtifact compiled = new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask()) {
                 @Override
                 public File getFile() {
@@ -474,8 +516,13 @@ public class XapiSchema {
     }
 
     public void whenReady(Action<? super XapiSchema> o) {
-        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED+1, ready->
-            o.execute(this)
-        );
+        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED+1, ready-> {
+            o.execute(this);
+        });
+    }
+
+    public ArchiveGraph module(Object platform, Object module) {
+        return view.getProjectGraph().platform(GradleCoerce.unwrapStringOr(platform, ""))
+            .archive(GradleCoerce.unwrapString(module));
     }
 }

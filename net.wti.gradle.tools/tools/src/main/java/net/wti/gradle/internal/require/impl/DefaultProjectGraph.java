@@ -101,4 +101,8 @@ public class DefaultProjectGraph extends AbstractChildGraphNode<PlatformGraph, B
             "} " + super.toString();
     }
 
+    @Override
+    public boolean whenReady(int priority, Action<Integer> newItem) {
+        return super.whenReady(priority, newItem);
+    }
 }

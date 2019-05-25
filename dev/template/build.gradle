@@ -1,9 +1,17 @@
-repositories {
-    jcenter()
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+plugins {
+    id 'xapi-require'
+}
+xapiRequire.module('main').configure {
+    req ->
+        req.internal('xapi-log:main:api')
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-log')
     compile project(':xapi-core-parent:xapi-core-args')
     compile project(':xapi-dev-parent:xapi-dev-source')
     testCompile 'junit:junit:4.12'

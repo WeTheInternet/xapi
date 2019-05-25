@@ -34,7 +34,6 @@ import xapi.util.X_String;
 import xapi.util.X_Util;
 
 import javax.annotation.Generated;
-import javax.inject.Provider;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;

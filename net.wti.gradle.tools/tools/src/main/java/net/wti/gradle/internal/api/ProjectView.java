@@ -15,6 +15,7 @@ import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.component.SoftwareComponentContainer;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
@@ -120,6 +121,8 @@ public interface ProjectView extends ExtensionAware {
     default File file(String path) {
         return new File(getProjectDir(), path);
     }
+
+    ConfigurableFileCollection files(Object ... from);
 
     default Dependency dependencyFor(String path, Configuration config) {
         final DependencyHandler deps = getDependencies();
