@@ -54,7 +54,9 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
     }
 
     public void finalizeGraph() {
-        drainTasks(ReadyState.EXECUTE - 1);
+        drainTasks(
+            ReadyState.EXECUTE - 1 // == Short.MAX_VALUE
+        );
     }
 
     public RealizableNamedObjectContainer<ProjectGraph> getProjects() {

@@ -14,6 +14,12 @@ public interface PlatformConfigInternal extends PlatformConfig {
     PlatformConfigInternal getParent();
 
     @Override
+    default PlatformConfigInternal getRoot() {
+        // consider overriding this w/ a settable root, and only use this as the default.
+        return (PlatformConfigInternal) PlatformConfig.super.getRoot();
+    }
+
+    @Override
     ArchiveConfigInternal getMainArchive();
 
     @Override
@@ -26,7 +32,14 @@ public interface PlatformConfigInternal extends PlatformConfig {
         return (ArchiveConfigInternal)PlatformConfig.super.findArchive(named);
     }
 
+    @Override
+    default ArchiveConfigInternal getArchive(Object named) {
+        return (ArchiveConfigInternal) PlatformConfig.super.getArchive(named);
+    }
+
     void baseOn(PlatformConfig rooted);
 
     void setParent(PlatformConfigInternal myParent);
+
+    boolean isOrReplaces(PlatformConfigInternal argPlat);
 }

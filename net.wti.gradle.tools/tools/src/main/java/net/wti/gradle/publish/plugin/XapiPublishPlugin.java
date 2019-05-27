@@ -28,6 +28,7 @@ import org.gradle.api.publish.plugins.PublishingPlugin;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.TaskReference;
+import xapi.gradle.fu.LazyString;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -83,30 +84,28 @@ public class XapiPublishPlugin implements Plugin<Project> {
         // so if we merely register the task, it could be realized _after_ the task graph is finalized.
         final TaskProvider<XapiPublish> xapiPublish = view.getTasks().register(XapiPublish.LIFECYCLE_TASK, XapiPublish.class);
         // depending on assemble is an escape hatch we don't really need (atm)
+        // plus it's better to let people choose assemble.dependsOn xapiPublish, if they wish.
         // xapiPublish.dependsOn(view.getTasks().getByName(BasePlugin.ASSEMBLE_TASK_NAME));
-
-//        // workaround...
-//        view.getRootProject().getTasks().maybeCreate("publishRequired");
 
         final ProjectGraph project = view.getProjectGraph();
 
-        final boolean[] canMutate = {true}; // TODO use MutationGuard instead
         project.platforms().configureEach(platformGraph -> {
+            final boolean[] canMutate = {true}; // TODO use MutationGuard instead
             platformGraph.archives().configureEach(module -> {
-                if (canMutate[0]) {
+                if (!canMutate[0]) {
+                    throw new IllegalStateException("Module added to " + view.getPath() + " after publishing finalized: " + module);
+                }
+                project.whenReady(ReadyState.AFTER_READY, p-> {
+                    canMutate[0] = false;
                     if (shouldSelect(module)) {
-                        // TODO: defer this to "just before we need it for publishing"
                         selectModule(view, lib, xapiPublish, module);
                     }
-                } else {
-                    throw new IllegalStateException("Module added after publishing finalized: " + module);
-                }
+                });
             });
 
         });
-        project.whenReady(ReadyState.AFTER_READY, p-> {
+        project.whenReady(ReadyState.BEFORE_FINISHED + 0x10, p-> {
             finalizeLibrary(view, lib, xapiPublish);
-            canMutate[0] = false;
         });
         return xapiPublish;
 
@@ -218,7 +217,12 @@ public class XapiPublishPlugin implements Plugin<Project> {
         // Anything with source to publish is selectable.
         // Should also likely include anything that has been xapiRequire'd.
         // Should also check for a platform-only build to filter ignored platforms.
-        return module.srcExists();
+        if (module.srcExists()) {
+            final boolean published = module.config().isPublished();
+            module.getView().getLogger().trace("Publishing {}? {}", LazyString.nonNullString(module::getModuleName), published);
+            return published;
+        }
+        return false;
     }
 
 }

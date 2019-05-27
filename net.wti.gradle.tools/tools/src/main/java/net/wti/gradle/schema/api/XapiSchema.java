@@ -23,6 +23,7 @@ import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.plugins.ide.idea.IdeaPlugin;
@@ -195,16 +196,23 @@ public class XapiSchema {
                     }
                 });
                 rootSchema.archives.configureEach(rooted->{
+                    // we want to create all archive types immediately, but we don't want to initialize them until scripts are evaluated.
+                    //  ...well, it would actually be nice to do more eager evaluation, but the current state machine makes that impossible.
                     final ArchiveConfigInternal myArch = archives.maybeCreate(rooted.getName());
-                    myArch.baseOn(rooted);
+                    myArch.baseOn(rooted, true);
                 });
                 rpg.whenReady(ReadyState.BEFORE_CREATED, ready -> {
                     spg.whenReady(ReadyState.BEFORE_CREATED, alsoReady -> {
+                        rootSchema.archives.configureEach(rooted->{
+                            final ArchiveConfigInternal myArch = archives.maybeCreate(rooted.getName());
+                            myArch.baseOn(rooted, false);
+                        });
+
                         platforms.configureEach(plat -> {
                             if (plat.getParent() != null) {
                                 archives.configureEach(arch -> {
                                     final ArchiveConfig local = plat.getArchive(arch.getName());
-                                    ((ArchiveConfigInternal)local).baseOn(arch);
+                                    ((ArchiveConfigInternal)local).baseOn(arch, true);
                                 });
                             }
                         });
@@ -370,9 +378,10 @@ public class XapiSchema {
             archGraph.configTransitive().extendsFrom(archGraph.configSource());
         }
 
-        platGraph.project().whenReady(ReadyState.BEFORE_READY+1, ready->{
+        platGraph.project().whenReady(ReadyState.BEFORE_READY+0x10, ready->{
 
-            final Set<LazyString> needed = archConfig.required().get();
+            // TODO: turn resolveNeeded into onNeeded(()->{});
+            final Set<LazyString> needed = resolveNeeded(archConfig);
             view.getLogger().debug("{} requires {}", archGraph.getModuleName(), needed);
 
             for (LazyString needs : needed) {
@@ -413,6 +422,29 @@ public class XapiSchema {
 
             }
         });
+
+    }
+
+    protected Set<LazyString> resolveNeeded(ArchiveConfig mod) {
+        // TODO: memoize results, lock provider with memoized result.
+        final SetProperty<LazyString> req = mod.required();
+        req.finalizeValue();
+        final Set<LazyString> mine = req.get();
+        final Set<LazyString> all = new LinkedHashSet<>();
+        all.addAll(mine);
+        addTransitive(mod, all, mine);
+        return all;
+    }
+
+    private void addTransitive(ArchiveConfig mod, Set<LazyString> all, Set<LazyString> mine) {
+        for (LazyString required : mine) {
+            String named = required.toString();
+            final ArchiveConfig req = mod.getPlatform().getArchive(named);
+            Set<LazyString> need = req.required().get();
+            if (all.addAll(need)) {
+                addTransitive(mod, all, need);
+            }
+        }
 
     }
 
@@ -524,5 +556,15 @@ public class XapiSchema {
     public ArchiveGraph module(Object platform, Object module) {
         return view.getProjectGraph().platform(GradleCoerce.unwrapStringOr(platform, ""))
             .archive(GradleCoerce.unwrapString(module));
+    }
+
+    public boolean shouldPublish(ArchiveConfigInternal module) {
+        if (!module.getPlatform().isPublished()) {
+            return false;
+        }
+        // Heuristic is that, by default, main, and anything required by main
+        // should be published.
+        final ArchiveConfigInternal main = module.getPlatform().getMainArchive();
+        return main.isOrRequires(module);
     }
 }

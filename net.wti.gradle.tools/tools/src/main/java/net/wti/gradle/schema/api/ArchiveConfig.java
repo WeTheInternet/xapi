@@ -25,7 +25,13 @@ public interface ArchiveConfig extends Named {
 
     boolean isTest();
 
-    void setSourceAllowed(boolean allowed);
+    boolean isPublished();
+
+    void setSourceAllowed(Object allowed);
+
+    void setTest(Object allowed);
+
+    void setPublished(Object allowed);
 
     ImmutableAttributes getAttributes(ProjectView view);
 

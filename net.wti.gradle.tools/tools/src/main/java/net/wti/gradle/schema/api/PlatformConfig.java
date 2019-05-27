@@ -60,11 +60,15 @@ public interface PlatformConfig extends Named {
      *
      * @param requires
      */
-    void setRequireSource(boolean requires);
+    void setRequireSource(Object requires);
 
     boolean isTest();
 
-    void setTest(boolean test);
+    boolean isPublished();
+
+    void setPublished(Object test);
+
+    void setTest(Object test);
 
     void replace(CharSequence named);
 

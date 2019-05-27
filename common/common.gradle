@@ -7,8 +7,10 @@ plugins { id 'xapi-require' }
 
 String v = version
 
-// alter our schema; we don't make spi depend on api by default, since it's plausible to chose dependency in either direction
+// perform project-local alterations to our schema; 
+// we don't make spi depend on api by default, since it's plausible to chose dependency in either direction
 xapiSchema.archives.getByName('spi').require('api')
+xapiSchema.archives.getByName('test').published = true
 
 xapiRequire {
     main().external "net.wti.core:xapi-gen:$v", "main"
@@ -35,8 +37,16 @@ xapiRequire {
 
 xapiSchema.whenReady {
     dependencies {
+        // anything created by our schema currently requires waiting until the whole schema is ready.
+        // when we use schema.xapi files, we may be able to selectively expose transient "configuration buckets" asap,
+        // and defer creating anything else until the schema is ready.
         gwtCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
         gwtCompileOnly 'net.wetheinter:gwt-user:2.8.0'
+        apiAnnotationProcessor("net.wti.gradle:xapi-dev-mirror:$v") {
+            ExternalModuleDependency dep ->
+                // TODO: set this based on static analysis of schema.xapi files
+    //            dep.targetConfiguration = 'exportCompile'
+        }
     }
 
 }
@@ -49,11 +59,6 @@ dependencies {
     // alternatively, make it compile-transitive from xapi-inject, so at least it's obvious consumer wants @Inject
 
     compile 'javax.annotation:javax.annotation-api:1.2'
-    apiAnnotationProcessor("net.wti.gradle:xapi-dev-mirror:$v") {
-        ExternalModuleDependency dep ->
-            // TODO: set this based on static analysis of schema.xapi files
-//            dep.targetConfiguration = 'exportCompile'
-    }
     testCompile 'junit:junit:4.12'
 }
 description = 'XApi - Core Interfaces and Abstractions'

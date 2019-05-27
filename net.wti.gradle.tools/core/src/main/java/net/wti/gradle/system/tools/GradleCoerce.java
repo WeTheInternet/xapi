@@ -108,4 +108,15 @@ public class GradleCoerce {
     private static RuntimeException failure(Object o) {
         return new UnsupportedOperationException("Cannot coerce " + o.getClass() + ": " + o);
     }
+
+    public static boolean unwrapBoolean(Object sourceAllowed) {
+        switch (unwrapString(sourceAllowed)) {
+            case "true":
+            case "TRUE":
+            case "True":
+            case "1":
+                return true;
+        }
+        return false;
+    }
 }

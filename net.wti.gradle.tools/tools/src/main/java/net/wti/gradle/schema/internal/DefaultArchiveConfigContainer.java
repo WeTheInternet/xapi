@@ -48,6 +48,11 @@ public class DefaultArchiveConfigContainer extends DefaultRealizableNamedObjectC
     }
 
     @Override
+    public ArchiveConfigInternal getByName(String name) {
+        return (ArchiveConfigInternal) super.getByName(name);
+    }
+
+    @Override
     public boolean isWithClassifier() {
         return withClassifier;
     }

@@ -92,7 +92,7 @@ public interface GradleService {
      */
     String CUSTOM_GRADLE_ZIP_TASK = "gradleZip";
 
-    String GRADLE_VERSION = "5.1-x-23";
+    String GRADLE_VERSION = "5.1-x-24";
 
     Project getProject();
 

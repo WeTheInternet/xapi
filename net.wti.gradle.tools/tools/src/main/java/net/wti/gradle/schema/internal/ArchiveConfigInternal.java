@@ -19,7 +19,12 @@ public interface ArchiveConfigInternal extends ArchiveConfig {
 
     void fixRequires(PlatformConfig platConfig);
 
-    DefaultArchiveConfig setTest(Boolean test);
+    void baseOn(ArchiveConfig rooted, boolean requiresOnly);
 
-    void baseOn(ArchiveConfig rooted);
+    @Override
+    PlatformConfigInternal getPlatform();
+
+    boolean isOrRequires(ArchiveConfigInternal module);
+
+    boolean moduleRequires(ArchiveConfigInternal module);
 }

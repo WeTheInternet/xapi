@@ -14,6 +14,8 @@ import xapi.gradle.fu.LazyString;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.wti.gradle.system.tools.GradleCoerce.unwrapBoolean;
+
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 1:45 PM.
  */
@@ -23,8 +25,9 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     private final PlatformConfigInternal platform;
     private final SetProperty<LazyString> requires;
     private final ProjectView view;
-    private boolean sourceAllowed;
-    private Boolean test;
+    private Object sourceAllowed;
+    private Object test;
+    private Object published;
 
     public DefaultArchiveConfig(
         PlatformConfigInternal platform,
@@ -106,23 +109,38 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     @Override
     public boolean isSourceAllowed() {
-        return sourceAllowed;
+        return unwrapBoolean(sourceAllowed);
     }
 
     @Override
     public boolean isTest() {
-        return test == null ? getName().matches(".*[tT]est.*") : test;
+        return test == null ? getName().matches(".*[tT]est.*") : unwrapBoolean(test);
     }
 
     @Override
-    public void setSourceAllowed(boolean sourceAllowed) {
+    public boolean isPublished() {
+        // TODO: assert that our ReadyState is past a given requirement,
+        //  so we can be sure that our schema can resolve to boolean safely.
+        //  In reality, we likely need to just use gradle Property api instead here...
+        if (!getPlatform().isPublished()) {
+            return false;
+        }
+        return published == null ? view.getSchema().shouldPublish(this) : unwrapBoolean(published);
+    }
+
+    @Override
+    public void setSourceAllowed(Object sourceAllowed) {
         this.sourceAllowed = sourceAllowed;
     }
 
     @Override
-    public DefaultArchiveConfig setTest(Boolean test) {
+    public void setPublished(Object published) {
+        this.published = published;
+    }
+
+    @Override
+    public void setTest(Object test) {
         this.test = test;
-        return this;
     }
 
     @Override
@@ -134,14 +152,34 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
         );
     }
 
+    @Override
     public PlatformConfigInternal getPlatform() {
         return platform;
     }
 
     @Override
-    public void baseOn(ArchiveConfig rooted) {
-        this.sourceAllowed = rooted.isSourceAllowed();
+    public void baseOn(ArchiveConfig rooted, boolean requiresOnly) {
         this.requires.addAll(rooted.required());
+        if (requiresOnly) {
+            return;
+        }
+        if (rooted instanceof DefaultArchiveConfig) {
+            // yup, we definitely want to be using Property<Boolean> instead of Object...
+            DefaultArchiveConfig other = (DefaultArchiveConfig) rooted;
+            if (other.sourceAllowed != null) {
+              this.sourceAllowed = other.sourceAllowed;
+            }
+            if (other.test != null) {
+                this.test = other.test;
+            }
+            if (other.published != null) {
+                this.published = other.published;
+            }
+        } else {
+            this.sourceAllowed = rooted.isSourceAllowed();
+            this.test = rooted.isTest();
+            this.published = rooted.isPublished();
+        }
     }
 
     @Override
@@ -168,4 +206,35 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
 
     }
+
+    @Override
+    public boolean isOrRequires(ArchiveConfigInternal module) {
+        return // module.isPublished() &&
+            moduleRequires(module);
+    }
+
+
+    @Override
+    public boolean moduleRequires(ArchiveConfigInternal module) {
+        final PlatformConfigInternal myPlat = getPlatform();
+        final String mod = module.getName();
+        if (getName().equals(mod)) {
+            return true;
+        }
+        final SetProperty<LazyString> req = required();
+        final Set<LazyString> direct = req.get();
+        req.finalizeValue();
+        for (LazyString item : direct) {
+            String required = item.toString();
+            if (mod.equals(required)) {
+                return true;
+            }
+            if (myPlat.getArchive(required).moduleRequires(module)) {
+                view.getLogger().quiet("{}.{}.{} requires {}", view.getPath(), myPlat.getName(), required, module.getName());
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

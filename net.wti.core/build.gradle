@@ -1,9 +1,18 @@
+buildscript {
+    String xapiHome = rootDir.parent
+    System.setProperty('xapiIntoBuildscript', 'true')
+    project.extensions.add('myBuildscript', it)
+    apply from: "$xapiHome/gradle/xapi-env.gradle"
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
+    }
+}
+
 plugins {
     id 'idea'
     id 'wrapper'
     id 'groovy'
 }
-apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"
 
@@ -27,7 +36,7 @@ group 'net.wti.core'
 version '0.5.1'
 gradle.beforeProject {
     Project p ->
-    
+
     p.group 'net.wti.core'
     p.version '0.5.1'
 

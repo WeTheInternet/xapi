@@ -49,7 +49,7 @@ if (!xapiHome) {
 if (System.getProperty('xapiIntoBuildscript') == 'true') {
     System.clearProperty('xapiIntoBuildscript')
     // TODO: check into the behavior of buildSrc in composites (relative to the rootProject; can buildSrc see composite root buildSrc?)
-    logger.quiet "Adding to xapi buildscript $project.path"
+    logger.trace "Adding to xapi buildscript $project.path"
     ScriptHandler b = project.extensions.findByName('myBuildscript') ?: project.buildscript
     if (b.configurations.getByName('classpath').state != Configuration.State.UNRESOLVED) {
         throw new IllegalStateException("-DxapiIntoBuildscript=true, but build script already resolved when xapi-env.gradle was applied;\n" +

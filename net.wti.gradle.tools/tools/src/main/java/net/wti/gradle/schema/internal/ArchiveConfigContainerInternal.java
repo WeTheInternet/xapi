@@ -12,4 +12,8 @@ public interface ArchiveConfigContainerInternal extends ArchiveConfigContainer {
 
     @Override
     ArchiveConfigInternal maybeCreate(String name);
+
+    @Override
+    ArchiveConfigInternal getByName(String name);
+    // consider doing more *Internal overloads
 }

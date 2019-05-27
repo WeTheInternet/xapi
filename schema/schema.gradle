@@ -14,9 +14,11 @@ xapiSchema {
         main
         gwt {
             replace 'main'
+            published = true
         }
         jre {
             replace main
+            published = true
         }
 //        server {
 //            replace jre
@@ -33,8 +35,10 @@ xapiSchema {
         spi
         main.require api, spi
         sample.require 'main'
-        test.require 'sample', 'main' // hm. transitivity isn't really working, we have to redeclare require()d dependencies
-                                      // highly likely to be related to callers of net.wti.gradle.internal.require.api.ArchiveGraph.srcExists
+        sample.published = true
+        testTools.require 'main'
+        testTools.published = true
+        archives.maybeCreate('test').require sample, testTools
     }
 }
 tasks.create 'testSchema', {
