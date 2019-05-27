@@ -5,6 +5,7 @@ import net.wti.gradle.require.api.RequirePlatform;
 import net.wti.gradle.require.api.XapiRequire;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
+import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 
@@ -30,7 +31,9 @@ public class RequirePlatformContainer extends AbstractNamedDomainObjectContainer
             // Push this validation later, since we want to be able to call xapiRequire _before_ the schema callbacks are invoked.
             final PlatformConfigInternal platform = schema.findPlatform(name);
             if (platform == null) {
-                throw new IllegalArgumentException(view.getPath()+ "; platform " + name + " not found in schema: " + schema);
+                throw new IllegalArgumentException(
+                    (":".equals(view.getPath()) ? view.getProjectDir() : view.getPath())
+                    + " -> platform " + name + " not found in schema: " + schema);
             }
         });
         // Create a platform-scoped XapiRequire

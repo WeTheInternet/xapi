@@ -8,6 +8,7 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.internal.GradleInternal;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.tasks.TaskContainer;
@@ -15,6 +16,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.api.tasks.wrapper.Wrapper.DistributionType;
+import org.gradle.util.Path;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -93,6 +95,10 @@ public interface GradleService {
     String CUSTOM_GRADLE_ZIP_TASK = "gradleZip";
 
     String GRADLE_VERSION = "5.1-x-24";
+
+    static Path buildId(Gradle gradle) {
+        return ((GradleInternal)gradle).findIdentityPath();
+    }
 
     Project getProject();
 

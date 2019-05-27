@@ -78,37 +78,40 @@ public class XapiRequirePlugin implements Plugin<Project> {
     private void register(ProjectView view, XapiRequire reg) {
         // Wire up listeners for XapiRequire to trigger lazy factories in schema/lib.
         final BuildGraph graph = view.getBuildGraph();
-        reg.getRegistrations().configureEach(include -> {
-            final ProjectGraph proj = graph.project(view.getPath()).get();
-            final String incProj = include.getProject();
-            final String incPlat = include.getPlatform();
-            final String incArch = include.getArchive();
-            final boolean only = !include.getTransitive();
-            final Boolean lenient = include.getLenient();
+        final ProjectGraph proj = graph.project(view.getPath()).get();
+        graph.whenReady(ReadyState.FINISHED, done->{
 
-            if (incArch == null) {
-                if (incPlat == null) {
-                    // project-wide requirement; bind every platform + archive pair
-                    proj.platforms().all(plat->
-                        plat.archives().all(arch-> {
-                            // hm.  another place where we should filter out modules which don't exist, to avoid creating them
-                            include(view, incProj, arch, include, only, lenient == null ? true : lenient);
-                        }
-                    ));
+            reg.getRegistrations().configureEach(include -> {
+                final String incProj = include.getProject();
+                final String incPlat = include.getPlatform();
+                final String incArch = include.getArchive();
+                final boolean only = !include.getTransitive();
+                final Boolean lenient = include.getLenient();
+
+                if (incArch == null) {
+                    if (incPlat == null) {
+                        // project-wide requirement; bind every platform + archive pair
+                        proj.platforms().all(plat->
+                            plat.archives().all(arch-> {
+                                // hm.  another place where we should filter out modules which don't exist, to avoid creating them
+                                include(view, incProj, arch, include, only, lenient == null ? true : lenient);
+                            }
+                        ));
+                    } else {
+                        // platform-wide requirement. This will get sticky if we allow
+                        // subprojects to customize archive types, as we don't want to
+                        // mess around w/ evaluating the foreign project.
+                        final PlatformGraph plat = proj.platform(incPlat);
+                        plat.archives().all(arch -> include(view, incProj, arch, include, only, lenient == null ? true : lenient));
+                    }
                 } else {
-                    // platform-wide requirement. This will get sticky if we allow
-                    // subprojects to customize archive types, as we don't want to
-                    // mess around w/ evaluating the foreign project.
+                    // a single project:platform:archive selector.
                     final PlatformGraph plat = proj.platform(incPlat);
-                    plat.archives().all(arch -> include(view, incProj, arch, include, only, lenient == null ? true : lenient));
+                    final ArchiveGraph arch = plat.archive(incArch);
+                    include(view, incProj, arch, include, only, lenient == null ? false : lenient);
                 }
-            } else {
-                // a single project:platform:archive selector.
-                final PlatformGraph plat = proj.platform(incPlat);
-                final ArchiveGraph arch = plat.archive(incArch);
-                include(view, incProj, arch, include, only, lenient == null ? false : lenient);
-            }
 
+            });
         });
     }
 
@@ -120,19 +123,21 @@ public class XapiRequirePlugin implements Plugin<Project> {
         boolean only,
         boolean lenient
     ) {
-        switch (include.getMode()) {
-            case project:
-                includeProject(self, projId, arch, only, lenient);
-                return;
-            case internal:
-                includeInternal(self, projId, arch, only, lenient);
-                return;
-            case external:
-                includeExternal(self, projId, include, arch, only, lenient);
-                return;
-            default:
-                throw new UnsupportedOperationException(include.getMode() + " was not handled");
-        }
+        self.getProjectGraph().whenReady(ReadyState.FINISHED + 0x100, done->{
+            switch (include.getMode()) {
+                case project:
+                    includeProject(self, projId, arch, only, lenient);
+                    return;
+                case internal:
+                    includeInternal(self, projId, arch, only, lenient);
+                    return;
+                case external:
+                    includeExternal(self, projId, include, arch, only, lenient);
+                    return;
+                default:
+                    throw new UnsupportedOperationException(include.getMode() + " was not handled");
+            }
+        });
     }
 
     private void includeProject(
@@ -181,7 +186,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
             String proj = projId.substring(0, projId.length() - platName.length() - archName.length() - 2);
             graph = bg.getProject(proj);
         }
-        graph.whenReady(ReadyState.BEFORE_READY, ready->{
+        graph.whenReady(ReadyState.BEFORE_FINISHED, ready->{
             final PlatformGraph reqPlatform = graph.platform(platName);
             final ArchiveGraph reqModule = reqPlatform.archive(archName);
 

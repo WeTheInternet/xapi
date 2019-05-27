@@ -375,7 +375,7 @@ public class DefaultProjectView implements ProjectView {
         final Object v = version.get();
         if ("unspecified".equals(v)) {
             // TODO: get a decent default version
-            getLogger().warn("Version accessed but not configured in {} of build {}", getPath(), ((GradleInternal)getGradle()).findIdentityPath(), new RuntimeException());
+            getLogger().warn("Version accessed but not configured in {} of build {}", getPath(), GradleService.buildId(gradle), new RuntimeException());
             return "0.0.1";
         }
         return String.valueOf(v);
