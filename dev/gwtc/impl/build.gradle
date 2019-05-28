@@ -1,7 +1,16 @@
+plugins {
+    id 'xapi-require'
+}
+
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
 repositories {
     jcenter()
+}
+
+xapiRequire.module('test').configure {
+    req ->
+        req.internal 'xapi-common:gwt:testTools'
 }
 
 dependencies {
@@ -15,7 +24,6 @@ dependencies {
     compile project(':xapi-dev-parent:xapi-dev-shell')
     compile 'junit:junit:4.12'
     compile project(':xapi-core-parent:xapi-core-test')
-    testCompile project(':xapi-gwt-test')
     testCompile project(':xapi-dev-parent:xapi-dev-maven')
 }
 

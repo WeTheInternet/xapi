@@ -1,7 +1,7 @@
 rootProject.name = 'xapi'
 
 def prop = {
-    String key -> System.getProperty(key) ?: 
+    String key -> System.getProperty(key) ?:
             System.getenv("ORG_GRADLE_PROJECT_$key") ?:
             startParameter.projectProperties.get(key)
 }
@@ -34,15 +34,15 @@ def singleProject = [
 
 /* in order to overcome "parallelization by project" instead of "by task",
  we should consider a settings.gradle plugin which can "explode" each defined module into N projects:
- 
+
  src/main/.*
  src/api/.*
  src/jdk8/.*
- src/jdk11/.* 
- src/gwt/.* 
- src/etc/.* 
+ src/jdk11/.*
+ src/gwt/.*
+ src/etc/.*
  src/projects/(main|api|jdk8|jdk11|gwt|etc).gradle
- 
+
  The projects buildfiles need not actually exist, but will override the supplied-by-settings plugin defaults.
  Those defaults will be made available for manually-supplied buildscripts via `project.parent.initChild(project|path)`.
  These defaults will still be applied _after_ the script is evaluated, unless you call `project.parent.skipChild(project|path)`
@@ -52,36 +52,36 @@ def singleProject = [
  Heck, the root project could opt to be a pom/bom for each child,
  though perhaps better to have the root project expose post-processed source dependencies;
  perhaps src/impl/.* which transforms any magic-method injection on main:main and dependencies.
- 
+
  The sub-project dependencies would be used exclusively between submodules, all with sources exposed for processing.
  The main:impl module melts post-processed versions all of main,api,spi, etc,
  and depends on all the post-processed versions of all xapi-module dependencies.
- 
+
  Other platforms can have jdk8Impl, jdk11Impl, gwtImpl, j2clImpl, etc, which behave the same, but live in src/projects.
- 
+
  Best of all, it means we don't _have_ to muck with multi-capability-publishing.
  We can save that for allowing variants-within-modules.
- 
+
  so... new plugin, 'xapi-settings'.
  Have it read a shared settings.xapi file to discover schema(s),
  create the necessary projects here,
  and then in the build scripts, simply create project dependencies if they exist, external if they don't.
- 
+
  Since all composite builds are declared here,
  we can also wait until settings are fully evaluated,
  then look for the settings.xapi file in each composite build
  to know the whole-world-schema up-front,
  with all possible "external capabilities" known,
  without having to try to communicate into an IncludedBuild in any way.
- 
+
  It _might_ make sense for us to be able to generate "skins" over composite build modules,
  taking all the src/projects children as dependencies,
  and use project-local toolset to generate new impl modules.
- 
+
  This allows a consumer project to replace generated sources with their own (just replace the groupId of the composite child).
  The consumer would be able to expose new, higher priority services / injection rules,
  and simply "shade" the entire project into the local build.
- 
+
  Finally, it should be possible to turn either source/impl on/off independently.
  source can only be turned off if it has already been built/deployed once
  (i.e. if there is no impl to speak of, we must run in source mode at least once to get generated)
@@ -89,19 +89,19 @@ def singleProject = [
  This is to avoid cluttering IDE.  Knowingly having duplicated classes is annoying when searching for types by name.
  There still should only be one actual accessible type from the correct source on your classpath (so jump to source is sane),
  but we'd still, ideally, want to be able to toggle between only-source, only-impl and source-and-impl modes.
- 
+
  For this to work nicely, impl would likely need to have an optional group of sourcesets to turn on at-will.
  Types with replacements would be filtered from any included sources (sync together everything but replacement files from source dirs),
  then all *that* source is compiled together with various java compiler plugins / processors running.
- 
- 
+
+
  The existing work to make multi-capability dependencies can also be used as needed;
  for absorbed composites, it may be possible to model the entire included build in a single project;
  for logical-variants of modules (free vs. debug, etc) (adding arbitrary dimensions of which only one is chosen);
  to expose all platform impls from a single project location.
- 
+
  We'll decide when and how to use this as we go, and update this code-comment-design-doc ...eventually.
- 
+
  */
 
 
@@ -117,7 +117,7 @@ def checkPlatform = {
                 }
             }
         }
-        return 'true' == 
+        return 'true' ==
                 (
                         prop("${prefix}.${proj}.${platform}") ?:
                         prop("xapi.${proj}.${platform}")
@@ -141,7 +141,7 @@ String realizedPath = prop('xapi.realized.path') ?: 'build/realized/'
 singleProject.forEach({
     parent, children ->
         String name = base(parent)
-        
+
         include(name)
         project(name).buildFileName = "${parent}.gradle"
         project(name).projectDir = file parent
@@ -184,7 +184,6 @@ include(':xapi-gwt-ui-parent')
 include(':xapi-components')
 include(':xapi-polymer')
 include(':xapi-gwt')
-include(':xapi-gwt-test')
 include(':xapi-jre-parent:xapi-jre-api')
 include(':xapi-jre-parent:xapi-jre-inject')
 include(':xapi-jre-parent:xapi-jre-collect')
@@ -247,7 +246,6 @@ project(':xapi-gwt-ui-parent').projectDir = file('gwt/ui')
 project(':xapi-components').projectDir = file('gwt/components')
 project(':xapi-polymer').projectDir = file('gwt/polymer')
 project(':xapi-gwt').projectDir = file('gwt/uber')
-project(':xapi-gwt-test').projectDir = file('gwt/test')
 project(':xapi-jre-parent:xapi-jre-api').projectDir = file('jre/api')
 project(':xapi-jre-parent:xapi-jre-inject').projectDir = file('jre/inject')
 project(':xapi-jre-parent:xapi-jre-collect').projectDir = file('jre/collect')

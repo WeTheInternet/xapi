@@ -1,18 +1,12 @@
-repositories {
-    jcenter()
+apply plugin: 'xapi-require'
+
+
+xapiRequire.main().configure {
+    req ->
+        req.internal 'xapi-common:gwt:testTools'
 }
 
 dependencies {
-    compile 'junit:junit:4.12'
-    compile 'junit:junit:4.12'
-    compile 'org.hamcrest:hamcrest-core:1.3'
-    compile 'net.sourceforge.htmlunit:htmlunit:2.19'
-    compile project(':xapi-core-parent:xapi-core-test')
-    compile project(':xapi-elemental')
-    compile project(':xapi-core-parent:xapi-core-test')
-    compile 'net.wetheinter:gwt-user:2.8.0'
-    compile 'net.wetheinter:gwt-elemental:2.8.0'
-    runtime project(':xapi-server-parent:xapi-server-api')
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     testRuntime 'net.wetheinter:gwt-dev:2.8.0'
 }

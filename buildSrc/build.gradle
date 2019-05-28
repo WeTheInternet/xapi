@@ -12,6 +12,11 @@ plugins {
 }
 apply plugin: 'xapi-require'
 
+xapiSchema {
+    platforms { main }
+    archives { main }
+}
+
 String v = version
 xapiRequire.main().configure {
     external "net.wti.gradle:xapi-gradle-plugin:$v", 'main'

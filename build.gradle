@@ -3,8 +3,6 @@ plugins {
     id 'idea'
 }
 
-
-
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
 
@@ -31,37 +29,30 @@ def shouldApply = { Project p->
 }
 
 allprojects {
-    group = 'net.wetheinter'
-    version = findProperty('xapiVersion')
+    Project p -> p.with {
+        group = 'net.wetheinter'
+        version = findProperty('xapiVersion')
 
-    plugins.apply 'idea'
-    plugins.apply 'xapi-schema'
+        plugins.apply 'idea'
+        plugins.apply 'xapi-schema'
 
-    // TODO: remove this by priming xapiLocal repo with all external dependencies
-    repositories.jcenter()
+        // TODO: remove this by priming xapiLocal repo with all external dependencies
+        repositories.jcenter()
 
-    // we want all projects to have xapi plugin,
-    // but we'll wait until they are resolved,
-    // to give each project a chance to pick a more specific plugin.
-    afterEvaluate {
-        test {
-            if (!maxHeapSize) {
-                maxHeapSize = '1G'
-            }
-        }
     }
+        
 }
 
 gradle.beforeProject {
     Project p ->
-        if (p.buildscript.repositories.empty) {
-            p.buildscript.repositories.maven {
-                name = 'xapiLocal'
-                url = new File(rootDir, 'repo')
-            }
-            // TODO make this obsolete by priming all external dependencies to xapiLocal
-            p.buildscript.repositories.jcenter()
+    if (p.buildscript.repositories.empty) {
+        p.buildscript.repositories.maven {
+            name = 'xapiLocal'
+            url = new File(rootDir, 'repo')
         }
+        // TODO make this obsolete by priming all external dependencies to xapiLocal
+        p.buildscript.repositories.jcenter()
+    }
 }
 
 subprojects {
@@ -85,13 +76,16 @@ subprojects {
                     File metaDir = (tasks.compileTestJava as JavaCompile).destinationDir
                     test.systemProperty('xapi.meta', metaDir.absolutePath)
 //                    test.systemProperty('xapi.injector.cache', metaDir.absolutePath)
+                    if (!test.maxHeapSize) {
+                        test.maxHeapSize = '1G'
+                    }
                     test.doFirst {
                         new File(metaDir, 'META-INF/singletons').mkdirs()
                         new File(metaDir, 'META-INF/instances').mkdirs()
                     }
             }
 
-            if (p.path != ':schema') {
+            if (path != ':schema') {
                 // we don't actually need the java plugin, so we leave it out, and just turn it on once in a while for manual verification
 //                plugins.apply 'java'
                 plugins.apply 'xapi-schema'
