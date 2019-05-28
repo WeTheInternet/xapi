@@ -2,6 +2,10 @@ package xapi.ui.autoui.api;
 
 public interface UiRenderer <T> {
 
+  // TODO: An ObjectRenderer + ORFactory,
+  //  so user can plug in (Class Key, In2Out1<Class, T, ElementType> factory) renderers.
+  //  perhaps this could also be implemented for logging, w/ a CliRenderer used to .toString() objects.
+
   /**
    * Called when a renderer must render an object into a UserInterface.
    * <br/>
@@ -10,7 +14,7 @@ public interface UiRenderer <T> {
    * <br/>
    * The {@link UiRendererSelector} used will be the one paired with the specified UiRenderer
    * inside of a {@link UiRendererOptions} annotation.
-   * 
+   *
    * @param ui -> The UserInterface to render into.
    * @param ctx -> The {@link UiRenderingContext} containing the utilities needed to render the data
    * @param path -> The path of the data to render;
