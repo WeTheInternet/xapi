@@ -4,11 +4,11 @@ plugins {
 }
 
 xapiRequire.main().configure {
-
-    external "org.spockframework:spock-core:1.2-groovy-2.5"
-    internal 'xapi-core-parent:xapi-core-collect:main:main'
-    external "net.wti.core:xapi-fu:${->version}", 'main'
-    external "net.wti.core:xapi-lang-core:${->version}", 'main'
+    req ->
+        req.external "org.spockframework:spock-core:1.2-groovy-2.5"
+        req.internal 'xapi-collect:main'
+        req.external "net.wti.core:xapi-fu:${->version}", 'main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
 }
 
 dependencies {

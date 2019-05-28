@@ -6,13 +6,18 @@ repositories {
     jcenter()
 }
 
-xapiRequire {
-    main.sample.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+xapiRequire.module('sample').configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+}
+
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-collect'
 }
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
-    compile project(':xapi-core-parent:xapi-core-collect')
     implementation 'net.wetheinter:gwt-user:2.8.0'
     testCompile 'junit:junit:4.12'
     testCompile project(':xapi-jre-parent:xapi-jre-inject')

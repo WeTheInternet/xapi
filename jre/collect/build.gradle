@@ -1,6 +1,11 @@
-dependencies {
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-core-parent:xapi-core-collect')
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-collect'
+        req.project 'xapi-jre-parent:xapi-jre-inject'
 }
 
 description = 'XApi - Jre collections implementation'

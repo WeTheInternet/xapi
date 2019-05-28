@@ -6,15 +6,22 @@ repositories {
 }
 
 xapiRequire {
-    main.test.internal ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui:main:sample'
-    main.test.internal 'xapi-common:gwt:testTools'
+}
+xapiRequire.module('test').configure {
+    req ->
+        req.internal ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui:main:sample'
+        req.internal 'xapi-common:gwt:testTools'
+
+}
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-collect'
 }
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
     compile project(':xapi-core-parent:xapi-core-event')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
-    compile project(':xapi-core-parent:xapi-core-collect')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
     compile project(':xapi-gwt-model')
     compile project(':xapi-dev-parent:xapi-dev-source')

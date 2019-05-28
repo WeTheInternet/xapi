@@ -1,5 +1,3 @@
-import net.wti.gradle.internal.require.api.Requirable
-
 buildscript({
     dependencies {
         classpath group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: version, changing: true
@@ -10,8 +8,15 @@ evaluationDependsOn(':schema')
 
 final String v = version
 
+xapiRequire.project 'xapi-inject' // inherit xapi-inject across all modules
+
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'junit:junit:4.12'
+}
+
 xapiRequire.module('api').configure {
-    Requirable req ->
+    req ->
         req.external "net.wti.core:xapi-fu:$v", "main"
         req.internal 'xapi-common:main'
 }
@@ -19,7 +24,7 @@ xapiRequire.module('api').configure {
 xapiRequire.module('gwt', 'main').configure {
     req ->
         req.internal 'xapi-inject:gwt:main'
-        req.internal "xapi-core-parent:xapi-core-collect:main:main"
+        req.internal "xapi-collect:main"
 }
 
 xapiSchema.whenReady {

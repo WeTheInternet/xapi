@@ -13,5 +13,5 @@ public class IntToTest {
     String[] asArray = array.toArray();
     Assert.assertEquals(asArray[0], array.get(0));
   }
-  
+
 }

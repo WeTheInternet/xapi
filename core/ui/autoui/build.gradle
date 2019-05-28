@@ -2,11 +2,14 @@ plugins {
     id 'xapi-require'
 }
 
-xapiRequire.main().internal 'xapi-util:main:main'
+xapiRequire.main().configure {
+    req ->
+        req.internal 'xapi-util:main'
+        req.internal 'xapi-collect:main'
+}
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-core-parent:xapi-core-collect')
     testCompile 'junit:junit:4.12'
     testCompile project(':xapi-jre-parent:xapi-jre-inject')
     testCompile project(':xapi-core-parent:xapi-core-test')

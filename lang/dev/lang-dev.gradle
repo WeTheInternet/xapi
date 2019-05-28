@@ -8,8 +8,9 @@ plugins {
 }
 
 xapiRequire.module('main').configure {
-    external "net.wti.core:xapi-fu:${->version}", 'main'
-    external "net.wti.core:xapi-lang-core:${->version}", 'main'
-    internal 'xapi-core-parent:xapi-core-collect:main:main'
-    internal 'xapi-core-parent:xapi-core-reflect:main:main'
+    req ->
+        req.external "net.wti.core:xapi-fu:${->version}", 'main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.internal 'xapi-collect:main'
+        req.internal 'xapi-core-parent:xapi-core-reflect:main:main'
 }

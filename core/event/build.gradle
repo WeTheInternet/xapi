@@ -1,11 +1,15 @@
-
+plugins {
+    id 'xapi-require'
+}
 evaluationDependsOn ':xapi-core-parent'
-import xapi.gradle.tools.Depend
-Depend depend = new Depend(project)
+
+xapiRequire.main().configure {
+    req ->
+        req.internal 'xapi-collect:main'
+        req.internal 'xapi-jre-parent:xapi-jre-inject:main:main'
+}
 
 dependencies {
-    compile depend.onXapi(':xapi-core-parent:xapi-core-collect'),
-            depend.onXapi(':xapi-jre-parent:xapi-jre-inject')
     implementation 'javax.validation:validation-api:1.0.0.GA'
 }
 

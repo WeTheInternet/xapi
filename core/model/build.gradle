@@ -10,10 +10,10 @@ plugins {
 xapiRequire.module('main').configure {
     req ->
         req.project 'xapi-inject'
+        req.project 'xapi-collect'
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-collect')
     compileOnly 'net.wetheinter:jsinterop-annotations:2.8.0'
     compile project(':xapi-dev-parent:xapi-dev-source')
     compile project(':xapi-dev-parent:xapi-dev-bytecode')
