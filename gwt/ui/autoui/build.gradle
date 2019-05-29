@@ -1,3 +1,5 @@
+import net.wti.gradle.schema.api.Transitivity
+
 plugins {
     id 'xapi-require'
 }
@@ -5,34 +7,27 @@ repositories {
     jcenter()
 }
 
-xapiRequire {
-}
-xapiRequire.module('test').configure {
-    req ->
-        req.internal ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui:main:sample'
-        req.internal 'xapi-common:gwt:testTools'
-
-}
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-collect'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.project 'xapi-core-parent:xapi-core-event'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+        req.project 'xapi-gwt-model'
+        req.project 'xapi-dev-parent:xapi-dev-source'
+        req.project 'xapi-inject', 'jre:main'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 }
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-core-parent:xapi-core-event')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
-    compile project(':xapi-gwt-model')
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
-    compileOnly 'net.wetheinter:gwt-user:2.8.0'
-    testRuntime 'net.wetheinter:gwt-dev:2.8.0'
-    testCompile 'net.wetheinter:gwt-user:2.8.0'
-    testRuntime 'net.wetheinter:gwt-codeserver:2.8.0'
-    testRuntime 'net.sourceforge.htmlunit:htmlunit:2.19'
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'main:sample'
+        req.project 'xapi-common', 'gwt:testTools'
+        req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'
+        req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
+        req.external Transitivity.runtime, 'net.wetheinter:gwt-codeserver:2.8.0'
+        req.external Transitivity.runtime, 'net.sourceforge.htmlunit:htmlunit:2.19'
 }
 
 apply from: "$rootDir/gradle/gwt-test.gradle"

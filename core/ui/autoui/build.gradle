@@ -6,13 +6,14 @@ xapiRequire.main().configure {
     req ->
         req.internal 'xapi-util:main'
         req.internal 'xapi-collect:main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
 }
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    testCompile 'junit:junit:4.12'
-    testCompile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-core-parent:xapi-core-test')
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'junit:junit:4.12'
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-core-parent:xapi-core-test'
 }
 
 task packageTests(type: Jar) {

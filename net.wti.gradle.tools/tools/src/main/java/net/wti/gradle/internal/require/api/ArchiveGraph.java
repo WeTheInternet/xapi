@@ -20,7 +20,6 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
-import org.gradle.api.internal.component.MultiCapabilitySoftwareComponent;
 import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.tasks.TaskContainer;
@@ -35,6 +34,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
+import static net.wti.gradle.system.tools.GradleCoerce.isEmpty;
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 
 /**
@@ -75,6 +75,8 @@ public interface ArchiveGraph extends Named, GraphNode {
     File srcRoot();
 
     ModuleTasks getTasks();
+
+    DependencyStitcher getDependencies();
 
     default boolean srcExists() {
         // TODO: replace this with a .whenExists variation
@@ -482,16 +484,26 @@ public interface ArchiveGraph extends Named, GraphNode {
         consumer.getDependencies().add(md);
     }
 
-    default void importGlobal(
+    default void importProject(
         String projName,
+        String platName,
+        String modName,
         boolean only,
         boolean lenient
     ) {
         final ProjectView self = getView();
-        assert !projName.equals(self.getPath()) : projName + " performed illegal importGlobal() on itself.";
+        if (isEmpty(platName)) {
+            platName = platform().getName();
+        }
+        if (isEmpty(modName)) {
+            modName = getName();
+        }
+        assert !projName.equals(self.getPath()) : projName + " performed illegal importProject() on itself.  " +
+            "Use .internal '" + platName + ":" + modName + "' instead.";
         final ProjectGraph targetProject = self.getBuildGraph().getProject(projName);
-        final PlatformGraph targetPlatform = targetProject.platform(platform().getName());
-        final ArchiveGraph into = targetPlatform.archive(getName());
+        final PlatformGraph targetPlatform = targetProject.platform(platName);
+        final ArchiveGraph into = targetPlatform.archive(modName);
+        // TODO: consider extra signifigance when modName or platName are empty (i.e. use a wider target like "all modules", "all platforms", etc.)
 
         targetPlatform.whenReady(ReadyState.BEFORE_FINISHED, ready->{
 
@@ -561,15 +573,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             if (!require.isEmpty()
                 && !(require + ":").startsWith(ident + ":")
             ) {
-
-                boolean isWti;
-                try {
-                    MultiCapabilitySoftwareComponent.class.getName();
-                    isWti = true;
-                } catch (NoClassDefFoundError e) {
-                    isWti = false;
-                }
-                if (isWti) {
+                if (getView().isWtiGradle()) {
                     // This relies on WTI's fork of gradle.
                     mod.setTargetConfiguration(
                         type.deriveConfiguration(base, dep, isLocal, only, lenient)
@@ -594,5 +598,13 @@ public interface ArchiveGraph extends Named, GraphNode {
 //        }
 
         target.getDependencies().add(mod);
+    }
+
+    default String getDefaultPlatform() {
+        return getView().getSchema().getMainPlatformName();
+    }
+
+    default String getDefaultModule() {
+        return platform().config().getMainModuleName();
     }
 }

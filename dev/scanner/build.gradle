@@ -5,12 +5,12 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-collect'
+        req.project 'xapi-dev-parent:xapi-dev-api'
+        req.project 'xapi-dev-parent:xapi-dev-bytecode'
 }
-
-dependencies {
-    compile project(':xapi-dev-parent:xapi-dev-api')
-    compile project(':xapi-dev-parent:xapi-dev-bytecode')
-    testCompile project(':xapi-core-parent:xapi-core-test')
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-test'
 }
 
 description = 'XApi - Classpath Scanner'

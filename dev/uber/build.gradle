@@ -11,13 +11,14 @@ buildscript {
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
-        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
 }
 
-plugins.apply 'com.github.johnrengelman.shadow'
 setProperty('xapi.main.component', 'shadow')
 apply from: "$rootDir/gradle/xapi-env.gradle"
+plugins.apply 'xapi-require'
+plugins.apply 'com.github.johnrengelman.shadow'
 
 (tasks.jar as Jar).archiveClassifier.set 'default'
 
@@ -59,20 +60,26 @@ artifacts {
 }
 assemble.dependsOn(shadowJar)
 
-dependencies {
-    compile project(':xapi-server-parent:xapi-server-vertx')
-    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-jre-parent:xapi-jre-process')
-    compile project(':xapi-dev-parent:xapi-dev-file')
-    compile project(':xapi-dev-parent:xapi-dev-shell')
-    compile project(':xapi-dev-parent:xapi-dev-scanner')
-    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
-    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
-    compile project(':xapi-dev-parent:xapi-dev-maven')
-    compile "net.wti.core:xapi-gen:$version"
-    compile project(':xapi-server-parent:xapi-server-gen')
-    testCompile project(':xapi-core-parent:xapi-core-test')
+xapiRequire.main().configure {
+    req ->
+        req.external "net.wti.core:xapi-gen:$version", 'main'
+        req.project 'xapi-server-parent:xapi-server-vertx'
+        req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-jre-parent:xapi-jre-process'
+        req.project 'xapi-dev-parent:xapi-dev-file'
+        req.project 'xapi-dev-parent:xapi-dev-shell'
+        req.project 'xapi-dev-parent:xapi-dev-scanner'
+        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api'
+        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl'
+        req.project 'xapi-dev-parent:xapi-dev-maven'
+        req.project 'xapi-server-parent:xapi-server-gen'
+}
+
+xapiRequire.module('test').configure {
+    req ->
+        req.project(':xapi-core-parent:xapi-core-test')
+
 }
 
 description = 'XApi - Dev uber jar'

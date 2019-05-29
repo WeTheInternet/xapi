@@ -95,7 +95,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
                 if (!canMutate[0]) {
                     throw new IllegalStateException("Module added to " + view.getPath() + " after publishing finalized: " + module);
                 }
-                project.whenReady(ReadyState.AFTER_READY, p-> {
+                project.whenReady(ReadyState.BEFORE_FINISHED, p-> {
                     canMutate[0] = false;
                     if (shouldSelect(module)) {
                         selectModule(view, lib, xapiPublish, module);

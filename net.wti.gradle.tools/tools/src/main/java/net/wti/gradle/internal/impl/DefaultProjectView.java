@@ -4,6 +4,7 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.spi.GradleServiceFinder;
+import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Incubating;
@@ -20,6 +21,7 @@ import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
+import org.gradle.api.internal.component.MultiCapabilitySoftwareComponent;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
@@ -32,6 +34,7 @@ import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
+import xapi.gradle.fu.LazyString;
 import xapi.gradle.java.Java;
 
 import java.io.File;
@@ -53,6 +56,14 @@ import java.util.function.Function;
 @SuppressWarnings("UnstableApiUsage")
 public class DefaultProjectView implements ProjectView {
 
+    private static final LazyString WTI_GRADLE = new LazyString(()-> {
+        try {
+            MultiCapabilitySoftwareComponent.class.getName();
+            return "true";
+        } catch (NoClassDefFoundError e) {
+            return "false";
+        }
+    });
     private final String path;
     private final ObjectFactory objects;
     private final Instantiator instantiator;
@@ -389,6 +400,11 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public DefaultComponentMetadataHandler getComponentMetadata() {
         return componentMetadata;
+    }
+
+    @Override
+    public boolean isWtiGradle() {
+        return GradleCoerce.unwrapBoolean(WTI_GRADLE);
     }
 
     @Override

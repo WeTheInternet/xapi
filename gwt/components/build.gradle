@@ -1,3 +1,4 @@
+import net.wti.gradle.schema.api.Transitivity
 plugins {
     id 'xapi-require'
 }
@@ -16,21 +17,19 @@ xapiRequire.main().configure {
     internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator:main:main'
     internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api:main:main'
     external 'net.wetheinter:gwt-user:2.8.0'
+    external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
 }
 
 xapiRequire.module('test').configure {
-    internal 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl:main:main'
-    internal 'xapi-dev-parent:xapi-dev-javac:main:main'
-    internal 'xapi-jre-parent:xapi-jre-inject:main:main'
-    external 'junit:junit:4.12'
-    external 'info.cukes:cucumber-java:1.2.5'
-    external 'info.cukes:cucumber-junit:1.2.5'
-    external 'org.assertj:assertj-core:3.2.0'
-}
-
-dependencies {
-    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
-    testRuntime 'net.wetheinter:gwt-dev:2.8.0'
+    req ->
+        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project 'xapi-inject', 'jre:main'
+        req.external 'junit:junit:4.12'
+        req.external 'info.cukes:cucumber-java:1.2.5'
+        req.external 'info.cukes:cucumber-junit:1.2.5'
+        req.external 'org.assertj:assertj-core:3.2.0'
+        req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'
 }
 
 description = 'XApi - Web Component Implementation'

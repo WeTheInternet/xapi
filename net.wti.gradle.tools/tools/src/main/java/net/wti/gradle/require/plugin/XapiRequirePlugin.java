@@ -9,11 +9,11 @@ import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.XapiRequire;
 import net.wti.gradle.schema.internal.XapiRegistration;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
+import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 
 import javax.inject.Inject;
@@ -126,7 +126,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         self.getProjectGraph().whenReady(ReadyState.FINISHED + 0x100, done->{
             switch (include.getMode()) {
                 case project:
-                    includeProject(self, projId, arch, only, lenient);
+                    includeProject(self, projId, include, arch, only, lenient);
                     return;
                 case internal:
                     includeInternal(self, projId, arch, only, lenient);
@@ -143,6 +143,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
     private void includeProject(
         ProjectView self,
         String projId,
+        XapiRegistration reg,
         ArchiveGraph arch,
         boolean only,
         boolean lenient
@@ -150,9 +151,19 @@ public class XapiRequirePlugin implements Plugin<Project> {
 
         final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
         incProject.whenReady(ReadyState.BEFORE_READY, other->{
+
             final String projName = incProject.getName();
-            self.getLogger().info("Including project {} into arch {}", projName, arch.getPath());
-            arch.importGlobal(projName, only, lenient);
+            final String coord = GradleCoerce.unwrapStringNonNull(reg.getFrom());
+            String[] coords = coord.split(":");
+            assert coords.length <3 : "xapi-coordinate paths cannot have more than two:segments. You sent " + coord;
+
+            self.getLogger().info("Including project {} into arch {} with coordinates {}", projName, arch.getPath(), coord);
+            // If there is 1 or fewer requested coordinates, the platform is default platform ("main")...
+            String platName = coords.length < 2 ? arch.getDefaultPlatform() : coords[0];
+            // If there are 0 coordinates, the module is default module ("main"), otherwise, module is the last item
+            String modName = coords.length == 0 ? arch.getDefaultModule() : coords[coords.length-1];
+
+            arch.importProject(projName, platName, modName, only, lenient);
         });
     }
 
@@ -164,26 +175,32 @@ public class XapiRequirePlugin implements Plugin<Project> {
         boolean lenient
     ) {
         String[] coords = projId.split(":");
+        assert ":".equals(projId) || !projId.endsWith(":") : "Invalid projId " + projId + " cannot end with :";
         final ProjectGraph graph;
         final String platName;
         final String archName;
-        archName = coords[coords.length -1];
         final BuildGraph bg = self.getBuildGraph();
-        if (coords.length == 1) {
+        if (coords.length < 2) {
             graph = self.getProjectGraph();
-            platName = "main";
+            platName = arch.getDefaultPlatform();
+            archName = projId.isEmpty() ? arch.getDefaultModule() : coords[coords.length - 1];
         } else if (coords.length == 2) {
             final String plat = coords[coords.length - 2];
+            archName = coords[coords.length - 1];
             if (bg.hasProject(plat)) {
-                platName = "main";
+                platName = arch.getDefaultPlatform();
                 graph = bg.getProject(plat);
             } else {
                 platName = plat;
                 graph = self.getProjectGraph();
             }
         } else {
+            // more than 2 coordinates; treat this as projectId:plat:mod
+
             platName = coords[coords.length - 2];
+            archName = coords[coords.length - 1];
             String proj = projId.substring(0, projId.length() - platName.length() - archName.length() - 2);
+            self.getLogger().warn("Using `Requirable.internal '{}'` instead of `Requirable.project '{}', '{}:{}'` ", projId, proj, platName, archName);
             graph = bg.getProject(proj);
         }
         graph.whenReady(ReadyState.BEFORE_FINISHED, ready->{

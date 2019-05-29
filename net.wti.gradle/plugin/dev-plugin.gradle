@@ -32,10 +32,11 @@ def depend = { String key, Object item ->
 }
 
 xapiRequire.main().configure {
-    external "net.wti.core:xapi-gen:$version", 'main'
-    external "net.wti.core:xapi-fu:$version", 'main'
-    external "net.wti.gradle.tools:xapi-gradle-tools:$version"//, 'main'
-    internal 'xapi-gradle-api:main:main'
+    req ->
+        req.external "net.wti.core:xapi-gen:$version", 'main'
+        req.external "net.wti.core:xapi-fu:$version", 'main'
+        req.external "net.wti.gradle.tools:xapi-gradle-tools:$version"//, 'main'
+        req.project 'xapi-gradle-api', 'main'
 }
 
 xapiRequire.module('test').configure {

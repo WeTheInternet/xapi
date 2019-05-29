@@ -5,7 +5,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-collect'
-        req.project 'xapi-jre-parent:xapi-jre-inject'
+        req.project 'xapi-inject', 'jre:main'
 }
 
 description = 'XApi - Jre collections implementation'

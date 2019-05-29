@@ -1,10 +1,8 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
 }
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-io')
-    testCompile project(':xapi-core-parent:xapi-core-test')
-}
+xapiRequire.main().project('xapi-core-parent:xapi-core-io')
+xapiRequire.module('test').project('xapi-core-parent:xapi-core-test')
 
 description = 'XApi - java.io.File utilities'

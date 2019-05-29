@@ -5,6 +5,7 @@ import org.gradle.api.Named;
 import org.gradle.api.provider.Provider;
 import org.gradle.util.GUtil;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -40,13 +41,26 @@ public class GradleCoerce {
     }
 
     public static String unwrapString(Object o) {
+        return unwrapString(o, true);
+    }
+
+    @Nonnull
+    public static String unwrapStringNonNull(Object o) {
+        final String result = unwrapString(o, false);
+        assert result != null : "nullOnEmpty:false failed when resolving " + o;
+        return result;
+    }
+
+    public static String unwrapString(Object o, boolean nullOnEmpty) {
         if (o instanceof CharSequence) {
             return o.toString();
         }
         final List<String> unwrapped = unwrapStrings(o);
         assert unwrapped.size() < 2 : "Got more than one string unwrapping " + o + " : " + unwrapped;
-        return unwrapped.isEmpty() ? null : unwrapped.get(0);
+        assert unwrapped.isEmpty() || unwrapped.get(0) != null : "Do not supply null strings!";
+        return unwrapped.isEmpty() ? nullOnEmpty ? null : "" : unwrapped.get(0);
     }
+
     public static List<String> unwrapStrings(Object o) {
         final List<Object> items = unwrap(o, item -> {
             if (item instanceof Named) {
@@ -118,5 +132,9 @@ public class GradleCoerce {
                 return true;
         }
         return false;
+    }
+
+    public static boolean isEmpty(Object value) {
+        return unwrapStringNonNull(value).isEmpty();
     }
 }

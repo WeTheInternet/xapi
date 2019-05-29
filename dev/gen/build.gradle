@@ -2,17 +2,20 @@ plugins {
     id 'xapi-require'
 }
 
-xapiRequire.module('main').internal 'xapi-common:jre:main'
+xapiRequire.main().configure {
+    req ->
+        req.external "net.wti.core:xapi-lang-core:${->version}"
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-lang-dev'
+        req.project 'xapi-core-parent:xapi-core-io'
+        req.project 'xapi-dev-parent:xapi-dev-javac'
+        req.project 'xapi-dev-parent:xapi-dev-scanner'
+}
 
-dependencies {
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile project(':xapi-lang-dev')
-    compile project(':xapi-core-parent:xapi-core-io')
-    compile project(':xapi-dev-parent:xapi-dev-javac')
-    compile project(':xapi-dev-parent:xapi-dev-scanner')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.assertj:assertj-core-java8:1.0.0m1'
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'junit:junit:4.12'
+        req.external 'org.assertj:assertj-core-java8:1.0.0m1'
 }
 
 description = 'XApi - Code Generator API'

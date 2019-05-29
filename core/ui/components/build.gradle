@@ -1,13 +1,18 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
 }
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-core-parent:xapi-core-event') // should not be necessary, but IntelliJ fails w/out this
-    testCompile 'junit:junit:4.12'
-    testCompile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-core-parent:xapi-core-test')
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.project 'xapi-core-parent:xapi-core-event' // should not be necessary, but IntelliJ fails w/out this
 }
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'junit:junit:4.12'
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-core-parent:xapi-core-test'
+}
+
 
 description = 'XApi - Core UI Generator'

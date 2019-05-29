@@ -1,7 +1,9 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.schema.api.Transitivity;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Named;
+import org.gradle.internal.impldep.bsh.This;
 
 import java.util.Objects;
 
@@ -32,6 +34,9 @@ public class XapiRegistration implements Named {
         this(project, platform, archive, from, RegistrationMode.DEFAULT);
     }
     public XapiRegistration(Object project, Object platform, Object archive, Object from, RegistrationMode mode) {
+        this(project, platform, archive, from, mode, Transitivity.api);
+    }
+    public XapiRegistration(Object project, Object platform, Object archive, Object from, RegistrationMode mode, Transitivity transitivity) {
         this.project = project;
         this.platform = platform;
         this.archive = archive;
@@ -49,6 +54,10 @@ public class XapiRegistration implements Named {
 
     public static XapiRegistration from(Object project, Object platform, Object archive, Object into, RegistrationMode mode) {
         return new XapiRegistration(project, platform, archive, into, mode);
+    }
+
+    public static XapiRegistration from(Object project, Object platform, Object archive, Object into, RegistrationMode mode, Transitivity trans) {
+        return new XapiRegistration(project, platform, archive, into, mode, trans);
     }
 
     private void maybeResolve() {

@@ -151,6 +151,7 @@ public class XapiSchema {
     private final PlatformConfigContainerInternal platforms;
     private final ArchiveConfigContainerInternal archives;
     private final ProjectView view;
+    private Object mainPlatform;
 
     public XapiSchema(ProjectView self) {
         final Instantiator instantiator = self.getInstantiator();
@@ -564,7 +565,16 @@ public class XapiSchema {
         }
         // Heuristic is that, by default, main, and anything required by main
         // should be published.
-        final ArchiveConfigInternal main = module.getPlatform().getMainArchive();
+        final ArchiveConfigInternal main = module.getPlatform().getMainModule();
         return main.isOrRequires(module);
+    }
+
+    public String getMainPlatformName() {
+        String s = GradleCoerce.unwrapStringNonNull(mainPlatform);
+        return s.isEmpty() ? "main" : s;
+    }
+
+    public void setMainPlatform(Object mainPlatform) {
+        this.mainPlatform = mainPlatform;
     }
 }

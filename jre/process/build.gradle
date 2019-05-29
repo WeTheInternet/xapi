@@ -1,7 +1,11 @@
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-process')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-core-parent:xapi-core-test')
+plugins { id 'xapi-require' }
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-process'
+        req.project 'xapi-inject', 'jre:main'
+}
+xapiRequire.module('test').configure {
+    req -> req.project(':xapi-core-parent:xapi-core-test')
 }
 
 test {

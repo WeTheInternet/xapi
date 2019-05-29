@@ -1,3 +1,5 @@
+import net.wti.gradle.schema.api.Transitivity
+
 buildscript {
     System.setProperty("xapiIntoBuildscipt", "true")
     project.extensions.add('myBuildscript', it)
@@ -14,16 +16,17 @@ plugins {
 import org.gradle.internal.jvm.Jvm
 
 xapiRequire.main().configure {
-    external "net.wti.core:xapi-fu:${->version}", 'main'
+    req ->
+        req.external "net.wti.core:xapi-fu:${->version}", 'main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project 'xapi-jre-parent:xapi-jre-io'
+        req.project 'xapi-core-parent:xapi-core-scope'
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-dev-parent:xapi-dev-file'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
 }
 
 dependencies {
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile project(':xapi-jre-parent:xapi-jre-io')
-    compile project(':xapi-core-parent:xapi-core-scope')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-dev-parent:xapi-dev-file')
-    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     Jvm jvm = Jvm.current()
     if (jvm.javaVersion.isJava8()) {
         File tools = jvm.toolsJar
@@ -43,7 +46,7 @@ dependencies {
             })
         })
     }
-    
+
     testCompile'net.wetheinter:gwt-dev:2.8.0'
     testCompile 'net.wetheinter:gwt-user:2.8.0'
     testCompile 'net.wetheinter:gwt-elemental:2.8.0'

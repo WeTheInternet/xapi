@@ -1,11 +1,8 @@
 package net.wti.gradle.internal.require.impl;
 
 import net.wti.gradle.internal.impl.DefaultWorker;
-import net.wti.gradle.internal.require.api.ArchiveGraph;
-import net.wti.gradle.internal.require.api.ArchiveRequest;
+import net.wti.gradle.internal.require.api.*;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
-import net.wti.gradle.internal.require.api.ModuleTasks;
-import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.require.api.DependencyKey;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.ModuleIdentifier;
@@ -27,6 +24,7 @@ public class DefaultArchiveGraph extends DefaultWorker implements ArchiveGraph {
     private final Set<ArchiveRequest> incoming;
     private final Set<ArchiveRequest> outgoing;
     private final ModuleTasks tasks;
+    private final DependencyStitcher dependencies;
 
     public DefaultArchiveGraph(PlatformGraph platform, String name) {
         this.platform = platform;
@@ -34,6 +32,7 @@ public class DefaultArchiveGraph extends DefaultWorker implements ArchiveGraph {
         incoming = new LinkedHashSet<>();
         outgoing = new LinkedHashSet<>();
         tasks = new ModuleTasks(this);
+        dependencies = new DefaultDependencyStitcher(this);
     }
 
     @Override
@@ -101,6 +100,11 @@ public class DefaultArchiveGraph extends DefaultWorker implements ArchiveGraph {
 
     @SuppressWarnings("WeakerAccess")
     protected void spyId(String name, DefaultModuleComponentIdentifier compId) {
+    }
+
+    @Override
+    public DependencyStitcher getDependencies() {
+        return dependencies;
     }
 
     @Override

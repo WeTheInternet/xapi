@@ -1,20 +1,28 @@
-repositories {
-    jcenter()
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-lang-dev', 'main'
+        req.project 'xapi-core-parent:xapi-core-scope', 'main'
+        req.project 'xapi-core-parent:xapi-core-event', 'main'
+        req.project 'xapi-core-parent:xapi-core-model', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-file', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+}
+
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-jre-parent:xapi-jre-model'
+        req.project 'xapi-core-parent:xapi-core-test'
 }
 
 dependencies {
-    compile "net.wti.core:xapi-lang-core:${->version}"
     implementation 'javax.validation:validation-api:1.0.0.GA'
-    compile project(':xapi-lang-dev')
-    compile project(':xapi-core-parent:xapi-core-scope')
     compileOnly 'net.wetheinter:jsinterop-annotations:2.8.0'
-    compile project(':xapi-core-parent:xapi-core-event')
-    compile project(':xapi-core-parent:xapi-core-model')
-    compile project(':xapi-dev-parent:xapi-dev-file')
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core:3.2.0'
-    testCompile project(':xapi-jre-parent:xapi-jre-model')
-    testCompile project(':xapi-core-parent:xapi-core-test')
 }
 
 description = 'XApi - Core UI Apis'

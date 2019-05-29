@@ -34,9 +34,13 @@ public interface PlatformConfig extends Named {
         return parent == null ? this : parent;
     }
 
+    default String getMainModuleName() {
+        return "main";
+    }
+
     ArchiveConfigContainer getArchives();
 
-    ArchiveConfig getMainArchive();
+    ArchiveConfig getMainModule();
 
     default ArchiveConfig getArchive(Object named) {
         final String name = GradleCoerce.unwrapString(named);

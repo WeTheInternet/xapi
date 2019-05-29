@@ -6,22 +6,26 @@ repositories {
     jcenter()
 }
 
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-collect'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+}
+
 xapiRequire.module('sample').configure {
     req ->
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
 }
 
-xapiRequire.main().configure {
+xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-collect'
+        req.external 'junit:junit:4.12'
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-core-parent:xapi-core-test'
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
     implementation 'net.wetheinter:gwt-user:2.8.0'
-    testCompile 'junit:junit:4.12'
-    testCompile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-core-parent:xapi-core-test')
 }
 
 description = 'XApi - Core Html utils'

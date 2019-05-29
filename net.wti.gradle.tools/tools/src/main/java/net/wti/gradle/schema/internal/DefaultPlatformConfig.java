@@ -5,6 +5,7 @@ import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.schema.api.ArchiveConfigContainer;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.PlatformConfigContainer;
+import net.wti.gradle.system.tools.GradleCoerce;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     private Object requireSource;
     private Object published;
     private Object test;
+    private Object mainModule;
 
     public DefaultPlatformConfig(
         String name,
@@ -73,12 +75,19 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     }
 
     @Override
-    public ArchiveConfigInternal getMainArchive() {
-        return archives.maybeCreate(getMainArchiveName());
+    public ArchiveConfigInternal getMainModule() {
+        return archives.maybeCreate(getMainModuleName());
     }
 
-    protected String getMainArchiveName() {
-        return "main";
+    @Override
+    public void setMainModule(Object mainModule) {
+        this.mainModule = mainModule;
+    }
+
+    @Override
+    public String getMainModuleName() {
+        String s = GradleCoerce.unwrapStringNonNull(mainModule);
+        return s.isEmpty() ? PlatformConfigInternal.super.getMainModuleName() : s;
     }
 
     @Override

@@ -7,6 +7,8 @@ import net.wti.gradle.schema.api.PlatformConfig;
  */
 public interface PlatformConfigInternal extends PlatformConfig {
 
+    void setMainModule(Object mainModule);
+
     @Override
     ArchiveConfigContainerInternal getArchives();
 
@@ -20,7 +22,7 @@ public interface PlatformConfigInternal extends PlatformConfig {
     }
 
     @Override
-    ArchiveConfigInternal getMainArchive();
+    ArchiveConfigInternal getMainModule();
 
     @Override
     default boolean isRoot() {

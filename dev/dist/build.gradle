@@ -1,22 +1,30 @@
+plugins { id 'xapi-require' }
 apply from: "$rootDir/gradle/xapi-env.gradle"
 import org.gradle.internal.jvm.Jvm
 
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-server-parent:xapi-server-vertx'
+        req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
+        req.project 'xapi-inject', 'jre:main'
+        req.project 'xapi-dev-parent:xapi-dev-file'
+        req.project 'xapi-dev-parent:xapi-dev-shell'
+        req.project 'xapi-dev-parent:xapi-dev-scanner'
+        req.project 'xapi-dev-parent:xapi-dev-maven'
+        req.external "net.wti.core:xapi-gen:$version", 'main'
+        req.project 'xapi-server-parent:xapi-server-gen'
+}
+
+xapiRequire.module('test').configure {
+    req -> req.project(':xapi-core-parent:xapi-core-test')
+}
+
 dependencies {
-    compile project(':xapi-server-parent:xapi-server-vertx')
-    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-dev-parent:xapi-dev-file')
-    compile project(':xapi-dev-parent:xapi-dev-shell')
-    compile project(':xapi-dev-parent:xapi-dev-scanner')
-    compile project(':xapi-dev-parent:xapi-dev-maven')
-    compile "net.wti.core:xapi-gen:$version"
-    compile project(':xapi-server-parent:xapi-server-gen')
     File tools = Jvm.current().toolsJar
     if (tools) {
         compileOnly files(tools)
         testCompile files(tools)
     }
-    testCompile project(':xapi-core-parent:xapi-core-test')
 }
 
 test {

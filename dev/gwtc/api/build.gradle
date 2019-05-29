@@ -1,25 +1,28 @@
+import net.wti.gradle.schema.api.Transitivity
 
-repositories {
-    jcenter()
-}
+plugins { id 'xapi-require' }
 
 apply from: "$rootDir/gradle/processor.gradle"
 
+xapiRequire.main().configure {
+    req ->
+        req.external "net.wti.gradle:xapi-gradle-api:$version", 'main'
+        req.project 'xapi-dev-parent:xapi-dev-source'
+        req.project 'xapi-core-parent:xapi-core-model'
+        req.project 'xapi-core-parent:xapi-core-process'
+        req.project Transitivity.impl, 'xapi-inject', 'jre:main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.project 'xapi-core-parent:xapi-core-io'
+        req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
+
+}
+
 dependencies {
-
-    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
-
-    compile "net.wti.gradle:xapi-gradle-api:$version"
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    compile project(':xapi-core-parent:xapi-core-model')
-    compile project(':xapi-core-parent:xapi-core-process')
-    implementation project(':xapi-jre-parent:xapi-jre-inject')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-core-parent:xapi-core-io')
-    implementation 'net.wetheinter:gwt-user:2.8.0'
     compileOnly 'junit:junit:4.12'
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     compileOnly 'net.wetheinter:gwt-user:2.8.0'
+    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
+
 }
 
 description = 'XApi - Gwt Compiler Api'

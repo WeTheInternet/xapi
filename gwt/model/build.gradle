@@ -1,3 +1,5 @@
+import net.wti.gradle.schema.api.Transitivity
+
 plugins { 
     id 'xapi-require' 
 }
@@ -7,26 +9,30 @@ repositories.jcenter()
 
 xapiRequire.main().configure {
     req ->
-        req.internal 'xapi-common:jre:main'
-        req.internal 'xapi-collect:gwt:main'
+        req.project 'xapi-common', 'jre:main'
+        req.project 'xapi-collect', 'gwt:main'
+        req.project 'xapi-gwt-io'
+        req.project 'xapi-core-parent:xapi-core-model'
+        req.external "net.wti.core:xapi-gen:$version", 'main'
+        req.project 'xapi-lang-dev'
+        req.project 'xapi-dev-parent:xapi-dev-source'
+        req.project 'xapi-core-parent:xapi-core-reflect'
+        req.project 'xapi-jre-parent:xapi-jre-collect', 'main'
+        req.project 'xapi-inject', 'jre:main'
 }
 
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-test'
+        req.external 'junit:junit:4.12'
+        req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
+        req.project 'xapi-jre-parent:xapi-jre-model'
+        req.project 'xapi-gwt-io'
+        req.project 'xapi-server-parent:xapi-server-api'
+        req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
+        
+}
 dependencies {
-    compile project(':xapi-gwt-io')
-    compile project(':xapi-core-parent:xapi-core-model')
-    compile "net.wti.core:xapi-gen:$version"
-    compile project(':xapi-lang-dev')
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    compile project(':xapi-core-parent:xapi-core-reflect')
-    compile project(':xapi-jre-parent:xapi-jre-collect')
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-core-parent:xapi-core-test')
-    testCompile 'junit:junit:4.12'
-    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
-    testRuntime project(':xapi-jre-parent:xapi-jre-inject')
-    testCompile project(':xapi-jre-parent:xapi-jre-model')
-    testCompile project(':xapi-gwt-io')
-    testCompile project(':xapi-server-parent:xapi-server-api')
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     implementation 'net.wetheinter:gwt-user:2.8.0'
 }

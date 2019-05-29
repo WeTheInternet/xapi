@@ -1,4 +1,5 @@
 import net.wti.gradle.internal.require.api.Requirable
+import net.wti.gradle.schema.api.Transitivity
 
 buildscript({
     dependencies {
@@ -10,34 +11,47 @@ evaluationDependsOn(':xapi-collect')
 
 String v = version
 
-xapiRequire.module('main', 'api').configure {
+xapiRequire.module('api').configure {
     Requirable req ->
         req.external "net.wti.core:xapi-fu:$v", 'main'
-        req.internal 'xapi-common:api'
-        req.internal 'xapi-common:spi'
+        req.project 'xapi-common', 'spi' // for some terribly reason, if we move this down, it will break.
+        // specifically, it seems like we can only inherit a single configuration from any given project (firstSeenDependency)
+        req.project 'xapi-common', 'api'
 }
 
-xapiRequire.module('main', 'spi').configure {
+xapiRequire.module('spi').configure {
     Requirable req ->
         req.external "net.wti.core:xapi-fu:$v", 'main'
-        req.internal 'xapi-common:api'
-        req.internal 'xapi-collect:api'
+        req.project 'xapi-common', 'api'
+        req.project 'xapi-collect', 'api'
 }
 xapiRequire.main().configure {
     Requirable req ->
-        req.internal 'xapi-log:main'
+        req.project 'xapi-log', 'main'
 }
-xapiRequire.module('gwt', 'main').configure {
+xapiRequire.main('gwt').configure {
     Requirable req ->
-        req.internal 'xapi-log:main'
-        req.internal 'xapi-common:gwt:main'
-        req.internal 'xapi-dev-parent:xapi-dev-source:main:main'
+        req.project 'xapi-log', 'main'
+        req.project 'xapi-common', 'gwt:main'
+        req.project 'xapi-dev-parent:xapi-dev-source', 'main:main'
+}
 
+xapiRequire.main('jre').configure {
+    Requirable req ->
+        req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+}
+
+xapiRequire.module('jre', 'test').configure {
+    Requirable req ->
+        req.project 'xapi-core-parent:xapi-core-test', 'main'
+        req.project Transitivity.runtime, 'xapi-jre-parent:xapi-jre-model'
 }
 
 xapiSchema.whenReady {
     project.dependencies {
         gwtCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
         gwtCompileOnly 'net.wetheinter:gwt-user:2.8.0'
+
+        jreAnnotationProcessor configurations.exportCompile
     }
 }

@@ -180,4 +180,6 @@ public interface ProjectView extends ExtensionAware {
     }
 
     DefaultComponentMetadataHandler getComponentMetadata();
+
+    boolean isWtiGradle();
 }

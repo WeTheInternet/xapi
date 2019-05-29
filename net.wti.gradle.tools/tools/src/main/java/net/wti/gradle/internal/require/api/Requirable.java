@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.require.api;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.schema.api.Transitivity;
 import net.wti.gradle.schema.internal.XapiRegistration;
 import net.wti.gradle.schema.internal.XapiRegistration.RegistrationMode;
 import org.gradle.api.Action;
@@ -24,7 +25,19 @@ public interface Requirable {
      * @return
      */
     default XapiRegistration project(Object project) {
-        XapiRegistration reg = XapiRegistration.from(project, getDefaultPlatform(), getDefaultModule(), getFrom(), RegistrationMode.project);
+        return project(Transitivity.api, project);
+    }
+    default XapiRegistration project(Transitivity transitivity, Object project) {
+        XapiRegistration reg = XapiRegistration.from(project, getDefaultPlatform(), getDefaultModule(), getFrom(), RegistrationMode.project, transitivity);
+        getRegistrations().add(reg);
+        return reg;
+    }
+
+    default XapiRegistration project(Object project, Object xapiCoord) {
+        return project(Transitivity.api, project, xapiCoord);
+    }
+    default XapiRegistration project(Transitivity transitivity, Object project, Object xapiCoord) {
+        XapiRegistration reg = XapiRegistration.from(project, getDefaultPlatform(), getDefaultModule(), xapiCoord, RegistrationMode.project, transitivity);
         getRegistrations().add(reg);
         return reg;
     }
@@ -47,8 +60,20 @@ public interface Requirable {
         return reg;
     }
 
+    default XapiRegistration external(Transitivity transitivity, Object dependencyString) {
+        XapiRegistration reg = XapiRegistration.from(dependencyString, getDefaultPlatform(), getDefaultModule(), getFrom(), RegistrationMode.external, transitivity);
+        getRegistrations().add(reg);
+        return reg;
+    }
+
     default XapiRegistration external(Object dependencyString, Object xapiCoord) {
         XapiRegistration reg = XapiRegistration.from(dependencyString, getDefaultPlatform(), getDefaultModule(), xapiCoord, RegistrationMode.external);
+        getRegistrations().add(reg);
+        return reg;
+    }
+
+    default XapiRegistration external(Transitivity transitivity, Object dependencyString, Object xapiCoord) {
+        XapiRegistration reg = XapiRegistration.from(dependencyString, getDefaultPlatform(), getDefaultModule(), xapiCoord, RegistrationMode.external, transitivity);
         getRegistrations().add(reg);
         return reg;
     }

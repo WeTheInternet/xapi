@@ -7,23 +7,26 @@ apply from: "$rootDir/gradle/xapi-env.gradle"
 repositories {
     jcenter()
 }
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-inject', 'jre:main'
+        req.external 'net.wetheinter:gwt-dev:2.8.0'
+        req.external 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
+        req.external 'net.wetheinter:gwt-user:2.8.0'
+        req.project 'xapi-gwt', 'main'
+        req.project ':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api'
+        req.project ':xapi-dev-parent:xapi-dev-shell'
+}
 
 xapiRequire.module('test').configure {
     req ->
-        req.internal 'xapi-common:gwt:testTools'
+        req.project 'xapi-common', 'gwt:testTools'
 }
 
 dependencies {
-    compile project(':xapi-jre-parent:xapi-jre-inject')
-    compile 'net.wetheinter:gwt-dev:2.8.0'
-    compile 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
-    compile 'net.wetheinter:gwt-user:2.8.0'
-    compile project(':xapi-gwt')
-    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
     runtime project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
-    compile project(':xapi-dev-parent:xapi-dev-shell')
-    compile 'junit:junit:4.12'
-    compile project(':xapi-core-parent:xapi-core-test')
+    implementation project(':xapi-core-parent:xapi-core-test')
+    implementation 'junit:junit:4.12' // a bit yucky... we look for junit types in our main tooling
     testCompile project(':xapi-dev-parent:xapi-dev-maven')
 }
 

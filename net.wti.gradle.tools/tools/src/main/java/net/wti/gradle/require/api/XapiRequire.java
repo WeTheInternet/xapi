@@ -48,7 +48,11 @@ public class XapiRequire extends BaseRequire<RequirePlatform> implements Requira
     }
 
     public RequireModule main() {
-        return module("main", "main");
+        return main("main"); // make the default main platform name configurable / Property-driven
+    }
+
+    public RequireModule main(String platform) {
+        return module(platform, "main");
     }
 
     public RequireModule platform(CharSequence platform) {
