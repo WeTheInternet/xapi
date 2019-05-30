@@ -44,6 +44,11 @@ public class GradleCoerce {
         return unwrapString(o, true);
     }
 
+    public static <T extends Enum<T>> T unwrapEnum(Class<T> cls, Object o) {
+        String v = unwrapString(o, true);
+        return Enum.valueOf(cls, v);
+    }
+
     @Nonnull
     public static String unwrapStringNonNull(Object o) {
         final String result = unwrapString(o, false);
@@ -71,6 +76,9 @@ public class GradleCoerce {
                 || item instanceof Number
                 || item instanceof Boolean) {
                 return item.toString();
+            }
+            if (item instanceof Enum) {
+                return ((Enum) item).name();
             }
             return DEFAULT_FALLBACK.apply(o);
         });

@@ -4,6 +4,7 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.require.api.DependencyKey;
+import net.wti.gradle.schema.api.Transitivity;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
@@ -463,12 +464,13 @@ public interface ArchiveGraph extends Named, GraphNode {
         return getTasks().getJavacTask();
     }
 
-    default void importLocal(ArchiveGraph neededArchive, boolean only, boolean lenient) {
-        importLocal(neededArchive, DefaultUsageType.Api, only, lenient);
-        importLocal(neededArchive, DefaultUsageType.Runtime, only, lenient);
+    default void importLocal(ArchiveGraph neededArchive, Transitivity transitivity, boolean lenient) {
+        // TODO: smartly transform / restrict the addition of Api/Runtime dependencies.
+        importLocal(neededArchive, DefaultUsageType.Api, transitivity, lenient);
+        importLocal(neededArchive, DefaultUsageType.Runtime, transitivity, lenient);
     }
 
-    default void importLocal(ArchiveGraph neededArchive, UsageType type, boolean only, boolean lenient) {
+    default void importLocal(ArchiveGraph neededArchive, UsageType type, Transitivity trans, boolean lenient) {
         // TODO: instead create an ArchiveRequest here,
         //  so we can avoid doing this wiring if we don't need to;
         //  i.e. modules w/out sources or outputs could be "ghosted", with only a minimal presence,
@@ -476,8 +478,8 @@ public interface ArchiveGraph extends Named, GraphNode {
 
         final ProjectGraph project = project();
 
-        final Configuration consumer = type.findConsumerConfig(this, only);
-        final ModuleDependency md = type.newDependency(project, this, neededArchive, only);
+        final Configuration consumer = type.findConsumerConfig(this, trans);
+        final ModuleDependency md = type.newDependency(project, this, neededArchive, trans);
 
         getView().getLogger().trace("{} adding dependency {} to {}",
             new LazyString(this::getModuleName), md, consumer.getName());
@@ -488,7 +490,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         String projName,
         String platName,
         String modName,
-        boolean only,
+        Transitivity only,
         boolean lenient
     ) {
         final ProjectView self = getView();
@@ -519,11 +521,11 @@ public interface ArchiveGraph extends Named, GraphNode {
         XapiRegistration reg,
         String newGroup,
         String newName,
-        boolean only,
+        Transitivity trans,
         boolean lenient
     ) {
-        importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, only, lenient);
-        importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, only, lenient);
+        importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, trans, lenient);
+        importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, trans, lenient);
     }
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     default void importExternal(
@@ -532,7 +534,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         UsageType type,
         String newGroup,
         String newName,
-        boolean only,
+        Transitivity trans,
         boolean lenient
     ) {
         // TODO: move all the import* logic from ArchiveGraph, into a new class, DependencyStitcher
@@ -542,11 +544,11 @@ public interface ArchiveGraph extends Named, GraphNode {
         final AttributeContainer attrs = schema.getAttributes(dep, newGroup, newName);
 
         // create variant-aware, on-demand inputs to the lenient config.
-        Configuration target = type.findConsumerConfig(this, only);
+        Configuration target = type.findConsumerConfig(this, trans);
 
-        String from = GradleCoerce.unwrapString(reg.getFrom());
+        final String coords = GradleCoerce.unwrapString(reg.getFrom());
 
-        boolean isLocal = from != null;// && "true".equals(System.getProperty("no.composite"));
+        boolean isLocal = coords != null;// && "true".equals(System.getProperty("no.composite"));
 
         final String ident = dep.getGroup() + ":" + dep.getName();
         final String path = ident + ":" + dep.getVersion();
@@ -561,9 +563,14 @@ public interface ArchiveGraph extends Named, GraphNode {
         }
         ModuleDependency mod = (ModuleDependency) deps.create(path);
 
-        if (from != null) {
-            String[] bits = from.split(":");
-            assert bits.length <3 : "Invalid Xapi descriptor contains more than one : character -> " + from;
+        if (coords == null) {
+            // An external w/out additional xapiCoords
+            mod.setTargetConfiguration(
+                type.deriveConfiguration(base, dep, false, trans, lenient)
+            );
+        } else {
+            String[] bits = coords.split(":");
+            assert bits.length <3 : "Invalid Xapi descriptor contains more than one : character -> " + coords;
             final String fromPlat = bits.length == 1 ? "main" : bits[0];
             String fromMod = bits[bits.length-1];
             if (fromMod.isEmpty()) {
@@ -576,7 +583,7 @@ public interface ArchiveGraph extends Named, GraphNode {
                 if (getView().isWtiGradle()) {
                     // This relies on WTI's fork of gradle.
                     mod.setTargetConfiguration(
-                        type.deriveConfiguration(base, dep, isLocal, only, lenient)
+                        type.deriveConfiguration(base, dep, isLocal, trans, lenient)
                     );
                 } else {
                     // using requireCapabilities results in runtime jars instead of compiled classpaths, so it is less ideal.
@@ -587,15 +594,6 @@ public interface ArchiveGraph extends Named, GraphNode {
             }
         }
 
-        if (from == null) {
-            mod.setTargetConfiguration(
-                type.deriveConfiguration(base, dep, false, only, lenient)
-            );
-        }
-
-//        if (":xapi-collect".equals(getView().getPath())) {
-//            System.out.println("\n\n\nFrom "+ mod.getName() + " : " + mod.getTargetConfiguration());
-//        }
 
         target.getDependencies().add(mod);
     }

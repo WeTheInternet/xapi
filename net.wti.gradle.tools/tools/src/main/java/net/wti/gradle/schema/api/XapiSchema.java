@@ -6,6 +6,7 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
+import net.wti.gradle.internal.require.api.DefaultUsageType;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.schema.internal.*;
@@ -255,7 +256,8 @@ public class XapiSchema {
             final ArchiveGraph parentArch = parent.archive(archGraph.getName());
             // Here is where we want to add inheritance points from child to parent platforms.
 
-            archGraph.importLocal(parentArch, false, false);
+            archGraph.importLocal(parentArch, DefaultUsageType.Api, Transitivity.api, false);
+            archGraph.importLocal(parentArch, DefaultUsageType.Runtime, Transitivity.runtime, false);
 
             platGraph.project().whenReady(ReadyState.AFTER_CREATED, ready->{
                 // Need to rebase our .required names.
@@ -407,7 +409,8 @@ public class XapiSchema {
                 final ArchiveGraph neededArchive = needPlat.archive(need);
 
                 if (neededArchive.srcExists()) {
-                    archGraph.importLocal(neededArchive, only, lenient);
+                    archGraph.importLocal(neededArchive, DefaultUsageType.Api, only ? Transitivity.compile_only : Transitivity.api, lenient);
+                    archGraph.importLocal(neededArchive, DefaultUsageType.Runtime, only ? Transitivity.runtime_only : Transitivity.runtime, lenient);
                 } else {
                     // we need to depend on transitive dependencies of missing-src modules.
                     // idea / solution: move all archGraph.import* calls behind a ModuleRequest (ArchiveRequest),

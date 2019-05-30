@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.require.api;
 
 import net.wti.gradle.internal.api.XapiUsage;
+import net.wti.gradle.schema.api.Transitivity;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
@@ -15,9 +16,9 @@ import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
  */
 public interface UsageType extends Named {
 
-    Configuration findConsumerConfig(ArchiveGraph module, boolean only);
+    Configuration findConsumerConfig(ArchiveGraph module, Transitivity transitivity);
 
-    Configuration findProducerConfig(ArchiveGraph module, boolean only);
+    Configuration findProducerConfig(ArchiveGraph module, Transitivity transitivity);
 
     default Usage findUsage(ProjectGraph project, Configuration consumer, Configuration producer) {
         Usage result;
@@ -72,11 +73,11 @@ public interface UsageType extends Named {
         return null;
     }
 
-    default ModuleDependency newDependency(ProjectGraph project, ArchiveGraph consumer, ArchiveGraph producer, boolean only) {
+    default ModuleDependency newDependency(ProjectGraph project, ArchiveGraph consumer, ArchiveGraph producer, Transitivity transitivity) {
         final DependencyHandler deps = consumer.getView().getDependencies();
         final ModuleDependency dep = (ModuleDependency) deps.create(producer.getView().getService().getProject());
         // TODO: add validation that target configuration exists.
-        dep.setTargetConfiguration(findProducerConfig(producer, only).getName());
+        dep.setTargetConfiguration(findProducerConfig(producer, transitivity).getName());
         return dep;
     }
 
@@ -84,7 +85,7 @@ public interface UsageType extends Named {
         String base,
         Dependency dep,
         boolean isLocal,
-        boolean only,
+        Transitivity transitivity,
         boolean lenient
     );
 

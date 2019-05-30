@@ -3,7 +3,6 @@ package net.wti.gradle.schema.internal;
 import net.wti.gradle.schema.api.Transitivity;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Named;
-import org.gradle.internal.impldep.bsh.This;
 
 import java.util.Objects;
 
@@ -21,9 +20,9 @@ public class XapiRegistration implements Named {
     private Object platform;
     private Object archive;
     private Object from;
-    private Object transitive;
     private Boolean lenient;
     private boolean resolved;
+    private Object transitivity;
     private final RegistrationMode mode;
 
     public XapiRegistration(Object project, Object platform, Object archive) {
@@ -36,12 +35,13 @@ public class XapiRegistration implements Named {
     public XapiRegistration(Object project, Object platform, Object archive, Object from, RegistrationMode mode) {
         this(project, platform, archive, from, mode, Transitivity.api);
     }
-    public XapiRegistration(Object project, Object platform, Object archive, Object from, RegistrationMode mode, Transitivity transitivity) {
+    public XapiRegistration(Object project, Object platform, Object archive, Object from, RegistrationMode mode, Transitivity trans) {
         this.project = project;
         this.platform = platform;
         this.archive = archive;
         this.from = from;
         this.mode = mode;
+        this.transitivity = trans;
     }
 
     public static XapiRegistration from(Object project, Object platform, Object archive) {
@@ -67,7 +67,7 @@ public class XapiRegistration implements Named {
             platform = resolvePlatform(platform);
             archive = resolveArchive(archive);
             from = resolveInto(from);
-            transitive = resolveInto(transitive);
+            transitivity = resolveTransitivity(transitivity);
         }
     }
 
@@ -87,8 +87,8 @@ public class XapiRegistration implements Named {
         return GradleCoerce.unwrapString(into);
     }
 
-    protected boolean resolveTransitive(Object into) {
-        return "true".equals(GradleCoerce.unwrapString(into));
+    protected Transitivity resolveTransitivity(Object into) {
+        return GradleCoerce.unwrapEnum(Transitivity.class, into);
     }
 
     public String getProject() {
@@ -111,13 +111,13 @@ public class XapiRegistration implements Named {
         return from;
     }
 
-    public boolean getTransitive() {
+    public Transitivity getTransitivity() {
         maybeResolve();
-        return !Boolean.FALSE.equals(transitive);
+        return (Transitivity) transitivity;
     }
 
-    public XapiRegistration withTransitive(boolean transitive) {
-        this.transitive = transitive;
+    public XapiRegistration withTransitive(Transitivity transitivity) {
+        this.transitivity = transitivity;
         return this;
     }
 

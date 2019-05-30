@@ -182,4 +182,10 @@ public interface ProjectView extends ExtensionAware {
     DefaultComponentMetadataHandler getComponentMetadata();
 
     boolean isWtiGradle();
+
+    default String getDebugPath() {
+        return getPath() +
+            " of " + GradleService.buildId(getGradle()) +
+            " at " + getProjectDir().toURI();
+    }
 }

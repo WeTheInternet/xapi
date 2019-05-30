@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.require.api;
 
+import net.wti.gradle.schema.api.Transitivity;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.attributes.Usage;
@@ -23,13 +24,24 @@ public enum DefaultUsageType implements UsageType {
      */
     Api {
         @Override
-        public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
-            return only ? module.configIntransitive() : module.configTransitive();
-//            return only ? module.configCompileOnly() : module.configCompile(); // hm, we should accept lenient here as well...
+        public Configuration findConsumerConfig(ArchiveGraph module, Transitivity trans) {
+            if (trans == null) {
+                return module.configTransitive();
+            }
+            switch (trans) {
+                case api:
+                case stub:
+                case impl:
+                    return module.configTransitive();
+                case compile_only:
+                case internal:
+                    return module.configIntransitive();
+            }
+            return module.configTransitive();
         }
 
         @Override
-        public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
+        public Configuration findProducerConfig(ArchiveGraph module, Transitivity transitivity) {
             return module.configExportedApi();
         }
 
@@ -45,13 +57,14 @@ public enum DefaultUsageType implements UsageType {
             String base,
             Dependency dep,
             boolean isLocal,
-            boolean only,
+            Transitivity transitivity,
             boolean lenient
         ) {
             return isLocal ?
                 "main".equals(base) ? "exportCompile" : base + "ExportCompile"
                 :
                 "compile"
+//                "default"
                 // TODO: get disambiguation rules working for consuming apiElements
 //                "apiElements"
                 ;
@@ -68,12 +81,27 @@ public enum DefaultUsageType implements UsageType {
      */
     Runtime {
         @Override
-        public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
-            return only ? module.configRuntimeOnly() : module.configRuntime();
+        public Configuration findConsumerConfig(ArchiveGraph module, Transitivity trans) {
+            if (trans == null) {
+                return module.configRuntime();
+            }
+            switch (trans) {
+                case runtime_only:
+                case execution:
+                    module.configRuntimeOnly();
+                case runtime:
+                case internal:
+                case api:
+                    return module.configRuntime();
+                case compile_only:
+                case stub:
+                case impl:
+            }
+            return module.configRuntime();
         }
 
         @Override
-        public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
+        public Configuration findProducerConfig(ArchiveGraph module, Transitivity transitivity) {
             return module.configExportedRuntime();
         }
 
@@ -86,13 +114,14 @@ public enum DefaultUsageType implements UsageType {
         public String deriveConfiguration(
             String base,
             Dependency dep,
-            boolean isLocal, boolean only,
+            boolean isLocal, Transitivity transitivity,
             boolean lenient
         ) {
             return isLocal ?
                 "main".equals(base) ? "exportRuntime" : base + "ExportRuntime"
                 :
                 "runtime"
+//                "default"
 //                "runtimeElements"
                 ;
         }
@@ -117,18 +146,18 @@ public enum DefaultUsageType implements UsageType {
     }
 
     @Override
-    public Configuration findConsumerConfig(ArchiveGraph module, boolean only) {
+    public Configuration findConsumerConfig(ArchiveGraph module, Transitivity transitivity) {
         throw new UnsupportedOperationException(this + " not yet supported");
     }
 
     @Override
-    public Configuration findProducerConfig(ArchiveGraph module, boolean only) {
+    public Configuration findProducerConfig(ArchiveGraph module, Transitivity transitivity) {
         throw new UnsupportedOperationException(this + " not yet supported");
     }
 
     @Override
     public String deriveConfiguration(
-        String base, Dependency dep, boolean isLocal, boolean only, boolean lenient
+        String base, Dependency dep, boolean isLocal, Transitivity transitivity, boolean lenient
     ) {
         throw new UnsupportedOperationException(this + " not yet supported");
     }

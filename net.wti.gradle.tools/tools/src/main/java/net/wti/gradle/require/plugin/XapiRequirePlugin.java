@@ -7,6 +7,7 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.XapiRequire;
+import net.wti.gradle.schema.api.Transitivity;
 import net.wti.gradle.schema.internal.XapiRegistration;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.tools.GradleCoerce;
@@ -85,7 +86,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                 final String incProj = include.getProject();
                 final String incPlat = include.getPlatform();
                 final String incArch = include.getArchive();
-                final boolean only = !include.getTransitive();
+                final Transitivity trans = include.getTransitivity();
                 final Boolean lenient = include.getLenient();
 
                 if (incArch == null) {
@@ -94,7 +95,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                         proj.platforms().all(plat->
                             plat.archives().all(arch-> {
                                 // hm.  another place where we should filter out modules which don't exist, to avoid creating them
-                                include(view, incProj, arch, include, only, lenient == null ? true : lenient);
+                                include(view, incProj, arch, include, trans, lenient == null ? true : lenient);
                             }
                         ));
                     } else {
@@ -102,13 +103,13 @@ public class XapiRequirePlugin implements Plugin<Project> {
                         // subprojects to customize archive types, as we don't want to
                         // mess around w/ evaluating the foreign project.
                         final PlatformGraph plat = proj.platform(incPlat);
-                        plat.archives().all(arch -> include(view, incProj, arch, include, only, lenient == null ? true : lenient));
+                        plat.archives().all(arch -> include(view, incProj, arch, include, trans, lenient == null ? true : lenient));
                     }
                 } else {
                     // a single project:platform:archive selector.
                     final PlatformGraph plat = proj.platform(incPlat);
                     final ArchiveGraph arch = plat.archive(incArch);
-                    include(view, incProj, arch, include, only, lenient == null ? false : lenient);
+                    include(view, incProj, arch, include, trans, lenient == null ? false : lenient);
                 }
 
             });
@@ -120,19 +121,19 @@ public class XapiRequirePlugin implements Plugin<Project> {
         String projId,
         ArchiveGraph arch,
         XapiRegistration include,
-        boolean only,
+        Transitivity trans,
         boolean lenient
     ) {
         self.getProjectGraph().whenReady(ReadyState.FINISHED + 0x100, done->{
             switch (include.getMode()) {
                 case project:
-                    includeProject(self, projId, include, arch, only, lenient);
+                    includeProject(self, projId, include, arch, trans, lenient);
                     return;
                 case internal:
-                    includeInternal(self, projId, arch, only, lenient);
+                    includeInternal(self, projId, arch, trans, lenient);
                     return;
                 case external:
-                    includeExternal(self, projId, include, arch, only, lenient);
+                    includeExternal(self, projId, include, arch, trans, lenient);
                     return;
                 default:
                     throw new UnsupportedOperationException(include.getMode() + " was not handled");
@@ -145,7 +146,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         String projId,
         XapiRegistration reg,
         ArchiveGraph arch,
-        boolean only,
+        Transitivity transitivity,
         boolean lenient
     ) {
 
@@ -163,7 +164,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
             // If there are 0 coordinates, the module is default module ("main"), otherwise, module is the last item
             String modName = coords.length == 0 ? arch.getDefaultModule() : coords[coords.length-1];
 
-            arch.importProject(projName, platName, modName, only, lenient);
+            arch.importProject(projName, platName, modName, transitivity, lenient);
         });
     }
 
@@ -171,7 +172,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         ProjectView self,
         String projId,
         ArchiveGraph arch,
-        boolean only,
+        Transitivity transitivity,
         boolean lenient
     ) {
         String[] coords = projId.split(":");
@@ -200,14 +201,14 @@ public class XapiRequirePlugin implements Plugin<Project> {
             platName = coords[coords.length - 2];
             archName = coords[coords.length - 1];
             String proj = projId.substring(0, projId.length() - platName.length() - archName.length() - 2);
-            self.getLogger().warn("Using `Requirable.internal '{}'` instead of `Requirable.project '{}', '{}:{}'` ", projId, proj, platName, archName);
+            self.getLogger().warn("{} is using `Requirable.internal '{}'` instead of `Requirable.project '{}', '{}:{}'` ", self.getPath(), projId, proj, platName, archName);
             graph = bg.getProject(proj);
         }
         graph.whenReady(ReadyState.BEFORE_FINISHED, ready->{
             final PlatformGraph reqPlatform = graph.platform(platName);
             final ArchiveGraph reqModule = reqPlatform.archive(archName);
 
-            arch.importLocal(reqModule, only, lenient);
+            arch.importLocal(reqModule, transitivity, lenient);
         });
     }
 
@@ -216,7 +217,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         String projId,
         XapiRegistration reg,
         ArchiveGraph arch,
-        boolean only,
+        Transitivity only,
         boolean lenient
     ) {
 

@@ -10,6 +10,7 @@ import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.BuildAdapter;
 import org.gradle.BuildResult;
 import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.internal.build.IncludedBuildState;
 
@@ -66,7 +67,12 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
     @Override
     protected ProjectGraph createItem(String name) {
         name = toPath(name);
-        return new DefaultProjectGraph(DefaultBuildGraph.this, project.findProject(name));
+        final ProjectView proj = project.findProject(name);
+        if (proj == null) {
+            throw new IllegalArgumentException("No projectView named " + name + "; " +
+                "accessed by " + project.getDebugPath() );
+        }
+        return new DefaultProjectGraph(DefaultBuildGraph.this, proj);
     }
 
     private String toPath(String name) {
