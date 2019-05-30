@@ -2,15 +2,15 @@ plugins {
     id 'xapi-require'
 }
 
-xapiRequire.module('main').internal 'xapi-common:jre:main'
-
-dependencies {
-    compile project(':xapi-jre-parent:xapi-jre-process')
-    compile project(':xapi-jre-parent:xapi-jre-collect')
-    compile project(':xapi-jre-parent:xapi-jre-io')
-    compile project(':xapi-dev-parent:xapi-dev-scanner')
-    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
-    testCompile project(':xapi-core-parent:xapi-core-test')
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-common', 'jre:main'
+        req.project 'xapi-jre-parent:xapi-jre-process'
+        req.project 'xapi-jre-parent:xapi-jre-collect'
+        req.project 'xapi-jre-parent:xapi-jre-io'
+        req.project 'xapi-dev-parent:xapi-dev-scanner'
+        req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
 }
+xapiRequire.module('test').project 'xapi-common', 'testTools'
 
 description = 'XApi - Jre uber jar'

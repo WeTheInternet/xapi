@@ -1,3 +1,9 @@
+import net.wti.gradle.schema.api.Transitivity
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
 plugins {
     id 'xapi-require'
 }
@@ -16,18 +22,14 @@ xapiRequire.main().configure {
         req.project 'xapi-gwt', 'main'
         req.project ':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api'
         req.project ':xapi-dev-parent:xapi-dev-shell'
+        req.project Transitivity.impl, 'xapi-common', 'testTools'
+        req.external Transitivity.impl, 'junit:junit:4.12' // a bit yucky... we look for junit types in our main tooling
 }
 
 xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-common', 'gwt:testTools'
-}
-
-dependencies {
-    runtime project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
-    implementation project(':xapi-core-parent:xapi-core-test')
-    implementation 'junit:junit:4.12' // a bit yucky... we look for junit types in our main tooling
-    testCompile project(':xapi-dev-parent:xapi-dev-maven')
+        req.project 'xapi-dev-parent:xapi-dev-maven'
 }
 
 apply from: "$rootDir/gradle/gwt-test.gradle"

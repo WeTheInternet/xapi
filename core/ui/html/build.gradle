@@ -21,7 +21,7 @@ xapiRequire.module('test').configure {
     req ->
         req.external 'junit:junit:4.12'
         req.project 'xapi-inject', 'jre:main'
-        req.project 'xapi-core-parent:xapi-core-test'
+        req.project 'xapi-common', 'testTools'
 }
 
 dependencies {

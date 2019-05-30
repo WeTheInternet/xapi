@@ -1,3 +1,4 @@
+import net.wti.gradle.schema.api.Transitivity
 buildscript({
     dependencies {
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
@@ -9,15 +10,17 @@ plugins {
 
 xapiRequire.module('main').configure {
     req ->
-        req.internal 'xapi-inject:gwt:main'
+        req.project 'xapi-inject', 'gwt:main'
+        req.project 'xapi-core-parent:xapi-core-process'
+        req.project 'xapi-core-parent:xapi-core-scope'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
+}
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-common', 'testTools'
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-process')
-    compile project(':xapi-core-parent:xapi-core-process')
-    compile project(':xapi-core-parent:xapi-core-scope')
-    testCompile project(':xapi-core-parent:xapi-core-test')
-    compileOnly 'net.wetheinter:gwt-user:2.8.0'
 }
 
 description = 'XApi - GWT concurrency implementation'

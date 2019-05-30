@@ -3,10 +3,10 @@ plugins {
 }
 
 xapiRequire.main().internal 'xapi-util:main:main'
-
-dependencies {
-    testCompile project(':xapi-core-parent:xapi-core-test')
-    testCompile 'org.json:json:20141113'
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-common', 'testTools'
+        req.external 'org.json:json:20141113'
 }
 
 description = 'XApi - IO core API'

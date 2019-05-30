@@ -26,6 +26,16 @@ xapiRequire.main().configure {
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
 }
 
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'net.wetheinter:gwt-dev:2.8.0'
+        req.external 'net.wetheinter:gwt-user:2.8.0'
+        req.external 'net.wetheinter:gwt-elemental:2.8.0'
+        req.project 'xapi-common', 'testTools'
+        req.external 'org.assertj:assertj-core-java8:1.0.0m1'
+        
+}
+
 dependencies {
     Jvm jvm = Jvm.current()
     if (jvm.javaVersion.isJava8()) {
@@ -47,11 +57,6 @@ dependencies {
         })
     }
 
-    testCompile'net.wetheinter:gwt-dev:2.8.0'
-    testCompile 'net.wetheinter:gwt-user:2.8.0'
-    testCompile 'net.wetheinter:gwt-elemental:2.8.0'
-    testCompile project(':xapi-core-parent:xapi-core-test')
-    testCompile 'org.assertj:assertj-core-java8:1.0.0m1'
 
 }
 

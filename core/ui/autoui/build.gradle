@@ -4,8 +4,8 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.internal 'xapi-util:main'
-        req.internal 'xapi-collect:main'
+        req.project 'xapi-util', 'main'
+        req.project 'xapi-collect', 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
 }
 
@@ -13,7 +13,7 @@ xapiRequire.module('test').configure {
     req ->
         req.external 'junit:junit:4.12'
         req.project 'xapi-inject', 'jre:main'
-        req.project 'xapi-core-parent:xapi-core-test'
+        req.project 'xapi-common', 'testTools'
 }
 
 task packageTests(type: Jar) {

@@ -25,7 +25,7 @@ xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'sample'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
-        req.project 'xapi-core-parent:xapi-core-test'
+        req.project 'xapi-common', 'testTools'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-codeserver:2.8.0'
 }

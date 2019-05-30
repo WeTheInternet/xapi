@@ -1,7 +1,7 @@
 import net.wti.gradle.schema.api.Transitivity
 
-plugins { 
-    id 'xapi-require' 
+plugins {
+    id 'xapi-require'
 }
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
@@ -23,14 +23,14 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-test'
+        req.project 'xapi-common', 'testTools'
         req.external 'junit:junit:4.12'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
         req.project 'xapi-jre-parent:xapi-jre-model'
         req.project 'xapi-gwt-io'
         req.project 'xapi-server-parent:xapi-server-api'
         req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
-        
+
 }
 dependencies {
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'

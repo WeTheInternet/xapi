@@ -17,12 +17,20 @@ xapiSchema.findPlatform('gwt').getArchive('testTools').published = true
 
 xapiRequire {
     main().external "net.wti.core:xapi-gen:$v", "main"
-    module('api').external "net.wti.core:xapi-anno:$v", "main"
-    module('api').external "net.wti.core:xapi-fu:$v", "main"
+    module('api').configure {
+        req ->
+            req.external "net.wti.core:xapi-anno:$v", "main"
+            req.external "net.wti.core:xapi-fu:$v", "main"
+    }
+    module('testTools').configure {
+        req ->
+            req.project 'xapi-util', 'main'
+            req.external 'junit:junit:4.12'
+            req.external 'junit:junit:4.12:sources'
+    }
     module('test').external "net.wti.core:xapi-fu:$v", "main"
-    module('jre', 'main').project 'xapi-util', 'main'
-    module('jre', 'test').internal "xapi-core-parent:xapi-core-test:main:main"
-    module('gwt', 'main').configure {
+    main('jre').project 'xapi-util', 'main'
+    main('gwt').configure {
         req ->
             req.project 'xapi-util', 'main'
             req.project 'xapi-dev-parent:xapi-dev-source', 'main'
@@ -43,11 +51,10 @@ xapiRequire {
             req.external 'org.hamcrest:hamcrest-core:1.3'
             req.external 'org.hamcrest:hamcrest-core:1.3:sources'
             req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
-            req.internal 'xapi-core-parent:xapi-core-test:main:main'
-            req.internal 'xapi-elemental:main:main'
+            req.project 'xapi-elemental', 'main'
             req.external 'net.wetheinter:gwt-user:2.8.0'
             req.external 'net.wetheinter:gwt-elemental:2.8.0'
-            req.internal 'xapi-server-parent:xapi-server-api:main:main'
+            req.project 'xapi-server-parent:xapi-server-api', 'main'
     }
 }
 

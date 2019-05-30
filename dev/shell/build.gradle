@@ -11,7 +11,7 @@ xapiRequire.main().configure {
 }
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-test'
+        req.project 'xapi-common', 'testTools'
         req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
 }
 

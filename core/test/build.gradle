@@ -3,9 +3,11 @@ plugins {
 }
 
 xapiRequire.main().configure {
-    project(':xapi-util')
-    external('junit:junit:4.12')
-    external('junit:junit:4.12:sources')
+    req ->
+        req.project 'xapi-util'
+        req.project 'xapi-common', 'testTools'
+        req.external 'junit:junit:4.12'
+        req.external 'junit:junit:4.12:sources'
 }
 
 description = 'XApi - Core testing utilities'
