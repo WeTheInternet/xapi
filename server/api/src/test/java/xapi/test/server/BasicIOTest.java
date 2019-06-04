@@ -40,12 +40,12 @@ public class BasicIOTest {
     server.finish();
   }
 
-  @Test
+  @Test(timeout = 30_000L) // generous...
   public void testRequests() {
     final IOService service = X_IO.getIOService();
     service.registerParser(String.class, pass_thru, pass_thru);
     final IORequestBuilder<String> req = service.request(String.class,
-      "http://127.0.0.1:" +	TestServer.TEST_PORT+
+      "http://0.0.0.0:" +	server.getPort() +
       "/xapi/debug");
     final Pointer<Boolean> success = new Pointer<Boolean>(false);
     final IORequest<String> state = req.send(new Handler() {

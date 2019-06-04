@@ -44,7 +44,7 @@ public final class X_Server {
 
   public static int getUnusedPort() {
     try (
-      final ServerSocket socket = new ServerSocket(0);
+      final ServerSocket socket = new ServerSocket(0)
     ) {
       return socket.getLocalPort();
     } catch (IOException e) {

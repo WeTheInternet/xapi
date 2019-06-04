@@ -23,7 +23,6 @@ xapiRequire.module('api').configure {
 xapiRequire.module('gwt', 'main').configure {
     req ->
         req.project 'xapi-inject', 'gwt:main'
-        req.project 'xapi-collect', 'main'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 }

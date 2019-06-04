@@ -13,6 +13,7 @@ import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.server.X_Server;
 import xapi.server.annotation.XapiServlet;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
@@ -27,12 +28,16 @@ public class TestServer
 
   Server server;
 
-  public static final int TEST_PORT = 13113;
-  private final int port = TEST_PORT;
+  private final int port;
 
   public TestServer() {
-    X_Properties.setProperty(X_Namespace.PROPERTY_SERVER_PORT, Integer.toString(getPort()));
-    server = new Server(getPort());
+    int p[] = {0};
+    X_Server.usePort(newPort->
+        server = new Server(p[0] = newPort)
+    );
+    X_Properties.setProperty(X_Namespace.PROPERTY_SERVER_PORT,
+        Integer.toString(port=p[0])
+    );
     // When testing, we don't want to setup configuration files,
     // we want to write code and run-it-right-now.
     // So, we scan the classpath for instances of HttpServlet,
