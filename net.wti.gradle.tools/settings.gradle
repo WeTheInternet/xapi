@@ -9,6 +9,7 @@ def add = {
 }
 
 add('core')
+add('preload')
 add('test')
 add('tools')
 

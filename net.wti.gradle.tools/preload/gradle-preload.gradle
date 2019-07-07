@@ -1,0 +1,143 @@
+import org.gradle.util.GUtil
+import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        // only needed for gradle versions < 5.5... should be resolved w/ different versions of released plugin
+        classpath 'org.apache.maven:maven-model:3.6.1'
+    }
+}
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+repositories { jcenter() }
+
+
+
+// This is a proof of concept buildscript, suitable for putting into a gist.
+// We have zero actual need for this dependency on wildfly, it's just here
+// as an arbitrary "deep dependency graph" that we can use for prototyping.
+dependencies { api 'org.wildfly.core:wildfly-server:9.0.1.Final' }
+
+
+
+List<Configuration> sourceConfigs = [configurations.runtimeClasspath] // make this backed by a task property instead
+
+// make a task that can be used to prime the local gradle jar cache.
+// on a ci system where you provide a pre-primed cache, you may wish to exclude this task.
+tasks.register 'primePreload', {
+    Task t ->
+        t.doLast {
+            // forcibly resolve everything we're supposed to be loading
+            Set allFiles = sourceConfigs*.resolvedConfiguration*.resolvedArtifacts*.file.flatten()
+            // TODO: make this log level (easily / obviously) configurable (move this code to a class)
+            logger.info "Preloading configurations ${->sourceConfigs*.name}; retrieved files $allFiles"
+        }
+}
+
+String repoName = 'Local repo'
+String publicationPrefix = 'pub-'
+if (findProperty('preload') == 'true') {
+    PublishingExtension pub = extensions.getByType(PublishingExtension)
+    pub.repositories.maven { MavenArtifactRepository repo ->
+        repo.name = repoName
+        repo.url = "file://$rootDir/repository"
+    }
+
+    Map<ModuleVersionIdentifier, Set<Dependency>> all = [:].withDefault { new LinkedHashSet<>() }
+    // we want to download all transitive dependencies, not just the firstLevel (declared) module dependencies.
+    sourceConfigs*.resolvedConfiguration*.resolvedArtifacts.flatten().each {
+        ResolvedArtifact d ->
+            ModuleVersionIdentifier id = d.moduleVersion.id
+            Dependency dep = dependencies.create(
+                    "$id.group:$id.name:$id.version" +
+                    "${d.classifier ? ":$d.classifier" : '' }" +
+                    "${ (d.extension ?: d.type) ? "@${d.extension ?: d.type}" : ''}"
+            )
+            all.get(id).add(dep)
+    }
+
+
+    ConfigurationContainer configs = project.configurations
+    File dlPomDir = new File(project.buildDir, "dl-poms/")
+    String gradleVersion = gradle.gradleVersion
+    all.each { ModuleVersionIdentifier d, Set<Dependency> c ->
+        String group = d.group
+        String name = d.name
+        String version = d.version
+        ResolvedConfiguration resolved = configs.detachedConfiguration(c.toArray(new Dependency[0])).resolvedConfiguration
+
+        TaskProvider pomGen = project.tasks.register("pomGen-$group--$name--$version") {
+            Task pomGen ->
+                Dependency dep = dependencies.create(
+                        "$d.group:$d.name:$d.version@pom"
+                )
+                File f = new File(dlPomDir, "$group/$name-${version}.pom".toString())
+                pomGen.outputs.file(f)
+                pomGen.doFirst {
+                    File source = configs.detachedConfiguration(dep).singleFile
+                    FileReader reader = new FileReader(source)
+                    org.apache.maven.model.Model pomModel
+                    try {
+                        pomModel = new MavenXpp3Reader().read(reader)
+                    } finally {
+                        reader.close()
+                    }
+                    // sadly, we have to fix the version/groupId for older versions of gradle;
+                    //  this was fixed in May 2019, so if you are using a very recent version of gradle,
+                    //  you could probably ditch alll this mess.  TODO: plugin w/ a bifurcating service based on gradle version
+                    if (!pomModel.version) {
+                        pomModel.version = pomModel.parent.version
+                    }
+                    if (!pomModel.groupId) {
+                        pomModel.groupId = pomModel.parent.groupId
+                    }
+                    FileWriter writer = new FileWriter(f)
+                    try {
+                        new MavenXpp3Writer().write(writer, pomModel)
+                    } finally {
+                        writer.close()
+                    }
+                }
+        }
+
+        pub.publications.create("$publicationPrefix}$group--$name--$version", MavenPublication) {
+            MavenPublication p ->
+
+                p.groupId = group
+                p.artifactId = name
+                p.version = version
+
+                if (gradleVersion < '5.5') {
+                    (p as MavenPublicationInternal).setPomGenerator(pomGen.get())
+                } else {
+                    (p as MavenPublicationInternal).setPomGenerator(pomGen)
+                }
+                resolved.resolvedArtifacts.each {
+                    ResolvedArtifact r ->
+                        if (r.moduleVersion.id == d) {
+                            p.artifact provider { r.file }, {
+                                MavenArtifact m ->
+                                    if (r.classifier) {
+                                        m.classifier = r.classifier
+                                    }
+                                    if (r.extension) {
+                                        m.extension = r.extension
+                                    }
+                            }
+                        }
+                }
+        }
+    }
+    tasks.register('downloadDeps') { dl ->
+        dl.dependsOn tasks.withType(PublishToMavenRepository).findResults {
+            it.name.startsWith("publish${GUtil.toCamelCase(publicationPrefix)}") && it.name.endsWith("${repoName}Repository")? it : null
+        }
+    }
+}
