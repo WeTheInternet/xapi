@@ -1,5 +1,6 @@
 package xapi.fu.java;
 
+import xapi.fu.In1Out1;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
 import xapi.fu.data.SetLike;
@@ -53,6 +54,10 @@ public class X_Jdk {
 
     public static <V> SetLike<V> toSet(Set<V> list) {
         return new SetAdapter<>(list);
+    }
+
+    public static <V> SetLike<V> toSet(Map<V, ?> map) {
+        return new SetAdapter<>(map, null);
     }
 
     public static <K, V> MapLike<K, V> mapHash() {

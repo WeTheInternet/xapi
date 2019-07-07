@@ -1,4 +1,4 @@
-package com.google.gwt.emul.java.lang;
+package java.lang;
 import java.io.Serializable;
 
 /**

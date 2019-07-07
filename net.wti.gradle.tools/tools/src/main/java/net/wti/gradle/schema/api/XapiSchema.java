@@ -26,7 +26,10 @@ import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.ide.idea.IdeaPlugin;
 import org.gradle.plugins.ide.idea.model.IdeaModule;
 import org.gradle.util.ConfigureUtil;
@@ -37,6 +40,10 @@ import java.io.File;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.gradle.language.base.plugins.LifecycleBasePlugin.CHECK_TASK_NAME;
 
 /**
  *
@@ -214,7 +221,7 @@ public class XapiSchema {
                             if (plat.getParent() != null) {
                                 archives.configureEach(arch -> {
                                     final ArchiveConfig local = plat.getArchive(arch.getName());
-                                    ((ArchiveConfigInternal)local).baseOn(arch, true);
+                                    ((ArchiveConfigInternal)local).baseOn(arch, false);
                                 });
                             }
                         });
@@ -234,6 +241,29 @@ public class XapiSchema {
 
                 });
             });
+        });
+
+        self.getPlugins().withType(IdeaPlugin.class).all( plugin -> {
+            platforms.configureEach(plat -> {
+                plat.getArchives().configureEach(arch -> {
+                    if (!arch.isTest()) {
+                        return;
+                    }
+                    final ArchiveGraph archive = self.getProjectGraph()
+                        .platform(plat.getName())
+                        .archive(arch.getName());
+                    if (!archive.srcExists()) {
+                        return;
+                    }
+//                            self.getGradle().buildFinished(res->{
+                    final IdeaModule module = plugin.getModel().getModule();
+                    final SourceSet srcSet = archive.getSource().getSrc();
+                    addTestDirs(self, module, srcSet, true);
+                    addTestDirs(self, module, srcSet, false);
+//                            });
+                        }
+                    );
+                });
         });
         self.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
             report.record(self.getSchema())
@@ -271,40 +301,18 @@ public class XapiSchema {
         if (archGraph.srcExists()) {
 
             if (archConfig.isTest()) {
-                archGraph.whenReady(ReadyState.AFTER_FINISHED, done->{
-                    view.getPlugins().withType(IdeaPlugin.class).all(
-                        plugin -> {
-                            final IdeaModule module = plugin.getModel().getModule();
-                            final SourceSet srcSet = archGraph.getSource().getSrc();
-                            Set<File> items = new LinkedHashSet<>();
-                            items.addAll(
-                                srcSet.getAllJava().getSrcDirs()
-                            );
-                            Set<File> src = module.getTestSourceDirs();
-                            if (src == null) {
-                                module.setTestSourceDirs(items);
-                            } else {
-                                src.addAll(items);
-                            }
-
-                            items = new LinkedHashSet<>();
-                            // our resources job is actually "all source input" - "all java input"
-                            // this includes, but is not limited to the sourceset resources directories
-
-                            items.addAll(
-                                srcSet.getAllSource().getSourceDirectories()
-                                .minus(srcSet.getAllJava().getSourceDirectories())
-                                .getFiles()
-                            );
-                            src = module.getTestResourceDirs();
-                            if (src == null) {
-                                module.setTestResourceDirs(items);
-                            } else {
-                                src.addAll(items);
-                            }
-
-                        }
-                    );
+                archGraph.whenReady(ReadyState.AFTER_CREATED, done->{
+                    if (!(
+                            platConfig.getMainModuleName().equals(archConfig.getName())
+                            &&
+                            view.getSchema().getMainPlatformName().equals(platConfig.getName())
+                    )) {
+                        // a non main:main test module _should_ have a Test task hooked up!
+                        final TaskProvider<Test> testTask = archGraph.getTasks().getTestTask();
+                        view.getTasks().named(CHECK_TASK_NAME, check->
+                            check.dependsOn(testTask));
+                        testTask.get();
+                    }
                 });
             }
 
@@ -340,7 +348,6 @@ public class XapiSchema {
             exportedRuntime.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
 
             view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
-            exportedRuntime.artifact(artifact);
 
 
             exportedApi.variants(variants -> {
@@ -378,7 +385,8 @@ public class XapiSchema {
             // without forcing those super-platforms to transitively inherit them.
             // ...would need an intermediate configuration that is transitive only to the sub-platform,
             // (and included in the compileOnly / runtimeOnly configurations).
-            archGraph.configTransitive().extendsFrom(archGraph.configSource());
+            archGraph.configTransitive().extendsFrom(archGraph.configSource()); // not depending on the exported variant,
+                                                                                // as we want to avoid devolving into a jar, from source
         }
 
         platGraph.project().whenReady(ReadyState.BEFORE_READY+0x10, ready->{
@@ -397,15 +405,15 @@ public class XapiSchema {
                 if (lenient) {
                     need = need.substring(0, need.length()-1);
                 }
-                PlatformConfigInternal conf = view.getSchema().findPlatform(need);
-                if (conf == null) {
-                    conf = (PlatformConfigInternal) platConfig;//view.getSchema().getMainPlatform();
+                PlatformConfigInternal plat = view.getSchema().findPlatform(need);
+                if (plat == null) {
+                    plat = (PlatformConfigInternal) platConfig;//view.getSchema().getMainPlatform();
                 }
-                final String confName = conf.getName();
-                if (!confName.equals(need)) {
-                    need = GUtil.toLowerCamelCase(need.replace(confName, ""));
+                final String platName = plat.getName();
+                if (!platName.equals(need)) {
+                    need = GUtil.toLowerCamelCase(need.replace(platName, ""));
                 }
-                final PlatformGraph needPlat = platGraph.project().platform(conf.getName());
+                final PlatformGraph needPlat = platGraph.project().platform(plat.getName());
                 final ArchiveGraph neededArchive = needPlat.archive(need);
 
                 if (neededArchive.srcExists()) {
@@ -424,9 +432,45 @@ public class XapiSchema {
                     view.getLogger().trace("{}.{} ignoring no-source module {}", archGraph.getModuleName(), archGraph.getSrcName(), neededArchive.getSrcName());
                 }
 
+
             }
         });
 
+    }
+
+    private static void addTestDirs(ProjectView view, IdeaModule module, SourceSet srcSet, boolean sources) {
+
+        Set<File> items =
+            (sources ?
+                srcSet.getAllJava().getSourceDirectories().getFiles() :
+                srcSet.getAllSource().getSourceDirectories().minus(
+                    srcSet.getAllJava().getSourceDirectories()
+                ).getFiles()
+            )
+            .stream()
+            .filter(File::exists)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+        sources = true;
+        if (!items.isEmpty()) {
+            final Set<File> src = sources ? module.getTestSourceDirs() : module.getTestResourceDirs();
+            if (src != null) {
+                src.addAll(items);
+                items = new LinkedHashSet<>(src);
+            }
+            if (sources) {
+                module.setTestSourceDirs(items);
+            } else {
+                module.setTestResourceDirs(items);
+            }
+
+            final Stream<File> dirs = items.stream();
+            view.getLogger().trace("Adding test {}source directories:\n\t{}",
+                sources ? "" : "re",
+                new LazyString(()->
+                    dirs.map(File::getAbsolutePath).collect(Collectors.joining("\n\t" ))
+                )
+            );
+        }
     }
 
     protected Set<LazyString> resolveNeeded(ArchiveConfig mod) {

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
-
-//import org.apache.harmony.luni.platform.Platform;
+package java.nio;
 
 /**
  * Defines byte order constants.
@@ -32,11 +30,7 @@ public final class ByteOrder {
     private static final ByteOrder NATIVE_ORDER;
 
     static {
-// if (Platform.getMemorySystem().isLittleEndian()) {
         NATIVE_ORDER = LITTLE_ENDIAN;
-// } else {
-// NATIVE_ORDER = BIG_ENDIAN;
-// }
     }
 
     /** Returns the current platform byte order.

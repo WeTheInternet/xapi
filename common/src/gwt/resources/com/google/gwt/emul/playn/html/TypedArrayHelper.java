@@ -1,4 +1,4 @@
-package com.google.gwt.emul.playn.html;
+package playn.html;
 
 import java.nio.ByteBuffer;
 

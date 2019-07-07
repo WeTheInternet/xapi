@@ -5,7 +5,7 @@
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
-package com.google.gwt.emul.java.util;
+package java.util;
 
 
 /**

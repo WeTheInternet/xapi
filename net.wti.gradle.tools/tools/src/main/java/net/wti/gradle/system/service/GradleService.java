@@ -4,13 +4,16 @@ import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
 import net.wti.gradle.internal.system.InternalProjectCache;
+import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
@@ -198,30 +201,37 @@ public interface GradleService {
     }
 
     default void configureWrapper(Project project) {
-        project.getLogger().trace("scheduling wrapper configuration for " + project);
+        project.getLogger().trace("scheduling wrapper configuration for {}", project);
         doOnce(project.getRootProject(), "xapi.gradle.root", root->{
 
-            String gradleRoot = System.getProperty("xapi.gradle.root");
-            if (gradleRoot == null) {
-                gradleRoot = System.getenv("ORG_GRADLE_PROJECT_xapi.gradle.root");
-            }
-            if (gradleRoot == null) {
-                gradleRoot = "gradle/gradle-X";
-            }
-
-            File gradleLoc = new File(gradleRoot);
-            if (!gradleLoc.isDirectory()) {
-                gradleLoc = new File(project.getRootDir().getParent(), gradleRoot);
-                if (!gradleLoc.isDirectory()) {
-                    gradleLoc = new File(project.getRootDir().getParentFile().getParent(), gradleRoot);
-                }
-            }
-
-            final File loc = gradleLoc;
-            project.getLogger().trace("configuring wrapper for {} using {}", root, loc);
-
             final String zipSeg = "gradle-" + GRADLE_VERSION + ".zip";
-            final File zipLoc = new File(loc.getParentFile(), zipSeg);
+            final RegularFileProperty zipDir = project.getObjects().fileProperty()
+                .convention(()->{
+
+                    String gradleRoot = System.getProperty("xapi.gradle.root");
+                    if (gradleRoot == null) {
+                        gradleRoot = System.getenv("ORG_GRADLE_PROJECT_xapi.gradle.root");
+                    }
+                    if (gradleRoot == null) {
+                        gradleRoot = "gradle/gradle-X";
+                    }
+
+                    File gradleLoc = new File(gradleRoot);
+                    if (!gradleLoc.isDirectory()) {
+                        gradleLoc = new File(project.getRootDir().getParent(), gradleRoot);
+                        if (!gradleLoc.isDirectory()) {
+                            gradleLoc = new File(project.getRootDir().getParentFile().getParent(), gradleRoot);
+                        }
+                    }
+                    project.getLogger().trace("configuring wrapper for {} using {}", root, gradleLoc);
+                    // we don't check if our final location exists here; we do it later,
+                    // when deciding if we should hijack Wrapper task or not
+                    return gradleLoc;
+                });
+
+            final RegularFileProperty zipFile = project.getObjects().fileProperty()
+                .convention(()->
+                    new File(zipDir.get().getAsFile().getParentFile(), zipSeg));
 
             // Need to also make a task to zip the current contents of the directory,
             // put them into a dist/gradle-v.zip, then make the wrapper dependent on this task.
@@ -232,8 +242,11 @@ public interface GradleService {
                 CUSTOM_GRADLE_ZIP_TASK,
                 Zip.class,
                 zip -> {
+                    // this code is only called if `wrapper` is selected to run (it's the only place resolving distZip var)
+                    final File zipLoc = zipFile.get().getAsFile();
                     zipLoc.getParentFile().mkdirs();
-                    zip.from(project.files(loc), spec->{
+
+                    zip.from(project.files(zipDir.get().getAsFile()), spec->{
                         spec.into("gradle-" + GRADLE_VERSION);
                     });
                     zip.getDestinationDirectory().set(zipLoc.getParentFile());
@@ -244,7 +257,9 @@ public interface GradleService {
             );
             rootTasks.named("wrapper", Wrapper.class, wrapper -> {
                 wrapper.whenSelected(selected->{
+                    final File loc = zipDir.get().getAsFile();
                     if (loc.isDirectory()) {
+                        final File zipLoc = zipFile.get().getAsFile();
                         project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", GRADLE_VERSION, zipLoc);
                         wrapper.setGradleVersion(GRADLE_VERSION);
                         wrapper.setDistributionType(DistributionType.ALL);
@@ -264,9 +279,12 @@ public interface GradleService {
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     default BuildGraph createBuildGraph() {
-        final ProjectView view = getView().getRootProject();
+        final ProjectView self = getView();
+        final ProjectView view = self.getRootProject();
         final BuildGraph graph = view.getInstantiator()
             .newInstance(typeBuildGraph(), this, view);
+        // add a traceable "this is where constructor is being used" (above) for IDE tracing support (and refactoring support!)
+        assert GradleMessages.noOpForAssertion(()->new DefaultBuildGraph(this, view));
         return graph;
     }
 

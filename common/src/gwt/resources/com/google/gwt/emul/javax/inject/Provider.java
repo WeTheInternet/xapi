@@ -1,4 +1,4 @@
-package com.google.gwt.emul.javax.inject;
+package javax.inject;
 
 public interface Provider<T>{
   T get();

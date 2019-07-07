@@ -1,3 +1,4 @@
+package java.util.concurrent;
 /*
  * Copyright (C) 2009 The Guava Authors
  *
@@ -21,6 +22,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Minimal emulation of {@link java.util.concurrent.ConcurrentHashMap}.

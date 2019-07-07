@@ -1,3 +1,4 @@
+package java.util.concurrent.atomic;
 public class AtomicBoolean implements java.io.Serializable {
 
     private boolean value;

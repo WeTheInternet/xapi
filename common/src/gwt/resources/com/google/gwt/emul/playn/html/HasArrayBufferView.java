@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package com.google.gwt.emul.playn.html;
+package playn.html;
 
 import com.google.gwt.typedarrays.shared.ArrayBufferView;
 

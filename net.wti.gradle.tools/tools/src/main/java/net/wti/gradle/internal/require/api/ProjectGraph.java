@@ -67,6 +67,14 @@ public interface ProjectGraph extends Named, GraphNode {
         return usage(XapiUsage.INTERNAL);
     }
 
+    default Usage usageSource() {
+        return usage(XapiUsage.SOURCE);
+    }
+
+    default Usage usageSourceJar() {
+        return usage(XapiUsage.SOURCE_JAR);
+    }
+
     default Usage usageRuntime() {
         return usage(Usage.JAVA_RUNTIME);
     }

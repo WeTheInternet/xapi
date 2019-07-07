@@ -38,7 +38,7 @@ xapiSchema {
         sample.published = true
         testTools.require 'main'
         testTools.published = true
-        archives.maybeCreate('test').require sample, testTools
+        maybeCreate('test').require sample, testTools
     }
 }
 tasks.create 'testSchema', {

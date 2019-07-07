@@ -15,7 +15,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.google.gwt.emul.javax.validation;
+package javax.validation;
 
 /**
  * Payload type that can be attached to a given

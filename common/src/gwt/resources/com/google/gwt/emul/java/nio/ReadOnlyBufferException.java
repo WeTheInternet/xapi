@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
+package java.nio;
 
 /**
  * A {@code ReadOnlyBufferException} is thrown when some write operation is called on a read-only

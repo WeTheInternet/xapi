@@ -15,9 +15,7 @@
  *  limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
-
-import java.nio.*;
+package java.nio;
 
 import com.google.gwt.typedarrays.shared.ArrayBufferView;
 import com.google.gwt.typedarrays.shared.Int32Array;

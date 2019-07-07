@@ -1,3 +1,4 @@
+
 import net.wti.gradle.schema.api.Transitivity
 plugins {
     id 'xapi-require'
@@ -11,11 +12,11 @@ sourceSets.getByName('main').java {
 
 xapiRequire.main().configure {
     external "net.wti.core:xapi-lang-core:${->version}", 'main'
-    internal 'xapi-gwt3:main'
-    internal 'xapi-elemental:main'
-    internal 'xapi-jre-parent:xapi-jre-io:main:main'
-    internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator:main:main'
-    internal 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api:main:main'
+    project 'xapi-gwt3'
+    project 'xapi-elemental'
+    project 'xapi-jre-parent:xapi-jre-io'
+    project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator'
+    project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
     external 'net.wetheinter:gwt-user:2.8.0'
     external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
 }

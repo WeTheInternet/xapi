@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
+package java.nio;
 
 /**
  * A <code>BufferUnderflowException</code> is thrown when elements are read from a buffer but there

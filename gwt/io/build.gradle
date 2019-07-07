@@ -12,7 +12,7 @@ xapiRequire.main().configure {
         req.internal('xapi-core-parent:xapi-core-io:main:main')
         req.internal 'xapi-collect:gwt:main'
         req.external 'net.wetheinter:jsinterop-annotations:2.8.0'
-    
+
 }
 xapiRequire.module('test').configure {
     req ->
@@ -28,21 +28,15 @@ dependencies {
 }
 
 xapiSchema.whenReady {
-    
-    // temporary for now... need to have this driven by isTest property on ArchiveConfig
-    idea {
-        module  {
-            testSourceDirs = sourceSets.gwtTest.java.srcDirs
-            testResourceDirs = sourceSets.gwtTest.resources.srcDirs
-        }
-    }
-    tasks.create 'testGwt', Test, {
-        Test t ->
-            t.classpath = configurations.gwtTestRuntimeClasspath + sourceSets.gwtTest.output
-            t.testClassesDirs = sourceSets.gwtTest.output.classesDirs
-            t.useJUnit()
-        
-    }
+
+//    tasks.create 'testGwt', Test, {
+//        Test t ->
+//            t.classpath = configurations.gwtTestRuntimeClasspath + sourceSets.gwtTest.output
+//            t.testClassesDirs = sourceSets.gwtTest.output.classesDirs
+//            t.useJUnit()
+//            tasks.check.dependsOn t
+//
+//    }
 }
 
 task packageTests(type: Jar) {

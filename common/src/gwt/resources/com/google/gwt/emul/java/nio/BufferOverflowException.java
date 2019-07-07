@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
+package java.nio;
 
 /** A <code>BufferOverflowException</code> is thrown when elements are written to a buffer but
  * there is not enough remaining space in the buffer.

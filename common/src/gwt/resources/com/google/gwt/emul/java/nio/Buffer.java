@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
+package java.nio;
 
 import java.nio.InvalidMarkException;
 

@@ -1,5 +1,11 @@
 import net.wti.gradle.schema.api.Transitivity
 
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+
 plugins {
     id 'xapi-require'
 }

@@ -1,4 +1,4 @@
-package xapi.emul.xapi.collect.api;
+package xapi.collect.api;
 
 import xapi.collect.api.Dictionary;
 import xapi.gwt.collect.JsStringDictionary;

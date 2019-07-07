@@ -22,6 +22,7 @@ def singleProject = [
         'inject': ['gwt', 'jre'],
         'collect': ['gwt', 'jre'],
         'common': ['gwt', 'jre'],
+        'model': ['gwt', 'jre'],
         'log': ['gwt', 'jre'],
         'util': ['gwt', 'jre'],
         // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc

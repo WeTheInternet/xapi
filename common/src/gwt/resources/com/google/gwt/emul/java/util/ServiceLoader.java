@@ -1,16 +1,11 @@
-package com.google.gwt.emul.java.util;
-
+package java.util;
 
 import javax.inject.Provider;
 
+import com.google.gwt.core.shared.GWT;
+
 // import xapi.util.api.ReceivesValue;
 // implements , ReceivesValue<Class<S>>
-
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.ServiceConfigurationError;
-
-import com.google.gwt.core.shared.GWT;
 
 
 public class ServiceLoader<S>

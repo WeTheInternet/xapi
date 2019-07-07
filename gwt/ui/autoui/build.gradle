@@ -1,11 +1,14 @@
 import net.wti.gradle.schema.api.Transitivity
 
+import java.time.Duration
+
 plugins {
     id 'xapi-require'
+    id 'idea'
 }
-repositories {
-    jcenter()
-}
+//repositories {
+//    jcenter()
+//}
 
 xapiRequire.main().configure {
     req ->
@@ -20,7 +23,7 @@ xapiRequire.main().configure {
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 }
 
-xapiRequire.module('test').configure {
+xapiRequire.module('gwt', 'test').configure {
     req ->
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'main:sample'
         req.project 'xapi-common', 'gwt:testTools'
@@ -28,8 +31,24 @@ xapiRequire.module('test').configure {
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-codeserver:2.8.0'
         req.external Transitivity.runtime, 'net.sourceforge.htmlunit:htmlunit:2.19'
+//        req.external "net.wti.core:xapi-fu-sources:$version"
+//        req.external "net.wti.core:xapi-gen-sources:$version"
 }
-
-apply from: "$rootDir/gradle/gwt-test.gradle"
+xapiSchema.whenReady {
+    Test gwtTest = xapiSchema.module('gwt', 'test').tasks.testTask.get()
+    gwtTest.doLast {
+        gradle.buildFinished {
+            println gwtTest.classpath
+        }
+    }
+    configure gwtTest, {
+        logging.level = LogLevel.INFO
+        forkEvery = 1
+        maxHeapSize = '2G'
+        timeout = Duration.ofMinutes(10)
+    //    systemProperty('gwt.args', "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
+        systemProperty('gwt.args', "-logLevel DEBUG -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-gwtTest ")
+    }
+}
 
 description = 'XApi - GWT AutoUi (generating GWT UI\'s based on model interfaces)'

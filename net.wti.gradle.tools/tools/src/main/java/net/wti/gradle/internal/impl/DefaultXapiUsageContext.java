@@ -64,6 +64,16 @@ public class DefaultXapiUsageContext implements XapiUsageContext {
                 this.configuration = archive.configExportedInternal();
                 break;
 
+            // source
+            case XapiUsage.SOURCE:
+                this.configuration = archive.configSource();
+                mutable.attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY);
+                break;
+            case XapiUsage.SOURCE_JAR:
+                this.configuration = archive.configExportedSource();
+                mutable.attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
+                break;
+
             // runtime
             case Usage.JAVA_RUNTIME:
             case Usage.JAVA_RUNTIME_JARS:

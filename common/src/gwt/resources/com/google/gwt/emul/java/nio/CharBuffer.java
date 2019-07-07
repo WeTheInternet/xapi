@@ -15,10 +15,9 @@
  *  limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
+package java.nio;
 
 import java.io.IOException;
-import java.nio.*;
 
 /** A buffer of chars.
  * <p> A char buffer can be created in either one of the following ways: </p>

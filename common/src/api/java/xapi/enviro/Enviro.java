@@ -16,6 +16,12 @@ import java.lang.annotation.Annotation;
  *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
+ * Random idea:
+ * <pre>
+ * void borrowEnv(In1<MutableEnviro> cb); // red
+ * Enviro createEnv(EnvConfig cfg); // blue
+ * </pre>
+ *
  */
 public interface Enviro {
 

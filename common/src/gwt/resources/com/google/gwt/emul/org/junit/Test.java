@@ -1,4 +1,4 @@
-package com.google.gwt.emul.org.junit;
+package org.junit;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

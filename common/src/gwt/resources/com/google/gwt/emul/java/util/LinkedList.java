@@ -13,17 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.emul.java.util;
+package java.util;
 
 import java.io.Serializable;
-import java.util.AbstractSequentialList;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
-import java.util.Queue;
 
 /**
  * Linked list implementation. <a

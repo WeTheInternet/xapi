@@ -1,6 +1,7 @@
+package java.util.concurrent.atomic;
+
 import java.util.function.UnaryOperator;
 import java.util.function.BinaryOperator;
-
 
 public class AtomicReference<V> implements java.io.Serializable {
 

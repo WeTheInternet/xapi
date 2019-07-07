@@ -15,7 +15,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.google.gwt.emul.javax.validation.constraints;
+package javax.validation.constraints;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

@@ -19,7 +19,7 @@ xapiRequire.module('test').configure {
 }
 
 dependencies {
-    implementation 'javax.validation:validation-api:1.0.0.GA'
+    compile 'javax.validation:validation-api:1.0.0.GA'
     compileOnly 'net.wetheinter:jsinterop-annotations:2.8.0'
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core:3.2.0'

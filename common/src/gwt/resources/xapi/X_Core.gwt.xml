@@ -29,6 +29,7 @@
   <source path="api"/> <!-- Shared api code -->
   <source path="scope"/> <!-- Scoping -->
   <source path="stream"/> <!-- Streaming -->
+  <source path="validate"/> <!-- Validation -->
   <source path="gwt/annotation"/>
   <source path="gwt/api"/> <!-- Basic js interop -->
   <source path="gwt/log"/>

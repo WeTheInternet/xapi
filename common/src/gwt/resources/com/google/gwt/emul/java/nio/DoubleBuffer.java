@@ -15,9 +15,7 @@
  *  limitations under the License.
  */
 
-package com.google.gwt.emul.java.nio;
-
-import java.nio.*;
+package java.nio;
 
 /** A buffer of doubles.
  * <p> A double buffer can be created in either one of the following ways: </p>

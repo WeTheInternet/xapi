@@ -5,9 +5,7 @@
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
-package com.google.gwt.emul.java.util;
-
-import java.util.*;
+package java.util;
 
 /**
  * A linear collection that supports element insertion and removal at

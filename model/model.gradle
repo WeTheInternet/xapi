@@ -1,0 +1,24 @@
+// only needed for auto-complete support in IDE:
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+import net.wti.gradle.schema.api.Transitivity
+
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.module('gwt', 'test').configure {
+    req ->
+        req.project 'xapi-gwt-model', 'main:main'
+
+        req.project 'xapi-common', 'testTools'
+        req.external 'junit:junit:4.12'
+        req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
+        req.project 'xapi-jre-parent:xapi-jre-model'
+        req.project 'xapi-gwt-io'
+        req.project 'xapi-server-parent:xapi-server-api'
+        req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
+}

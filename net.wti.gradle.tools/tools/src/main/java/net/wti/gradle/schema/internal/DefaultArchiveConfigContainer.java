@@ -17,7 +17,7 @@ public class DefaultArchiveConfigContainer extends DefaultRealizableNamedObjectC
     private final Callable<PlatformConfigInternal> platform;
     private final ProjectView view;
 
-    private boolean withClassifier, withCoordinate, withSourceJar;
+    private boolean withClassifier, withCoordinate = true, withSourceJar;
 
     public DefaultArchiveConfigContainer(
         Callable<PlatformConfigInternal> platform, ProjectView view

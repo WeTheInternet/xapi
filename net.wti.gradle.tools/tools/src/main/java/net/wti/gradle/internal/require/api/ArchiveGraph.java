@@ -2,6 +2,7 @@ package net.wti.gradle.internal.require.api;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
+import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.require.api.DependencyKey;
 import net.wti.gradle.schema.api.Transitivity;
@@ -18,7 +19,10 @@ import org.gradle.api.Named;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.file.FileCollectionInternal;
@@ -31,6 +35,7 @@ import org.gradle.internal.Actions;
 import org.gradle.util.GUtil;
 import xapi.gradle.fu.LazyString;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
@@ -180,6 +185,9 @@ public interface ArchiveGraph extends Named, GraphNode {
 //                .attribute(USAGE_ATTRIBUTE, project().usageApi())
             ;
             configNamed("default", def->def.extendsFrom(exportCompile));
+            if (config().isSourceAllowed()) {
+                exportCompile.extendsFrom(configSource());
+            }
         });
     }
 
@@ -197,6 +205,16 @@ public interface ArchiveGraph extends Named, GraphNode {
                 .attribute(USAGE_ATTRIBUTE, project().usageInternal());
         });
     }
+    default Configuration configExportedSource() {
+        return config("ExportSource", internal -> {
+            internal.setVisible(true);
+            internal.setCanBeResolved(true);
+            internal.setCanBeConsumed(true);
+            internal.getOutgoing().capability(getCapability("sources"));
+            withAttributes(internal)
+                .attribute(USAGE_ATTRIBUTE, project().usageSourceJar());
+        });
+    }
 
     default Configuration configExportedRuntime() {
 //            config(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).extendsFrom(runtimeElements);
@@ -211,6 +229,11 @@ public interface ArchiveGraph extends Named, GraphNode {
                 .attribute(USAGE_ATTRIBUTE, project().usageRuntime())
             ;
             configNamed("default", def->def.extendsFrom(exportRuntime));
+
+//            if (config().isSourceAllowed()) {
+//                // runtime will depend on the exported source jar.
+//                exportRuntime.extendsFrom(configSource());
+//            }
         });
     }
 
@@ -323,62 +346,54 @@ public interface ArchiveGraph extends Named, GraphNode {
             return config;
         }
 
-        String taskName = name + "Jar";
-        final TaskContainer tasks = view.getTasks();
         config = configs.maybeCreate(name);
 
-        final TaskProvider<Jar> jarTask = tasks.register(taskName, Jar.class, jar -> {
-            if (srcExists()) {
-                SourceMeta meta = getSource();
-                jar.from(meta.getSrc().getAllSource());
-                jar.getExtensions().add(SourceMeta.EXT_NAME, meta);
-            }
-            if (schema.getArchives().isWithCoordinate()) {
-                assert !schema.getArchives().isWithClassifier() : "Archive container cannot use both coordinate and classifier: " + schema.getArchives();
-                jar.getArchiveAppendix().set("sources");
-            } else {
-                jar.getArchiveClassifier().set("sources");
-            }
-        });
-
-        final ConfigurationPublications outgoing = config.getOutgoing();
-
-//        PublishArtifact jarArtifact = new LazyPublishArtifact(jarTask, getVersion());
-//        view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(jarArtifact);
-
-        // Now that we have the rest of variants working, we should be able to reinstate this...
-        //        outgoing.variants(variants->{
-        //            final ConfigurationVariant variant = variants.maybeCreate("sources");
-        //            variant.attributes(attrs->
-        //                attrs.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, "sources")
-        //            );
-        ////        if (hasSrc) {
-        ////            for (File srcDir : archive.allSourceDirs().getSourceDirectories()) {
-        ////                final Provider<File> provider = providers.provider(() -> srcDir);
-        ////                LazyPublishArtifact src = new LazyPublishArtifact(provider);
-        ////                final Directory proj = project.getLayout().getProjectDirectory();
-        ////                final String seg = srcDir.getAbsolutePath().replace(proj.getAsFile().getAbsolutePath(), "").substring(1);
-        ////                final Directory asDir = proj.dir(seg);
-        ////                outgoing.artifact(new FileSystemPublishArtifact(
-        ////                    asDir, project.getVersion()
-        ////                ));
-        //////                outgoing.artifact(src);
-        ////            }
-        ////        }
-        //        });
-
-//        configAssembled().extendsFrom(config);
         configExportedApi().extendsFrom(config);
 
         if (srcExists()) {
+            final TaskProvider<Jar> sourceJarTask = getSourceJarTask();
+            final ConfigurationPublications outgoing = configExportedSource().getOutgoing();
             final FileCollectionInternal srcDirs = (FileCollectionInternal) allSourceDirs().getSourceDirectories();
-//            final ComponentIdentifier srcId = getComponentId("source");
-//            final DefaultSelfResolvingDependency dep = new DefaultSelfResolvingDependency(srcId, srcDirs);
-            view.getDependencies().add(
-                name,
-                srcDirs
-//                dep
-            );
+            final FileCollection filtered = srcDirs.filter(File::exists);
+            if (!filtered.isEmpty()) {
+                final Jar srcJarTask = sourceJarTask.get();
+                IntermediateJavaArtifact sourceJar = new IntermediateJavaArtifact("sources", srcJarTask) {
+                    @Override
+                    public File getFile() {
+                        return srcJarTask.getArchiveFile().get().getAsFile();
+                    }
+
+                    @Override
+                    public String getExtension() {
+                        return "jar";
+                    }
+
+                    @Nullable
+                    @Override
+                    public String getClassifier() {
+                        // blech.  maven publications require this to be a classifier'd artifact.
+                        // what we should really be doing is N publications, for the -sources, or -compile variants...
+                        return "sources";
+                    }
+                };
+                outgoing.variants(variants->{
+                    // TODO: distinguish between sources and source-jars
+                    final ConfigurationVariant variant = variants.maybeCreate("sources");
+                    variant.artifact(sourceJar);
+                    variant.attributes(attrs->{
+                        withAttributes(attrs);
+                        attrs.attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getModuleName() + "-sources");
+                        attrs.attribute(USAGE_ATTRIBUTE, project().usageSource());
+                    });
+                });
+
+                outgoing.artifact(sourceJar);
+
+                view.getDependencies().add(
+                    name,
+                    filtered
+                );
+            }
         }
         final PlatformGraph platform = platform();
         final PlatformConfigInternal parent = platform.config().getParent();
@@ -458,6 +473,10 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default TaskProvider<Jar> getJarTask() {
         return getTasks().getJarTask();
+    }
+
+    default TaskProvider<Jar> getSourceJarTask() {
+        return getTasks().getSourceJarTask();
     }
 
     default TaskProvider<JavaCompile> getJavacTask() {
@@ -588,7 +607,8 @@ public interface ArchiveGraph extends Named, GraphNode {
                 } else {
                     // using requireCapabilities results in runtime jars instead of compiled classpaths, so it is less ideal.
                     // also; we need to get better version information here.  This should come from whatever-is-handling schema.xapi
-                    mod.capabilities(cap->cap.requireCapabilities(require + ":" + dep.getVersion()));
+                    mod.
+                        capabilities(cap->cap.requireCapabilities(require + ":" + dep.getVersion()));
 
                 }
             }

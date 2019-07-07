@@ -1,9 +1,6 @@
 package net.wti.gradle.publish.plugin;
 
-import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.internal.api.ReadyState;
-import net.wti.gradle.internal.api.XapiLibrary;
-import net.wti.gradle.internal.api.XapiPlatform;
+import net.wti.gradle.internal.api.*;
 import net.wti.gradle.internal.impl.DefaultXapiUsageContext;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
@@ -120,6 +117,12 @@ public class XapiPublishPlugin implements Plugin<Project> {
         final DefaultXapiUsageContext runtimeCtx = new DefaultXapiUsageContext(select, Usage.JAVA_RUNTIME);
         module.getUsages().add(compileCtx);
         module.getUsages().add(runtimeCtx);
+        final boolean hasSource = select.config().isSourceAllowed();
+        if (hasSource) {
+            view.getLogger().quiet("Adding source jar publishing for {}", select.getCapability());
+            final DefaultXapiUsageContext sourceCtx = new DefaultXapiUsageContext(select, XapiUsage.SOURCE_JAR);
+            module.getUsages().add(sourceCtx);
+        }
         // The produced artifacts will be added to publication based on their presence,
         // but we need to realize the tasks for them to run callbacks and hook themselves up.
         // So, we make the lifecycle task depend on the assembled configuration.
@@ -127,6 +130,9 @@ public class XapiPublishPlugin implements Plugin<Project> {
             publish.whenSelected(selected-> {
                 publish.dependsOn(select.getJavacTask().get());
                 publish.dependsOn(select.getJarTask().get());
+                if (hasSource) {
+                    publish.dependsOn(select.getTasks().getSourceJarTask());
+                }
             });
         });
     }
@@ -164,7 +170,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
         List<MavenPublication> pubs = new ArrayList<>();
         LinkedHashMap<String, PublishedModule> allMods = new LinkedHashMap<>();
         lib.getPlatforms().all(p->
-            p.getModules().all(m->
+            p.getModules().all(m-> {
                     pubs.add(publications.create("_" + p.getName()+"_"+m.getName(), MavenPublication.class, pub->{
                         pub.from(m);
                         pub.setGroupId(m.getGroup());
@@ -172,10 +178,12 @@ public class XapiPublishPlugin implements Plugin<Project> {
                         allMods.put(m.getGroup() + ":" + m.getName(), m);
                         // "generatePomFileFor" + capitalize(publicationName) + "Publication"
                         ((ExtensionAware)pub).getExtensions().add("xapiModule", m);
-                    }))
+                    }));
+                }
             )
         );
 //        // publish the main artifact.  All items above are child modules (~variants) of the XapiLibrary
+        // Disabled, as it currently inferes w/ "just get it directly from other publications".
 //        MavenPublication mainPub = publications.create("xapi", MavenPublication.class);
 //        mainPub.from(lib);
 
@@ -190,6 +198,9 @@ public class XapiPublishPlugin implements Plugin<Project> {
                         PublishedModule mod = (PublishedModule) module;
                         final ArchiveGraph graph = mod.getModule();
                         task.dependsOn(graph.getJarTask());
+                        if (graph.config().isSourceAllowed()) {
+                            task.dependsOn(graph.getSourceJarTask());
+                        }
                     });
                 }
             }
