@@ -1,6 +1,13 @@
 package xapi.gradle.config;
 
+import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.ArchiveGraph;
+import net.wti.gradle.internal.require.api.PlatformGraph;
+import net.wti.gradle.schema.api.ArchiveConfig;
+import net.wti.gradle.schema.api.PlatformConfig;
+import net.wti.gradle.schema.api.XapiSchema;
 import org.gradle.api.tasks.Internal;
+import org.gradle.internal.impldep.bsh.commands.dir;
 import org.gradle.util.GFileUtils;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.PrintBuffer;
@@ -12,9 +19,6 @@ import xapi.fu.data.SetLike;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.gradle.paths.AllPaths;
-import xapi.gradle.api.ArchiveType;
-import xapi.gradle.api.SourceConfig;
-import xapi.gradle.plugin.XapiExtension;
 
 import java.io.File;
 
@@ -29,41 +33,46 @@ import static xapi.source.X_Source.javaQuote;
  */
 public class ManifestGenerator {
 
-    private final XapiExtension ext;
-    private final Lazy<ArchiveType> main;
-    private final MapLike<ArchiveType, AllPaths> paths;
+    private final XapiSchema schema;
+    private final Lazy<ArchiveGraph> main;
+    private final MapLike<ArchiveGraph, AllPaths> paths;
     private final AllPaths mainPaths, otherPaths;
+    private final ProjectView view;
 
-    public ManifestGenerator(XapiExtension ext) {
-        this.ext = ext;
+    public ManifestGenerator(ProjectView view) {
+        this.view = view;
+        this.schema = view.getSchema();
         mainPaths = new AllPaths();
         otherPaths = new AllPaths();
         paths = X_Jdk.mapOrderedInsertion();
-        main = Lazy.deferred1(()-> {
-            ext.getMainArtifact().finalizeValue();
-            return ext.getMainArtifact().get();
-        });
-        ext.sources().configureEach(this::addSources);
-        ext.getPlatform().configureEach(this::addPlatform);
+        main = Lazy.deferred1(()->
+            view.getProjectGraph().mainModule()
+        );
+
+        view.projectGraph().configure(graph ->
+            // only "print" any realized platforms.
+            graph.realizedPlatforms(this::addPlatform)
+        );
     }
 
-    public void addPlatform(PlatformConfig config) {
-        final ArchiveType type = config.getType();
+    public void addPlatform(PlatformGraph config) {
+        final ArchiveGraph type = config.getMainModule();
         AllPaths ap = paths.computeIfAbsent(type, AllPaths::new);
-        (isInherited(config.getType()) ? mainPaths : otherPaths)
+        (isInherited(type) ? mainPaths : otherPaths)
             .absorb(ap);
-        ap.addSources(config.getSources(), this::isGenDir);
+        ap.addSources(type, this::isGenDir);
+        config.archives().configureEach(this::addSources);
     }
 
-    public void addSources(SourceConfig config) {
-        AllPaths ap = paths.computeIfAbsent(config.getArchiveType(), AllPaths::new);
-        (isInherited(config.getArchiveType()) ? mainPaths : otherPaths)
+    public void addSources(ArchiveGraph config) {
+        AllPaths ap = paths.computeIfAbsent(config, AllPaths::new);
+        (isInherited(config) ? mainPaths : otherPaths)
             .absorb(ap);
         ap.addSources(config, this::isGenDir);
     }
 
-    public boolean isInherited(ArchiveType type) {
-        return main.out1().includes(type);
+    public boolean isInherited(ArchiveGraph type) {
+        return main.out1().config().isOrRequires(type.config());
     }
 
     public boolean isGenDir(File dir) {
@@ -86,13 +95,14 @@ public class ManifestGenerator {
 
         // If you add more data sources here, be sure to update summary()
 
-        String module = ext.module();
+        ArchiveGraph mod = view.getProjectGraph().mainModule();
+        final String module = mod.getNameCore();
         final File subDir = new File(dir, module);
         subDir.mkdirs();
-        final ArchiveType type = getArchiveType();
+        final ArchiveGraph type = getArchiveType();
 
         // Write out each individual archive type, @ META-INF/xapi/module-name/archiveType.xapi
-        for (Out2<ArchiveType, AllPaths> item : paths.forEachItem()) {
+        for (Out2<ArchiveGraph, AllPaths> item : paths.forEachItem()) {
             // Printing these will also ensure that the META-INF/xapi/module-name/main.xapi is _clean_ of inherited dependencies;
             // the parent mainPaths will absorb included children into paths.
             printArchive(subDir, module, item.out1(), item.out2());
@@ -105,11 +115,11 @@ public class ManifestGenerator {
     }
 
     @Internal
-    public ArchiveType getArchiveType() {
+    public ArchiveGraph getArchiveType() {
         return main.out1();
     }
 
-    protected String printArchive(File dir, String module, ArchiveType main, AllPaths paths) {
+    protected String printArchive(File dir, String module, ArchiveGraph main, AllPaths paths) {
 
         DomBuffer out = new DomBuffer("xapi", false);
         out.allowAbbreviation(true).setAttributeNewline(true);
@@ -117,7 +127,7 @@ public class ManifestGenerator {
 
         // If you add more data sources here, be sure to update summary()
         out.setAttribute("module", module);
-        out.setAttribute("type", main.sourceName());
+        out.setAttribute("type", main.platform().getName());
 
         writeClasspath(out, "sources", paths.getSources());
         writeClasspath(out, "resources", paths.getResources());
@@ -130,14 +140,17 @@ public class ManifestGenerator {
           api : "xapi-lang/api"
         }
         */
-        SetLike<ArchiveType> used = X_Jdk.set();
-        for (ArchiveType type : main.getTypes()) {
-            if (this.paths.has(type)) {
-                used.add(type);
+        SetLike<ArchiveGraph> used = X_Jdk.set();
+        for (PlatformGraph realized: main.platform().project().realizedPlatforms()) {
+            for (ArchiveGraph arch : realized.realizedArchives()) {
+                if (this.paths.has(arch)) {
+                    used.add(arch);
+                }
             }
+
         }
         if (used.isNotEmpty()) {
-            final String[][] items = used.map(type -> new String[]{type.sourceName(), module + "/" + type.sourceName()})
+            final String[][] items = used.map(type -> new String[]{type.getSrcName(), type.project().getName() + "/" + type.platform().getName() + "/" + type.getName()})
                 .toArray(String[][]::new);
             writeJson(out, "includes", true, items);
         }
@@ -146,7 +159,7 @@ public class ManifestGenerator {
         String src = out.toSource();
         if (dir.isDirectory()) {
             // If it's a directory, we're writing a submodule.
-            dir = new File(dir, main.sourceName() + ".xapi");
+            dir = new File(dir, main.getSrcName() + ".xapi");
             GFileUtils.writeFile(src, dir);
         } else {
             // It's a main module, write its qualified named file and (for now, until we can make a better tool,
@@ -265,8 +278,8 @@ public class ManifestGenerator {
 
     public String summary() {
         ListLike<String> values = list();
-        for (Out2<ArchiveType, AllPaths> item : paths.forEachItem()) {
-            values.add(item.out1().sourceName());
+        for (Out2<ArchiveGraph, AllPaths> item : paths.forEachItem()) {
+            values.add(item.out1().getModuleName());
             values.add(item.out2().summary());
         }
         return values.join("{", "~","}");

@@ -4,7 +4,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
-import net.wti.gradle.internal.api.HasSourceSet;
+import net.wti.gradle.internal.require.api.ArchiveGraph;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetOutput;
 import xapi.fu.In1;
@@ -91,25 +91,26 @@ public class AllPaths {
     }
 
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
-    public void addSources(HasSourceSet config, In1Out1<File, Boolean> genDirCheck) {
+    public void addSources(ArchiveGraph config, In1Out1<File, Boolean> genDirCheck) {
+        final SourceSet src = config.getSource().getSrc();
         if (!mutateOnAbsorb) {
             // We may undo this if we see fit, but it's appropriate for now.
             throw new IllegalStateException("Only a child AllPaths may add sources; call parent.absorb(child) on " + this);
         }
         mutated++;
-        for (File srcDir : config.getSources().getJava().getSrcDirs()) {
+        for (File srcDir : src.getJava().getSrcDirs()) {
             sources.add(srcDir);
             if (genDirCheck.io(srcDir)) {
                 generated.add(srcDir);
             }
         }
-        for (File srcDir : config.getSources().getResources().getSrcDirs()) {
+        for (File srcDir : src.getResources().getSrcDirs()) {
             resources.add(srcDir);
             if (genDirCheck.io(srcDir)) {
                 generated.add(srcDir);
             }
         }
-        final SourceSetOutput outs = config.getSources().getOutput();
+        final SourceSetOutput outs = src.getOutput();
         for (File dir : MappedIterable.mapped(outs.getDirs())
             .plus(outs.getClassesDirs())
             .plus(outs.getResourcesDir())

@@ -36,6 +36,8 @@ public interface ProjectGraph extends Named, GraphNode {
 
     PlatformGraph main();
 
+    ArchiveGraph mainModule();
+
     PlatformGraph test();
 
     default boolean isSelectable(PlatformGraph platform) {

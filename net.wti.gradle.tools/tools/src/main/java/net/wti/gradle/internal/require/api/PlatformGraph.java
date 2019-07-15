@@ -85,8 +85,8 @@ public interface PlatformGraph extends Named, HasWork {
         return asGroup(project().getGroup());
     }
 
-    default String getMainModule() {
-        return archive("main").getModuleName();
+    default ArchiveGraph getMainModule() {
+        return archive(config().getMainModuleName());
     }
 
     default String getVersion() {

@@ -50,7 +50,6 @@ public class XapiExtension {
     private final Property<PublishConfig> publish;
     private final Property<SourceConfigContainer> sources;
     private final Property<AllJars> jars;
-    private final DirectoryProperty outputMeta;
     private final TaskProvider<XapiInit> initTask;
     private final DomainObjectSet<In1Out1<TaskProvider<XapiInit>, TaskProvider<?>>> beforeInit, afterInit;
     private final Out1<XapiInit> init;
@@ -111,12 +110,6 @@ public class XapiExtension {
         sources.set(project.provider(lazySource::out1));
         Lazy<AllJars> lazyJars = Lazy.deferred1(this::prepareJars, project);
         jars.set(project.provider(lazyJars::out1));
-
-        outputMeta = project.getObjects().directoryProperty();
-        outputMeta.set(
-            project.getLayout().getBuildDirectory().dir("xapi-paths")
-        );
-
 
         onInit = Chain.startChain();
         onPrepare = Chain.startChain();
@@ -435,15 +428,6 @@ public class XapiExtension {
 //        manifest.printMain(out, manifest, type);
 //        return out.toSource();
 //    }
-
-    public DirectoryProperty getOutputMeta() {
-        return outputMeta;
-    }
-
-    public Directory outputMeta() {
-        outputMeta.finalizeValue();
-        return outputMeta.get();
-    }
 
     public Logger getLogger() {
         return logger;

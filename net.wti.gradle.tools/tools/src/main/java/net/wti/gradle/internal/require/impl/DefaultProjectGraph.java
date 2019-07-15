@@ -1,9 +1,11 @@
 package net.wti.gradle.internal.require.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
+import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.system.api.RealizableNamedObjectContainer;
 import org.gradle.api.Action;
 
@@ -63,6 +65,15 @@ public class DefaultProjectGraph extends AbstractChildGraphNode<PlatformGraph, B
     @Override
     public PlatformGraph main() {
         return platforms().maybeCreate("main");
+    }
+
+    protected XapiSchema getSchema() {
+        return main().getView().getSchema();
+    }
+
+    @Override
+    public ArchiveGraph mainModule() {
+        return getSchema().getMainPlatform().getMainModule().findGraph(this);
     }
 
     @Override

@@ -259,7 +259,7 @@ public interface ArchiveGraph extends Named, GraphNode {
     }
 
     default String getNameCore() {
-        return platform().getMainModule();
+        return platform().getMainModule().getModuleName();
     }
 
     default String getCapability(String suffix) {

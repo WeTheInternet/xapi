@@ -23,7 +23,7 @@ repositories { jcenter() }
 // This is a proof of concept buildscript, suitable for putting into a gist.
 // We have zero actual need for this dependency on wildfly, it's just here
 // as an arbitrary "deep dependency graph" that we can use for prototyping.
-dependencies { api 'org.wildfly.core:wildfly-server:9.0.1.Final' }
+//dependencies { api 'org.wildfly.core:wildfly-server:9.0.1.Final' }
 
 
 

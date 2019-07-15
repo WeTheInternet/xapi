@@ -1,27 +1,22 @@
 package xapi.gradle.task;
 
+import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.ArchiveGraph;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.TaskAction;
-import xapi.dev.source.DomBuffer;
 import xapi.fu.data.SetLike;
 import xapi.fu.java.X_Jdk;
-import xapi.gradle.api.ArchiveType;
 import xapi.gradle.config.ManifestGenerator;
-import xapi.gradle.plugin.XapiExtension;
 
 import java.io.File;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
-import static xapi.fu.itr.MappedIterable.mapped;
 
 /**
  * This task is used to generate build/xapi-paths/META-INF/xapi/$artifactId.xapi (and paths.xapi)
@@ -123,9 +118,8 @@ public class XapiManifest extends DefaultTask {
     private final ManifestGenerator builder;
 
     private DirectoryProperty outputDir;
-    private final Set<ArchiveType> seenTypes;
+    private final Set<ArchiveGraph> seenTypes;
     private final SetLike<File> allDirs;
-
 
     public XapiManifest() {
         final Project p = getProject();
@@ -137,8 +131,8 @@ public class XapiManifest extends DefaultTask {
         setGroup("xapi");
         setDescription("Transfer gradle meta data into xapi manifest files");
         seenTypes = new LinkedHashSet<>();
-        final XapiExtension ext = XapiExtension.from(getProject());
-        builder = new ManifestGenerator(ext);
+        final ProjectView view = ProjectView.fromProject(getProject());
+        builder = new ManifestGenerator(view);
     }
 
     @TaskAction
@@ -146,17 +140,14 @@ public class XapiManifest extends DefaultTask {
         outputDir.finalizeValue();
         final File out = outputDir.get().getAsFile();
         final File file = new File(out, "META-INF" + File.separator + "xapi");
-        final XapiExtension ext = XapiExtension.from(getProject());
 
-
-        final String main = writeSettings(ext, file, builder);
+        final String main = writeSettings(file, builder);
 
         getLogger().info("Wrote xapi manifest {};\nuse trace logging to see manifest contents.", file.toURI());
         getLogger().trace("Manifest contents: {}", main);
     }
 
-    protected String writeSettings(XapiExtension ext, File dir, ManifestGenerator builder) {
-        ext.getMainArtifact().finalizeValue();
+    protected String writeSettings(File dir, ManifestGenerator builder) {
         final String main = builder.printMain(dir);
         return main;
     }
@@ -176,10 +167,6 @@ public class XapiManifest extends DefaultTask {
 
     public void setOutputDir(File outputDir) {
         this.outputDir.set(outputDir);
-    }
-
-    public XapiExtension getXapi() {
-        return (XapiExtension) getProject().getExtensions().getByName(XapiExtension.EXT_NAME);
     }
 
     public Callable<String> computeFreshness() {
