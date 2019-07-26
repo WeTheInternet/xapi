@@ -31,6 +31,7 @@ import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
@@ -187,5 +188,9 @@ public interface ProjectView extends ExtensionAware {
         return getPath() +
             " of " + GradleService.buildId(getGradle()) +
             " at " + getProjectDir().toURI();
+    }
+
+    default SourceSet getMainSources() {
+        return getProjectGraph().mainModule().getSource().getSrc();
     }
 }

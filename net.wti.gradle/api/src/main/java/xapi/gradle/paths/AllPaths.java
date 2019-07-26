@@ -154,12 +154,12 @@ public class AllPaths {
     }
 
     public static AllPaths deserialize(String path, InputStream from) throws ParseException {
-        final AllPaths paths = new AllPaths();
         final UiContainerExpr el = JavaParser.parseUiContainer(
             path,
             from,
             LogLevel.INFO
         );
+        final AllPaths paths = new AllPaths();
         final ComposableXapiVisitor<AllPaths> visitor = ComposableXapiVisitor.onMissingLog(
             AllPaths.class,
             false

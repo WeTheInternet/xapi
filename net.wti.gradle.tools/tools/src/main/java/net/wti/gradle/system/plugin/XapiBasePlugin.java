@@ -151,7 +151,7 @@ public class XapiBasePlugin implements Plugin<Project> {
                 xapiHome = GradleServiceFinder.getService(project).findXapiHome();
             }
             if (xapiHome == null) {
-                project.getLogger().quiet("No xapi.home found; setting xapiLocal repo to {}/repo", project.getRootDir());
+                project.getLogger().quiet("No xapi.home found; setting xapiLocal repo to file:{}/repo", project.getRootDir());
                 xapiHome = project.getRootDir().getAbsolutePath();
             } else {
                 project.getLogger().trace("Using repo from xapi.home {}/repo", xapiHome);

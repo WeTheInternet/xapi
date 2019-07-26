@@ -70,8 +70,7 @@ xapiSchema.whenReady {
                 // TODO: set this based on static analysis of schema.xapi files
     //            dep.targetConfiguration = 'exportCompile'
         }
-        gwtTestToolsCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
-        gwtTestToolsRuntime 'net.wetheinter:gwt-dev:2.8.0'
+        gwtTestToolsImplementation 'net.wetheinter:gwt-dev:2.8.0'
     }
 
 }

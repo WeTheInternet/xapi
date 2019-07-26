@@ -1,7 +1,8 @@
 package xapi.gradle.plugin;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.system.service.GradleService;
-import net.wti.gradle.system.spi.GradleServiceFinder;
+import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.BuildAdapter;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -10,12 +11,8 @@ import org.gradle.api.artifacts.*;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.internal.concurrent.ExecutorFactory;
-import org.gradle.internal.concurrent.GradleThread;
 import org.gradle.internal.concurrent.ManagedExecutor;
-import org.gradle.internal.operations.BuildOperationExecutor;
-import org.gradle.internal.reflect.Instantiator;
 import xapi.fu.Lazy;
-import xapi.fu.Out1;
 import xapi.gradle.task.XapiInit;
 import xapi.gradle.task.XapiPreload;
 
@@ -28,15 +25,12 @@ import java.util.concurrent.Callable;
  */
 public class XapiRootPlugin implements Plugin<Project> {
 
-    private final Instantiator instantiator;
     private final ExecutorFactory exec;
 
     @Inject
-    public XapiRootPlugin(Instantiator instantiator, ExecutorFactory exec) {
-        this.instantiator = instantiator;
+    public XapiRootPlugin(ExecutorFactory exec) {
         this.exec = exec;
     }
-
 
 
     @Override
@@ -44,12 +38,20 @@ public class XapiRootPlugin implements Plugin<Project> {
         if (project != project.getRootProject()) {
             throw new GradleException("xapi-root plugin may only be installed on the root project!");
         }
-        final GradleService service = GradleServiceFinder.getService(project);
+        ProjectView view = ProjectView.fromProject(project);
 
-        final XapiExtensionRoot root = createRootExtension(project, instantiator);
-        project.getExtensions().add(XapiExtension.class, XapiExtension.EXT_NAME, root);
+        view.getService(); // ensure the GradleService is initialized
 
-        project.getPlugins().apply(XapiBasePlugin.class);
+        final XapiExtensionRoot root = project.getExtensions().create(
+            XapiExtensionRoot.EXT_NAME, XapiExtensionRoot.class, project);
+        //noinspection ConstantConditions just here to trace "real" constructor call, above, in IDE
+        assert GradleMessages.noOpForAssertion(()->new XapiExtensionRoot(project)) : "";
+
+        // okay...  scan for the following files:
+        // settings.xapi, and, per-gradle-project, schema.xapi
+        loadSettings();
+        loadSchemas();
+
 
         project.getGradle().addBuildListener(new BuildAdapter(){
             @Override
@@ -61,28 +63,31 @@ public class XapiRootPlugin implements Plugin<Project> {
                 }
             }
         });
+    }
 
-        // We're actually just running a GradleBuild in the buildSrc project to ensure plugin jars are _always_ fresh.
-//        project.getGradle().getIncludedBuilds().forEach(
-//            b -> {
-//            if ("net.wti.gradle".equals(b.getName())) {
-//                XapiExtension ext = (XapiExtension) project.getExtensions().getByName(XapiExtension.EXT_NAME);
-//                project.getLogger().quiet("Accessing init task so we can encourage up-to-date maven dependencies");
-//                ext.getInit().dependsOn(b.task(":xapi-gradle-plugin:publishToMavenLocal"));
-//            }
-//        });
+    private void loadChildSchemas() {
 
+    }
+
+    private void loadSchemas() {
+
+    }
+
+    private void loadSettings() {
+        // settings.xapi will contain build-wide metadata.
+        // This includes the version / source repository metadata for preloadable dependencies.
+        // This will also, likely, include the full subproject structure;
+        // for use by xapi-settings plugin, to be able to define gradle projects per settings.xapi layout.
     }
 
     /**
      * TODO move this method into {@link GradleService} so it can control how this extension is created.
      */
-    private XapiExtensionRoot createRootExtension(Project project, Instantiator instantiator) {
+    private XapiExtensionRoot createRootExtension(Project project) {
         return project.getExtensions().create(
             XapiExtensionRoot.EXT_NAME,
             XapiExtensionRoot.class,
-            project,
-            instantiator
+            project
         );
     }
 

@@ -386,6 +386,7 @@ public class XapiBasePlugin implements Plugin<Project> {
     ) {
         project.getTasks().withType(GenerateMavenPom.class).all(
             pom -> {
+                // hm...  should be finding the publication from the task, which requires nasty taskname dissection...
                 final MavenPublication main = config.getMainPublication();
                 project.getTasks().named(JavaPlugin.JAR_TASK_NAME, t -> {
                     Jar jar = (Jar) t;

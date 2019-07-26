@@ -3,8 +3,8 @@ plugins {
 }
 
 xapiRequire.main().configure {
-    internal 'xapi-common:gwt:main'
-    internal 'xapi-gwt-ui-parent:xapi-gwt-ui-api:main:main'
+    project 'xapi-common', 'gwt:main'
+    project 'xapi-gwt-ui-parent:xapi-gwt-ui-api'
     external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
     external 'com.google.jsinterop:base:1.0.0-RC1'
 }

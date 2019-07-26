@@ -251,15 +251,7 @@ public class XapiExtension {
         autoPlugin.set(true);
 
         publish.set(new PublishConfig());
-        final Project root = project.getRootProject();
-        this.prefix.set(project.provider(()-> {
-            if (project == root) {
-                return GradleServiceFinder.getService(project).guessPrefix();
-            }
-            root.getPlugins().apply(XapiRootPlugin.class);
-            XapiExtensionRoot rootExt = (XapiExtensionRoot) project.getExtensions().getByName(XapiExtensionRoot.EXT_NAME);
-            return rootExt.getPrefix();
-        }));
+        this.prefix.set(project.provider(()-> GradleServiceFinder.getService(project).guessPrefix()));
     }
 
 

@@ -387,7 +387,9 @@ public class JreInjector implements Injector {
     }
 
     private void scanClasspath() {
-        runtimeInjector.out1().in(
+        runtimeInjector
+            .out1() // resolve the injector
+            .in( // call injector callback w/ a location to save scan results, and our PlatformChecker
             System.getProperty(PROPERTY_RUNTIME_META, "build/classes/java/main"), checker
         );
     }

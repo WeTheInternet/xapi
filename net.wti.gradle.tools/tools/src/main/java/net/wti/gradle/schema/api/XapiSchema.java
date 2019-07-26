@@ -369,6 +369,13 @@ public class XapiSchema {
 
 //            exportedRuntime.artifact(packaged);
             exportedRuntime.variants(variants -> {
+                variants.create("assembled", variant -> {
+                    variant.artifact(compiled);
+                    variant.attributes(attributes->{
+                        archGraph.withAttributes(attributes);
+                        attributes.attribute(Usage.USAGE_ATTRIBUTE, platGraph.project().usageApiClasses());
+                    });
+                });
                 variants.create("packaged", variant -> {
                     variant.artifact(packaged);
                     variant.attributes(attributes->{
@@ -555,33 +562,48 @@ public class XapiSchema {
         return platforms.maybeCreate("main");
     }
 
-    public ImmutableAttributes getAttributes(Dependency dep, String newGroup, String newName) {
+    public ImmutableAttributes getAttributes(String xapiCoords, String newGroup, String newName) {
         // TODO: consult a registry before relying on naming conventions...
-        int lastDot = newGroup.lastIndexOf('.');
         PlatformConfig plat = null;
-        if (lastDot != -1) {
-            String suffix = newGroup.substring(lastDot+1);
-            if (platforms.hasWithName(suffix)) {
-                plat = platforms.getByName(suffix);
-            }
-        }
-        String[] bits = newName.split("-");
-        String suffix = bits[bits.length-1];
-        if (plat == null) {
-            plat = findPlatform(suffix);
-            if (plat == null) {
-                plat = getMainPlatform();
-            }
-        }
         String left;
-        if (bits.length == 1) {
-            // There is no suffix.  assume main.
-            left = "main";
-        } else {
-            left = GUtil.toLowerCamelCase(suffix.replace(plat.getName(), ""));
-            if (!plat.getArchives().hasWithName(left)) {
-                // Hm... should probably log or throw here, and enforce registrations...
+        if (xapiCoords != null) {
+            String[] coords = xapiCoords.split(":");
+            if (coords.length == 2) {
+                plat = platforms.getByName(coords[0]);
+                left = coords[1];
+            } else if (coords.length == 1) {
+                plat = platforms.getByName(getMainPlatformName());
+                left = coords[0];
+            } else {
+                assert coords.length == 0 : "Invalid xapi coordinated " + xapiCoords + " for " + newGroup + ":" + newName;
+                plat = platforms.getByName(getMainPlatformName());
                 left = "main";
+            }
+        } else {
+            int lastDot = newGroup.lastIndexOf('.');
+            if (lastDot != -1) {
+                String suffix = newGroup.substring(lastDot+1);
+                if (platforms.hasWithName(suffix)) {
+                    plat = platforms.getByName(suffix);
+                }
+            }
+            String[] bits = newName.split("-");
+            String suffix = bits[bits.length-1];
+            if (plat == null) {
+                plat = findPlatform(suffix);
+                if (plat == null) {
+                    plat = getMainPlatform();
+                }
+            }
+            if (bits.length == 1) {
+                // There is no suffix.  assume main.
+                left = "main";
+            } else {
+                left = GUtil.toLowerCamelCase(suffix.replace(plat.getName(), ""));
+                if (!plat.getArchives().hasWithName(left)) {
+                    // Hm... should probably log or throw here, and enforce registrations...
+                    left = "main";
+                }
             }
         }
         final ArchiveConfig arch = plat.getArchive(left);

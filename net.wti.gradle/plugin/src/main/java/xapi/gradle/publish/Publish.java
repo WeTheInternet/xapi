@@ -118,7 +118,7 @@ public class Publish {
                 final SourceSetContainer sourceSets = java.getSourceSets();
 
                 XapiExtension ext = (XapiExtension) p.getExtensions().getByName("xapi");
-                final MavenPublication mainPub = ext.getMainPublication();
+                ext.getMainPublication();
 
                 TaskProvider<SourceJar> sourceJar = ext.getJars().get().getSources();
 

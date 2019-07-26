@@ -6,7 +6,7 @@ xapiRequire.main().configure {
     external "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
     external "net.wti.core:xapi-gen:${->version}", 'main'
     external "net.wti.core:xapi-lang-core:${->version}", 'main'
-    internal "xapi-gradle-api:main"
+    project "xapi-gradle-manifest"
     // hm... when mixing external and internal which both have transitive dependencies on xapi-fu,
     // we will get choice conflict errors unless we explicitly add xapi-fu here.  Investigate!
     external "net.wti.core:xapi-fu:${->version}", 'main'
@@ -46,9 +46,9 @@ xapiSchema.whenReady {
     plugins.apply 'java-gradle-plugin'
     GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
     plugin.publishComponent = '_main_main'
-    plugin.plugins.register('xapi.meta', {
+    plugin.plugins.register('xapi-meta', {
         PluginDeclaration decl->
-            decl.id = 'xapi.meta'
+            decl.id = 'xapi-meta'
             decl.displayName = "Xapi Meta Plugin"
             decl.description = doc
             decl.implementationClass = "xapi.gradle.meta.MetaPlugin"

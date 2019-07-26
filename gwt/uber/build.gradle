@@ -1,8 +1,10 @@
+
 buildscript {
     repositories {
         maven {
             name = 'xapiLocal'
-            url = new URI("file://$rootDir/repo")
+            url = new URI("file://$rootDir/repo".toString())
+            //noinspection UnstableApiUsage
             metadataSources({ m -> m.gradleMetadata() })
         }
     }
@@ -14,8 +16,9 @@ buildscript {
 }
 plugins {
     id 'xapi-require'
+    id 'xapi-meta'
 }
-plugins.apply 'xapi.meta'
+
 plugins.apply 'com.github.johnrengelman.shadow'
 setProperty('xapi.main.component', 'shadow')
 
@@ -29,11 +32,10 @@ tasks.shadowJar.configure {
 
 xapiRequire.main().configure {
     req ->
-        req.internal 'xapi-util:main:main'
-        req.internal 'xapi-inject:gwt:main'
-        req.internal 'xapi-collect:gwt:main'
-        req.internal 'xapi-common:gwt:testTools'
-
+        req.project 'xapi-util'
+        req.project 'xapi-inject', 'gwt:main'
+        req.project 'xapi-collect', 'gwt:main'
+        req.project 'xapi-common', 'gwt:testTools'
 }
 
 dependencies {

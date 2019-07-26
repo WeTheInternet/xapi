@@ -18,7 +18,7 @@ import static java.lang.String.valueOf;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/22/18 @ 10:29 PM.
  */
-public class XapiExtensionRoot extends XapiExtension {
+public class XapiExtensionRoot {
 
     public static final String EXT_NAME = "xapiRoot";
 
@@ -28,8 +28,7 @@ public class XapiExtensionRoot extends XapiExtension {
     private final Property<String> xapiRepo;
     private final In1Out1<String, Dependency> resolver;
 
-    public XapiExtensionRoot(Project project, Instantiator instantiator) {
-        super(project, instantiator);
+    public XapiExtensionRoot(Project project) {
         localCache = project.getObjects().listProperty(ModuleDependency.class);
         xapiRepo = project.getObjects().property(String.class);
         strictCaching = project.getObjects().property(Boolean.class);

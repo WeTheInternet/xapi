@@ -2,13 +2,17 @@ package xapi.gradle.task;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
+import net.wti.gradle.system.service.GradleService;
+import net.wti.manifest.ManifestPlugin;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.TaskProvider;
 import xapi.fu.data.SetLike;
 import xapi.fu.java.X_Jdk;
 import xapi.gradle.config.ManifestGenerator;
@@ -114,25 +118,36 @@ archives = {
 public class XapiManifest extends DefaultTask {
 
     public static final String MANIFEST_TASK_NAME = "xapiManifest";
-    private static final String DEFAULT_OUTPUT_DIR = "xapi-paths";
+    public static final String DEFAULT_OUTPUT_DIR = "xapi-paths";
     private final ManifestGenerator builder;
 
-    private DirectoryProperty outputDir;
+    private final DirectoryProperty outputDir;
+    private final Property<String> outputDirName;
     private final Set<ArchiveGraph> seenTypes;
     private final SetLike<File> allDirs;
 
     public XapiManifest() {
         final Project p = getProject();
         allDirs = X_Jdk.setLinkedSynchronized();
+
+        outputDirName = p.getObjects().property(String.class);
+        outputDirName.convention(DEFAULT_OUTPUT_DIR);
+
         outputDir = p.getObjects().directoryProperty();
         outputDir.set(
-            p.getLayout().getBuildDirectory().dir(DEFAULT_OUTPUT_DIR)
+            p.getLayout().getBuildDirectory().dir(p.provider(getOutputDirName()::get))
         );
+
         setGroup("xapi");
         setDescription("Transfer gradle meta data into xapi manifest files");
         seenTypes = new LinkedHashSet<>();
         final ProjectView view = ProjectView.fromProject(getProject());
         builder = new ManifestGenerator(view);
+    }
+
+    public static TaskProvider<XapiManifest> fromView(ProjectView view) {
+        view.getPlugins().apply(ManifestPlugin.class);
+        return view.getTasks().named(XapiManifest.MANIFEST_TASK_NAME, XapiManifest.class);
     }
 
     @TaskAction
@@ -157,16 +172,20 @@ public class XapiManifest extends DefaultTask {
         return outputDir;
     }
 
-    public void setOutputDir(Provider<Directory> outputDir) {
-        this.outputDir.set(outputDir);
+    public Property<String> getOutputDirName() {
+        return outputDirName;
     }
 
-    public void setOutputDir(Directory outputDir) {
-        this.outputDir.set(outputDir);
+    public void setOutputDirName(Provider<String> outputDir) {
+        this.outputDirName.set(outputDir);
     }
 
-    public void setOutputDir(File outputDir) {
-        this.outputDir.set(outputDir);
+    public void setOutputDirName(CharSequence outputDir) {
+        this.outputDirName.set(getProject().provider(outputDir::toString));
+    }
+
+    public void setOutputDirName(String outputDir) {
+        this.outputDirName.set(outputDir);
     }
 
     public Callable<String> computeFreshness() {

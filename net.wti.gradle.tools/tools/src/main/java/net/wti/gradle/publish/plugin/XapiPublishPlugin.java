@@ -119,7 +119,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
         module.getUsages().add(runtimeCtx);
         final boolean hasSource = select.config().isSourceAllowed();
         if (hasSource) {
-            view.getLogger().quiet("Adding source jar publishing for {}", select.getCapability());
+            view.getLogger().info("Adding source jar publishing for {}", select.getCapability());
             final DefaultXapiUsageContext sourceCtx = new DefaultXapiUsageContext(select, XapiUsage.SOURCE_JAR);
             module.getUsages().add(sourceCtx);
         }

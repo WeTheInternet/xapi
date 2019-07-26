@@ -17,7 +17,7 @@ import static xapi.process.X_Process.*;
 public class ConcurrencyTest {
 
   @BeforeClass public static void prepare() {
-    System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "target/test-classes");
+    System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "build/classes/java/test");
     System.setProperty(X_Namespace.PROPERTY_DEBUG, "true");
     System.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "5");
   }

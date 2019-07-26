@@ -130,7 +130,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                     includeProject(self, projId, include, arch, trans, lenient);
                     return;
                 case internal:
-                    includeInternal(self, projId, arch, trans, lenient);
+                    includeInternal(self, projId, include, arch, trans, lenient);
                     return;
                 case external:
                     includeExternal(self, projId, include, arch, trans, lenient);
@@ -160,9 +160,9 @@ public class XapiRequirePlugin implements Plugin<Project> {
 
             self.getLogger().info("Including project {} into arch {} with coordinates {}", projName, arch.getPath(), coord);
             // If there is 1 or fewer requested coordinates, the platform is default platform ("main")...
-            String platName = coords.length < 2 ? arch.getDefaultPlatform() : coords[0];
+            String platName = coords.length < 2 ? reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform() : coords[0];
             // If there are 0 coordinates, the module is default module ("main"), otherwise, module is the last item
-            String modName = coords.length == 0 ? arch.getDefaultModule() : coords[coords.length-1];
+            String modName = coords.length == 0 ? reg.getArchive() == null ? arch.getName() : arch.getDefaultModule() : coords[coords.length-1];
 
             arch.importProject(projName, platName, modName, transitivity, lenient);
         });
@@ -171,6 +171,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
     private void includeInternal(
         ProjectView self,
         String projId,
+        XapiRegistration reg,
         ArchiveGraph arch,
         Transitivity transitivity,
         boolean lenient
@@ -183,13 +184,13 @@ public class XapiRequirePlugin implements Plugin<Project> {
         final BuildGraph bg = self.getBuildGraph();
         if (coords.length < 2) {
             graph = self.getProjectGraph();
-            platName = arch.getDefaultPlatform();
-            archName = projId.isEmpty() ? arch.getDefaultModule() : coords[coords.length - 1];
+            platName = reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform();
+            archName = projId.isEmpty() ? reg.getArchive() == null ? arch.getName() : arch.getDefaultModule() : coords[coords.length - 1];
         } else if (coords.length == 2) {
             final String plat = coords[coords.length - 2];
             archName = coords[coords.length - 1];
             if (bg.hasProject(plat)) {
-                platName = arch.getDefaultPlatform();
+                platName = reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform();
                 graph = bg.getProject(plat);
             } else {
                 platName = plat;
@@ -201,6 +202,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
             platName = coords[coords.length - 2];
             archName = coords[coords.length - 1];
             String proj = projId.substring(0, projId.length() - platName.length() - archName.length() - 2);
+            // TODO: fix all warning generated, then delete this block of code and make it throw an exception
             self.getLogger().warn("{} is using `Requirable.internal '{}'` instead of `Requirable.project '{}', '{}:{}'` ", self.getPath(), projId, proj, platName, archName);
             graph = bg.getProject(proj);
         }
@@ -221,6 +223,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         boolean lenient
     ) {
 
+        // Hm...  we should really be preferring reg.getFrom() instead.
         String requestedGroup = reg.getPlatform();
         String requestedName = reg.getArchive();
 

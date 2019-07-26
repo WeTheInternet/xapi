@@ -21,13 +21,12 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.AttributeContainer;
-import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.plugins.ExtensionAware;
-import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -182,6 +181,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             exportCompile.setCanBeConsumed(true);
             exportCompile.getOutgoing().capability(getCapability("compile"));
             withAttributes(exportCompile)
+                .attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE)
 //                .attribute(USAGE_ATTRIBUTE, project().usageApi())
             ;
             configNamed("default", def->def.extendsFrom(exportCompile));
@@ -200,9 +200,11 @@ public interface ArchiveGraph extends Named, GraphNode {
             internal.setVisible(true);
             internal.setCanBeResolved(true);
             internal.setCanBeConsumed(true);
-//            internal.getOutgoing().capability(getCapability("internal"));
+            internal.getOutgoing().capability(getCapability("internal"));
             withAttributes(internal)
-                .attribute(USAGE_ATTRIBUTE, project().usageInternal());
+                .attribute(USAGE_ATTRIBUTE, project().usageInternal())
+                .attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE)
+            ;
         });
     }
     default Configuration configExportedSource() {
@@ -212,7 +214,9 @@ public interface ArchiveGraph extends Named, GraphNode {
             internal.setCanBeConsumed(true);
             internal.getOutgoing().capability(getCapability("sources"));
             withAttributes(internal)
-                .attribute(USAGE_ATTRIBUTE, project().usageSourceJar());
+                .attribute(USAGE_ATTRIBUTE, project().usageSourceJar())
+                .attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE)
+            ;
         });
     }
 
@@ -227,6 +231,7 @@ public interface ArchiveGraph extends Named, GraphNode {
 
             withAttributes(exportRuntime)
                 .attribute(USAGE_ATTRIBUTE, project().usageRuntime())
+                .attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE)
             ;
             configNamed("default", def->def.extendsFrom(exportRuntime));
 
@@ -560,24 +565,43 @@ public interface ArchiveGraph extends Named, GraphNode {
 
         final DependencyHandler deps = getView().getDependencies();
         final XapiSchema schema = getView().getSchema();
-        final AttributeContainer attrs = schema.getAttributes(dep, newGroup, newName);
+        final String coords = GradleCoerce.unwrapString(reg.getFrom());
+        final AttributeContainer attrs = schema.getAttributes(coords, newGroup, newName);
 
         // create variant-aware, on-demand inputs to the lenient config.
         Configuration target = type.findConsumerConfig(this, trans);
 
-        final String coords = GradleCoerce.unwrapString(reg.getFrom());
-
-        boolean isLocal = coords != null;// && "true".equals(System.getProperty("no.composite"));
+        boolean hasXapiCoord = coords != null;// && "true".equals(System.getProperty("no.composite"));
 
         final String ident = dep.getGroup() + ":" + dep.getName();
         final String path = ident + ":" + dep.getVersion();
-        String base = attrs.getAttribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
-        if ("main".equals(base)) {
-            base = attrs.getAttribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE);
+        String base;
+        if (hasXapiCoord) {
+            String[] parts = coords.split(":");
+            if (parts.length == 2) {
+                if ("main".equals(parts[0])) {
+                    base = parts[1];
+                } else if ("main".equals(parts[1])) {
+                    base = parts[0];
+                } else {
+                    base = parts[0] + GUtil.toCamelCase(parts[1]);
+                }
+            } else if (parts.length == 1) {
+                base = "main" + GUtil.toCamelCase(parts[0]);
+            } else {
+                assert parts.length == 0 : "Invalid xapi coordinates " + coords;
+                base = "main";
+            }
         } else {
-            final String toAdd = GUtil.toCamelCase(attrs.getAttribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE));
-            if (!"Main".equals(toAdd)) {
-                base += toAdd;
+            // no coords?
+            base = attrs.getAttribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
+            if ("main".equals(base)) {
+                base = attrs.getAttribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE);
+            } else {
+                final String toAdd = GUtil.toCamelCase(attrs.getAttribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE));
+                if (!"Main".equals(toAdd)) {
+                    base += toAdd;
+                }
             }
         }
         ModuleDependency mod = (ModuleDependency) deps.create(path);
@@ -601,9 +625,9 @@ public interface ArchiveGraph extends Named, GraphNode {
             ) {
                 if (getView().isWtiGradle()) {
                     // This relies on WTI's fork of gradle.
-                    mod.setTargetConfiguration(
-                        type.deriveConfiguration(base, dep, isLocal, trans, lenient)
-                    );
+                    final String derived = type.deriveConfiguration(base, dep, hasXapiCoord, trans, lenient);
+                    mod.setTargetConfiguration(derived);
+                    System.out.println("Derived " + derived + " for " + dep + " on " + base + " coords " + coords);
                 } else {
                     // using requireCapabilities results in runtime jars instead of compiled classpaths, so it is less ideal.
                     // also; we need to get better version information here.  This should come from whatever-is-handling schema.xapi
