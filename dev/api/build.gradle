@@ -1,9 +1,20 @@
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-process')
-    compile project(':xapi-core-parent:xapi-core-model')
-    compile project(':xapi-core-parent:xapi-core-io')
-    compile project(':xapi-core-parent:xapi-core-scope')
-    compile "net.wti.core:xapi-lang-core:${->version}"
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-process'
+        req.project 'xapi-model', 'main'
+        req.project 'xapi-core-parent:xapi-core-io'
+        req.project 'xapi-core-parent:xapi-core-scope'
+        req.external "net.wti.core:xapi-lang-core:$version", 'main'
 }
 
 test {

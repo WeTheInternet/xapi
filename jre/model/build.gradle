@@ -5,7 +5,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-common', 'jre:main'
-        req.project 'xapi-core-parent:xapi-core-model'
+        req.project 'xapi-model', 'main'
         req.project 'xapi-core-parent:xapi-core-io'
         req.project 'xapi-dev-parent:xapi-dev-template'
         req.project 'xapi-inject', 'jre:main'

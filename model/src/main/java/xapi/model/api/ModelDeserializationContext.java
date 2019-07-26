@@ -4,7 +4,6 @@
 package xapi.model.api;
 
 import xapi.model.service.ModelService;
-import xapi.source.api.CharIterator;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)

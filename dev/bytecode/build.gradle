@@ -1,12 +1,18 @@
+buildscript{
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+}
+
 plugins {
     id 'xapi-require'
 }
 
-xapiRequire.main().internal 'xapi-util:main:main'
-
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-reflect')
-    testCompile 'junit:junit:4.12'
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-util', 'main'
+        req.project 'xapi-core-parent:xapi-core-reflect'
 }
+xapiRequire.module('test').external 'junit:junit:4.12'
 
 description = 'XApi - Bytecode Reader'

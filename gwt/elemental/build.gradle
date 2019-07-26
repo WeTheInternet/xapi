@@ -5,18 +5,20 @@ plugins {
 import org.gradle.internal.jvm.Jvm
 
 xapiRequire.main().configure {
-    internal 'xapi-gwt-ui-parent:xapi-gwt-ui-html:main:main'
-    internal 'xapi-dev-parent:xapi-dev-javac:main:main'
-    external 'net.wetheinter:gwt-elemental:2.8.0'
-    external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
-    external 'net.wetheinter:gwt-user:2.8.0'
+    req ->
+        req.project 'xapi-gwt-ui-parent:xapi-gwt-ui-html', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.external 'net.wetheinter:gwt-elemental:2.8.0'
+        req.external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
+        req.external 'net.wetheinter:gwt-user:2.8.0'
 }
 
 xapiRequire.module('test').configure {
-    external 'junit:junit:4.12'
-    external 'info.cukes:cucumber-java:1.2.5'
-    external 'info.cukes:cucumber-junit:1.2.5'
-    external 'org.hamcrest:hamcrest-library:1.1'
+    req ->
+        req.external 'junit:junit:4.12'
+        req.external 'info.cukes:cucumber-java:1.2.5'
+        req.external 'info.cukes:cucumber-junit:1.2.5'
+        req.external 'org.hamcrest:hamcrest-library:1.1'
 }
 
 dependencies {

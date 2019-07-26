@@ -1,26 +1,24 @@
 import net.wti.gradle.internal.require.api.Requirable
+import net.wti.gradle.schema.api.Transitivity
 
-buildscript({
+buildscript{
     dependencies {
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
-})
+}
+
 plugins {
     id 'xapi-require'
 }
 
 xapiRequire.module('api').configure {
     Requirable req ->
-        req.internal 'xapi-common:main'
-        req.internal 'xapi-core-parent:xapi-core-args:main:main' // requires double-main, b/c two-parent project segment causes ambiguity
+        req.project 'xapi-common', 'main'
+        req.project 'xapi-core-parent:xapi-core-args', 'main'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
+        req.external Transitivity.compile_only, 'javax.inject:javax.inject:1'
 }
 
 xapiRequire.module('test').external 'junit:junit:4.12'
-
-xapiSchema.whenReady {
-    project.dependencies.add 'apiCompileOnly', 'net.wetheinter:gwt-dev:2.8.0'
-    project.dependencies.add 'apiCompileOnly', 'javax.inject:javax.inject:1'
-}
-
 
 description = 'XApi - Basic logger interface'

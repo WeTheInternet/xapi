@@ -6,11 +6,8 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
-import xapi.jre.model.ModelServiceJre;
 import xapi.model.X_Model;
-import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelModule;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelRating;
@@ -18,7 +15,6 @@ import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
 import xapi.time.X_Time;
 import xapi.util.api.Pointer;
-import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 
 public class ModelServiceTestJre {

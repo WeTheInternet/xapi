@@ -1,5 +1,9 @@
 import net.wti.gradle.schema.api.Transitivity
-
+buildscript{
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+}
 plugins { id 'xapi-require' }
 
 apply from: "$rootDir/gradle/processor.gradle"
@@ -8,21 +12,20 @@ xapiRequire.main().configure {
     req ->
         req.external "net.wti.gradle:xapi-gradle-api:$version", 'main'
         req.project 'xapi-dev-parent:xapi-dev-source'
-        req.project 'xapi-core-parent:xapi-core-model'
+        req.project 'xapi-model', 'main'
         req.project 'xapi-core-parent:xapi-core-process'
         req.project Transitivity.impl, 'xapi-inject', 'jre:main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
         req.project 'xapi-core-parent:xapi-core-io'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
+        req.external Transitivity.compile_only, 'junit:junit:4.12'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 
 }
 
 dependencies {
-    compileOnly 'junit:junit:4.12'
-    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
-    compileOnly 'net.wetheinter:gwt-user:2.8.0'
     annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
-
 }
 
 description = 'XApi - Gwt Compiler Api'

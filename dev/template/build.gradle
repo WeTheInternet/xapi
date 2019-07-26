@@ -1,20 +1,19 @@
-buildscript({
+buildscript{
     dependencies {
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
-})
+}
+
 plugins {
     id 'xapi-require'
 }
-xapiRequire.module('main').configure {
-    req ->
-        req.internal('xapi-log:main:api')
-}
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-args')
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    testCompile 'junit:junit:4.12'
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-log', 'main:api'
+        req.project 'xapi-core-parent:xapi-core-args'
+        req.project 'xapi-dev-parent:xapi-dev-source'
 }
+xapiRequire.module('test').external 'junit:junit:4.12'
 
 description = 'XApi - Code Generator Templates'

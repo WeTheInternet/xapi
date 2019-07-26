@@ -1,28 +1,31 @@
+import net.wti.gradle.schema.api.Transitivity
+buildscript{
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+}
+
 plugins {
     id 'xapi-require'
 }
-
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-lang-dev', 'main'
         req.project 'xapi-core-parent:xapi-core-scope', 'main'
         req.project 'xapi-core-parent:xapi-core-event', 'main'
-        req.project 'xapi-core-parent:xapi-core-model', 'main'
+        req.project 'xapi-model', 'main'
         req.project 'xapi-dev-parent:xapi-dev-file', 'main'
         req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+        req.external 'javax.validation:validation-api:1.0.0.GA'
+        req.external Transitivity.compile_only, 'net.wetheinter:jsinterop-annotations:2.8.0'
 }
 
 xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-jre-parent:xapi-jre-model'
         req.project 'xapi-common', 'testTools'
-}
-
-dependencies {
-    compile 'javax.validation:validation-api:1.0.0.GA'
-    compileOnly 'net.wetheinter:jsinterop-annotations:2.8.0'
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.assertj:assertj-core:3.2.0'
+        req.external 'junit:junit:4.12'
+        req.external 'org.assertj:assertj-core:3.2.0'
 }
 
 description = 'XApi - Core UI Apis'

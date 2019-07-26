@@ -7,17 +7,18 @@ plugins {
     id 'xapi-require'
 }
 
+xapiRequire.main().configure {
+    req ->
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project 'xapi-core-parent:xapi-core-io'
+        req.project 'xapi-model', 'main'
+}
+
 xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-collect', 'jre:main'
-}
-
-dependencies {
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile project(':xapi-core-parent:xapi-core-io')
-    compile project(':xapi-core-parent:xapi-core-model')
-    testCompile 'junit:junit:4.12'
-    testCompile project(':xapi-jre-parent:xapi-jre-model')
+        req.project 'xapi-jre-parent:xapi-jre-model'
+        req.external 'junit:junit:4.12'
 }
 
 description = 'XApi - Settings API'

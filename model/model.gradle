@@ -10,6 +10,15 @@ plugins {
     id 'xapi-require'
 }
 
+xapiRequire.module('main').configure {
+    req ->
+        req.project 'xapi-inject'
+        req.project 'xapi-collect'
+        req.external Transitivity.compile_only, 'net.wetheinter:jsinterop-annotations:2.8.0'
+        req.project 'xapi-dev-parent:xapi-dev-source'
+        req.project 'xapi-dev-parent:xapi-dev-bytecode'
+}
+
 xapiRequire.module('gwt', 'test').configure {
     req ->
         req.project 'xapi-gwt-model', 'main:main'
@@ -22,3 +31,5 @@ xapiRequire.module('gwt', 'test').configure {
         req.project 'xapi-server-parent:xapi-server-api'
         req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
 }
+
+description = 'XApi - Data model core API'

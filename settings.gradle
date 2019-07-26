@@ -157,7 +157,6 @@ singleProject.forEach({
 })
 
 include(':xapi-core-parent:xapi-core-reflect')
-include(':xapi-core-parent:xapi-core-model')
 include(':xapi-core-parent:xapi-core-io')
 include(':xapi-core-parent:xapi-core-scope')
 include(':xapi-core-parent:xapi-core-process')
@@ -215,7 +214,6 @@ include(':xapi-samples:xapi-demo')
 include(':xapi-samples')
 
 project(':xapi-core-parent:xapi-core-reflect').projectDir = file('core/reflect')
-project(':xapi-core-parent:xapi-core-model').projectDir = file('core/model')
 project(':xapi-core-parent:xapi-core-io').projectDir = file('core/io')
 project(':xapi-core-parent:xapi-core-scope').projectDir = file('core/scope')
 project(':xapi-core-parent:xapi-core-process').projectDir = file('core/process')
