@@ -1,8 +1,19 @@
+buildscript {
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+}
+plugins {
+    id 'xapi-require'
+}
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-collect', 'jre:main'
+}
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
     compile project(':xapi-jre-parent:xapi-jre-io')
-    compile project(':xapi-jre-parent:xapi-jre-collect')
     compile project(':xapi-core-parent:xapi-core-io')
     compile project(':xapi-dev-parent:xapi-dev-javac')
 }

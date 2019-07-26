@@ -1,12 +1,22 @@
-buildscript.dependencies.add 'classpath',
-        'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+buildscript{
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+}
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-collect', 'jre:main'
+}
 
 dependencies {
     compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-core-parent:xapi-core-io')
     compile project(':xapi-core-parent:xapi-core-model')
     testCompile 'junit:junit:4.12'
-    testCompile project(':xapi-jre-parent:xapi-jre-collect')
     testCompile project(':xapi-jre-parent:xapi-jre-model')
 }
 

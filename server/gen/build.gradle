@@ -1,6 +1,16 @@
-import xapi.gradle.X_Gradle
-X_Gradle.init project
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+plugins {
+    id 'xapi-require'
+}
 
+xapiRequire.module('test').configure {
+    req ->
+        req.project ':xapi-collect', 'jre:main'
+}
 dependencies {
     compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-server-parent:xapi-server-api')
@@ -14,7 +24,6 @@ dependencies {
     testCompile 'org.eclipse.jetty:jetty-server:9.4.18.v20190429'
     testCompile 'org.eclipse.jetty:jetty-servlet:9.4.18.v20190429'
     testCompile project(':xapi-dev-parent:xapi-dev-scanner')
-    testCompile project(':xapi-jre-parent:xapi-jre-collect')
     testCompile 'junit:junit:4.12'
     testCompile 'info.cukes:cucumber-java:1.2.5'
     testCompile 'info.cukes:cucumber-junit:1.2.5'

@@ -1,3 +1,9 @@
+import net.wti.gradle.schema.api.Transitivity
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
 plugins {
     id 'groovy'
     id 'xapi-require'
@@ -9,9 +15,9 @@ xapiRequire.main().configure {
         req.internal 'xapi-collect:main'
         req.external "net.wti.core:xapi-fu:${->version}", 'main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project Transitivity.runtime, 'xapi-collect', 'jre:main'
 }
 
 dependencies {
     implementation project(':xapi-core-parent:xapi-core-reflect')
-    runtime project(':xapi-jre-parent:xapi-jre-collect')
 }
