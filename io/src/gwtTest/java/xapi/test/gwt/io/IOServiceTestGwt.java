@@ -32,7 +32,7 @@ import com.google.gwt.xhr.client.XMLHttpRequest;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-public class IOServiceTest extends GWTTestCase{
+public class IOServiceTestGwt extends GWTTestCase{
 
     protected IOService service() {
       return new IOServiceGwt() {

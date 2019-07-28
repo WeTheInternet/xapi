@@ -289,11 +289,6 @@ public class XapiSchema {
             archGraph.importLocal(parentArch, DefaultUsageType.Api, Transitivity.api, false);
             archGraph.importLocal(parentArch, DefaultUsageType.Runtime, Transitivity.runtime, false);
 
-            platGraph.project().whenReady(ReadyState.AFTER_CREATED, ready->{
-                // Need to rebase our .required names.
-//                ((ArchiveConfigInternal)archConfig).fixRequires(platConfig);
-            });
-
         }
 
         final ConfigurationPublications exportedApi = archGraph.configExportedApi().getOutgoing();
@@ -333,17 +328,6 @@ public class XapiSchema {
             final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion());
             view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
             exportedRuntime.artifact(artifact);
-//            final ConfigurationVariant runtimeVariant = exportedRuntime.getVariants().maybeCreate(
-//                "runtime");
-//            runtimeVariant.artifact(artifact);
-//            final AttributeContainer attrs = runtimeVariant.getAttributes();
-//            archGraph.withAttributes(attrs);
-//            attrs.attribute(
-//                Usage.USAGE_ATTRIBUTE, view.getProjectGraph().usage(Usage.JAVA_RUNTIME_JARS)
-//            );
-//            attrs.attribute(
-//                ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE
-//            );
 
             exportedRuntime.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
 
@@ -412,15 +396,21 @@ public class XapiSchema {
                 if (lenient) {
                     need = need.substring(0, need.length()-1);
                 }
-                PlatformConfigInternal plat = view.getSchema().findPlatform(need);
+                PlatformConfigInternal plat = null;
+                if (need.contains(":")) {
+                    String[] bits = need.split(":");
+                    assert bits.length == 2 : "Malformed module require: " + need + " can have at most one :";
+                    plat = view.getSchema().findPlatform(bits[0]);
+                    need = bits[1];
+                }
                 if (plat == null) {
-                    plat = (PlatformConfigInternal) platConfig;//view.getSchema().getMainPlatform();
+                    plat = (PlatformConfigInternal) platConfig;
                 }
                 final String platName = plat.getName();
                 if (!platName.equals(need)) {
                     need = GUtil.toLowerCamelCase(need.replace(platName, ""));
                 }
-                final PlatformGraph needPlat = platGraph.project().platform(plat.getName());
+                final PlatformGraph needPlat = platGraph.project().platform(platName);
                 final ArchiveGraph neededArchive = needPlat.archive(need);
 
                 if (neededArchive.srcExists()) {
