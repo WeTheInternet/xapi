@@ -1,34 +1,36 @@
-buildscript{
+// only needed for auto-complete support in IDE:
+buildscript({
     dependencies {
-        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
-}
+})
 
 plugins {
     id 'xapi-require'
 }
 
-xapiRequire {
-    main.test.project ':xapi-server-parent:xapi-server-gen', 'main:sample'
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-server-parent:xapi-server-gen', 'main'
+        req.project 'xapi-server-parent:xapi-server-api', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'main'
+        req.project 'xapi-process', 'jre:main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.external 'io.vertx:vertx-web:3.5.3'
+        req.external 'io.vertx:vertx-hazelcast:3.5.3'
+        req.external 'io.vertx:vertx-auth-oauth2:3.5.3'
 }
-
-dependencies {
-    compile project(':xapi-server-parent:xapi-server-gen')
-    compile project(':xapi-server-parent:xapi-server-api')
-    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
-    compile project(':xapi-jre-parent:xapi-jre-process')
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-dev-parent:xapi-dev-maven')
-    compile project(':xapi-dev-parent:xapi-dev-javac')
-    compile 'io.vertx:vertx-web:3.5.3'
-    compile 'io.vertx:vertx-hazelcast:3.5.3'
-    compile 'io.vertx:vertx-auth-oauth2:3.5.3'
-    testCompile project(':xapi-dev-parent:xapi-dev-scanner')
-    testCompile project(':xapi-server-parent:xapi-server-gen')
-    testCompile project(':xapi-dev-parent:xapi-dev-javac')
-    testCompile 'info.cukes:cucumber-java:1.2.5'
-    testCompile 'info.cukes:cucumber-junit:1.2.5'
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-server-parent:xapi-server-gen', 'main:sample'
+        req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+        req.project 'xapi-server-parent:xapi-server-gen', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.external 'info.cukes:cucumber-java:1.2.5'
+        req.external 'info.cukes:cucumber-junit:1.2.5'
 }
 
 test {

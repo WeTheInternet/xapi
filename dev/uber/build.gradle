@@ -66,7 +66,7 @@ xapiRequire.main().configure {
         req.project 'xapi-server-parent:xapi-server-vertx'
         req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
         req.project 'xapi-inject', 'jre:main'
-        req.project 'xapi-jre-parent:xapi-jre-process'
+        req.project 'xapi-process', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-file'
         req.project 'xapi-dev-parent:xapi-dev-shell'
         req.project 'xapi-dev-parent:xapi-dev-scanner'

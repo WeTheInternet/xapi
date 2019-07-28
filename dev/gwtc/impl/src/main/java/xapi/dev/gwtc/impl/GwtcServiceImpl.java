@@ -320,7 +320,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           urls.add(downloadDependency(dep));
         }
         if (needsJreProcess) {
-          final MvnDependency dep = getDependency("xapi-jre-process");
+          final MvnDependency dep = getDependency("xapi-process-jre");
           urls.add(downloadDependency(dep));
         }
       }

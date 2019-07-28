@@ -1,40 +1,39 @@
+// only needed for auto-complete support in IDE:
 buildscript({
     dependencies {
-        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
 })
+import net.wti.gradle.schema.api.Transitivity
+
 plugins {
     id 'xapi-require'
 }
 
+xapiRequire.main.configure {
+    req ->
+        req.project 'xapi-process', 'jre:main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project 'xapi-server-parent:xapi-server-api', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-api', 'main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'
+        req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
+        req.project Transitivity.compile_only, 'xapi-dev-parent:xapi-dev-javac'
+        
+}
 xapiRequire.module('test').configure {
     req ->
-        req.project ':xapi-collect', 'jre:main'
-}
-dependencies {
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile project(':xapi-server-parent:xapi-server-api')
-    compile project(':xapi-dev-parent:xapi-dev-javac')
-    compile project(':xapi-dev-parent:xapi-dev-api')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
-    compile project(':xapi-jre-parent:xapi-jre-process')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    implementation 'net.wetheinter:gwt-user:2.8.0'
-    testCompile 'javax.servlet:javax.servlet-api:3.1-b02'
-    testCompile 'org.eclipse.jetty:jetty-server:9.4.18.v20190429'
-    testCompile 'org.eclipse.jetty:jetty-servlet:9.4.18.v20190429'
-    testCompile project(':xapi-dev-parent:xapi-dev-scanner')
-    testCompile 'junit:junit:4.12'
-    testCompile 'info.cukes:cucumber-java:1.2.5'
-    testCompile 'info.cukes:cucumber-junit:1.2.5'
-    compileOnly project(':xapi-dev-parent:xapi-dev-javac')
-    testRuntime project(':xapi-dev-parent:xapi-dev-javac')
-}
-
-task packageTests(type: Jar) {
-    classifier = 'tests'
-    from(sourceSets.test.output)
+        req.project 'xapi-collect', 'jre:main'
+        req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+        req.external 'javax.servlet:javax.servlet-api:3.1-b02'
+        req.external 'org.eclipse.jetty:jetty-server:9.4.18.v20190429'
+        req.external 'org.eclipse.jetty:jetty-servlet:9.4.18.v20190429'
+        req.external 'junit:junit:4.12'
+        req.external 'info.cukes:cucumber-java:1.2.5'
+        req.external 'info.cukes:cucumber-junit:1.2.5'
+        req.project Transitivity.runtime, 'xapi-dev-parent:xapi-dev-javac'
 }
 
 description = 'XApi - Server generator'
-artifacts.archives(tasks.packageTests)

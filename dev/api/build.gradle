@@ -10,7 +10,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-process'
+        req.project 'xapi-process', 'main'
         req.project 'xapi-model', 'main'
         req.project 'xapi-io', 'main'
         req.project 'xapi-core-parent:xapi-core-scope'

@@ -11,7 +11,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-common', 'jre:main'
-        req.project 'xapi-jre-parent:xapi-jre-process'
+        req.project 'xapi-process', 'jre:main'
         req.project 'xapi-collect', 'jre:main'
         req.project 'xapi-io', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-scanner'
