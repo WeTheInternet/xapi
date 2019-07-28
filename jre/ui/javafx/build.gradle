@@ -1,18 +1,20 @@
-buildscript {
+// only needed for auto-complete support in IDE:
+buildscript({
     dependencies {
-        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
-}
+})
+
 plugins {
     id 'xapi-require'
 }
+
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-collect', 'jre:main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components', 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
-        req.project 'xapi-jre-parent:xapi-jre-io', 'main'
-        req.project 'xapi-io', 'main'
+        req.project 'xapi-io', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
 }
 

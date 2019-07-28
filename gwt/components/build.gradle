@@ -1,5 +1,10 @@
-
 import net.wti.gradle.schema.api.Transitivity
+// only needed for auto-complete support in IDE:
+buildscript({
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
+    }
+})
 plugins {
     id 'xapi-require'
 }
@@ -11,14 +16,15 @@ sourceSets.getByName('main').java {
 }
 
 xapiRequire.main().configure {
-    external "net.wti.core:xapi-lang-core:${->version}", 'main'
-    project 'xapi-gwt3'
-    project 'xapi-elemental'
-    project 'xapi-jre-parent:xapi-jre-io'
-    project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator'
-    project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
-    external 'net.wetheinter:gwt-user:2.8.0'
-    external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
+    req ->
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project 'xapi-gwt3'
+        req.project 'xapi-elemental'
+        req.project 'xapi-io', 'jre:main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.external 'net.wetheinter:gwt-user:2.8.0'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
 }
 
 xapiRequire.module('test').configure {

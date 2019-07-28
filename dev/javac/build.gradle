@@ -19,7 +19,7 @@ xapiRequire.main().configure {
     req ->
         req.external "net.wti.core:xapi-fu:${->version}", 'main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
-        req.project 'xapi-jre-parent:xapi-jre-io'
+        req.project 'xapi-io', 'jre:main'
         req.project 'xapi-core-parent:xapi-core-scope'
         req.project 'xapi-inject', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-file'
