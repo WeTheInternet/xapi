@@ -9,7 +9,7 @@ repositories {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-io'
+        req.project 'xapi-io', 'main'
         req.project 'xapi-collect', 'gwt:main'
         req.external 'net.wetheinter:jsinterop-annotations:2.8.0'
 

@@ -1,11 +1,21 @@
-project.getObjects()
+// only needed for auto-complete support in IDE:
+buildscript({
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
+    }
+})
 
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-io')
-    compile project(':xapi-core-parent:xapi-core-scope')
+plugins {
+    id 'xapi-require'
 }
+
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-io', 'main'
+        req.project 'xapi-core-parent:xapi-core-scope', 'main'
+}
+
 gradle.projectsEvaluated {
-    
     test {
         maxHeapSize = '2G'
     }

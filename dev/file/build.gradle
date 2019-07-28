@@ -2,7 +2,7 @@ plugins {
     id 'xapi-require'
 }
 
-xapiRequire.main().project('xapi-core-parent:xapi-core-io')
+xapiRequire.main().project 'xapi-io', 'main'
 xapiRequire.module('test').project 'xapi-common', 'testTools'
 
 description = 'XApi - java.io.File utilities'

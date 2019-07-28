@@ -12,7 +12,7 @@ xapiRequire.main().configure {
     req ->
         req.project 'xapi-core-parent:xapi-core-process'
         req.project 'xapi-model', 'main'
-        req.project 'xapi-core-parent:xapi-core-io'
+        req.project 'xapi-io', 'main'
         req.project 'xapi-core-parent:xapi-core-scope'
         req.external "net.wti.core:xapi-lang-core:$version", 'main'
 }

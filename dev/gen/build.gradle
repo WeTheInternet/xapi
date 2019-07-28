@@ -6,8 +6,8 @@ xapiRequire.main().configure {
     req ->
         req.external "net.wti.core:xapi-lang-core:${->version}"
         req.project 'xapi-inject', 'jre:main'
-        req.project 'xapi-lang-dev'
-        req.project 'xapi-core-parent:xapi-core-io'
+        req.project 'xapi-lang-dev', 'main'
+        req.project 'xapi-io', 'main'
         req.project 'xapi-dev-parent:xapi-dev-javac'
         req.project 'xapi-dev-parent:xapi-dev-scanner'
 }

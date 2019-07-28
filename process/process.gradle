@@ -1,0 +1,11 @@
+// only needed for auto-complete support in IDE:
+buildscript({
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
+    }
+})
+import net.wti.gradle.schema.api.Transitivity
+
+plugins {
+    id 'xapi-require'
+}

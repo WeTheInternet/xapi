@@ -1,3 +1,10 @@
+// only needed for auto-complete support in IDE:
+buildscript({
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
+    }
+})
+
 plugins {
     id 'xapi-require'
 }
@@ -8,5 +15,3 @@ xapiRequire.module('test').configure {
         req.project 'xapi-common', 'testTools'
         req.external 'org.json:json:20141113'
 }
-
-description = 'XApi - IO core API'

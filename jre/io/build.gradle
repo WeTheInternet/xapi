@@ -1,5 +1,5 @@
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-io')
 }
 
 description = 'XApi - Jre core API'

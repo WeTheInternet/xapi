@@ -9,13 +9,11 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-collect', 'jre:main'
-}
-dependencies {
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components')
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
-    compile project(':xapi-jre-parent:xapi-jre-io')
-    compile project(':xapi-core-parent:xapi-core-io')
-    compile project(':xapi-dev-parent:xapi-dev-javac')
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components', 'main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
+        req.project 'xapi-jre-parent:xapi-jre-io', 'main'
+        req.project 'xapi-io', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
 }
 
 description = 'XApi - Jre JavaFx UI'
