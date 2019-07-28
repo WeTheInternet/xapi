@@ -24,7 +24,7 @@ xapiRequire.module('gwt', 'main').configure {
     req ->
         req.project 'xapi-common', 'jre:main'
         req.project 'xapi-collect', 'gwt:main'
-        req.project 'xapi-gwt-io', 'main'
+        req.project 'xapi-io', 'gwt:main'
         req.project 'xapi-model', 'main'
         req.external "net.wti.core:xapi-gen:$version", 'main'
         req.project 'xapi-lang-dev', 'main'
@@ -42,7 +42,7 @@ xapiRequire.module('gwt', 'test').configure {
         req.external 'junit:junit:4.12'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
         req.project 'xapi-model', 'jre:main'
-        req.project 'xapi-gwt-io'
+        req.project 'xapi-io', 'gwt:main'
         req.project 'xapi-server-parent:xapi-server-api'
         req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
 

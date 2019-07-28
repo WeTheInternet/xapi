@@ -1,3 +1,5 @@
+import net.wti.gradle.schema.api.Transitivity
+
 // only needed for auto-complete support in IDE:
 buildscript({
     dependencies {
@@ -14,4 +16,19 @@ xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-common', 'testTools'
         req.external 'org.json:json:20141113'
+}
+
+xapiRequire.module('gwt', 'main').configure {
+    req ->
+        req.project 'xapi-collect', 'gwt:main'
+        req.external 'net.wetheinter:jsinterop-annotations:2.8.0'
+        req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
+}
+xapiRequire.module('gwt', 'test').configure {
+    req ->
+        req.external 'net.wetheinter:gwt-user:2.8.0'
+        req.external 'net.wetheinter:gwt-dev:2.8.0'
+        req.external 'net.wetheinter:gwt-codeserver:2.8.0'
+        req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
+        req.external 'junit:junit:4.12'
 }
