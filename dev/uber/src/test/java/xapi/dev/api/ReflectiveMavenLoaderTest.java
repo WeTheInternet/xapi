@@ -75,7 +75,7 @@ public class ReflectiveMavenLoaderTest {
         final URL[] classpath =
             downloadDependencies(loader.getDependency("xapi-dev-api"))
             .out1()
-            .append(downloadDependencies(loader.getDependency("xapi-jre-model")).out1())
+            .append(downloadDependencies(loader.getDependency("xapi-model-jre")).out1())
             .append(downloadDependencies(loader.getDependency("xapi-collect-jre")).out1())
             .appendItems(X_Reflect.getFileLoc(IsolatedMvnTestThread.class), X_Reflect.getFileLoc(Assert.class))
             .map(s->"file://" + s)
