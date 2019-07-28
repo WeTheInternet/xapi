@@ -244,7 +244,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
           model = ctx.getTypeOracle().getType(Model.class.getName());
         } catch (final NotFoundException e) {
           logger.log(Type.ERROR, "Cannot load " + Model.class.getName() + "; " +
-            "make sure you have xapi-gwt-model:sources.jar on classpath.");
+            "make sure you have xapi-model-gwt:sources.jar on classpath.");
           throw new UnableToCompleteException();
         }
         assert model != null : "Could not find " + Model.class.getCanonicalName() + " on the classpath";

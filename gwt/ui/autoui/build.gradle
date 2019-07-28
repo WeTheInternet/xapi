@@ -16,7 +16,7 @@ xapiRequire.main().configure {
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
         req.project 'xapi-core-parent:xapi-core-event'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
-        req.project 'xapi-gwt-model'
+        req.project 'xapi-model', 'gwt:main'
         req.project 'xapi-dev-parent:xapi-dev-source'
         req.project 'xapi-inject', 'jre:main'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'

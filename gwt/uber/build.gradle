@@ -1,4 +1,4 @@
-
+import net.wti.gradle.schema.api.Transitivity
 buildscript {
     repositories {
         maven {
@@ -10,8 +10,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
-        classpath 'net.wti.gradle:xapi-gradle-meta:0.5.1'
-        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+        classpath "net.wti.gradle:xapi-gradle-meta:$version"
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
 }
 plugins {
@@ -36,29 +36,24 @@ xapiRequire.main().configure {
         req.project 'xapi-inject', 'gwt:main'
         req.project 'xapi-collect', 'gwt:main'
         req.project 'xapi-common', 'gwt:testTools'
+        req.project 'xapi-gwt3', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-source', 'main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
+        req.project 'xapi-core-parent:xapi-core-reflect', 'main'
+        req.project 'xapi-elemental', 'main'
+        req.project 'xapi-model', 'gwt:main'
+        req.project 'xapi-gwt-process', 'main'
+        req.project 'xapi-gwt-io', 'main'
+        req.project 'xapi-dev-gwtc:xapi-gwtc-api', 'main'
 }
 
-dependencies {
-    compile project(':xapi-gwt3')
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    compile "net.wti.core:xapi-lang-core:${->version}"
-    compile project(':xapi-core-parent:xapi-core-reflect')
-    compile project(':xapi-elemental')
-    compile project(':xapi-gwt-model')
-    compile project(':xapi-gwt-process')
-    compile project(':xapi-gwt-io')
-    compile project(':xapi-dev-gwtc:xapi-gwtc-api')
-    testCompile 'net.wetheinter:gwt-codeserver:2.8.0'
-    testCompile 'net.wetheinter:gwt-user:2.8.0'
-    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
-    testCompile 'junit:junit:4.12'
-    testRuntime 'junit:junit:4.12:sources'
-}
-
-task packageTests(type: Jar) {
-    classifier = 'tests'
-    from(sourceSets.test.output)
+xapiRequire.module('test').configure {
+    req ->
+        req.external 'net.wetheinter:gwt-codeserver:2.8.0'
+        req.external 'net.wetheinter:gwt-user:2.8.0'
+        req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
+        req.external 'junit:junit:4.12'
+        req.external Transitivity.runtime, 'junit:junit:4.12:sources'
 }
 
 description = 'XApi - Gwt uber jar'
-artifacts.archives(tasks.packageTests)

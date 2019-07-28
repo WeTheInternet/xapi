@@ -1,7 +1,7 @@
 // only needed for auto-complete support in IDE:
 buildscript({
     dependencies {
-        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
 })
 import net.wti.gradle.schema.api.Transitivity
@@ -10,7 +10,7 @@ plugins {
     id 'xapi-require'
 }
 
-xapiRequire.module('main').configure {
+xapiRequire.main().configure {
     req ->
         req.project 'xapi-inject'
         req.project 'xapi-collect'
@@ -19,10 +19,25 @@ xapiRequire.module('main').configure {
         req.project 'xapi-dev-parent:xapi-dev-bytecode'
 }
 
+
+xapiRequire.module('gwt', 'main').configure {
+    req ->
+        req.project 'xapi-common', 'jre:main'
+        req.project 'xapi-collect', 'gwt:main'
+        req.project 'xapi-gwt-io', 'main'
+        req.project 'xapi-model', 'main'
+        req.external "net.wti.core:xapi-gen:$version", 'main'
+        req.project 'xapi-lang-dev', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-source', 'main'
+        req.project 'xapi-core-parent:xapi-core-reflect', 'main'
+        req.project 'xapi-collect', 'jre:main'
+        req.project 'xapi-inject', 'jre:main'
+        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
+        req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
+}
+
 xapiRequire.module('gwt', 'test').configure {
     req ->
-        req.project 'xapi-gwt-model', 'main:main'
-
         req.project 'xapi-common', 'testTools'
         req.external 'junit:junit:4.12'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
@@ -30,6 +45,7 @@ xapiRequire.module('gwt', 'test').configure {
         req.project 'xapi-gwt-io'
         req.project 'xapi-server-parent:xapi-server-api'
         req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
+
 }
 
-description = 'XApi - Data model core API'
+description = 'XApi - Data model'

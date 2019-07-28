@@ -212,7 +212,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
   private void bailNoGwtModel(final TreeLogger logger) throws UnableToCompleteException {
     logger.log(Type.ERROR, "Could not find "+ModelGwt.class.getName()+" on " +
-    		"source lookup path for gwt compile.  Ensure you inherit artifact xapi-gwt-model.");
+    		"source lookup path for gwt compile.  Ensure you inherit artifact xapi-model-gwt.");
     throw new UnableToCompleteException();
   }
 
