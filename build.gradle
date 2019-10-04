@@ -38,9 +38,18 @@ allprojects {
 
         // TODO: remove this by priming xapiLocal repo with all external dependencies
         repositories.jcenter()
+//repositories {
+//    maven {
+//        name = 'xapiExternal'
+//        url = new URI("file://$project.rootDir/repo")
+//        metadataSources { sources ->
+//            sources.mavenPom()
+//        }
+//    }
+//}
 
     }
-        
+
 }
 
 gradle.beforeProject {

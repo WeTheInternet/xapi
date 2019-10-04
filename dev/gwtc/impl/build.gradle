@@ -7,7 +7,15 @@ buildscript({
 plugins {
     id 'xapi-require'
 }
-
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
 repositories {

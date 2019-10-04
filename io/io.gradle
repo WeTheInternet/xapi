@@ -11,6 +11,16 @@ plugins {
     id 'xapi-require'
 }
 
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
+
 xapiRequire.main().project 'xapi-util'
 xapiRequire.module('test').configure {
     req ->

@@ -9,6 +9,16 @@ buildscript({
 plugins { id 'xapi-require' }
 evaluationDependsOn(':xapi-collect')
 
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir.parent/xapi/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
+
 String v = version
 
 xapiRequire.module('api').configure {

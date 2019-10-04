@@ -12,6 +12,15 @@ plugins {
     id 'xapi-require'
 }
 
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
 
 import org.gradle.internal.jvm.Jvm
 

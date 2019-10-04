@@ -5,6 +5,16 @@ buildscript({
 })
 plugins { id 'xapi-require' }
 
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir.parent/xapi/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
+
 String v = version
 
 // perform project-local alterations to our schema;

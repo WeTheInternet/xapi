@@ -1,7 +1,15 @@
 repositories {
     jcenter()
 }
-
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
 dependencies {
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
     compileOnly 'net.wetheinter:gwt-user:2.8.0'

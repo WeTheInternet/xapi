@@ -8,6 +8,16 @@ buildscript({
 plugins { id 'xapi-require' }
 evaluationDependsOn(':schema')
 
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
+
 final String v = version
 
 xapiRequire.main().project 'xapi-inject'

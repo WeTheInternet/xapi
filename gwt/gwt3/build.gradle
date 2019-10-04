@@ -1,7 +1,15 @@
 plugins {
     id 'xapi-require'
 }
-
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
 xapiRequire.main().configure {
     project 'xapi-common', 'gwt:main'
     project 'xapi-gwt-ui-parent:xapi-gwt-ui-api'

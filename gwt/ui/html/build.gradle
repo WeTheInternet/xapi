@@ -7,6 +7,16 @@ repositories {
     jcenter()
 }
 
+repositories {
+    maven {
+        name = 'xapiExternal'
+        url = new URI("file://$project.rootDir/repo")
+        metadataSources { sources ->
+            sources.mavenPom()
+        }
+    }
+}
+
 xapiRequire {
 }
 xapiRequire.main().configure {
