@@ -7,6 +7,7 @@ xapiRequire.main().configure {
         req.project 'xapi-util', 'main'
         req.project 'xapi-collect', 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.external 'javax.inject:javax.inject:1:sources'
 }
 
 xapiRequire.module('test').configure {

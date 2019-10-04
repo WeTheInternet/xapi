@@ -183,7 +183,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
             )
         );
 //        // publish the main artifact.  All items above are child modules (~variants) of the XapiLibrary
-        // Disabled, as it currently inferes w/ "just get it directly from other publications".
+        // Disabled, as it currently interferes w/ "just get it directly from other publications".
 //        MavenPublication mainPub = publications.create("xapi", MavenPublication.class);
 //        mainPub.from(lib);
 

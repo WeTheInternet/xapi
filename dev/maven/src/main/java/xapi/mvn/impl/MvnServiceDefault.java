@@ -63,13 +63,12 @@ import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 
 import static xapi.fu.itr.Chain.startChain;
@@ -166,38 +165,61 @@ public class MvnServiceDefault implements MvnService {
   protected StringTo<Model> loadLocalProjects() {
     StringTo<Model> models = X_Collect.newStringMap(Model.class);
     workspaces.out1().forAllUnsafe(p->{
-      final Model root = loadPomFile(p.resolve("pom.xml").toString());
-      if (root != null) {
-          recursiveLoadLocalProject(models, root, p);
-      }
+        Path resolved;
+        // hm...  in reality, we should be reading the xapi.schema file here,
+        // instead of relying on publication snooping... ...but, we don't intend
+        // to support third party use cases at this time.
+        resolved = p.resolve("build/publications");
+        if (Files.exists(resolved)) { // if we have publications, use the defaults
+            try (DirectoryStream<Path> publications = Files.newDirectoryStream(resolved)) {
+                for (Path module : publications) {
+                    final Path pom = module.resolve("pom-default.xml");
+                    if (Files.exists(pom)) {
+                        final Model root = loadPomFile(pom.toString());
+                        if (root != null) {
+                            recursiveLoadLocalProject(models, root, pom.getParent());
+                        }
+                    }
+                }
+            }
+            return; // if build/publications exists, use it.
+        }
+        Model pom = findAPom(p);
+        if (pom != null) {
+            final Path asPath = Paths.get(pom.getPomFile().getAbsolutePath());
+            recursiveLoadLocalProject(models, pom, asPath.getParent());
+        }
     });
     return models;
   }
 
-  protected void recursiveLoadLocalProject(StringTo<Model> models, Model root, Path path) {
+  protected void recursiveLoadLocalProject(StringTo<Model> models, Model root, Path path)
+  throws IOException, XmlPullParserException {
       findXapiMeta(root, path);
     String groupId = findGroupId(root);
     if (groupId != null) {
       models.put(groupId + ":" + root.getArtifactId(), root);
     }
     models.putIfUnchanged(root.getArtifactId(), null, root);
-    final List<String> modules = root.getModules();
-    if (modules != null) {
-      for (String module : modules) {
-        final Path loc = path.resolve(module).resolve("pom.xml");
-        if (Files.exists(loc)) {
-          try {
-            final Model child = loadPomFile(loc.toString());
-            recursiveLoadLocalProject(models, child, loc.getParent());
-          } catch (XmlPullParserException | IOException e) {
-            X_Log.warn(MvnServiceDefault.class, "Invalid pom @ ", loc, e);
+      final List<String> modules = root.getModules();
+      if (modules != null) {
+          for (String module : modules) {
+              final Path modDir = path.resolve(module);
+              final Model child = findAPom(modDir);
+              if (child != null) {
+                  Path asPath = Paths.get(child.getPomFile().getAbsolutePath());
+                  try {
+                      recursiveLoadLocalProject(models, child, asPath.getParent());
+                  } catch (XmlPullParserException | IOException e) {
+                      X_Log.warn(MvnServiceDefault.class, "Invalid pom @ ", asPath, e);
+                  }
+              } else {
+                  // hideous warning...?
+                  X_Log.warn(MvnServiceDefault.class, "Unable to find a module at ", modDir);
+              }
           }
-        } else {
-          // hideous warning... broken reactor
-        }
-      }
 
-    }
+      }
   }
 
     private void findXapiMeta(Model root, Path path) {
@@ -309,14 +331,43 @@ public class MvnServiceDefault implements MvnService {
     // not configured.  Compute from workspace root poms.
     return workspaces.out1()
         .mapUnsafe(p->{
-          final Model f = loadPomFile(p.resolve("pom.xml").toString());
-          return f.getGroupId();
+            final Model f = findAPom(p);
+            return f == null ? null : f.getGroupId();
         })
         .filterNull()
         .cached();
   }
 
-  protected SizedIterable<Path> loadWorkspaces() {
+    protected Model findAPom(Path p) throws IOException, XmlPullParserException {
+
+        Path resolved = p.resolve("build/publications/_main_main/pom-default.xml");
+        if (Files.exists(resolved)) {
+            return loadPomFile(resolved.toString());
+        }
+
+        resolved = p.resolve("build/generated/poms/pom.xml");
+        if (Files.exists(resolved)) {
+            return loadPomFile(resolved.toString());
+        }
+
+        // we deprioritize a plain pom.xml, since our builds are all gradle builds, these days.
+        // if someone in a maven project wants to put in some wiring to optionally test this sooner,
+        // a pull request is welcome.
+        resolved = p.resolve("pom.xml");
+        if (Files.exists(resolved)) {
+            return loadPomFile(resolved.toString());
+        }
+
+        // finally, in case it's a jar in a directory w/ it's gradle artifactId .pom, look at sibling directories.
+        p = p.resolve(p.getFileName().toString().replaceAll(".jar$", ".pom"));
+        if (Files.exists(p)) {
+            return loadPomFile(p.toString());
+        } else {
+            return null;
+        }
+    }
+
+    protected SizedIterable<Path> loadWorkspaces() {
     String locations = System.getProperty(X_Namespace.PROPERTY_MAVEN_WORKSPACE, "/opt/xapi /opt/wti");
     return ArrayIterable
         .iterate(locations.split("(?<!\\\\)\\s+"))
@@ -851,7 +902,7 @@ public class MvnServiceDefault implements MvnService {
           }
           return MappedIterable.mapped(loadDependencies(artifact, this::shouldLoad));
         } catch (Throwable t) {
-            X_Log.error("Error encountered downloading artifact ", dep, t);
+            X_Log.error(MvnServiceDefault.class, "Error encountered downloading artifact ", dep, t);
             return EmptyIterator.none();
         }
     });
@@ -1004,7 +1055,9 @@ public class MvnServiceDefault implements MvnService {
       );
       final Model parentPom = parentArtifact == null ? null : loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
       // If we have a parent, push a provider onto the search stack
-      loadParent(stack, parentPom.getParent());
+      if (parentPom != null) {
+        loadParent(stack, parentPom.getParent());
+      }
       return parentPom;
     });
   }

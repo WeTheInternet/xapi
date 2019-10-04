@@ -1,0 +1,73 @@
+plugins {
+    id 'xapi-require'
+    id 'groovy'
+}
+
+repositories.jcenter()
+
+String xapiHome = rootDir.parent
+apply from: "$xapiHome/gradle/xapi-env.gradle"
+apply from: "$xapiHome/gradle/int-test.gradle"
+
+
+xapiRequire.main().configure {
+    external "net.wti.gradle.tools:xapi-gradle-tools:${->version}", 'main'
+    external "net.wti.core:xapi-gen:${->version}", 'main'
+    external "net.wti.core:xapi-lang-core:${->version}", 'main'
+}
+
+xapiRequire.module('test').configure {
+    external "net.wti.gradle.tools:xapi-gradle-test:${->version}", 'main'
+}
+
+dependencies {
+    compileOnly gradleApi()
+}
+
+
+String doc = '''The loader plugin is a *settings.gradle* plugin which creates projects from schema.xapi files.
+
+After you `apply plugin: 'xapi-loader'` in your settings.gradle,
+we will have created gradle projects, as appropriate, based on your system configuration.
+
+If the -Dxapi.platform=jre|gwt,etc property is supplied,
+we will only create the projects necessary to build the given platform(s).
+This includes any "parent platforms" of the comma-separated list of platform names.
+'''
+
+description = doc
+
+xapiSchema.whenReady {
+    // java-gradle-plugin relies on task jar being defined.  Lets use the schema to realize it early.
+    xapiSchema.module('main', 'main').jarTask.get()
+    setProperty('skip.java.plugin', 'true')
+    setProperty('skip.java.component', 'true')
+    plugins.apply 'java-gradle-plugin'
+    GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
+    plugin.publishComponent = '_main_main'
+    plugin.plugins.register('xapi-loader', {
+        PluginDeclaration decl->
+            decl.id = 'xapi-loader'
+            decl.displayName = "Xapi Loader Plugin"
+            decl.description = doc
+            decl.implementationClass = "net.wti.loader.plugin.XapiLoaderPlugin"
+    })
+
+//     To actually publish plugin:
+//     plugins {
+//      id "com.gradle.plugin-publish" version "0.10.1"
+//     }
+//     Then uncomment:
+//    pluginBundle {
+//        website = "https://wti.net/xapi"
+//        vcsUrl = "https://github.com/WeTheInternet/xapi"
+//        description = doc
+//        tags = listOf("java", "gradle", "git")
+//        mavenCoordinates {
+//            groupId = project.group.toString()
+//            artifactId = project.name
+//        }
+//    }
+
+} // end xapiSchema.whenReady{}
+

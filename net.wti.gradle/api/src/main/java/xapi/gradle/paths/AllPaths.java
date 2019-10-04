@@ -4,11 +4,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
-import net.wti.gradle.internal.require.api.ArchiveGraph;
-import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.SourceSetOutput;
 import xapi.fu.In1;
-import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.SetLike;
@@ -19,13 +15,14 @@ import xapi.fu.log.Log.LogLevel;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static xapi.fu.java.X_Jdk.set;
 
 /**
  * A container for "all relevant paths" that are known about a single archive type w/in a module.
  *
- * Think of this like an internal copy of a {@link SourceSet}.
+ * Think of this like an internal copy of a {@link org.gradle.api.tasks.SourceSet}.
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/27/18 @ 2:35 AM.
  */
@@ -33,12 +30,13 @@ public class AllPaths {
 
     private final SetLike<File> sources, resources, outputs, generated;
     private final SetLike<AllPaths> inherited;
-    private volatile int mutated;
+    private final AtomicInteger mutated;
     // A root AllPaths will not increase mutation count upon absorption,
     // but its children will.  This ensures we see all child mutations...
     private boolean mutateOnAbsorb;
 
     public AllPaths() {
+        mutated = new AtomicInteger(0);
         sources = X_Jdk.setLinked();
         resources = X_Jdk.setLinked();
         outputs = X_Jdk.setLinked();
@@ -51,9 +49,16 @@ public class AllPaths {
         return sources;
     }
 
+    public SetLike<File> _sources() {
+        return sources;
+    }
 
     public SetLike<File> getResources() {
         resolve();
+        return resources;
+    }
+
+    public SetLike<File> _resources() {
         return resources;
     }
 
@@ -62,8 +67,16 @@ public class AllPaths {
         return outputs;
     }
 
+    public SetLike<File> _outputs() {
+        return outputs;
+    }
+
     public SetLike<File> getGenerated() {
         resolve();
+        return generated;
+    }
+
+    public SetLike<File> _generated() {
         return generated;
     }
 
@@ -71,11 +84,8 @@ public class AllPaths {
         final Integer result = inherited
             .filter(this::isMutated)
             .map(this::setFrom)
-            .reduce(Math::max, mutated);
-        if (result > mutated) {
-            mutated = result;
-        }
-
+            .reduce(Math::max, mutated.get());
+        mutated.updateAndGet(is -> result > is ? result : is);
     }
 
     private int setFrom(AllPaths o) {
@@ -83,43 +93,11 @@ public class AllPaths {
         this.resources.addNow(o.getResources());
         this.outputs.addNow(o.getOutputs());
         this.generated.addNow(o.getGenerated());
-        return o.mutated;
+        return o.mutated.get();
     }
 
     private boolean isMutated(AllPaths o) {
-        return o.mutated > this.mutated;
-    }
-
-    @SuppressWarnings("NonAtomicOperationOnVolatileField")
-    public void addSources(ArchiveGraph config, In1Out1<File, Boolean> genDirCheck) {
-        final SourceSet src = config.getSource().getSrc();
-        if (!mutateOnAbsorb) {
-            // We may undo this if we see fit, but it's appropriate for now.
-            throw new IllegalStateException("Only a child AllPaths may add sources; call parent.absorb(child) on " + this);
-        }
-        mutated++;
-        for (File srcDir : src.getJava().getSrcDirs()) {
-            sources.add(srcDir);
-            if (genDirCheck.io(srcDir)) {
-                generated.add(srcDir);
-            }
-        }
-        for (File srcDir : src.getResources().getSrcDirs()) {
-            resources.add(srcDir);
-            if (genDirCheck.io(srcDir)) {
-                generated.add(srcDir);
-            }
-        }
-        final SourceSetOutput outs = src.getOutput();
-        for (File dir : MappedIterable.mapped(outs.getDirs())
-            .plus(outs.getClassesDirs())
-            .plus(outs.getResourcesDir())
-        ) {
-            outputs.add(dir);
-            if (genDirCheck.io(dir)) {
-                generated.add(dir);
-            }
-        }
+        return o.mutated.get() > this.mutated.get();
     }
 
     public void absorb(AllPaths ap) {
@@ -127,7 +105,7 @@ public class AllPaths {
             return;
         }
         if (mutateOnAbsorb) {
-            mutated++;
+            mutate();
         } else {
             ap.mutateOnAbsorb = true;
         }
@@ -258,5 +236,13 @@ public class AllPaths {
             files = files.plus(children.getAllFiles(withSource));
         }
         return files;
+    }
+
+    public boolean isMutateOnAbsorb() {
+        return mutateOnAbsorb;
+    }
+
+    public int mutate() {
+        return mutated.incrementAndGet();
     }
 }

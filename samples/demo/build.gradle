@@ -9,18 +9,19 @@ repositories {
     }
 }
 
-xapiRequire {
-    main.main.project ':xapi-common'
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-common'
+        req.project 'xapi-dev-parent:xapi-dev'
+        req.project 'xapi-gwt3'
+        req.project 'xapi-components', 'main'
+        req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
 }
 
 dependencies {
-    compile project(':xapi-dev-parent:xapi-dev')
     implementation ('de.mocra.cy:wti-shared:0.5.1-SNAPSHOT') {
         exclude group: 'net.wetheinter'
     }
-    compile project(':xapi-gwt3')
-    compile project(':xapi-components')
-    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
 }
 
 description = 'XApi - Demo Application'

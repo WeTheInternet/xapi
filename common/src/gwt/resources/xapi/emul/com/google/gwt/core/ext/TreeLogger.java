@@ -1,4 +1,4 @@
-package xapi.emul.com.google.gwt.core.ext;
+package com.google.gwt.core.ext;
 
 import xapi.gwt.log.SuperTreeLogger;
 

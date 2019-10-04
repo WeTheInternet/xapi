@@ -3,19 +3,20 @@ package xapi.gradle.config;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.PlatformGraph;
-import net.wti.gradle.schema.api.ArchiveConfig;
-import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.XapiSchema;
 import org.gradle.api.tasks.Internal;
-import org.gradle.internal.impldep.bsh.commands.dir;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetOutput;
 import org.gradle.util.GFileUtils;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.PrintBuffer;
+import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out2;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
 import xapi.fu.data.SetLike;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.gradle.paths.AllPaths;
@@ -60,15 +61,49 @@ public class ManifestGenerator {
         AllPaths ap = paths.computeIfAbsent(type, AllPaths::new);
         (isInherited(type) ? mainPaths : otherPaths)
             .absorb(ap);
-        ap.addSources(type, this::isGenDir);
+        addSources(ap, type, this::isGenDir);
         config.archives().configureEach(this::addSources);
+    }
+
+    private void addSources(AllPaths ap, ArchiveGraph config, In1Out1<File, Boolean> genDirCheck) {
+        if (!config.srcExists()) {
+            return;
+        }
+        final SourceSet src = config.getSource().getSrc();
+        if (!ap.isMutateOnAbsorb()) {
+            // We may undo this if we see fit, but it's appropriate for now.
+            throw new IllegalStateException("Only a child AllPaths may add sources; call parent.absorb(child) on " + this);
+        }
+        ap.mutate();
+        for (File srcDir : src.getJava().getSrcDirs()) {
+            ap._sources().add(srcDir);
+            if (genDirCheck.io(srcDir)) {
+                ap._generated().add(srcDir);
+            }
+        }
+        for (File srcDir : src.getResources().getSrcDirs()) {
+            ap._resources().add(srcDir);
+            if (genDirCheck.io(srcDir)) {
+                ap._generated().add(srcDir);
+            }
+        }
+        final SourceSetOutput outs = src.getOutput();
+        for (File dir : MappedIterable.mapped(outs.getDirs())
+            .plus(outs.getClassesDirs())
+            .plus(outs.getResourcesDir())
+        ) {
+            ap._outputs().add(dir);
+            if (genDirCheck.io(dir)) {
+                ap._generated().add(dir);
+            }
+        }
     }
 
     public void addSources(ArchiveGraph config) {
         AllPaths ap = paths.computeIfAbsent(config, AllPaths::new);
         (isInherited(config) ? mainPaths : otherPaths)
             .absorb(ap);
-        ap.addSources(config, this::isGenDir);
+        addSources(ap, config, this::isGenDir);
     }
 
     public boolean isInherited(ArchiveGraph type) {

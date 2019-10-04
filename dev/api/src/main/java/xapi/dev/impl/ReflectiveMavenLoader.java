@@ -123,6 +123,7 @@ public class ReflectiveMavenLoader implements MavenLoader {
         }
 
         // set the classloader with xapi-dev artifact...
+        X_Log.trace(ReflectiveMavenLoader.class, "Maven loader classpath", paths);
         URLClassLoader loader = new URLClassLoader(paths.toArray(URL.class), null);
         final Class<?> threadClass = loader.loadClass(MavenLoaderThread.class.getName());
         final Class<?> out1Class = loader.loadClass(Out1.class.getName());
@@ -221,7 +222,7 @@ public class ReflectiveMavenLoader implements MavenLoader {
             Thread.currentThread().getContextClassLoader()
                 .loadClass("xapi.mvn.X_Maven");
             return true;
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
             return false;
         }
     }

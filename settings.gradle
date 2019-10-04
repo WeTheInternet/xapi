@@ -179,7 +179,6 @@ include(':xapi-gwt-ui-parent')
 include(':xapi-components')
 include(':xapi-polymer')
 include(':xapi-gwt')
-include(':xapi-jre-parent:xapi-jre-api')
 include(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
 include(':xapi-jre-parent:xapi-jre-ui-parent')
 include(':xapi-jre-parent:xapi-jre')
@@ -195,7 +194,7 @@ include(':xapi-dev-parent:xapi-dev-file')
 include(':xapi-dev-parent:xapi-dev-maven')
 include(':xapi-dev-parent:xapi-dist')
 include(':xapi-dev-parent:xapi-dev-shell')
-include(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
+include(':xapi-dev-gwtc:xapi-gwtc-api')
 include(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
 include(':xapi-dev-parent:xapi-dev-gwtc')
 include(':xapi-dev-parent:xapi-dev')
@@ -229,7 +228,6 @@ project(':xapi-gwt-ui-parent').projectDir = file('gwt/ui')
 project(':xapi-components').projectDir = file('gwt/components')
 project(':xapi-polymer').projectDir = file('gwt/polymer')
 project(':xapi-gwt').projectDir = file('gwt/uber')
-project(':xapi-jre-parent:xapi-jre-api').projectDir = file('jre/api')
 project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx').projectDir = file('jre/ui/javafx')
 project(':xapi-jre-parent:xapi-jre-ui-parent').projectDir = file('jre/ui')
 project(':xapi-jre-parent:xapi-jre').projectDir = file('jre/uber')
@@ -245,7 +243,7 @@ project(':xapi-dev-parent:xapi-dev-file').projectDir = file('dev/file')
 project(':xapi-dev-parent:xapi-dev-maven').projectDir = file('dev/maven')
 project(':xapi-dev-parent:xapi-dist').projectDir = file('dev/dist')
 project(':xapi-dev-parent:xapi-dev-shell').projectDir = file('dev/shell')
-project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api').projectDir = file('dev/gwtc/api')
+project(':xapi-dev-gwtc:xapi-gwtc-api').projectDir = file('dev/gwtc/api')
 project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl').projectDir = file('dev/gwtc/impl')
 project(':xapi-dev-parent:xapi-dev-gwtc').projectDir = file('dev/gwtc')
 project(':xapi-dev-parent:xapi-dev').projectDir = file('dev/uber')
@@ -277,13 +275,13 @@ if (composite != 'false') {
 }
 
 
-List<String> dist = ['gwt']
-
-dist.each {
-    String s ->
-        include(":xapi-$s")
-        ProjectDescriptor p = project(":xapi-$s")
-        p.buildFileName = "dist-${s}.gradle"
-        p.projectDir = file("dist/${s}".toString())
-}
+//List<String> dist = ['gwt']
+//
+//dist.each {
+//    String s ->
+//        include(":xapi-$s")
+//        ProjectDescriptor p = project(":xapi-$s")
+//        p.buildFileName = "dist-${s}.gradle"
+//        p.projectDir = file("dist/${s}".toString())
+//}
 enableFeaturePreview('GRADLE_METADATA')

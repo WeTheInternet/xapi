@@ -1,4 +1,4 @@
-package xapi.emul.xapi.collect.impl;
+package xapi.collect.impl;
 
 import xapi.fu.In1Out1;
 import xapi.gwt.collect.JsDictionary;

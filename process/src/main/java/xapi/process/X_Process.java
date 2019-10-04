@@ -21,13 +21,13 @@ public class X_Process {
   private static final Lazy<ConcurrencyService> service = X_Inject
       .singletonLazy(ConcurrencyService.class);
 
-  public static <T> void resolve(Future<T> future, In1<T> receiver) {
-    service.out1().resolve(future, receiver);
+  public static <T> void resolve(Future<T> future, In1<T> receiver, In1Unsafe<Throwable> failure) {
+    service.out1().resolve(future, receiver, failure);
   }
 
-  public static <T> void blockInBackground(Future<T> future, In1<T> receiver) {
+  public static <T> void blockInBackground(Future<T> future, In1<T> receiver, In1Unsafe<Throwable> failure) {
     runDeferred(()->
-      service.out1().resolve(future, receiver)
+      service.out1().resolve(future, receiver, failure)
     );
   }
 

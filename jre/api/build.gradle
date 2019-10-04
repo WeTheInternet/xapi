@@ -1,5 +1,0 @@
-repositories {
-    jcenter()
-}
-
-description = 'XApi - Jre implementation of basic utils'

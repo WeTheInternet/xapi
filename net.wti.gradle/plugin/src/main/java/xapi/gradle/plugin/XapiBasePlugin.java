@@ -76,6 +76,7 @@ import static xapi.fu.itr.EmptyIterator.none;
  * <p>
  * Created by James X. Nelson (James@WeTheInter.net) on 11/4/18 @ 1:04 AM.
  */
+@Deprecated
 public class XapiBasePlugin implements Plugin<Project> {
 
     private final Instantiator instantiator;

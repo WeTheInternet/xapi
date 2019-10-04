@@ -15,6 +15,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.GradleInternal;
@@ -87,6 +88,7 @@ public class DefaultProjectView implements ProjectView {
     private final Action<Action<? super Boolean>> whenReady;
     private final Function<String, File> file;
     private final Function<Object[], ConfigurableFileCollection> files;
+    private final Function<Object, FileTree> zipTree;
 
     private final Provider<BuildGraph> buildGraph;
     private final Provider<SourceSetContainer> sourceSets;
@@ -129,6 +131,7 @@ public class DefaultProjectView implements ProjectView {
             project::findProperty,
             project::file,
             project::files,
+            project::zipTree,
 
             // only immutable values should go above here.
             done-> {
@@ -184,6 +187,7 @@ public class DefaultProjectView implements ProjectView {
         Function<String, Object> propFinder,
         Function<String, File> file,
         Function<Object[], ConfigurableFileCollection> files,
+        Function<Object, FileTree> zipTree,
 
         Action<Action<? super Boolean>> whenReady,
         // All new providers should go here, at the end
@@ -219,6 +223,7 @@ public class DefaultProjectView implements ProjectView {
         this.whenReady = whenReady;
         this.file = file;
         this.files = files;
+        this.zipTree = zipTree;
 
         // The rest are providers.  Make them lazy.
         this.sourceSets = lazyProvider(sourceSets);
@@ -374,6 +379,11 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public final ConfigurableFileCollection files(Object... from) {
         return files.apply(from);
+    }
+
+    @Override
+    public final FileTree zipTree(Object from) {
+        return zipTree.apply(from);
     }
 
     @Override

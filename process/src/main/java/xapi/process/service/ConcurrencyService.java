@@ -2,6 +2,7 @@ package xapi.process.service;
 
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.api.DoNotOverride;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
@@ -123,12 +124,13 @@ public interface ConcurrencyService {
    *
    * @param future - The future to wait upon.
    * @param receiver - The handler to receive the value.
+   * @param failure - The handler to call if anything goes wrong.
    *
    * If received is an instanceof {@link ErrorHandler}, it will receive
    * any exceptions caused by the future (after unwrapping ExecutionException
    * and RuntimeException).
    */
-  <T> void resolve(Future<T> future, In1<T> receiver);
+  <T> void resolve(Future<T> future, In1<T> receiver, In1Unsafe<Throwable> failure);
 
   /**
    * Flushes all jobs for a given thread, up to a given millisecond timeout.

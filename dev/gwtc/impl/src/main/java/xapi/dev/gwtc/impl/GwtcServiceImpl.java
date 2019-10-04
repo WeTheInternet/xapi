@@ -115,7 +115,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
     final Moment start = X_Time.now();
     try {
-
       manager.compileIfNecessary(manifest, callback);
     } catch (Exception e) {
       X_Log.error(GwtcServiceImpl.class, "Attempt to compile had unexpected error", e, " Killing all jobs in GwtcService", this);
@@ -139,7 +138,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     X_Log.debug(getClass(), manifest);
 
     final String[] classpath = manifest.toClasspathFullCompile();
-    X_Log.debug(getClass(), "Requested Classpath\n", classpath);
+    X_Log.debug(GwtcServiceImpl.class, "Requested Classpath\n", classpath);
 
     In1<Integer> cleanup = prepareCleanup(manifest);
 
@@ -264,25 +263,25 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
     try {
       classpath.loadClass(GwtcService.class.getName());
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
       // No class found.  We'll need to add one
       needsXapiGwtcApi = true;
     }
     try {
       classpath.loadClass(GwtcServiceImpl.class.getName());
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
       // No class found.  We'll need to add one
       needsXapiGwtcImpl = true;
     }
     try {
       classpath.loadClass(GWT.class.getName());
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
       // No class found.  We'll need to add one
       needsGwtUser = true;
     }
     try {
       classpath.loadClass(Compiler.class.getName());
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
       // No class found.  We'll need to add one
       needsGwtDev = true;
     }
@@ -293,10 +292,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       needsSlf4j = true;
       classpath.loadClass("org.slf4j.impl.StaticLoggerBinder");
       needsSlf4j = false;
-    } catch (ClassNotFoundException ignored) { }
+    } catch (ClassNotFoundException | NoClassDefFoundError ignored) { }
     try {
       classpath.loadClass(ConcurrencyServiceJre.class.getName());
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
       // No class found.  We'll need to add one
       needsJreProcess = true;
     }

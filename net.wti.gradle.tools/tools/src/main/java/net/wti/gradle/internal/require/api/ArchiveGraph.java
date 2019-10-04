@@ -545,11 +545,12 @@ public interface ArchiveGraph extends Named, GraphNode {
         XapiRegistration reg,
         String newGroup,
         String newName,
+        String classifier,
         Transitivity trans,
         boolean lenient
     ) {
-        importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, trans, lenient);
-        importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, trans, lenient);
+        importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, classifier, trans, lenient);
+        importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, classifier, trans, lenient);
     }
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     default void importExternal(
@@ -558,6 +559,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         UsageType type,
         String newGroup,
         String newName,
+        String classifier,
         Transitivity trans,
         boolean lenient
     ) {
@@ -574,7 +576,8 @@ public interface ArchiveGraph extends Named, GraphNode {
         boolean hasXapiCoord = coords != null;// && "true".equals(System.getProperty("no.composite"));
 
         final String ident = dep.getGroup() + ":" + dep.getName();
-        final String path = ident + ":" + dep.getVersion();
+        final String path = ident + ":" + dep.getVersion() +
+            (classifier == null ? "" : ":" + classifier);
         String base;
         if (hasXapiCoord) {
             String[] parts = coords.split(":");
@@ -627,7 +630,7 @@ public interface ArchiveGraph extends Named, GraphNode {
                     // This relies on WTI's fork of gradle.
                     final String derived = type.deriveConfiguration(base, dep, hasXapiCoord, trans, lenient);
                     mod.setTargetConfiguration(derived);
-                    System.out.println("Derived " + derived + " for " + dep + " on " + base + " coords " + coords);
+                    getView().getLogger().trace("Derived {} for {} on {} coords {}", derived, dep , base, coords);
                 } else {
                     // using requireCapabilities results in runtime jars instead of compiled classpaths, so it is less ideal.
                     // also; we need to get better version information here.  This should come from whatever-is-handling schema.xapi

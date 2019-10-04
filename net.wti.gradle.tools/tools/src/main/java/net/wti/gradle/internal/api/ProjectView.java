@@ -16,6 +16,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
@@ -50,7 +51,7 @@ import java.util.concurrent.Callable;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/31/18 @ 12:45 AM.
  */
-public interface ProjectView extends ExtensionAware {
+public interface ProjectView extends MinimalProjectView {
 
     String EXT_NAME = System.getProperty("xapi.view", "_xapi");
 
@@ -124,6 +125,8 @@ public interface ProjectView extends ExtensionAware {
     }
 
     ConfigurableFileCollection files(Object ... from);
+
+    FileTree zipTree(Object from);
 
     default Dependency dependencyFor(String path, Configuration config) {
         final DependencyHandler deps = getDependencies();

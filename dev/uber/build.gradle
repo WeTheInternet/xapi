@@ -70,10 +70,12 @@ xapiRequire.main().configure {
         req.project 'xapi-dev-parent:xapi-dev-file'
         req.project 'xapi-dev-parent:xapi-dev-shell'
         req.project 'xapi-dev-parent:xapi-dev-scanner'
-        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api'
+        req.project 'xapi-dev-gwtc:xapi-gwtc-api'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl'
         req.project 'xapi-dev-parent:xapi-dev-maven'
         req.project 'xapi-server-parent:xapi-server-gen'
+        req.external 'javax.inject:javax.inject:1:sources'
+
 }
 
 xapiRequire.module('test').configure {

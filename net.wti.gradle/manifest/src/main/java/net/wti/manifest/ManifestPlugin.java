@@ -1,6 +1,7 @@
 package net.wti.manifest;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -89,12 +90,16 @@ public class ManifestPlugin implements Plugin<Project> {
         });
         tasks.named(JavaPlugin.COMPILE_JAVA_TASK_NAME, task -> {
             task.dependsOn(manifest);
-
-            JavaCompile compile = (JavaCompile) task;
-            final TaskOutputsInternal outputs = manifest.get().getOutputs();
-            compile.setClasspath(
-                compile.getClasspath().plus(outputs.getFiles())
-            );
+            view.getBuildGraph().whenReady(ReadyState.RUN_FINALLY-1, later->{
+                final XapiManifest man = manifest.get();
+                task.whenSelected(selected->{
+                    JavaCompile compile = (JavaCompile) task;
+                    final TaskOutputsInternal outputs = man.getOutputs();
+                    compile.setClasspath(
+                        compile.getClasspath().plus(outputs.getFiles())
+                    );
+                });
+            });
         });
 
         return manifest;

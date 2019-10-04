@@ -22,14 +22,19 @@ public class JdkMultiSet<K, V> extends MapAdapter<K, SetLike<V>> implements Mult
     }
 
     public JdkMultiSet(Map<K, SetLike<V>> map) {
-        this(map, map instanceof ConcurrentMap ?
-                map instanceof ConcurrentHashMap ?
-                    X_Jdk::setHashConcurrent :
-                    X_Jdk::setLinkedSynchronized :
-                map instanceof HashMap ?
-                    X_Jdk::setHash :
-                    X_Jdk::setLinked);
+        this(map, pickMapImpl(map));
     }
+
+    private static <K, V> Out1<SetLike<V>> pickMapImpl(Map<K, SetLike<V>> map) {
+        return map instanceof ConcurrentMap ?
+            map instanceof ConcurrentHashMap ?
+                X_Jdk::setHashConcurrent :
+                X_Jdk::setLinkedSynchronized :
+            map instanceof HashMap ?
+                X_Jdk::setHash :
+                X_Jdk::setLinked;
+    }
+
     public JdkMultiSet(Out1<SetLike<V>> listFactory) {
         this(listFactory.ignoreIn1());
     }

@@ -238,7 +238,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
             self.getLogger().info("Replacing {} with {}", was, projId);
         }
         final String[] items = projId.split(":");
-        assert items.length == 3 : "Malformed path " + projId + "; expected three segments, got " + Arrays.asList(items);
+        assert items.length >= 3 && items.length <= 4 : "Malformed path " + projId + "; expected three or four segments, got " + Arrays.asList(items);
         if ("null".equals(items[2])) {
             self.getLogger().quiet("Replacing \"null\" with {}", projId);
             items[2] = self.getVersion();
@@ -255,7 +255,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
         // If you have `com.foo:thing:1`, gradle will know it is variant-mapped and use our import configuration to select correctly.
         // If you have `com.foo:thing-api:1`, gradle will look for it in your local repo, and will fail if it is not found.
 
-        arch.importExternal(dep, reg, newGroup, newName, only, lenient);
+        arch.importExternal(dep, reg, newGroup, newName, items.length == 3 ? null : items[3], only, lenient);
     }
 
 }

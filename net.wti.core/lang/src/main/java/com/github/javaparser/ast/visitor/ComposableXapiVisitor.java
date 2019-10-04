@@ -8,6 +8,7 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
+import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;
 import xapi.fu.In3;
@@ -628,6 +629,23 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     public ComposableXapiVisitor<Ctx> withNameTerminal(In2<NameExpr, Ctx> callback) {
         putCallback(NameExpr.class, callback.supply1(false));
         return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withNameOrString(In2<String, Ctx> callback) {
+        return withNameTerminal((name, val) -> {
+            String platName = name.getQualifiedName();
+            callback.in(name.getQualifiedName(), val);
+        })
+        .withStringLiteralTerminal((name, val) -> {
+            callback.in(name.getValue(), val);
+        })
+        .withTemplateLiteralTerminal((name, val) -> {
+            callback.in(name.getValueWithoutTicks(), val);
+        });
+    }
+
+    public ComposableXapiVisitor<Ctx> nameOrString(In1<String> callback) {
+        return withNameOrString(callback.ignore2());
     }
 
     @Override

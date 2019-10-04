@@ -1,4 +1,4 @@
-package xapi.emul.xapi.util;
+package xapi.util;
 
 import xapi.util.X_Namespace;
 

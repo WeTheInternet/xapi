@@ -98,9 +98,13 @@ public class ModuleTasks {
     public TaskProvider<Jar> getJarTask() {
         if (jarTask == null) {
             final TaskContainer tasks = view().getTasks();
-            final String name = meta().getSrc().getJarTaskName();
+            String name = meta().getSrc().getJarTaskName();
             if (tasks.findByName(name) != null || ("jar".equals(name) && view().isJavaCompatibility())) {
                 // main jar needs special casing.
+                Object jarName = view().findProperty("xapi.main.jar.task");
+                if (jarName != null) {
+                    name = String.valueOf(jarName);
+                }
                 jarTask = tasks.named(name, Jar.class);
             } else {
                 // everything else, we create on-demand.

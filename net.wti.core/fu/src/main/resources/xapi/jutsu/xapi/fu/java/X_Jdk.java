@@ -96,6 +96,10 @@ public class X_Jdk {
         return toMultiSet(defaultMap(), defaultSetFactory());
     }
 
+    public static <K, V> JdkMultiList<K, V> multiListOrderedInsertion() {
+        return toMultiList(defaultMapOrderedInsertion(), defaultListFactory());
+    }
+
     public static <V> ListLike<V> listArrayConcurrent() {
         return toList(new ArrayList<>());
     }
@@ -136,9 +140,17 @@ public class X_Jdk {
         return toSet(new LinkedHashSet<V>());
     }
 
+    public static <V> SetLike<V> setLinkedSynchronized() {
+        return toSet(new LinkedHashSet<>()); // no synchronized in gwt
+    }
+
 
     public static <K, V> Map<K, V> defaultMap() {
         return new HashMap<>();
+    }
+
+    public static <K, V> Map<K, V> defaultMapOrderedInsertion() {
+        return new LinkedHashMap<>();
     }
 
     public static <V> Set<V> defaultSet() {

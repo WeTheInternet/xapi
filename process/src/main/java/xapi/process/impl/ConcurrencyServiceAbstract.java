@@ -5,6 +5,7 @@ import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.Lazy;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
@@ -228,16 +229,16 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   @Override
-  public <T> void resolve(final Future<T> future, final In1<T> receiver) {
+  public <T> void resolve(final Future<T> future, final In1<T> receiver, In1Unsafe<Throwable> failure) {
     if (future.isDone()) {
-      callback(future, receiver);
+      callback(future, receiver, failure);
       return;
     }
     //The future isn't done.  Let's push a task into the enviro.
     Thread otherThread = getFuturesThread();
     ConcurrentEnvironment enviro = environments.get(otherThread, otherThread.getUncaughtExceptionHandler());
     enviro.monitor(Priority.Low, future::isDone,
-        () -> callback(future, receiver)
+        () -> callback(future, receiver, failure)
     );
   }
 
@@ -250,17 +251,22 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     return Thread.currentThread();
   }
 
-  protected <T> void callback(Future<T> future, In1<T> receiver) {
-    // TODO: force this to also take In1<Throwable>, so we can route failures back to calling code and fail it.
+  protected <T> void callback(Future<T> future, In1<T> receiver, In1<Throwable> failure) {
+    callback(future, receiver, error-> {
+      debug(error);
+      X_Util.rethrow(X_Util.unwrap(error));
+    });
+  }
+
+  protected <T> void callback(Future<T> future, In1<T> receiver, In1Unsafe<Throwable> failure) {
     try {
       receiver.in(future.get());
       return;
     } catch (InterruptedException e) {
-      debug(e);
       Thread.interrupted();
+      failure.in(e);
     } catch (ExecutionException e) {
-      debug(e);
-      throw X_Util.rethrow(X_Util.unwrap(e));
+      failure.in(e);
     }
   }
 

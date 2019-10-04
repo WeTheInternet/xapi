@@ -29,6 +29,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
     req ->
+        req.project 'xapi-process', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'main'
         req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
         req.project 'xapi-inject', 'jre:main'
@@ -38,7 +39,6 @@ xapiRequire.module('test').configure {
         req.external 'org.assertj:assertj-core:3.2.0'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'
 }
-
 description = 'XApi - Web Component Implementation'
 
 gradle.projectsEvaluated {
@@ -46,3 +46,5 @@ gradle.projectsEvaluated {
         maxHeapSize = '5G'
     }
 }
+
+// tasks.test.dependsOn ':xapi-dev-parent:xapi-dev:xapiPublish'

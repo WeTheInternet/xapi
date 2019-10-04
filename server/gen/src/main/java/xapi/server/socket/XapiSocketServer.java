@@ -19,6 +19,7 @@ import xapi.process.X_Process;
 import xapi.server.X_Server;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
+import xapi.util.X_Debug;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -157,7 +158,8 @@ public class XapiSocketServer implements Rethrowable {
                     public void failed(Throwable exc, Object attachment) {
                         X_Log.error(getClass(), "Send failure:", exc);
                     }
-                })
+                }),
+                X_Debug::rethrow
             );
             return () -> {
                 // listen for a reply.
@@ -174,7 +176,7 @@ public class XapiSocketServer implements Rethrowable {
                          serverSize.in(i);
                          dst.notify();
                      }
-                 });
+                 }, X_Debug::rethrow);
                 if (serverSize.out1() == null) {
                     synchronized (dst) {
                         dst.wait();

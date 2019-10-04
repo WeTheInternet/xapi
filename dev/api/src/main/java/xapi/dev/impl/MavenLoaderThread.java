@@ -10,6 +10,7 @@ import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
+import xapi.util.X_Debug;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
@@ -21,6 +22,7 @@ public class MavenLoaderThread extends Thread {
 
     final IntTo<String> pendingCoords;
     final StringTo<String[]> results;
+    final StringTo<Throwable> failures;
     private long maxTtl;
     private boolean failed;
 
@@ -28,12 +30,13 @@ public class MavenLoaderThread extends Thread {
         super("ReflectiveMavenLoader");
         pendingCoords = X_Collect.newList(String.class, X_Collect.MUTABLE_CONCURRENT);
         results = X_Collect.newStringMap(String[].class, X_Collect.MUTABLE_CONCURRENT);
+        failures = X_Collect.newStringMap(Throwable.class, X_Collect.MUTABLE_CONCURRENT);
         setDaemon(true);
     }
 
     public String[] blockOnResult(String coords) throws InterruptedException, TimeoutException {
         String[] paths;
-        long deadline = System.currentTimeMillis() - getMaxTtl();
+        long deadline = System.currentTimeMillis() + getMaxTtl();
         while ((paths = results.get(coords)) == null) {
             synchronized (results) {
                 paths = results.get(coords);
@@ -41,7 +44,14 @@ public class MavenLoaderThread extends Thread {
                 if (wait < 0) {
                     throw new TimeoutException("Unable to load results within " + getMaxTtl() + " ms");
                 } else if (paths == null) {
-                    results.wait(wait);
+                    final Throwable failure = failures.get(coords);
+                    if (failure == null) {
+                        // wait some more
+                        results.wait(wait);
+                    } else {
+                        // failed...
+                        throw X_Debug.rethrow(failure);
+                    }
                 } else {
                     return paths;
                 }
@@ -105,6 +115,13 @@ public class MavenLoaderThread extends Thread {
                 done->{
                     final String[] path = MappedIterable.mapped(done).toArray(String[]::new);
                     results.put(coord, path);
+                    synchronized (results) {
+                        results.notifyAll();
+                    }
+                },
+                failed -> {
+                    failures.put(coord, failed);
+                    X_Debug.debug(failed);
                     synchronized (results) {
                         results.notifyAll();
                     }

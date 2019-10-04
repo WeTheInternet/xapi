@@ -1,7 +1,7 @@
 /**
  *
  */
-package xapi.jre.util;
+package xapi.util;
 
 import java.nio.ByteBuffer;
 
