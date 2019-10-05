@@ -1,7 +1,6 @@
 package com.google.gwt.dev.codeserver;
 
 import xapi.dev.gwtc.api.IsAppSpace;
-import xapi.gwtc.api.GwtManifest;
 
 import com.google.gwt.dev.MinimalRebuildCacheManager;
 import com.google.gwt.dev.codeserver.JobEvent.Status;

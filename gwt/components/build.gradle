@@ -30,7 +30,7 @@ xapiRequire.main().configure {
 xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-process', 'jre:main'
-        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
         req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
         req.project 'xapi-inject', 'jre:main'
         req.external 'junit:junit:4.12'

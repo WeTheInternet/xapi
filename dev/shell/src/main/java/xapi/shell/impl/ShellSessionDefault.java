@@ -225,13 +225,20 @@ class ShellSessionDefault implements ShellSession, Do {
       }
       finished = true;
       // Don't block to notify stdErr and stdOut
-      X_Time.runLater(new Runnable() {
-        @Override
-        public void run() {
-          onStdOut.onEnd();
-          onStdErr.onEnd();
-        }
-      });
+      if ("stopping".equals(System.getProperty("xapi.system.state"))) {
+        onStdOut.onEnd();
+        onStdErr.onEnd();
+        // do not notify callbacks: we are shutting down.
+        return;
+      } else {
+        X_Time.runLater(new Runnable() {
+          @Override
+          public void run() {
+            onStdOut.onEnd();
+            onStdErr.onEnd();
+          }
+        });
+      }
       finish();
     } finally {
       if (process != null) {

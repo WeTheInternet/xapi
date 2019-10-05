@@ -37,7 +37,13 @@ public class FileServiceImpl implements FileService {
     @Override
     public void run() {
       for (String kill : toKill) {
-        rm(kill, Boolean.getBoolean("xapi.file.autorm"));
+        boolean recurse = kill.startsWith("!");
+        if (recurse) {
+          kill = kill.substring(1);
+        } else {
+          recurse = Boolean.getBoolean("xapi.file.autorm");
+        }
+        rm(kill, recurse);
       }
     }
   }
@@ -159,7 +165,7 @@ public class FileServiceImpl implements FileService {
       }
       f.mkdirs();
       if (deleteOnExit) {
-        GC.toKill.add(f.getCanonicalPath());
+        GC.toKill.add("!"+f.getCanonicalPath());
       }
       chmod(0x777, f);
     } catch (IOException e) {

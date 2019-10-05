@@ -26,6 +26,7 @@ xapiRequire.main.configure {
 xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-collect', 'jre:main'
+        req.project 'xapi-model', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
         req.external 'javax.servlet:javax.servlet-api:3.1-b02'
         req.external 'org.eclipse.jetty:jetty-server:9.4.18.v20190429'

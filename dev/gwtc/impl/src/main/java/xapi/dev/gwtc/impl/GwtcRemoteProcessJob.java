@@ -115,6 +115,7 @@ public class GwtcRemoteProcessJob extends GwtcJob {
             stdOut,
             stdErr
         );
+        process.shutdownWithSystem();
 
         this.monitor = new GwtcJobMonitorImpl(
             fromCompiler::take,
@@ -135,9 +136,12 @@ public class GwtcRemoteProcessJob extends GwtcJob {
 
     @Override
     public void destroy() {
-        super.destroy();
-        if (process != null) {
-            process.destroy();
+        try {
+            super.destroy();
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
         }
     }
 

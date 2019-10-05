@@ -65,4 +65,12 @@ public interface ShellSession extends Destroyable{
 
 	int block(long l, TimeUnit seconds);
 
+    default void shutdownWithSystem() {
+    	Runtime.getRuntime().addShutdownHook(new Thread(()-> {
+    		System.setProperty("xapi.system.state", "stopping");
+    		if (isRunning()) {
+    			destroy();
+		}
+	}));
+    }
 }

@@ -18,11 +18,13 @@ public class IsolatedCompiler implements Runnable, Destroyable {
 
     private final String[] args;
     private final GwtcJobMonitor remoteMonitor;
+    private final GwtcArgProcessor managerArgs;
     private GwtcJobManagerImpl manager;
 
     public IsolatedCompiler(Object remoteMonitor, String[] args) {
         this.remoteMonitor = (GwtcJobMonitor) remoteMonitor;
-        this.args = args;
+        managerArgs = new GwtcArgProcessor();
+        this.args = managerArgs.processArgs(args);
     }
 
     @Override
@@ -30,7 +32,7 @@ public class IsolatedCompiler implements Runnable, Destroyable {
         try {
             GwtcService compiler = X_Inject.instance(GwtcService.class);
             manager = new GwtcJobManagerImpl(compiler);
-            manager.runJob(remoteMonitor, args);
+            manager.runJob(remoteMonitor, managerArgs, args);
         } catch (Throwable t) {
             final Throwable unwrapped = X_Util.unwrap(t);
             if (unwrapped instanceof ClassNotFoundException || unwrapped instanceof LinkageError) {

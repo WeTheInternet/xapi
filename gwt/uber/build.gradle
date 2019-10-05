@@ -2,7 +2,6 @@ import net.wti.gradle.internal.api.ProjectView
 import net.wti.gradle.internal.require.api.ArchiveGraph
 import net.wti.gradle.schema.api.Transitivity
 import net.wti.gradle.schema.api.XapiSchema
-import net.wti.gradle.schema.internal.ArchiveConfigInternal
 
 buildscript {
     repositories {
@@ -48,7 +47,7 @@ xapiRequire.main().configure {
         req.project 'xapi-dev-gwtc:xapi-gwtc-api', 'main'
 }
 
-xapiRequire.module('test').configure {
+xapiRequire.module('gwt', 'test').configure {
     req ->
         req.external 'net.wetheinter:gwt-codeserver:2.8.0'
         req.external 'net.wetheinter:gwt-user:2.8.0'

@@ -13,6 +13,7 @@ import xapi.file.X_File;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.Out2;
+import xapi.fu.itr.SizedIterable;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.model.CompilerSettings;
@@ -66,15 +67,16 @@ public class DistGenerator {
             this.opts = opts;
             final String[] remaining = opts.processArgs(args);
 
-            MappedIterable<String> entryPoints = opts.getEntryPoints();
+            SizedIterable<String> entryPoints = opts.getEntryPoints();
+            final SizedIterable<String> packageFilters = opts.getPackageFilters();
             // TODO add DistOpts for finer grain scanning
             final ExecutorService pool = Executors.newCachedThreadPool();
             final Callable<ClasspathResourceMap> targets =
                 X_Inject.instance(ClasspathScanner.class)
                     .matchClassFile(".*")
-                    .matchSourceFile(".*")
+                    .matchSourceFiles(remaining.length == 0 ? new String[]{".*"} : remaining)
 //                    .matchResource(".*[.]java")
-                    .scanPackage("")
+                    .scanPackages(packageFilters.toArray(String.class))
                     .scan(Thread.currentThread().getContextClassLoader(),
                         pool);
             final Set<String> cp = new LinkedHashSet<>();
@@ -124,8 +126,9 @@ public class DistGenerator {
                 final URL[] urls = {result.out2()};
                 URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
                 for (String e : entryClasses) {
+                    String[] bits = e.split("java/xapi");
                     try {
-                        cl.loadClass("xapi" + e.split("java/xapi")[1].replace('/', '.').replace(".java", ""));
+                        cl.loadClass("xapi" + bits[bits.length-1].replace('/', '.').replace(".java", ""));
                     } catch (ClassNotFoundException ex) {
                         X_Log.error(DistGenerator.class, "Unable to load class", e, ex);
                     }

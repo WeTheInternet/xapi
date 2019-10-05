@@ -18,6 +18,7 @@ public class XapiDistTest {
         // using our output folder as the location to dump output.
         DistGenerator generator = new DistGenerator();
         DistOpts opts = new DistOpts();
+        opts.addPackageFilter("xapi.dist.impl");
         String output = X_Reflect.getFileLoc(XapiDistTest.class);
         output = X_Source.rebase(output, "", "");
         opts.setOutputDir(new File(output, "dist"));

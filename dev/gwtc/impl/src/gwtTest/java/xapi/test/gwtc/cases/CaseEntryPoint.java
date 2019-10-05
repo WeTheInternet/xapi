@@ -47,8 +47,8 @@ import com.google.gwt.dom.client.Element;
       groupId="net.wetheinter", value="xapi-gwt-api",version=X_Namespace.XAPI_VERSION),
     @Dependency(dependencyType=DependencyType.MAVEN,
       groupId="net.wetheinter", value="xapi-process-gwt",version=X_Namespace.XAPI_VERSION),
-    @Dependency("src/test/java"),
-    @Dependency("src/test/resources"),
+    @Dependency("src/gwtTest/java"),
+    @Dependency("src/gwtTest/resources"),
   }
   ,propertiesLaunch=@GwtcProperties(
     obfuscationLevel=ObfuscationLevel.PRETTY

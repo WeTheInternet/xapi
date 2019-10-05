@@ -4,10 +4,11 @@ import xapi.bytecode.ClassFile;
 import xapi.collect.api.HasPrefixed;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Iterator;
 
-class ClassFileIterator implements Iterable<ClassFile> {
+class ClassFileIterator implements MappedIterable<ClassFile> {
 
   private final Filter1<ClassFile> matcher;
   private final HasPrefixed<ByteCodeResource> bytecode;
@@ -20,9 +21,12 @@ class ClassFileIterator implements Iterable<ClassFile> {
     @Override
     public boolean hasNext() {
       while(iter.hasNext()) {
-        cls = iter.next().getClassData();
-        if (matcher.filter1(cls)) {
-          return true;
+        final ByteCodeResource next = iter.next();
+        if (consider(next)) {
+          cls = next.getClassData();
+          if (matcher.filter1(cls)) {
+            return true;
+          }
         }
       }
       return false;
@@ -37,6 +41,10 @@ class ClassFileIterator implements Iterable<ClassFile> {
     public void remove() {
       throw new UnsupportedOperationException();
     }
+  }
+
+  protected boolean consider(ByteCodeResource next) {
+    return !"module-info.class".equals(next.getResourceName());
   }
 
   ClassFileIterator(Filter1<ClassFile> matcher, HasPrefixed<ByteCodeResource> bytecode) {

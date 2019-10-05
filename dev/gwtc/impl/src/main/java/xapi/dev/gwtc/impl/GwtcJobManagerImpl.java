@@ -31,10 +31,10 @@ import static xapi.time.X_Time.diff;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.*;
-import com.google.gwt.dev.CompileTaskRunner.CompileTask;
 import com.google.gwt.dev.Compiler;
-import com.google.gwt.dev.Compiler.ArgProcessor;
+import com.google.gwt.dev.CompileTaskRunner.CompileTask;
 import com.google.gwt.dev.CompilerOptionsImpl;
+import com.google.gwt.dev.Compiler.ArgProcessor;
 import com.google.gwt.dev.cfg.ResourceLoader;
 import com.google.gwt.dev.cfg.ResourceLoaders;
 import com.google.gwt.dev.codeserver.*;
@@ -56,9 +56,13 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
     private final StringTo<String> logFiles;
 
     public GwtcJobManagerImpl(GwtcService service) {
+        this(service, X_Collect.newStringMap(String.class));
+    }
+
+    public GwtcJobManagerImpl(GwtcService service, StringTo<String> logFiles) {
         super(service);
         eventIds = X_Collect.newStringMap(String.class);
-        logFiles = X_Collect.newStringMap(String.class);
+        this.logFiles = logFiles;
     }
 
     @Override
@@ -94,25 +98,26 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
         // We were called as a main, so we should expect to use System.in/out for communication,
         // and only be able to access the *AsCompiler methods (the *AsCaller should throw errors if used)
         final GwtcJobMonitorImpl monitor = new GwtcJobMonitorImpl(System.in, System.out);
+        GwtcArgProcessor managerArgs = new GwtcArgProcessor();
+        final StringTo<String> logFiles = X_Collect.newStringMap(String.class);
+        try {
+            args = processArgs(managerArgs, args, logFiles);
+        } catch (IOException e) {
+            X_Log.error(GwtcJobManagerImpl.class, "Error parsing arguments", e);
+            monitor.updateCompileStatus(CompileMessage.Failed);
+            return;
+        }
         GwtcService compiler = X_Inject.instance(GwtcService.class);
-        final GwtcJobManagerImpl manager = new GwtcJobManagerImpl(compiler);
-        manager.runJob(monitor, args);
+        final GwtcJobManagerImpl manager = new GwtcJobManagerImpl(compiler, logFiles);
+        manager.runJob(monitor, managerArgs, args);
     }
 
-    public void runJob(GwtcJobMonitor monitor, String[] args) {
+    public void runJob(GwtcJobMonitor monitor, GwtcArgProcessor managerArgs, String[] args) {
 
         monitor.updateCompileStatus(CompileMessage.Preparing);
 
         try {
 
-            GwtcArgProcessor managerArgs = new GwtcArgProcessor();
-            try {
-                args = processArgs(managerArgs, args);
-            } catch (IOException e) {
-                X_Log.error(GwtcJobManagerImpl.class, "Error parsing arguments", e);
-                monitor.updateCompileStatus(CompileMessage.Failed);
-                return;
-            }
             String command = args[0];
             args = X_Fu.slice(1, args.length, args);
 
@@ -143,7 +148,11 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
 
     }
 
-    private String[] processArgs(GwtcArgProcessor managerArgs, String[] args) throws IOException {
+    private static String[] processArgs(
+        GwtcArgProcessor managerArgs,
+        String[] args,
+        StringTo<String> logFiles
+    ) throws IOException {
         args = managerArgs.processArgs(args);
 
         // Now, grab our log file
@@ -484,6 +493,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             touched = System.currentTimeMillis();
             while (System.currentTimeMillis() - touched < Process_TTL_Millis) {
                 String message = monitor.readAsCompiler().trim();
+                X_Log.info(GwtcJobManagerImpl.class, "Got message: ", message);
                 touched = System.currentTimeMillis();
                 undo.done();
                 undo = X_Process.scheduleInterruption(Process_TTL_Millis, TimeUnit.MILLISECONDS);

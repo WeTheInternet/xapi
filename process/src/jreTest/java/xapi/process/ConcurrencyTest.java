@@ -3,6 +3,7 @@ package xapi.process;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import xapi.fu.Do;
 import xapi.fu.Mutable;
 import xapi.util.X_Namespace;
 import xapi.util.api.Pointer;
@@ -54,26 +55,37 @@ public class ConcurrencyTest {
         // but our build runs in parallel, so native OS is more likely to be busy enough to want to stop our thread.
         runFinally(() -> {
             //runs first
-            Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 0);
+            Assert.assertEquals("1st defer ran before 1st finally",0, stage.get().longValue());
             stage.set(1L);
             runDeferred(() -> {
                 //runs last
-                Assert.assertEquals("2nd defer ran before 2nd finally",stage.get().longValue(), 3);
+                Assert.assertEquals("2nd defer ran before 2nd finally", 3, stage.get().longValue());
                 stage.set(4L);
                 latch.countDown();
             });
         });
-        runDeferred(() -> {
+
+        class SecondDefer implements Do {
+
+            @Override
+            public void done() {
               //runs second
-              Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 1);
+              Assert.assertEquals("1st defer ran before 1st finally", 1, stage.get().longValue());
               stage.set(2L);
               runFinally(() -> {
                   //runs third, as a finally inside a defer should.
-                  Assert.assertEquals("2nd finally did not run after 1st defer",stage.get().longValue(), 2);
+                  Assert.assertEquals("2nd finally did not run after 1st defer", 2, stage.get().longValue());
                   stage.set(3L);
                   latch.countDown();
-            });
-        });
+              });
+            }
+
+            @Override
+            public Do once() {
+                return this;
+            }
+        }
+        runDeferred(new SecondDefer());
     }
 
     do {

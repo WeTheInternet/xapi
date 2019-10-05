@@ -2,6 +2,7 @@ package xapi.dev.gwtc.api;
 
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.itr.ArrayIterable;
+import xapi.log.X_Log;
 import xapi.util.X_String;
 
 /**
@@ -165,7 +166,9 @@ public interface GwtcJobMonitor {
     void writeAsCompiler(String toCompiler);
 
     default void updateCompileStatus(CompileMessage status, String ... args) {
-        writeAsCompiler(status.type + ArrayIterable.iterate(args).join(""));
+        final String msg = status.type + ArrayIterable.iterate(args).join("");
+        X_Log.info(GwtcJobMonitor.class, "Updating compile status: ", msg);
+        writeAsCompiler(msg);
     }
 
     boolean hasMessageForCaller();

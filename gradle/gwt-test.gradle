@@ -19,7 +19,7 @@ dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, sources)
 
 dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, 'net.wetheinter:gwt-dev:2.8.0')
 
-test {
+tasks.withType(Test) {
     logging.level = LogLevel.INFO
     forkEvery = 1
     maxHeapSize = '2G'

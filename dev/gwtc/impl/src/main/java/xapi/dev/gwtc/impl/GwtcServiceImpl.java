@@ -7,14 +7,20 @@ import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.inject.InstanceDefault;
-import xapi.dev.gwtc.api.*;
+import xapi.dev.gwtc.api.AnnotatedDependency;
+import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
+import xapi.dev.gwtc.api.GwtcProjectGenerator;
+import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.impl.ExtensibleClassLoader;
 import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.source.ClassBuffer;
 import xapi.file.X_File;
 import xapi.fu.*;
-import xapi.fu.itr.*;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.MappedIterable;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
@@ -311,7 +317,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         urls.add(downloadDependency(dep));
       }
       if (needsXapiGwtcImpl) {
-        final MvnDependency dep = getDependency("xapi-gwtc-impl");
+        final MvnDependency dep = getDependency("xapi-gwtc-impl-gwt");
         urls.add(downloadDependency(dep));
       } else {
         if (needsXapiGwtcApi) {

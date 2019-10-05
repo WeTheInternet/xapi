@@ -45,12 +45,12 @@ public class ReflectiveMavenLoaderTest {
         final Out1<Iterable<String>> result = loader.downloadDependency(dep);
         final Iterable<String> items = result.out1();
         final SizedIterable<String> counted = MappedIterable.mapped(items).counted();
-        if (counted.size() == 2) {
+        if (counted.size() == 1) {
             // we loaded jars
             assertTrue("Expected xapi-fu in result",
                 counted.hasMatch2(String::contains, "xapi-fu")
             );
-        } else if (counted.size() == 4) {
+        } else if (counted.size() == 2) {
             // we loaded source folders
             assertTrue("Expected xapi-fu in result",
                 counted
@@ -60,10 +60,6 @@ public class ReflectiveMavenLoaderTest {
         } else {
             fail("Unexpected number of results for xapi-fu:\n" + counted.join("\n"));
         }
-
-        assertTrue("Expected validation api in result",
-            counted.hasMatch2(String::contains, "validation")
-        );
     }
 
     @Test(timeout = 830_000)

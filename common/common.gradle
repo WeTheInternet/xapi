@@ -1,3 +1,5 @@
+import net.wti.gradle.schema.api.Transitivity
+
 buildscript({
     dependencies {
         classpath group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: version, changing: true
@@ -43,6 +45,10 @@ xapiRequire {
             req.external 'javax.inject:javax.inject:1:sources'
             req.external 'javax.validation:validation-api:1.0.0.GA'
             req.external 'javax.validation:validation-api:1.0.0.GA:sources'
+    }
+    module('gwt', 'test').configure {
+        req ->
+            req.external Transitivity.runtime_only, 'net.wetheinter:gwt-dev:2.8.0'
     }
     module('gwt', 'testTools').configure {
         req ->

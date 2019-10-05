@@ -8,7 +8,7 @@ import xapi.fu.itr.SizedIterable;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/12/17.
  */
-public class ArgHandlerDist extends ArgHandlerString {
+public class ArgHandlerEntryPoints extends ArgHandlerString {
 
     private final IntTo<String> dist = X_Collect.newList(String.class);
 

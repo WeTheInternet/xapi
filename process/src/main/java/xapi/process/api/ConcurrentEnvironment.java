@@ -11,10 +11,11 @@ import xapi.util.X_Debug;
 
 import javax.inject.Provider;
 import java.util.Iterator;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
-import static xapi.process.X_Process.newThread;
-import static xapi.process.X_Process.now;
+import static xapi.process.X_Process.*;
 
 public abstract class ConcurrentEnvironment {
 
@@ -67,7 +68,7 @@ public abstract class ConcurrentEnvironment {
     do {
       boolean didWork = false;
       if (hasFinalies()) {
-        X_Log.debug(ConcurrentEnvironment.class, "run finallies");
+        X_Log.debug(ConcurrentEnvironment.class, "run finalies");
         runFinalies(max);
         didWork = true;
       }
@@ -82,14 +83,21 @@ public abstract class ConcurrentEnvironment {
           iter.remove();
         }
         didWork = true;
-        X_Log.trace(ConcurrentEnvironment.class, "iterating job", next);
+        X_Log.trace(ConcurrentEnvironment.class, "iterating deferred job", next);
         flushing.process(In1Out1.INCREMENT_INT);
         if (next instanceof HasPreload) {
           ((HasPreload) next).preload();
         }
-        final Thread t = newThread(() -> {
-          next.done();
-          flushing.process(In1Out1.DECREMENT_INT);
+        final Thread t = newThreadUnsafe(() -> {
+            try {
+              next.done();
+            } finally {
+                flushing.process(In1Out1.DECREMENT_INT);
+                if (hasFinalies()) {
+                    X_Log.trace(ConcurrentEnvironment.class, "has finalies after deferred task");
+                    runFinalies(max);
+                }
+            }
         });
         t.setName("X_Process Blocker for " + next);
         t.setDaemon(true);
@@ -131,6 +139,7 @@ public abstract class ConcurrentEnvironment {
         next = iter.next();
         iter.remove();
       }
+      X_Log.debug(ConcurrentEnvironment.class, "Running finaly", next);
       next.done();
       if (now() > max)
         throw new TimeoutException();

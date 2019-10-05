@@ -7,7 +7,9 @@ import xapi.fu.In2Out1;
 import xapi.util.api.Destroyable;
 
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.dev.codeserver.JobEvent;
 import com.google.gwt.dev.codeserver.JobEvent.Status;
+import com.google.gwt.dev.codeserver.JobEventTable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/18/17.

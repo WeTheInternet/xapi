@@ -10,18 +10,28 @@ import java.io.File;
  */
 public class DistOpts extends KwArgProcessorBase {
 
-    private final ArgHandlerDist dist = new ArgHandlerDist();
+    private final ArgHandlerEntryPoints dist = new ArgHandlerEntryPoints();
+    private final ArgHandlerPackageFilter filters = new ArgHandlerPackageFilter();
     private final ArgHandlerOutputDir output = new ArgHandlerOutputDir();
     private final ArgHandlerWorkDir work = new ArgHandlerWorkDir();
 
     public DistOpts() {
         registerHandler(dist);
+        registerHandler(filters);
         registerHandler(output);
         registerHandler(work);
     }
 
     public SizedIterable<String> getEntryPoints() {
         return dist.getDistEntryPoints();
+    }
+
+    public void addPackageFilter(String name) {
+        filters.setString(name);
+    }
+
+    public SizedIterable<String> getPackageFilters() {
+        return filters.getPackageFilters();
     }
 
     public void addEntryPoint(String name) {
