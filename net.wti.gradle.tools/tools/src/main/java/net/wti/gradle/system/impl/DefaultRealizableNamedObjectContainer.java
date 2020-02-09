@@ -33,4 +33,5 @@ public abstract class DefaultRealizableNamedObjectContainer <T> extends Abstract
     public boolean hasWithName(String name) {
         return super.hasWithName(name);
     }
+
 }

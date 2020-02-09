@@ -1,6 +1,5 @@
 package xapi.gwt.model.service;
 
-import jsinterop.base.Js;
 import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
@@ -43,7 +42,6 @@ public class ModelServiceGwt extends AbstractModelService
   private static Class<? extends Model> implClassRef;
   public static <M extends Model> String registerCreator(final Class<M> cls, final String type, final Class<? extends M> implClass, final ProvidesValue<M> provider) {
     PROVIDERS.put(cls, provider);
-    Js.debugger();
     implClassRef = implClass;
     final ModelService modelService = X_Model.getService();
     if (modelService instanceof ModelServiceGwt) {

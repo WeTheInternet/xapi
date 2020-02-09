@@ -47,6 +47,20 @@ xapiRequire.module('gwt', 'test').configure {
         req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
 
 }
+xapiSchema.whenReady {
+
+    dependencies {
+        gwtTestCompile("net.wti.core:xapi-gen:$version") {
+            capabilities {
+                requireCapability("net.wti.core:xapi-gen-sources")
+            }
+            attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'xapi-source-jar'))
+            }
+
+        }
+    }
+}
 
 xapiRequire.module('jre', 'main').configure {
     req ->

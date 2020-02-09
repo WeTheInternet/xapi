@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static xapi.log.X_Log.info;
 import static xapi.process.X_Process.*;
 
@@ -55,11 +56,13 @@ public class ConcurrencyTest {
         // but our build runs in parallel, so native OS is more likely to be busy enough to want to stop our thread.
         runFinally(() -> {
             //runs first
-            Assert.assertEquals("1st defer ran before 1st finally",0, stage.get().longValue());
+            assertEquals("1st defer ran before 1st finally",0, stage.get().longValue());
             stage.set(1L);
-            runDeferred(() -> {
-                //runs last
-                Assert.assertEquals("2nd defer ran before 2nd finally", 3, stage.get().longValue());
+            runDeferredUnsafe(() -> {
+                // runs last.  We use this Thread.sleep b/c we can't _really_ depend on the ordering of thread launched,
+                // so on fast systems, we would fail this test.
+                Thread.sleep(10);
+                assertEquals("2nd defer ran before 2nd finally", 3, stage.get().longValue());
                 stage.set(4L);
                 latch.countDown();
             });
@@ -70,11 +73,11 @@ public class ConcurrencyTest {
             @Override
             public void done() {
               //runs second
-              Assert.assertEquals("1st defer ran before 1st finally", 1, stage.get().longValue());
+              assertEquals("1st defer ran before 1st finally", 1, stage.get().longValue());
               stage.set(2L);
               runFinally(() -> {
                   //runs third, as a finally inside a defer should.
-                  Assert.assertEquals("2nd finally did not run after 1st defer", 2, stage.get().longValue());
+                  assertEquals("2nd finally did not run after 1st defer", 2, stage.get().longValue());
                   stage.set(3L);
                   latch.countDown();
               });
@@ -92,7 +95,7 @@ public class ConcurrencyTest {
         flush(200);
     } while (!latch.await(100, TimeUnit.MILLISECONDS));
 
-    Assert.assertTrue(stage.get() == 4);
+    assertEquals(4, (long) stage.get());
   }
 
   @Test(timeout = 10_000)

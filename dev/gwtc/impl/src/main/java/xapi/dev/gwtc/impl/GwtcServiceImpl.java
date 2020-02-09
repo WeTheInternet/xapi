@@ -542,8 +542,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       try (
           FileInputStream in = new FileInputStream(item)
       ) {
+          X_Log.warn(GwtcServiceImpl.class, "Using classpath file", item);
           String classpath = X_IO.toStringUtf8(in);
-          return iterate(classpath.split("[:;]"));
+          return iterate(classpath.split("[:;\n]"));
       } catch (IOException e) {
         X_Log.error(GwtcServiceImpl.class, "Cannot load classpath file", item, e);
       }
@@ -554,6 +555,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         X_Log.warn(GwtcServiceImpl.class, "Classpath file does not exist", item);
       } else {
         try {
+          X_Log.warn(GwtcServiceImpl.class, "Using classpath file from classloader", item);
           String classpath = X_IO.toStringUtf8(res.openStream());
           return iterate(classpath.split("[:;]"));
         } catch (IOException e) {

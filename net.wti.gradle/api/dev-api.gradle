@@ -10,5 +10,5 @@ xapiRequire.main().configure {
 }
 
 dependencies {
-    compile gradleApi()
+    compileOnly gradleApi()
 }

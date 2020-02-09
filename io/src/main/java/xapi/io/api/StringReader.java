@@ -46,10 +46,10 @@ public class StringReader implements LineReader {
 
   @Override
   public final void onEnd() {
-    X_Log.trace(getClass(),"ending", this);
+    X_Log.trace(StringReader.class,"ending", this);
     try {
       for (LineReader delegate : delegates.forEach()) {
-        X_Log.debug(getClass(),"ending delegate", delegate.getClass(), delegate);
+        X_Log.debug(StringReader.class,"ending delegate", delegate.getClass(), delegate);
         delegate.onEnd();
       }
     } finally {

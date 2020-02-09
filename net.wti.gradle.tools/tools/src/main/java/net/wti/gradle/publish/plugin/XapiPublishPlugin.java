@@ -37,7 +37,7 @@ import java.util.List;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/22/19 @ 3:51 AM.
  */
-@SuppressWarnings("UnstableApiUsage")
+@SuppressWarnings({"UnstableApiUsage", "unused"})
 public class XapiPublishPlugin implements Plugin<Project> {
 
     @Override
@@ -123,6 +123,16 @@ public class XapiPublishPlugin implements Plugin<Project> {
             final DefaultXapiUsageContext sourceCtx = new DefaultXapiUsageContext(select, XapiUsage.SOURCE_JAR);
             module.getUsages().add(sourceCtx);
         }
+        final String pomTaskName = "generatePomFileFor_" + platformGraph.getName() + "_" + select.getName() + "Publication";
+            select.getJarTask().configure(jar -> {
+                jar.whenSelected(selected->{
+                    final TaskProvider<Task> pomTask = view.getTasks().named(pomTaskName);
+                    String[] cap = select.getCapability().split(":");
+                    jar.into("META-INF/maven/" + cap[0] + "/" + cap[1] + "/pom.xml", spec -> {
+                        spec.from(pomTask);
+                });
+            });
+        });
         // The produced artifacts will be added to publication based on their presence,
         // but we need to realize the tasks for them to run callbacks and hook themselves up.
         // So, we make the lifecycle task depend on the assembled configuration.
@@ -171,16 +181,35 @@ public class XapiPublishPlugin implements Plugin<Project> {
         LinkedHashMap<String, PublishedModule> allMods = new LinkedHashMap<>();
         lib.getPlatforms().all(p->
             p.getModules().all(m-> {
-                    pubs.add(publications.create("_" + p.getName()+"_"+m.getName(), MavenPublication.class, pub->{
-                        pub.from(m);
-                        pub.setGroupId(m.getGroup());
-                        pub.setArtifactId(m.getModuleName());
-                        allMods.put(m.getGroup() + ":" + m.getName(), m);
-                        // "generatePomFileFor" + capitalize(publicationName) + "Publication"
-                        ((ExtensionAware)pub).getExtensions().add("xapiModule", m);
-                    }));
-                }
-            )
+                String key ="_" + p.getName()+"_"+m.getName();
+                pubs.add(publications.create(key, MavenPublication.class, pub->{
+                    pub.from(m);
+                    pub.setGroupId(m.getGroup());
+                    pub.setArtifactId(m.getModuleName());
+                    allMods.put(m.getGroup() + ":" + m.getModuleName(), m);
+                    // "generatePomFileFor" + capitalize(publicationName) + "Publication"
+                    ((ExtensionAware)pub).getExtensions().add("xapiModule", m);
+
+
+                    final String pomTaskName = "generatePomFileFor" + key + "Publication";
+                    final TaskProvider<Task> pomTask = view.getTasks().named(pomTaskName);
+                    final ArchiveGraph arch = view.getProjectGraph().platform(p.getName()).archive(m.getName());
+                    pub.versionMapping(strat -> {
+                        strat.usage(XapiUsage.SOURCE_JAR, variant -> {
+                            variant.fromResolutionOf(arch.configExportedSource());
+                        });
+                    });
+                    arch.getJarTask().configure(jar -> {
+                        String[] cap = arch.getCapability().split(":");
+                        jar.into("META-INF/maven/" + cap[0] + "/" + cap[1], spec -> {
+                            spec.from(pomTask);
+                            spec.rename("pom-default.xml", "pom.xml");
+                        });
+                    });
+
+
+                }));
+            })
         );
 //        // publish the main artifact.  All items above are child modules (~variants) of the XapiLibrary
         // Disabled, as it currently interferes w/ "just get it directly from other publications".
@@ -194,9 +223,9 @@ public class XapiPublishPlugin implements Plugin<Project> {
 
                 final Object module = ((ExtensionAware) source).getExtensions().findByName("xapiModule");
                 if (module != null) {
+                    PublishedModule mod = (PublishedModule) module;
+                    final ArchiveGraph graph = mod.getModule();
                     task.whenSelected(selected->{
-                        PublishedModule mod = (PublishedModule) module;
-                        final ArchiveGraph graph = mod.getModule();
                         task.dependsOn(graph.getJarTask());
                         if (graph.config().isSourceAllowed()) {
                             task.dependsOn(graph.getSourceJarTask());
@@ -228,12 +257,12 @@ public class XapiPublishPlugin implements Plugin<Project> {
         // Anything with source to publish is selectable.
         // Should also likely include anything that has been xapiRequire'd.
         // Should also check for a platform-only build to filter ignored platforms.
-        if (module.srcExists()) {
+//        if (module.srcExists()) {
             final boolean published = module.config().isPublished();
             module.getView().getLogger().trace("Publishing {}? {}", LazyString.nonNullString(module::getModuleName), published);
             return published;
-        }
-        return false;
+//        }
+//        return false;
     }
 
 }

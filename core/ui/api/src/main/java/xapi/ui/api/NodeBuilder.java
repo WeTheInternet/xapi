@@ -34,6 +34,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   protected Function<String, String> bodySanitizer;
   protected BiFunction<String, Boolean, NodeBuilder<E>> newNode;
   private boolean initialized;
+  private boolean autoAppend;
 
   protected NodeBuilder() {
     this(false);
@@ -480,4 +481,11 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     return elementProvider != null && elementProvider.isResolving();
   }
 
+    public void setAutoAppend(boolean autoAppend) {
+        this.autoAppend = autoAppend;
+    }
+
+    public boolean getAutoAppend() {
+        return autoAppend;
+    }
 }

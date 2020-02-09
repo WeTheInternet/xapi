@@ -126,6 +126,37 @@ public enum DefaultUsageType implements UsageType {
                 ;
         }
     },
+    Source {
+        @Override
+        public Configuration findConsumerConfig(ArchiveGraph module, Transitivity trans) {
+            return module.configSource();
+        }
+
+        @Override
+        public Configuration findProducerConfig(ArchiveGraph module, Transitivity transitivity) {
+            return module.configExportedSource();
+        }
+
+        @Override
+        public Usage findUsage(ProjectGraph project, Configuration consumer, Configuration producer) {
+            return project.usageSourceJar(); // TODO: pick between Source and SourceJar based on consuming configuration...
+        }
+
+        @Override
+        public String deriveConfiguration(
+            String base,
+            Dependency dep,
+            boolean isLocal, Transitivity transitivity,
+            boolean lenient
+        ) {
+            return isLocal && !"false".equals(System.getProperty("xapi.composite")) ? "main".equals(base) ? "exportSource" : base + "ExportSource" : null;
+        }
+
+        @Override
+        public String computeRequiredCapabilities(Dependency dep, String fromPlat, String fromMod, String classifier) {
+            return super.computeRequiredCapabilities(dep, fromPlat, fromMod, null) + "-sources";
+        }
+    },
     /**
      * Extra runtime code you only want during development
      */
@@ -163,8 +194,13 @@ public enum DefaultUsageType implements UsageType {
     }
 
     @Override
-    public String computeRequiredCapabilities(Dependency dep, String fromPlat, String fromMod) {
+    public String computeRequiredCapabilities(
+        Dependency dep,
+        String fromPlat,
+        String fromMod,
+        String classifier
+    ) {
         // We are overriding this b/c groovy can complain when trying to find inherited default methods
-        return UsageType.super.computeRequiredCapabilities(dep, fromPlat, fromMod);
+        return UsageType.super.computeRequiredCapabilities(dep, fromPlat, fromMod, classifier);
     }
 }

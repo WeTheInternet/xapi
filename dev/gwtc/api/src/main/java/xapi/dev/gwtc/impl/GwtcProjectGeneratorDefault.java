@@ -20,11 +20,13 @@ import xapi.except.NotYetImplemented;
 import xapi.file.X_File;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
+import xapi.fu.itr.ArrayIterable;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.inject.X_Inject;
+import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.reflect.X_Reflect;
@@ -32,9 +34,7 @@ import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -42,6 +42,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.io.File.pathSeparator;
+import static xapi.fu.Out1.immutable;
+import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.gwtc.api.GwtManifest.GEN_PREFIX;
 import static xapi.source.X_Source.hasMainPath;
 import static xapi.source.X_Source.rebaseMain;
@@ -479,6 +482,17 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
 
     @Override
     public void generateCompile(GwtManifest manifest) {
+        String classpathProp = "gwt.classpath." + manifest.getModuleShortName();
+        String classpathValue = System.getProperty(classpathProp);
+        if (classpathValue != null) {
+            try {
+                manifest.addDependencies(immutable(iterate(
+                    X_IO.toStringUtf8(new FileInputStream(classpathValue))
+                .split(pathSeparator))));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Classpath file " + classpathValue + " from system property " + classpathProp + " does not exist!", e);
+            }
+        }
         assert tempDir.exists() : "No usable directory " + tempDir.getAbsolutePath();
         if (manifest.getModuleName() == null) {
             manifest.setModuleName(genName);

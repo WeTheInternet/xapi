@@ -56,12 +56,17 @@ public interface Log extends Debuggable {
   default Log log(Class forClass, Object ... values) {
     LogLevel level = levelForClass(forClass);
     if (isLoggable(level)) {
-      print(level, debug(values));
+      print(level, maybePrefix(forClass) + debug(values));
     }
     return this;
   }
 
-  default LogLevel levelForClass(Class forClass) {
+   default String maybePrefix(Class forClass) {
+      // convert this class into an IDE-friendly link
+      return Debuggable.classLink((Class<?>)forClass);
+   }
+
+    default LogLevel levelForClass(Class forClass) {
     gen_logLevelForClass : {
       // This level will always be loggable,
       // but note the named block here;

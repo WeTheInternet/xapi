@@ -25,7 +25,7 @@ dependencies {
 }
 
 
-String doc = '''The loader plugin is a *settings.gradle* plugin which creates projects from schema.xapi files.
+String settingsPluginDoc = '''The loader plugin is a *settings.gradle* plugin which *creates* projects from schema.xapi files.
 
 After you `apply plugin: 'xapi-loader'` in your settings.gradle,
 we will have created gradle projects, as appropriate, based on your system configuration.
@@ -35,7 +35,13 @@ we will only create the projects necessary to build the given platform(s).
 This includes any "parent platforms" of the comma-separated list of platform names.
 '''
 
-description = doc
+String parserPluginDoc = '''The parser plugin is a *build.gradle* plugin which *configures* projects from schema.xapi files.
+
+All xapi plugins will automatically try to load this plugin from the classpath,
+so we can be sure of eager-initialization of xapi schema objects, and gradle Configuration instances.
+'''
+
+description = settingsPluginDoc
 
 xapiSchema.whenReady {
     // java-gradle-plugin relies on task jar being defined.  Lets use the schema to realize it early.
@@ -49,9 +55,23 @@ xapiSchema.whenReady {
         PluginDeclaration decl->
             decl.id = 'xapi-loader'
             decl.displayName = "Xapi Loader Plugin"
-            decl.description = doc
+            decl.description = settingsPluginDoc
             decl.implementationClass = "net.wti.loader.plugin.XapiLoaderPlugin"
     })
+    plugin.plugins.register('xapi-parser', {
+        PluginDeclaration decl->
+            decl.id = 'xapi-parser'
+            decl.displayName = "Xapi Parser Plugin"
+            decl.description = parserPluginDoc
+            decl.implementationClass = "net.wti.gradle.parser.plugin.XapiParserPlugin"
+    })
+    tasks.test.dependsOn 'pluginUnderTestMetadata'
+    dependencies {
+        testRuntime files(new File(buildDir, 'pluginUnderTestMetadata'))
+    }
+    tasks.test.doFirst {
+        new File(buildDir, 'testRuntime.classpath').text = (tasks.test as Test).classpath.asPath
+    }
 
 //     To actually publish plugin:
 //     plugins {

@@ -12,11 +12,11 @@ repositories.jcenter()
 sourceCompatibility = '1.8'
 
 dependencies {
-    compile gradleApi()
+    compileOnly gradleApi()
     testCompile project(':xapi-gradle-test')
-    
+
     // uncomment / copy+paste dependencies below to unlock class mocking in spock.
-    // you might only need one of them...  
+    // you might only need one of them...
     // (update above comment when used next)
 //    testRuntime 'net.bytebuddy:byte-buddy:1.9.9',
 //                'org.objenesis:objenesis:3.0.1'

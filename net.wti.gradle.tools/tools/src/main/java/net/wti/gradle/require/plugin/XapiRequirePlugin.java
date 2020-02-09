@@ -15,6 +15,8 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.attributes.AttributeMatchingStrategy;
+import org.gradle.api.attributes.Usage;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 
 import javax.inject.Inject;
@@ -74,6 +76,26 @@ public class XapiRequirePlugin implements Plugin<Project> {
             }
         }
         register(view, reg);
+        view.getDependencies().attributesSchema(attrSchema -> {
+
+            final AttributeMatchingStrategy<String> platAttr = attrSchema.attribute(
+                XapiSchemaPlugin.ATTR_PLATFORM_TYPE);
+            final AttributeMatchingStrategy<String> modAttr = attrSchema.attribute(
+                XapiSchemaPlugin.ATTR_ARTIFACT_TYPE);
+            platAttr.getCompatibilityRules().add(XapiCompatibilityRules.class);
+            modAttr.getCompatibilityRules().add(XapiCompatibilityRules.class);
+            platAttr.getDisambiguationRules().add(XapiDisambiguationRules.class);
+            modAttr.getDisambiguationRules().add(XapiDisambiguationRules.class);
+
+            final AttributeMatchingStrategy<Usage> modUsage = attrSchema.attribute(
+                Usage.USAGE_ATTRIBUTE);
+            modUsage.getCompatibilityRules().add(XapiUsageCompatibilityRules.class, rules -> {
+                rules.params(view.getProjectGraph().usageSourceJar());
+            });
+            modUsage.getDisambiguationRules().add(XapiUsageDisambiguationRules.class, rules -> {
+                rules.params(view.getProjectGraph().usageSourceJar());
+            });
+        });
     }
 
     private void register(ProjectView view, XapiRequire reg) {

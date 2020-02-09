@@ -7,6 +7,8 @@ import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.util.GUtil;
 import xapi.gradle.fu.LazyString;
@@ -25,6 +27,7 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     private final PlatformConfigInternal platform;
     private final SetProperty<LazyString> requires;
     private final ProjectView view;
+    private final Property<Boolean> publish;
     private Object sourceAllowed;
     private Object test;
     private Object published;
@@ -37,6 +40,10 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
         this.name = name;
         this.platform = platform;
         this.view = view;
+        publish = view.getObjects().property(Boolean.class);
+        publish.convention(view.lazyProvider(()->
+            published == null ? view.getSchema().shouldPublish(this) : unwrapBoolean(published)
+        ));
         requires = view.getObjects().setProperty(LazyString.class);
         requires.convention(view.lazyProvider(()->{
             // Nothing set?  apply convention.
@@ -77,9 +84,10 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
             requires.addAll(
                 // TODO: wire in some pre-built version of xapi-fu
                 Arrays.stream(units)
-                    .map(require->
-                        new LazyString(()->GradleCoerce.unwrapString(require))
-                    ).collect(Collectors.toList()));
+                    .map(GradleCoerce::unwrapStrings)
+                    .flatMap(Collection::stream)
+                    .map(LazyString::new)
+                    .collect(Collectors.toList()));
         }
     }
 
@@ -125,7 +133,7 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
         if (!getPlatform().isPublished()) {
             return false;
         }
-        return published == null ? view.getSchema().shouldPublish(this) : unwrapBoolean(published);
+        return publish.getOrElse(false);
     }
 
     @Override
@@ -136,6 +144,11 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     @Override
     public void setPublished(Object published) {
         this.published = published;
+    }
+
+    @Override
+    public void setPublishedProvider(Provider<Boolean> allowed) {
+        publish.set(allowed);
     }
 
     @Override

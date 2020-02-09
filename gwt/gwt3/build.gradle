@@ -7,6 +7,7 @@ xapiRequire.main().configure {
         req.project 'xapi-common', 'gwt:main'
         req.project 'xapi-gwt-ui-parent:xapi-gwt-ui-api'
         req.external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
+        req.external 'com.google.elemental2:elemental2-promise:1.0.0-RC1'
         req.external 'com.google.jsinterop:base:1.0.0-RC1'
 }
 

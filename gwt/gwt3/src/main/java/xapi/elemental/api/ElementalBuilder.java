@@ -205,7 +205,7 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implemen
 
   @Override
   protected void startInitialize(E el) {
-    if (isAutoAppend(el)) {
+    if (getAutoAppend() && isAutoAppend(el)) {
       DomGlobal.document.body.appendChild(el);
     }
     super.startInitialize(el);

@@ -24,7 +24,7 @@ import xapi.gradle.task.SourceJar;
  */
 public class AllJars {
 
-    public static final String SOURCE_JAR = "sourceJar";
+    public static final String SOURCE_JAR = "sourceJarDeprecated";
     private final TaskProvider<SourceJar> sourceJar;
     private ArchiveType mainType = DefaultArchiveType.MAIN;
 

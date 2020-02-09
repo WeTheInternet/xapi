@@ -466,7 +466,7 @@ public class GwtManifest {
 
   private MappedIterable<Out1<? extends Iterable<String>>> splitOnPathSeparator(MappedIterable<String> strings) {
     return strings
-        .map2(String::split, "[;:]") // server path:encoding:character may not == client path;encoding;character
+        .map2(String::split, "[;:\n]") // server path:encoding:character may not == client path;encoding;character
         .map(ArrayIterable::iterate)
         .map(Immutable::immutable1);
   }

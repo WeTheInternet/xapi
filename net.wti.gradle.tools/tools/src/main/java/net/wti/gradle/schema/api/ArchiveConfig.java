@@ -3,6 +3,7 @@ package net.wti.gradle.schema.api;
 import net.wti.gradle.internal.api.ProjectView;
 import org.gradle.api.Named;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.SetProperty;
 import xapi.gradle.fu.LazyString;
 
@@ -32,6 +33,8 @@ public interface ArchiveConfig extends Named {
     void setTest(Object allowed);
 
     void setPublished(Object allowed);
+
+    void setPublishedProvider(Provider<Boolean> allowed);
 
     ImmutableAttributes getAttributes(ProjectView view);
 

@@ -2,6 +2,8 @@ plugins {
     id 'xapi-require'
 }
 
+apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+
 repositories {
     jcenter()
 }

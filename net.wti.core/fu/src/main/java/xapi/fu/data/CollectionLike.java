@@ -1,5 +1,6 @@
 package xapi.fu.data;
 
+import xapi.fu.Filter.Filter1;
 import xapi.fu.Out2;
 import xapi.fu.api.Clearable;
 import xapi.fu.api.Ignore;
@@ -52,6 +53,29 @@ public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItem
     default CollectionLike<V> addNow(Iterable<? extends V> items) {
         items.forEach(this::add);
         return this;
+    }
+
+    default boolean removeIf(Filter1<V> filter) {
+        boolean removed = false;
+        for (
+            final SizedIterator<V> itr = iterator();
+            itr.hasNext();
+        ) {
+            final V next = itr.next();
+            if (filter.filter1(next)) {
+                removed = true;
+                itr.remove();
+            }
+        }
+        return removed;
+    }
+
+    default boolean removeAllEquality(CollectionLike<V> others) {
+        return removeIf(others::containsEquality);
+    }
+
+    default boolean removeAllReference(CollectionLike<V> others) {
+        return removeIf(others::containsReference);
     }
 
 }

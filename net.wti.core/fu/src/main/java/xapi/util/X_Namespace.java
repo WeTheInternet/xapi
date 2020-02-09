@@ -1,8 +1,5 @@
 package xapi.util;
 
-import xapi.util.service.PropertyService;
-
-
 /**
  * A collection of string constants, used as property keys throughout the app.
  *
@@ -95,7 +92,7 @@ public class X_Namespace {
   public static final String PROPERTY_MODEL_STRATEGY = "xapi.model.strategy";
   /**
    * "xapi.properties" System property for setting the class to act as
-   * runtime {@link PropertyService}. Default implementation backed by System.properties
+   * runtime {@link xapi.util.service.PropertyService}. Default implementation backed by System.properties
    */
   public static final String PROPERTY_PROVIDER = "xapi.properties";
   /**

@@ -30,7 +30,7 @@ public interface BuildGraph extends GraphNode {
     String EXT_NAME = "xapiBuild";
 
     static BuildGraph findBuildGraph(Project project) {
-        final GradleService service = GradleServiceFinder.getService(project);
+        final GradleService service = GradleServiceFinder.getService(project.getRootProject());
         return service.buildOnce(
             BuildGraph.class, EXT_NAME, p-> service.createBuildGraph());
     }

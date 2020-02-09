@@ -1,6 +1,7 @@
 package net.wti.gradle.schema.plugin;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.system.plugin.XapiBasePlugin;
 import net.wti.gradle.schema.api.ArchiveConfig;
@@ -65,13 +66,35 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         plugins.apply(XapiBasePlugin.class);
 
         final ProjectView view = ProjectView.fromProject(project);
+        boolean isRoot = view == schemaRootProject(view);
         BuildGraph graph = view.getBuildGraph();
+        if (isRoot) {
+            // signal that the root schema.xapi should be parsed, and a SchemaMap built.
+
+        }
         finalize(view, graph);
 
+        if (isRoot) {
+            // do not attempt to resolve sourcesets and module tasks in the schema root project... yet.
+
+            return;
+        }
+        if ("true".equals(System.getProperty("idea.resolveSourceSetDependencies"))) {
+            // idea is trying to resolve dependencies... make sure we realize everything!
+            view.getProjectGraph().platforms().all(plat -> {
+                plat.archives().all(mod -> {
+                    graph.whenReady(ReadyState.FINISHED, done->{
+                        mod.getSource();
+                        mod.getTasks().realizeAll();
+                    });
+                });
+            });
+        }
+        // DO NOT ADD CODE HERE WITHOUT CONSIDERING THE EARLY RETURN STATEMENT ABOVE!
     }
 
     @SuppressWarnings({"ConstantConditions"}) // we null check the input to the method that can return null
-    private void finalize(ProjectView view, BuildGraph graph) {
+    private XapiSchema finalize(ProjectView view, BuildGraph graph) {
         final Object limiter = view.findProperty("xapi.platform");
         final XapiSchema schema = view.getSchema();
 
@@ -112,6 +135,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
                 next.getArchives().all(archConfig-> configure.accept(current, archConfig));
             }
         }
+        return schema;
     }
 
     private static String schemaRootPath(ProjectView project) {

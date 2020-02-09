@@ -2,18 +2,25 @@ package net.wti.gradle.schema.parser;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.JsonContainerExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import net.wti.gradle.internal.api.MinimalProjectView;
+import net.wti.gradle.schema.map.SchemaMap;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.GradleException;
 import xapi.fu.In2;
+import xapi.fu.data.ListLike;
 import xapi.fu.log.Log.LogLevel;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 
-import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.onMissingFail;
 import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
 /**
@@ -35,42 +42,63 @@ public interface SchemaParser {
     /**
      * Find the schema.xapi file for a given project, and parse it.
      *
-     * TODO: take in a _much_ more limited subset of ProjectView,
-     *  so we can reuse this code for a ProjectDesriptor as well.
-     *
-     * @param p
-     * @return
-     * @throws ParseException
-     * @throws IOException
+     * @param p - A MinimalProjectView, to be able to look up properties and locate a project directory.
+     * @return A parsed {@link SchemaMetadata} file.
      */
     default SchemaMetadata parseSchema(MinimalProjectView p) {
         String schemaFile = GradleCoerce.unwrapStringOr(p.findProperty("xapiSchema"), "schema.xapi");
         File f = new File(schemaFile);
-        if (!f.exists()) {
-            if (f.isAbsolute()) {
+        return parseSchemaFile(p.getProjectDir(), f);
+    }
+
+    /**
+     * Parse a supplied "schema.xapi" file.
+     *
+     * @return A parsed {@link SchemaMetadata} file.
+     * @param relativeRoot In case the schemaFile is relative, where to try resolving it.
+     * @param schemaFile A relative-or-absolute path to a schema.xapi file (can be named anything)
+     * @return A parsed {@link SchemaMetadata} file.
+     *
+     * We will throw illegal argument exceptions if you provide a non-existent absolute-path-to-a-schema-file.
+     * Relative paths will be more forgiving.
+     */
+    default SchemaMetadata parseSchemaFile(File relativeRoot, File schemaFile) {
+        if (!schemaFile.exists()) {
+            if (schemaFile.isAbsolute()) {
                 throw new IllegalArgumentException("Non-existent absolute-path xapiSchema file " + schemaFile);
             }
-            f = new File(p.getProjectDir(), schemaFile);
+            schemaFile = new File(relativeRoot, schemaFile.getPath());
         }
-        if (!f.exists()) {
-            return new SchemaMetadata();
+        if (schemaFile.isDirectory()) {
+            schemaFile = new File(schemaFile, "schema.xapi");
+        }
+        if (!schemaFile.exists()) {
+            return new SchemaMetadata(schemaFile);
         }
         final UiContainerExpr expr;
         try (
-            FileInputStream fio = new FileInputStream(f)
+            FileInputStream fio = new FileInputStream(schemaFile)
         ) {
-            expr = JavaParser.parseUiContainer(f.getAbsolutePath(), fio, LogLevel.INFO);
+            expr = JavaParser.parseUiContainer(schemaFile.getAbsolutePath(), fio, LogLevel.INFO);
         } catch (IOException e) {
-            throw new UncheckedIOException("Unable to load file:" + f.getAbsolutePath(), e);
+            throw new UncheckedIOException("Unable to load file:" + schemaFile.getAbsolutePath(), e);
         } catch (ParseException e) {
-            throw new GradleException("Invalid xapi source in file:" + f.getAbsolutePath(), e);
+            throw new GradleException("Invalid xapi source in file:" + schemaFile.getAbsolutePath(), e);
         }
-        return parseSchema(expr);
+        return parseSchemaElement(schemaFile, expr);
     }
 
-    default SchemaMetadata parseSchema(UiContainerExpr schema) {
-        final SchemaMetadata metadata = new SchemaMetadata();
+    default SchemaMetadata parseSchemaElement(File schemaFile, UiContainerExpr schema) {
+        final SchemaMetadata metadata = new SchemaMetadata(schemaFile);
         ComposableXapiVisitor.<SchemaMetadata>whenMissingFail(SchemaParser.class)
+            .withUiContainerRecurse(In2.ignoreAll())
+            .withNameExpr((ctr, meta)-> {
+                if (!ctr.getName().equals("xapi-schema")) {
+                    throw new IllegalArgumentException("Bad schema file, " + schemaFile.getAbsolutePath() + "; " +
+                        "does not start with <xapi-schema; instead, starts with: " + ctr.getName() + ":\n" + ctr.toSource());
+                }
+                return false;
+            })
             .withUiAttrTerminal((attr, meta)->{
                 switch (attr.getNameString()) {
                     case "platforms":
@@ -96,6 +124,10 @@ public interface SchemaParser {
                     case "schemaLocation":
                         // location of a generated schema script. If it's a directory, a file named build.gradle will be created.
                         addSchemaLocation(meta, attr.getExpression());
+                        break;
+                    case "rootName":
+                        // the name of the root project, for use it paths
+                        meta.setName(attr.getStringExpression(false, true));
                         break;
                     default:
                         throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
@@ -127,7 +159,10 @@ public interface SchemaParser {
                 // an array of elements:
                 // [ <main />, <gwt replace="main" />, <jre replace=main />, ... ]
                 visitor
+                    .withJsonArrayRecurse(In2.ignoreAll(), false)
+                    .withJsonPairRecurse(In2.ignoreAll())
                     .withUiAttrRecurse(In2.ignoreAll())
+                    .withIntegerLiteralTerminal(In2.ignoreAll())
                     .visit(json, null);
             } else {
                 // a map from name to replace= values:
@@ -164,19 +199,60 @@ public interface SchemaParser {
         <test require = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
     ]
         */
+        final ComposableXapiVisitor<?> visitor = whenMissingFail(SchemaParser.class)
+            .withUiContainerTerminal((el, val) -> {
+                String modName = el.getName();
+                meta.addModule(modName, el);
+            })
+            .nameOrString(modName ->
+                meta.addModule(modName, new UiContainerExpr(modName))
+            );
+        if (expression instanceof JsonContainerExpr) {
+            final JsonContainerExpr json = (JsonContainerExpr) expression;
+            if (json.isArray()) {
+                // an array of elements:
+                // [ <main />, <gwt require="main" />, <jre require=main />, ... ]
+                visitor
+                    .withJsonArrayRecurse(In2.ignoreAll(), false)
+                    .withJsonPairRecurse(In2.ignoreAll())
+                    .withUiAttrRecurse(In2.ignoreAll())
+                    .withIntegerLiteralTerminal(In2.ignoreAll())
+                    .visit(json, null);
+            } else {
+                // a map from name to require= values:
+                // { main: "", gwt: "main", jre: "main", etc: "..." }
+                whenMissingFail(SchemaParser.class)
+                    .withUiAttrTerminal((attr, val) -> {
+                        String platName = attr.getNameString();
+                        attr.accept(
+                            whenMissingFail(SchemaParser.class)
+                                .nameOrString(require -> {
+                                    final UiContainerExpr expr = new UiContainerExpr(platName);
+                                    if (!require.isEmpty()) {
+                                        expr.addAttribute("require", NameExpr.of(require));
+                                    }
+                                    meta.addModule(platName, expr);
+                                })
+                            , val);
+                    })
+                    .visit(json, null);
+            }
+        } else if (expression instanceof UiContainerExpr) {
+            expression.accept(visitor, null);
+        } else {
+            throw new GradleException("Invalid platforms expression " + expression.getClass() +" :\n" + expression.toSource());
+        }
+
     }
     default void addProjects(SchemaMetadata meta, Expression expression) {
-        /*
-    modules = [
-        <main require = [ api, spi ] />,
-        <sample require = "main" published = true />,
-        <testTools require = "main" published = true />,
-        <test require = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
-    ]
-        */
+        meta.addProject(expression);
     }
 
     default void addExternal(SchemaMetadata meta, Expression expression) {
+        ComposableXapiVisitor<SchemaMetadata> v = ComposableXapiVisitor.whenMissingFail(SchemaParser.class);
+        v  .withJsonArrayRecurse(In2.ignoreAll())
+           .withUiContainerTerminal(meta::addExternal);
+        expression.accept(v, meta);
         /*
 
     // declare any external dependencies here,
@@ -210,15 +286,39 @@ public interface SchemaParser {
             whenMissingFail(SchemaParser.class)
                 // consider supporting method calls and the like here too...
                 .nameOrString(meta::setDefaultUrl)
+                .withMethodCallExpr((expr, ignored) -> {
+                    if (!expr.getArgs().isEmpty()) {
+                        throw new IllegalArgumentException("defaultRepoUrl methods cannot take arguments! you sent " + expr.toSource());
+                    }
+                    return true;
+                })
             , null);
     }
 
     default void addSchemaLocation(SchemaMetadata meta, Expression expression) {
-        // define where to produce a generated schema.  default is schema/build.gradle
+        // define where to produce a generated schema.  default is $meta.schemaFile.parentDir/schema.gradle
         expression.accept(
             whenMissingFail(SchemaParser.class)
                 .nameOrString(meta::setSchemaLocation)
             , null);
     }
 
+    default void loadModules(SchemaMap map, SchemaMetadata metadata) {
+        final ListLike<UiContainerExpr> platforms = metadata.getPlatforms();
+        if (platforms != null) {
+            map.loadPlatforms(metadata, platforms);
+        }
+        final ListLike<UiContainerExpr> modules = metadata.getModules();
+        if (modules != null) {
+            map.loadModules(metadata, modules);
+        }
+        final ListLike<UiContainerExpr> externals = metadata.getExternal();
+        if (externals != null) {
+            map.loadExternals(metadata, this, externals);
+        }
+        final ListLike<UiContainerExpr> projects = metadata.getProjects();
+        if (projects != null) {
+            map.loadProjects(metadata, this, projects);
+        }
+    }
 }

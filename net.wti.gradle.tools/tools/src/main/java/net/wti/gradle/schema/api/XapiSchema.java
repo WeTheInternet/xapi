@@ -180,16 +180,20 @@ public class XapiSchema {
             // When we are the schema root, we must wait until we are evaluated before we let other XapiSchema instances
             // read from our values.
             rpg.whenReady(ReadyState.RUN_FINALLY + 1, ready->{
-                    platforms.configureEach(plat ->
-                        archives.configureEach(arch-> {
-                            rpg.whenReady(ReadyState.RUN_FINALLY + 2, allReady->{
-                                final ArchiveConfig inst = plat.getArchive(arch.getName());
-                                self.getLogger().trace("root schema ({}~{}) declared {}", ((GradleInternal) self.getGradle()).findIdentityPath(), self.getPath(), inst);
-                                final PlatformConfig rootPlat = plat.getRoot();
-                            });
+                platforms.configureEach(plat ->
+                    archives.configureEach(arch-> {
+                        rpg.whenReady(ReadyState.RUN_FINALLY + 2, allReady->{
+                            final ArchiveConfig inst = plat.getArchive(arch.getName());
+                            inst.require(arch.required());
+                            inst.setPublishedProvider(self.lazyProvider(arch::isPublished));
+                            inst.setSourceAllowed(arch.isSourceAllowed());
+                            inst.setTest(arch.isTest());
+                            self.getLogger().trace("root schema ({}~{}) declared {}", ((GradleInternal) self.getGradle()).findIdentityPath(), self.getPath(), inst);
+                            final PlatformConfig rootPlat = plat.getRoot();
+                        });
 
-                        })
-                    );
+                    })
+                );
             });
         } else {
             root.whenReady(evaluated->{

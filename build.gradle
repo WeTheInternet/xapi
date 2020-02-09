@@ -3,6 +3,7 @@ plugins {
     id 'idea'
 }
 
+
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
 
@@ -40,7 +41,7 @@ allprojects {
         repositories.jcenter()
 
     }
-        
+
 }
 
 gradle.beforeProject {
@@ -73,15 +74,22 @@ subprojects {
             tasks.withType(Test).all {
                 Test test ->
                     test.systemProperty('xapi.mvn.repo', mvnRepo.absolutePath)
-                    File metaDir = (tasks.compileTestJava as JavaCompile).destinationDir
-                    test.systemProperty('xapi.meta', metaDir.absolutePath)
-//                    test.systemProperty('xapi.injector.cache', metaDir.absolutePath)
                     if (!test.maxHeapSize) {
                         test.maxHeapSize = '1G'
                     }
-                    test.doFirst {
-                        new File(metaDir, 'META-INF/singletons').mkdirs()
-                        new File(metaDir, 'META-INF/instances').mkdirs()
+
+                    String compileForTest = "compile${test.name - "test" - "Main"}Java"
+                    JavaCompile javac = project.tasks.findByName(compileForTest)
+                    if (javac) {
+                        File metaDir = javac.destinationDir
+                        test.systemProperty('xapi.meta', metaDir.absolutePath)
+    //                    test.systemProperty('xapi.injector.cache', metaDir.absolutePath)
+                        test.doFirst {
+                            new File(metaDir, 'META-INF/singletons').mkdirs()
+                            new File(metaDir, 'META-INF/instances').mkdirs()
+                        }
+                    } else {
+                        test.logger.warn "Could not find $compileForTest in $project.path"
                     }
             }
 

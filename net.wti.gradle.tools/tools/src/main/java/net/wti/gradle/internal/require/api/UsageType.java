@@ -89,7 +89,13 @@ public interface UsageType extends Named {
         boolean lenient
     );
 
-    default String computeRequiredCapabilities(Dependency dep, String fromPlat, String fromMod) {
+    default String computeRequiredCapabilities(
+        Dependency dep,
+        String fromPlat,
+        String fromMod,
+        String classifier
+    ) {
+        // consider using the classifier here? we're going to rework all this mess shortly anyway...
         return dep.getGroup() +
             ":" +
             XapiNamer.moduleName(dep.getName(), fromPlat, fromMod)

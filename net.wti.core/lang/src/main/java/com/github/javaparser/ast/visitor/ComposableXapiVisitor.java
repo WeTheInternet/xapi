@@ -8,10 +8,7 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
-import xapi.fu.In1;
-import xapi.fu.In2;
-import xapi.fu.In2Out1;
-import xapi.fu.In3;
+import xapi.fu.*;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
@@ -634,7 +631,7 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     public ComposableXapiVisitor<Ctx> withNameOrString(In2<String, Ctx> callback) {
         return withNameTerminal((name, val) -> {
             String platName = name.getQualifiedName();
-            callback.in(name.getQualifiedName(), val);
+            callback.in(platName, val);
         })
         .withStringLiteralTerminal((name, val) -> {
             callback.in(name.getValue(), val);
@@ -1058,13 +1055,29 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(UiContainerExpr.class, callback);
         return this;
     }
+
+    public ComposableXapiVisitor<Ctx> withUiContainerExpr(In1Out1<UiContainerExpr, Boolean> callback) {
+        putCallback(UiContainerExpr.class, callback.ignoresIn2());
+        return this;
+    }
+
     public ComposableXapiVisitor<Ctx> withUiContainerRecurse(In2<UiContainerExpr, Ctx> callback) {
         putCallback(UiContainerExpr.class, callback.supply1(true));
         return this;
     }
 
+    public ComposableXapiVisitor<Ctx> withUiContainerRecurse(In1<UiContainerExpr> callback) {
+        putCallback(UiContainerExpr.class, callback.<Ctx>ignore2().supply1(true));
+        return this;
+    }
+
     public ComposableXapiVisitor<Ctx> withUiContainerTerminal(In2<UiContainerExpr, Ctx> callback) {
         putCallback(UiContainerExpr.class, callback.supply1(false));
+        return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withUiContainerTerminal(In1<UiContainerExpr> callback) {
+        putCallback(UiContainerExpr.class, callback.<Ctx>ignore2().supply1(false));
         return this;
     }
 
@@ -1079,6 +1092,24 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     }
     public ComposableXapiVisitor<Ctx> withJsonContainerRecurse(In2<JsonContainerExpr, Ctx> callback) {
         putCallback(JsonContainerExpr.class, callback.supply1(true));
+        return this;
+    }
+    public ComposableXapiVisitor<Ctx> withJsonArrayRecurse(In2<JsonContainerExpr, Ctx> callback) {
+        return withJsonArrayRecurse(callback, false);
+    }
+
+    public ComposableXapiVisitor<Ctx> withJsonArrayRecurse(In2<JsonContainerExpr, Ctx> callback, boolean allowFail) {
+        putCallback(JsonContainerExpr.class, (json, ctx) -> {
+            if (json.isArray()) {
+                callback.in(json, ctx);
+            } else if (!allowFail) {
+                throw new IllegalArgumentException("Found illegal {json: map} " + json.toSource());
+            }
+            return true;
+        });
+        if (!callbacks.has(JsonPairExpr.class)) {
+            withJsonPairTerminal((pair, ctx) -> pair.getValueExpr().accept(this, ctx));
+        }
         return this;
     }
     public ComposableXapiVisitor<Ctx> withJsonContainerTerminal(In2<JsonContainerExpr, Ctx> callback) {
@@ -1174,6 +1205,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     public ComposableXapiVisitor<Ctx> withCssValueExpr(In2Out1<CssValueExpr, Ctx, Boolean> callback) {
         putCallback(CssValueExpr.class, callback);
         return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> extractNames(In1<String> onNameFound) {
+        return withJsonArrayRecurse(In2.ignoreAll())
+              .withNameOrString(onNameFound.ignore2());
     }
 
     @Override

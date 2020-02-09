@@ -22,10 +22,16 @@ plugins {
 xapiSchema {
   platforms {
     main
+    gwt {
+      replace 'main'
+      published = true
+    }
   }
   archives { 
     main
     api
+    maybeCreate('test').require main
+    maybeCreate('test').published = true
   }
 }
 """
@@ -154,6 +160,28 @@ xapiRequire {
         expect:
         result.task(':compileJava').outcome == TaskOutcome.SUCCESS
         result.task(':xapiPublish') == null
+
+    }
+
+    def "published source jars can be consumed by test classpaths"() {
+        given:
+        IncludedTestBuild comp = getComposite("comp")
+        comp.addSource('gwtTest', 'test.gwt', 'TestGwtClass', 'package test.gwt; public class TestGwtClass {}')
+        addSource('gwtTest', 'test.gwt', 'TestGwtDepends', 'package test.gwt; public class TestGwtDepends extends TestGwtClass{}')
+        buildFile.text += 'xapiRequire.module("gwt", "test").external "com.producer:comp:1.0", "gwt", "test"'
+
+        when:
+        def result = runSucceed(LogLevel.INFO, folder('comp'),'xapiPublish')
+
+        then: 'The source and main jars published'
+        result.task(':compileGwtTestJava').outcome == TaskOutcome.SUCCESS
+        result.task(':xapiPublish').outcome == TaskOutcome.SUCCESS
+
+        when:
+        result = runSucceed(LogLevel.INFO, comp.rootDir, 'compileGwtTestJava')
+
+        then:
+        result.task(':compileGwtTestJava').outcome == TaskOutcome.UP_TO_DATE
 
     }
 

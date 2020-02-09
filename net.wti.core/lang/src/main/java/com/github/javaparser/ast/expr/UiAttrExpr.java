@@ -73,11 +73,21 @@ public class UiAttrExpr extends UiExpr implements HasAnnotationExprs {
   }
 
   public String getStringExpression(boolean quotes) {
+      return getStringExpression(quotes, true);
+  }
+  public String getStringExpression(boolean quotes, boolean coerceLiterals) {
     String value;
     if (expression instanceof StringLiteralExpr) {
+        if (!coerceLiterals) {
+            if (expression.getClass() != StringLiteralExpr.class) {
+                throw new IllegalStateException("Expression is not a raw string (primitives not allowed): " + expression.getClass() +" : " + expression.toSource());
+            }
+        }
       value = ((StringLiteralExpr)expression).getValue();
     } else if (expression instanceof TemplateLiteralExpr) {
       value = ((TemplateLiteralExpr)expression).getValueWithoutTicks();
+    } else if (expression instanceof BooleanLiteralExpr) {
+      value = Boolean.toString(((BooleanLiteralExpr)expression).getValue());
     } else if (expression == null) {
       return null;
     } else {

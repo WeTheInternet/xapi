@@ -76,6 +76,11 @@ public class UiContainerExpr extends UiExpr {
   public UiAttrExpr getAttributeNotNull(String name) {
     return getAttribute(name).getOrThrow(()->new NullPointerException("No feature named " + name + " found in " + this));
   }
+
+  public boolean hasAttribute(String name) {
+    return attrs.has(name);
+  }
+
   public MappedIterable<UiAttrExpr> getAttributesMatching(Filter1<UiAttrExpr> filter) {
     return attrs.flatten()
             .filter(filter);

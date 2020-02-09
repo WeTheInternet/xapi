@@ -49,6 +49,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('gwt', 'test').configure {
     req ->
+        req.project 'xapi-collect', 'jre:main'
         req.external 'net.wetheinter:gwt-codeserver:2.8.0'
         req.external 'net.wetheinter:gwt-user:2.8.0'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'

@@ -89,6 +89,11 @@ public abstract class ConcurrentEnvironment {
           ((HasPreload) next).preload();
         }
         final Thread t = newThreadUnsafe(() -> {
+            // clear any finalies registered by others before doing any work.
+            if (hasFinalies()) {
+                X_Log.trace(ConcurrentEnvironment.class, "has finalies after deferred task");
+                runFinalies(max);
+            }
             try {
               next.done();
             } finally {
@@ -139,7 +144,7 @@ public abstract class ConcurrentEnvironment {
         next = iter.next();
         iter.remove();
       }
-      X_Log.debug(ConcurrentEnvironment.class, "Running finaly", next);
+      X_Log.debug(ConcurrentEnvironment.class, "Running finally", next);
       next.done();
       if (now() > max)
         throw new TimeoutException();

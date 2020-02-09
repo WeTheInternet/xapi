@@ -492,7 +492,11 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             try {
             touched = System.currentTimeMillis();
             while (System.currentTimeMillis() - touched < Process_TTL_Millis) {
-                String message = monitor.readAsCompiler().trim();
+                final String readValue = monitor.readAsCompiler();
+                if (readValue == null) {
+                    continue;
+                }
+                String message = readValue.trim();
                 X_Log.info(GwtcJobManagerImpl.class, "Got message: ", message);
                 touched = System.currentTimeMillis();
                 undo.done();

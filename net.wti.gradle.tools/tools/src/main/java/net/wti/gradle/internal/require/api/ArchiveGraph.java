@@ -21,6 +21,8 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.attributes.Bundling;
+import org.gradle.api.attributes.java.TargetJvmVersion;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
@@ -284,7 +286,10 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default AttributeContainer withAttributes(AttributeContainer attrs) {
         return attrs.attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, platform().getName())
-                .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName());
+                .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, getName())
+                .attribute(Bundling.BUNDLING_ATTRIBUTE, project().bundlingExternal())
+                .attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+                ;
     }
 
     @SuppressWarnings("deprecation") // configApi() is deprecated only for external use cases
@@ -549,8 +554,12 @@ public interface ArchiveGraph extends Named, GraphNode {
         Transitivity trans,
         boolean lenient
     ) {
-        importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, classifier, trans, lenient);
-        importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, classifier, trans, lenient);
+        if (reg.getFrom() != null && "sources".equals(classifier)) {
+            importExternal(dep, reg, DefaultUsageType.Source, newGroup, newName, classifier, trans, lenient);
+        } else {
+            importExternal(dep, reg, DefaultUsageType.Api, newGroup, newName, classifier, trans, lenient);
+            importExternal(dep, reg, DefaultUsageType.Runtime, newGroup, newName, classifier, trans, lenient);
+        }
     }
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     default void importExternal(
@@ -590,7 +599,7 @@ public interface ArchiveGraph extends Named, GraphNode {
                     base = parts[0] + GUtil.toCamelCase(parts[1]);
                 }
             } else if (parts.length == 1) {
-                base = "main" + GUtil.toCamelCase(parts[0]);
+                base = "main".equals(parts[0]) ? "main" : "main" + GUtil.toCamelCase(parts[0]);
             } else {
                 assert parts.length == 0 : "Invalid xapi coordinates " + coords;
                 base = "main";
@@ -622,15 +631,43 @@ public interface ArchiveGraph extends Named, GraphNode {
             if (fromMod.isEmpty()) {
                 fromMod = "main";
             }
-            String require = type.computeRequiredCapabilities(dep, fromPlat, fromMod);
+            String require = type.computeRequiredCapabilities(dep, fromPlat, fromMod, classifier);
+            getView().getLogger().debug("Got require {} on ident {} for {} on {} coords {}", require, ident, dep , base, coords);
             if (!require.isEmpty()
                 && !(require + ":").startsWith(ident + ":")
             ) {
                 if (getView().isWtiGradle()) {
                     // This relies on WTI's fork of gradle.
                     final String derived = type.deriveConfiguration(base, dep, hasXapiCoord, trans, lenient);
-                    mod.setTargetConfiguration(derived);
-                    getView().getLogger().trace("Derived {} for {} on {} coords {}", derived, dep , base, coords);
+                    if (derived == null) {
+                        if (require.endsWith("-sources")) {
+                            // dirty hack for now... we'll want to register each variant type in a way that allows
+                            // them to contribute dependency attributes wherever it makes sense to do so.
+                            mod.attributes(depAttrs ->
+                                depAttrs.attribute(USAGE_ATTRIBUTE, project().usageSourceJar())
+                                        .attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+                                        .attribute(Bundling.BUNDLING_ATTRIBUTE, getView().getObjects().named(Bundling.class, Bundling.EXTERNAL))
+                            );
+                            mod.capabilities(cap->cap.requireCapabilities(require + ":" + dep.getVersion()));
+                        } else {
+                            mod.capabilities(cap->cap.requireCapabilities(require + ":" + dep.getVersion()));
+                        }
+                    } else {
+                        if ("sources".equals(classifier)) {
+                            mod.getArtifacts().clear();
+                            String finalMod = fromMod;
+                            mod.attributes(depAttrs->
+                                depAttrs
+                                .attribute(XapiSchemaPlugin.ATTR_PLATFORM_TYPE, fromPlat)
+                                .attribute(XapiSchemaPlugin.ATTR_ARTIFACT_TYPE, finalMod)
+                                .attribute(USAGE_ATTRIBUTE, project().usageSourceJar())
+                                .attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+                                .attribute(Bundling.BUNDLING_ATTRIBUTE, getView().getObjects().named(Bundling.class, Bundling.EXTERNAL))
+                            );
+                        }
+                        mod.setTargetConfiguration(derived);
+                    }
+                    getView().getLogger().debug("Derived {} for {} on {} coords {}", derived, dep , base, coords);
                 } else {
                     // using requireCapabilities results in runtime jars instead of compiled classpaths, so it is less ideal.
                     // also; we need to get better version information here.  This should come from whatever-is-handling schema.xapi

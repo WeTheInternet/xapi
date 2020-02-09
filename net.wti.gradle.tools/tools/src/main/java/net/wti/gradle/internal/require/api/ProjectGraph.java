@@ -7,6 +7,7 @@ import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.Usage;
 
 import java.util.Set;
@@ -57,6 +58,10 @@ public interface ProjectGraph extends Named, GraphNode {
         return project().getGroup();
     }
 
+    default Bundling bundlingExternal() {
+        return bundling(Bundling.EMBEDDED);
+    }
+
     default Usage usageApi() {
         return usage(Usage.JAVA_API);
     }
@@ -91,6 +96,10 @@ public interface ProjectGraph extends Named, GraphNode {
 
     default Usage usage(String usageType) {
         return project().getObjects().named(Usage.class, usageType);
+    }
+
+    default Bundling bundling(String usageType) {
+        return project().getObjects().named(Bundling.class, usageType);
     }
 
     default String getVersion() {

@@ -42,7 +42,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
             String ... tasksOrFlags
     ) {
         flush()
-        List<String> args = [toFlag(logLevel), '--full-stacktrace', *tasksOrFlags]
+        List<String> args = [toFlag(logLevel), '-Dxapi.home=' + getRootDir(), '--full-stacktrace', *tasksOrFlags]
 
         GradleRunner.create()
                 .withProjectDir(projectDir)
@@ -65,7 +65,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
             String ... task
     ) {
         flush()
-        List<String> args = [*task, '--stacktrace', toFlag(logLevel)]
+        List<String> args = [*task, '-Dxapi.home=' + getRootDir(), '--stacktrace', toFlag(logLevel)]
         GradleRunner.create()
                 .withProjectDir(projectDir)
                 .withPluginClasspath()

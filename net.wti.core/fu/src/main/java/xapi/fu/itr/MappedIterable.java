@@ -30,6 +30,10 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return adaptIterable(this, mapper);
     }
 
+    default <To> MappedIterable<To> mapRemoveNull(In1Out1<T, To> mapper) {
+        return map(mapper).filter(Filter.ifNotNull());
+    }
+
     default <To> MappedIterable<To> mapIndexed(In2Out1<T, Integer, To> mapper) {
         return adaptIterableIndexed(this, mapper);
     }

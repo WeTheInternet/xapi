@@ -34,7 +34,7 @@ trait TestFileTools implements HasTestFiles {
     }
 
     File sourceFile(String srcSet = 'main', String pkg, String cls) {
-        String[] paths = "src/$srcSet/java/${pkg.replace('.', '/')}".split("[/]")
+        String[] paths = "src/$srcSet/java/${pkg.replace('.' as char, '/' as char)}".split("[/]")
         File dir = folder(paths)
         return new File(dir, cls + '.java')
     }

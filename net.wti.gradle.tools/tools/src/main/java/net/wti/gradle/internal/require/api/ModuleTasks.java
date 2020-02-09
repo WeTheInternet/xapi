@@ -196,4 +196,12 @@ public class ModuleTasks {
         return testTask;
 
     }
+
+    public void realizeAll() {
+        getTestTask().get();
+        getJarTask().get();
+        getProcessResourcesTask().get();
+        getJavacTask().get();
+        getSourceJarTask().get();
+    }
 }

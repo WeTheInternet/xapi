@@ -3,6 +3,7 @@ package net.wti.gradle.system.plugin;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
+import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -48,6 +49,7 @@ public class XapiBasePlugin implements Plugin<Project> {
 
         final ProjectView self = ProjectView.fromProject(project);
         final ProjectView root = XapiSchemaPlugin.schemaRootProject(self);
+
 
         if (self == root) {
             // When we are the schema root project,
@@ -125,6 +127,18 @@ public class XapiBasePlugin implements Plugin<Project> {
                     self.getConfigurations().getByName(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME).setCanBeConsumed(false);
                 }
             });
+        }
+
+        // Whenever we apply any plugins, we should, as soon as possible, parse our schema.xapi / SchemaMap,
+        // so other processes can rely on finding / visiting the SchemaMap to construct project graphs.
+        // Unfortunately, the parser we need for that is published with these tools,
+        // so we're going to do this relatively terrible thing: try to apply a plugin existing in a downstream, optional dependency
+        try {
+            plugins.apply("xapi-parser");
+        } catch (UnknownPluginException e) {
+            if (!"true".equals(self.findProperty("xapi.ignore.missing.xapi-parser"))) {
+                project.getLogger().warn("Unable to find xapi-parser plugin on classpath");
+            }
         }
 
     }

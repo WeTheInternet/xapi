@@ -101,8 +101,20 @@ public class XapiReport extends DefaultTask {
                 .append(getProject().getConfigurations().stream()
                     .map(c->c.getName() + " extends [" +
                             c.getExtendsFrom().stream().map(Configuration::getName).collect(Collectors.joining(","))
-                    + "]")
-                    .collect(Collectors.joining("\n")));
+                    + "]" +
+                        (
+                            c.getOutgoing().getCapabilities().isEmpty() ? "" :
+                                "\n\t\t\tCapabilities:\n\t\t\t\t" + c.getOutgoing().getCapabilities().stream()
+                                .map(cap -> cap.getGroup() + ":" + cap.getName() + ":" + cap.getVersion())
+                                .collect(Collectors.joining("\n\t\t\t\t"))
+                        ) + (
+                            c.getOutgoing().getVariants().isEmpty() ? "" :
+                                "\n\t\t\tVariants:\n\t\t\t\t" + c.getOutgoing().getVariants().stream()
+                                .map(variant -> variant.getName() + " -> " + variant.getArtifacts().getFiles().getAsPath())
+                                .collect(Collectors.joining("\n\t\t\t\t"))
+                        )
+                    )
+                    .collect(Collectors.joining("\n\t\t")));
         if (getProject().getConvention().findPlugin(JavaPluginConvention.class) == null) {
             b.append("\nSkipping sourcesets as ").append(getProject().getPath()).append(" does not have any valid java plugin");
         } else {
