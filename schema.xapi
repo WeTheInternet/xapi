@@ -1,0 +1,98 @@
+<xapi-schema
+
+    defaultRepoUrl = jcenter()
+
+    schemaLocation = "schema/schema.gradle"
+
+    platforms = [
+        <main />,
+        // purposely using two different forms of references to main,
+        // so that we can detect and fix any wierdness as we go:
+        <jre replace = "main" published = true/>,
+        <gwt replace = "main" published = true/>,
+        // TODO: move gwt into client/schema.xapi; add javafx, android, j2cl, j2objc, etc.
+
+        // put these in server/schema.xapi:
+        // server.replace jre
+        // vertx.replace server
+        // appengine.replace server
+    ]
+
+    modules = [
+        <api />,
+        <spi />,
+        <main require = [ api, spi ] />,
+        <sample require = "main" published = true />,
+        <testTools require = "main" published = true />,
+        <test require = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
+    ]
+
+    projects = {
+        // the projects below all have gwt, jre and other platforms
+        multiPlatform: [
+//            "inject",
+//            "collect",
+//            "common",
+//            "model",
+//            "log",
+//            "util",
+//            "io",
+//            "process",
+//            "reflect",
+//            "scope",
+        ],
+
+        // the projects below all have a single "main" platform (potentially w/ multiple modules like api and testTools though!)
+        standalone: [
+//            "lang",
+//            "util"
+        ],
+
+        // the projects below are effectively parents of multiple child projects.
+        // it will be left to the schema.xapi of these projects to determine whether
+        // the child modules are multiPlatform, standalone, or nested multiProject
+        virtual: {
+//            ui: ["api", "autoui", "components", "generator", "html"],
+//            server: ["api", "gen", "vertx"], // hm, perhaps needs to be modeled as a single multiPlatform, with more platforms...
+//            dev: ["api", "bytecode", "file", "gen", "gwtc", "javac", "maven", "shell", "source", "template", "dist"],
+//            dist: ["gwt", "jre"],
+//            samples: ["demo"]
+        },
+    }
+
+    // declare any external dependencies here,
+    // so we can handle pre-emptively syncing jars (and maybe source checkouts) to a local cache,
+    // then just reference these "blessed artifacts" w/out versions anywhere;
+    // leaving it up to the system
+    external = [
+        // preload elements will be downloaded once, on build startup, into a local filesystem repository (xapi.repo)
+        <preload
+            name = "gwt"
+            url = "https://wti.net/repo"
+            version = "2.8.0"
+            // limits these artifacts to gwt platform, where they will be auto-available as versionless dependencies
+            // this inheritance is also given to any platform replacing gwt platform.
+            platforms = [ "gwt" ]
+            artifacts = {
+                "com.google.gwt" : [
+                    "gwt-user",
+                    "gwt-dev",
+                    "gwt-codeserver",
+                ]
+            }
+        /preload>
+        ,
+        <preload
+            name = "junit"
+            version = "4.1.12"
+            // limits these artifacts to test and testTools, where they will be auto-available as versionless dependencies
+            // this inheritance is also given to any module requiring test or testTools modules.
+            modules = [ "test", "testTools" ]
+            artifacts = {
+                "junit" : "junit"
+            }
+        /preload>
+        ,
+    ]
+
+/xapi-schema>
