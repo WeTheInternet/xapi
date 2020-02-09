@@ -14,6 +14,7 @@ public class TimeServiceDefault extends AbstractTimeService {
   public void runLater(Runnable runnable) {
     final Thread t = new Thread(runnable);
     t.setName("X_Time " + runnable);
+//    t.setDaemon(true);
     t.start();
   }
 

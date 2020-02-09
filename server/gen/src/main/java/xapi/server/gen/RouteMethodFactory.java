@@ -38,6 +38,7 @@ class RouteMethodFactory {
     private final ComponentBuffer source;
     private final GeneratedUiComponent component;
     private final String ROUTE;
+    private final Lazy<String> TYPE_DIRECTORY;
     private final Lazy<String> TYPE_FILE;
     private final Lazy<String> MODEL_CREATE;
     private final Lazy<String> TYPE_TEMPLATE;
@@ -70,6 +71,7 @@ class RouteMethodFactory {
         this.ROUTE = mb.addImport(Route.class);
         this.MODEL_CREATE = Lazy.deferSupplier(mb::addImportStatic, X_Model.class, "create");
         this.TYPE_FILE = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.File.name());
+        this.TYPE_DIRECTORY = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Directory.name());
         this.TYPE_TEXT = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Text.name());
         this.TYPE_TEMPLATE = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Template.name());
         this.TYPE_CALLBACK = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Callback.name());
@@ -124,6 +126,10 @@ class RouteMethodFactory {
 
     private String tFile() {
         return TYPE_FILE.out1();
+    }
+
+    private String tDirectory() {
+        return TYPE_DIRECTORY.out1();
     }
 
     private String tText() {
@@ -223,6 +229,8 @@ class RouteMethodFactory {
                 return tText();
             case File:
                 return tFile();
+            case Directory:
+                return tDirectory();
             case Reroute:
                 return tReroute();
             case Gwt:

@@ -8,6 +8,8 @@ import xapi.fu.Immutable;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.inject.X_Inject;
 import xapi.model.X_Model;
@@ -190,6 +192,31 @@ public interface WebApp extends Model {
             }
             return new FileInputStream(f);
         };
+    }
+
+
+    StringTo<Boolean> getAbsolutes();
+    WebApp setAbsolutes(StringTo<Boolean> absolutes);
+    default StringTo<Boolean> getOrCreateAllowAbsolutes() {
+        return getOrCreate(this::getAbsolutes, Out1.out1Deferred(X_Collect::newStringMap, Boolean.class), this::setAbsolutes);
+    }
+
+    default void allowAbsolute(String payload, Boolean allowAbsolute) {
+        getOrCreateAllowAbsolutes().put(payload, allowAbsolute);
+
+    }
+    default boolean allowAbsolute(String payload) {
+        final StringTo<Boolean> map = getOrCreateAllowAbsolutes();
+        final String[] segments = payload.split("/");
+        ChainBuilder<String> path = Chain.startChain();
+        for (int l = 0; l < segments.length; l++ ) {
+            path.add(segments[l]);
+            String test = path.join("/");
+            if (map.has(test)) {
+                return map.get(test);
+            }
+        }
+        return false;
     }
 }
 class WebAppIdHolder {

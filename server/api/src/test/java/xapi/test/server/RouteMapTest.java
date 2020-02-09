@@ -31,6 +31,8 @@ public class RouteMapTest {
         final Route helloAnyWorld = X_Model.create(Route.class);
         helloAnyWorld.setPath("hello/*/world");
 
+        // need to test that hello/* matches hello, hello/ and hello/world
+
         RouteMap map;
         map = X_Model.create(RouteMap.class);
         map.addRoute(helloWorld);

@@ -86,6 +86,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -499,6 +500,7 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                             case Text:
                             case Callback:
                             case File:
+                            case Directory:
                             case Template:
                             case Service:
                                 inContext(vc, VertxContext::getScope, (req, t, done)->{
@@ -881,9 +883,8 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         return null;
     }
 
-    @Override
-    public void writeFile(
-        RequestScopeVertx request, String payload, In2<RequestScopeVertx, Throwable> callback
+    protected void writeFileSystem(
+        boolean allowDirListing, RequestScopeVertx request, String payload, In2<RequestScopeVertx, Throwable> callback
     ) {
         final HttpServerResponse response = request.getRequest().getResponse();
         File toServe = new File(webApp.getContentRoot());
@@ -892,18 +893,51 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         }
         toServe = new File(webApp.getContentRoot(), payload);
         if (!toServe.exists()) {
-            toServe = new File(payload.startsWith("/") ? payload.substring(1) : payload);
+            boolean allowAbsolute = webApp.allowAbsolute(request.getPath());
+            toServe = new File(!allowAbsolute && payload.startsWith("/") ? payload.substring(1) : payload);
             if (!toServe.exists()) {
-                throw new IllegalStateException("Content file " + new File(webApp.getContentRoot(), payload) + " does not exist!");
+                throw new IllegalStateException("Content file " + (allowAbsolute ? toServe : new File(webApp.getContentRoot(), payload)) + " does not exist!");
             }
         }
-        final String path = toServe.getAbsolutePath();
+        final File finalPath = toServe;
         request.getResponse().onFinish(resp-> {
                 resp.prepareToClose();
-                response.sendFile(path);
+                if (finalPath.isDirectory()) {
+                    if (allowDirListing) {
+                        response.setChunked(true);
+                        response.write("<html><body>");
+                        for (File file : Objects.requireNonNull(finalPath.listFiles())) {
+                            response.write("<a href=\"" +
+                                request.getPath() + (request.getPath().endsWith("/") ? "" : "/") + file.getName() +
+                             "\">" + file.getName() + " </a><br/>");
+
+                        }
+                        response.end("</body></html>");
+                    } else {
+                        X_Log.error(XapiVertxServer.class, "Disallowed viewing of ", finalPath);
+                        response.setStatusCode(503).end("Not allowed to view " + finalPath.toString());
+                    }
+                } else {
+                    response.sendFile(finalPath.getAbsolutePath());
+                }
             }
         );
         callback.in(request, null);
+    }
+
+    @Override
+    public void writeFile(
+        RequestScopeVertx request, String payload, In2<RequestScopeVertx, Throwable> callback
+    ) {
+        X_Log.error("Writing file request", payload);
+        writeFileSystem(false, request, payload, callback);
+    }
+    @Override
+    public void writeDirectory(
+        RequestScopeVertx request, String payload, In2<RequestScopeVertx, Throwable> callback
+    ) {
+        X_Log.error("Writing directory request", payload);
+        writeFileSystem(true, request, payload, callback);
     }
 
     @Override

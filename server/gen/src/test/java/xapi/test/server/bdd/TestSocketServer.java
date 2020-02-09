@@ -53,6 +53,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     private int port = -1;
     private StringTo<Classpath> classpaths;
     private StringTo<ModelGwtc> gwtcs;
+    private StringTo<Boolean> allowAbsolutes;
     private StringTo<Model> templates;
     private IntTo<Route> routes;
     private volatile boolean running;
@@ -132,7 +133,14 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     public void writeFile(
         SocketScope scope, String payload, In2<SocketScope, Throwable> callback
     ) {
-        throw new UnsupportedOperationException("writeText not supported");
+        throw new UnsupportedOperationException("writeFile not supported");
+    }
+
+    @Override
+    public void writeDirectory(
+        SocketScope socketScope, String payload, In2<SocketScope, Throwable> callback
+    ) {
+        throw new UnsupportedOperationException("writeDirectory not supported");
     }
 
     @Override
@@ -253,6 +261,18 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     @Override
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
+    }
+
+
+    @Override
+    public StringTo<Boolean> getAbsolutes() {
+        return allowAbsolutes;
+    }
+
+    @Override
+    public WebApp setAbsolutes(StringTo<Boolean> allowAbsolutes) {
+        this.allowAbsolutes = allowAbsolutes;
+        return this;
     }
 
     private void serviceRequests() throws IOException {

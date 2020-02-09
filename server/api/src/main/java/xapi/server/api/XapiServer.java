@@ -31,6 +31,8 @@ public interface XapiServer <Request extends RequestScope> {
 
     void writeFile(Request request, String payload, In2<Request, Throwable>  callback);
 
+    void writeDirectory(Request request, String payload, In2<Request, Throwable>  callback);
+
     void writeTemplate(Request request, String payload, In2<Request, Throwable>  callback);
 
     void writeGwtJs(Request request, String payload, In2<Request, Throwable>  callback);

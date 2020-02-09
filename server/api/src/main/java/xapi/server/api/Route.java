@@ -29,7 +29,7 @@ public interface Route extends Model {
             public boolean isBlocking() {
                 return true;
             }
-        }, Callback, File, Template, Service, Reroute;
+        }, Callback, File, Directory, Template, Service, Reroute;
 
         public boolean isBlocking() {
             return false;
@@ -87,6 +87,9 @@ public interface Route extends Model {
                 return;
             case File:
                 server.writeFile(request, payload, callback);
+                return;
+            case Directory:
+                server.writeDirectory(request, payload, callback);
                 return;
             case Template:
                 server.writeTemplate(request, payload, callback);
@@ -181,6 +184,7 @@ public interface Route extends Model {
                             myInd++;
                             yourInd--;
                         }
+                        // need to properly test...  repo/** matching repo/net
                     } else {
                         if (yourInd >= yourParts.length) {
                             return 0.;
