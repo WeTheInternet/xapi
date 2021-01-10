@@ -9,10 +9,13 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
 import xapi.fu.*;
+import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
+import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
+import xapi.util.X_String;
 
 import static xapi.fu.In2Out1.superIn1;
 
@@ -25,7 +28,7 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return whenMissingIgnore(logTo);
     }
     public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingIgnore(Class<?> logTo) {
-        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
+        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>(logTo);
         return visitor
             .withDefaultCallback((node, ctx, next)->{
                 Log log = visitor.findLog(ctx, node);
@@ -45,7 +48,7 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return whenMissingLog(logTo, visitAll);
     }
     public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingLog(Class<?> logTo, boolean visitAll) {
-        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
+        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>(logTo);
         return visitor
             .withDefaultCallback((node, ctx, next)-> {
                 Log log = visitor.findLog(ctx, node);
@@ -65,7 +68,7 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     }
 
     public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingFail(Class<?> logTo) {
-        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
+        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>(logTo);
         return visitor
             .withDefaultCallback((node, ctx, next)-> {
                 Log log = visitor.findLog(ctx, node);
@@ -80,12 +83,28 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
 
     private MapLike<Class<?>, In2Out1<Node, Ctx, Boolean>> callbacks = X_Jdk.mapOrderedInsertion();
     private In3<Node, Ctx, In2<Node, Ctx>> defaultCallback = (n, c, i)->i.in(n, c);
+    private final Object source;
+
+    public ComposableXapiVisitor(){
+        final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        source = new Object() {
+            @Override
+            public String toString() {
+                return X_String.join("\n\t", StackTraceElement::toString, trace);
+            }
+        };
+    }
+
+    public ComposableXapiVisitor(Object source){
+        this.source = source;
+    }
 
     private <N extends Node> void doVisit(Class<N> cls, N node, Ctx ctx, In2<N, Ctx> superCall) {
         In2Out1<Node, Ctx, Boolean> filter = callbacks.get(cls);
+        boolean filterCheck;
         if (filter == null) {
             defaultCallback.in(node, ctx, (In2)superCall);
-        } else if (filter.io(node, ctx)) {
+        } else if (filterCheck = filter.io(node, ctx)) {
             superCall.in(node, ctx);
 //        } else { // The filter returned false; do nothing.
         }
@@ -1207,6 +1226,13 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return this;
     }
 
+    public SizedIterable<String> extractNames(Expression e, Ctx ctx) {
+        ListLike<String> list = X_Jdk.list();
+        extractNames(list::add);
+        e.accept(this, ctx);
+        return list;
+    }
+
     public ComposableXapiVisitor<Ctx> extractNames(In1<String> onNameFound) {
         return withJsonArrayRecurse(In2.ignoreAll())
               .withNameOrString(onNameFound.ignore2());
@@ -1215,7 +1241,8 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     @Override
     public String toString() {
         return "ComposableXapiVisitor{" +
-            "callbacks=" + callbacks +
+            "source=" + source +
+            ", callbacks=" + callbacks +
             ", defaultCallback=" + defaultCallback +
             "} ";
     }

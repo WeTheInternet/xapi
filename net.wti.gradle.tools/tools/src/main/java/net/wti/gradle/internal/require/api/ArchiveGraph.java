@@ -57,8 +57,6 @@ public interface ArchiveGraph extends Named, GraphNode {
         return platform().project();
     }
 
-    ArchiveRequest request(ArchiveGraph other, ArchiveRequestType type);
-
     /**
      * @return group:name:version / whatever we need to create external dependencies.
      * <p>

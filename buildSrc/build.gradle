@@ -19,6 +19,7 @@ xapiSchema {
 
 String v = version
 xapiRequire.main().configure {
+    external "net.wti.gradle:xapi-gradle-loader:$v", 'main'
     external "net.wti.gradle:xapi-gradle-plugin:$v", 'main'
     external "net.wti.gradle:xapi-gradle-api:$v", 'main'
     external "net.wti.gradle.tools:xapi-gradle-tools:$v"

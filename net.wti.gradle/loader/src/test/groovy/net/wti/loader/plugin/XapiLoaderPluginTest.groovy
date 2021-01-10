@@ -1,8 +1,10 @@
 package net.wti.loader.plugin
 
 
-import net.wti.gradle.internal.api.MinimalProjectView
+import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.schema.map.SchemaMap
+import org.gradle.api.Action
+import org.gradle.api.invocation.Gradle
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 import xapi.util.X_Namespace
@@ -20,7 +22,24 @@ class XapiLoaderPluginTest extends AbstractSchemaTest<XapiLoaderPluginTest> impl
     def "The loader plugin will create all gradle projects in schema xapi file"() {
         given:
         addSourceCommon()
-        addSourceUtil()
+        addSourceUtil(false)
+
+        when:
+        BuildResult res = runSucceed(
+                ':util:xapiReport', ':util:compileGwtJava')
+        String reportText = file('util', 'build', 'xapiReport', 'report').text
+        then:
+        res.task(':util:compileGwtJava').outcome == TaskOutcome.SUCCESS
+        res.task(':common:compileApiJava').outcome == TaskOutcome.SUCCESS
+        reportText.contains "$rootDir/common/src/api/java"
+        reportText.contains "$rootDir/util/src/gwt/java"
+
+    }
+
+    def "The loader plugin will interact nicely with the xapi require plugin"() {
+        given:
+        addSourceCommon()
+        addSourceUtil(true)
 
         when:
         BuildResult res = runSucceed(
@@ -80,5 +99,4 @@ class XapiLoaderPluginTest extends AbstractSchemaTest<XapiLoaderPluginTest> impl
         map.allPreloads.map({it.name}).contains('gwt')
         map.allPreloads.map({it.name}).contains('util')
     }
-
 }

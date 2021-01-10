@@ -63,7 +63,7 @@ public interface Log extends Debuggable {
 
    default String maybePrefix(Class forClass) {
       // convert this class into an IDE-friendly link
-      return Debuggable.classLink((Class<?>)forClass);
+      return Debuggable.classLink((Class<?>)forClass) + " ";
    }
 
     default LogLevel levelForClass(Class forClass) {
@@ -188,9 +188,14 @@ public interface Log extends Debuggable {
   default String coerceNonArray(Object obj, boolean first) {
     if (first && obj instanceof Class) {
       // classes get special treatment...
-      return Debuggable.classLink((Class<?>) obj);
+      return Debuggable.classLink((Class<?>) obj) + " ";
     }
     return Debuggable.super.coerceNonArray(obj, first);
   }
+
+    @Override
+    default String listSeparator() {
+        return "\t";
+    }
 }
 

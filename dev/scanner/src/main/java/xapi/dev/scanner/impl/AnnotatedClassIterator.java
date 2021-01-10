@@ -95,7 +95,7 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, Filter1<ClassFile> 
   }
 
   @Override
-  public boolean filter1(final ClassFile value) {
+  public Boolean io(final ClassFile value) {
     return value.getAnnotations().length > 0;
   }
 }

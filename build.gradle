@@ -7,6 +7,8 @@ plugins {
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
 
+group = 'net.wetheinter'
+
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
 tasks.create 'publishRequired', { req ->
@@ -20,18 +22,28 @@ tasks.create 'publishRequired', { req ->
 
 File mvnRepo = new File(rootDir, 'repo')
 
-def shouldApply = { Project p->
-    return ! (
-            p.plugins.hasPlugin('xapi-schema') ||
-            p.plugins.hasPlugin('xapi-require') ||
-            (p.path.split(':')?:[''])[-1]
-                    .contains("parent")
-            )
-}
+gradle.beforeProject {
+    Project p ->
+        if (p.group != 'net.wetheinter') {
+            p.logger.info "gradle.beforeProject group was: $p.group"
+            p.group = 'net.wetheinter'
+        }
 
+        if (p.buildscript.repositories.empty) {
+        p.buildscript.repositories.maven {
+            name = 'xapiLocal'
+            url = new File(rootDir, 'repo')
+        }
+        // TODO make this obsolete by priming all external dependencies to xapiLocal
+        p.buildscript.repositories.jcenter()
+    }
+}
 allprojects {
     Project p -> p.with {
-        group = 'net.wetheinter'
+        if (p.group != 'net.wetheinter') {
+            p.logger.info "allprojects group was $p.group"
+            p.group = 'net.wetheinter'
+        }
         version = findProperty('xapiVersion')
 
         plugins.apply 'idea'
@@ -42,18 +54,6 @@ allprojects {
 
     }
 
-}
-
-gradle.beforeProject {
-    Project p ->
-    if (p.buildscript.repositories.empty) {
-        p.buildscript.repositories.maven {
-            name = 'xapiLocal'
-            url = new File(rootDir, 'repo')
-        }
-        // TODO make this obsolete by priming all external dependencies to xapiLocal
-        p.buildscript.repositories.jcenter()
-    }
 }
 
 subprojects {

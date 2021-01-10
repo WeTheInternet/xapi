@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.impl;
 
+import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.system.service.GradleService;
@@ -18,12 +19,12 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
-import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.api.internal.component.MultiCapabilitySoftwareComponent;
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.internal.project.ProjectStateInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
@@ -85,6 +86,7 @@ public class DefaultProjectView implements ProjectView {
     private final SoftwareComponentContainer components;
     private final PluginContainer plugins;
 
+    private final Runnable ensureEvaluated;
     private final Action<Action<? super Boolean>> whenReady;
     private final Function<String, File> file;
     private final Function<Object[], ConfigurableFileCollection> files;
@@ -134,6 +136,15 @@ public class DefaultProjectView implements ProjectView {
             project::zipTree,
 
             // only immutable values should go above here.
+            runOnce(()-> {
+
+//                if (!project.getState().getExecuted()) {
+                project.getLogger().quiet(project.getPath() + " executed? " + project.getState().getExecuted());
+                if (!((ProjectStateInternal)project.getState()).isConfiguring() && !project.getState().getExecuted()) {
+                    ((ProjectInternal)project).evaluate();
+                }
+//                }
+            }),
             done-> {
                 if (project.getState().getExecuted()) {
                     // Hm. Consider making this always-async using a higher level queue somewhere.
@@ -163,6 +174,18 @@ public class DefaultProjectView implements ProjectView {
         );
     }
 
+    private static Runnable runOnce(Runnable r) {
+        Runnable[] pntr = { r };
+        return ()-> {
+            Runnable task;
+            synchronized (pntr) {
+                task = pntr[0];
+                pntr[0] = ()->{};
+            }
+            task.run();
+        };
+    }
+
     public DefaultProjectView(
         Gradle gradle,
         String path,
@@ -188,6 +211,7 @@ public class DefaultProjectView implements ProjectView {
         Function<String, File> file,
         Function<Object[], ConfigurableFileCollection> files,
         Function<Object, FileTree> zipTree,
+        Runnable ensureEvaluated,
 
         Action<Action<? super Boolean>> whenReady,
         // All new providers should go here, at the end
@@ -224,6 +248,7 @@ public class DefaultProjectView implements ProjectView {
         this.file = file;
         this.files = files;
         this.zipTree = zipTree;
+        this.ensureEvaluated = ensureEvaluated;
 
         // The rest are providers.  Make them lazy.
         this.sourceSets = lazyProvider(sourceSets);
@@ -382,12 +407,17 @@ public class DefaultProjectView implements ProjectView {
     }
 
     @Override
+    public void ensureEvaluated() {
+        ensureEvaluated.run();
+    }
+
+    @Override
     public final FileTree zipTree(Object from) {
         return zipTree.apply(from);
     }
 
     @Override
-    public void whenReady(Action<? super ProjectView> callback) {
+    public void whenReady(Action<? super MinimalProjectView> callback) {
         whenReady.execute(immediate->callback.execute(this));
     }
 

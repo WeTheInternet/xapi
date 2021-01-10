@@ -61,7 +61,7 @@ public class XapiBasePlugin implements Plugin<Project> {
             // information in dependencies {} as xapiRequire {}, and both generate the same bom / behavior / artifacts.
             if ("true".equals(project.findProperty(XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_PLATFORM))) {
                 withJavaPlatformPlugin = true;
-                self.whenReady(this::applyPlatformPlugin);
+                self.whenReady(ready->applyPlatformPlugin(self));
             } else {
                 plugins.withType(JavaPlatformPlugin.class).configureEach(addedLater -> {
                     throw new IllegalStateException("You must apply the java-platform plugin before xapi-base, or set gradle property -P" + XapiBasePlugin.PROP_SCHEMA_APPLIES_JAVA_PLATFORM +"=true");

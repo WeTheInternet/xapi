@@ -1,29 +1,25 @@
 package net.wti.loader.plugin
 
-import net.wti.gradle.internal.api.MinimalProjectView
+import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.schema.map.SchemaMap
 import net.wti.gradle.schema.parser.SchemaMetadata
 import net.wti.gradle.schema.parser.SchemaParser
+import net.wti.gradle.settings.ProjectDescriptorView
 import net.wti.gradle.test.AbstractMultiBuildTest
-import org.gradle.api.plugins.ExtensionContainer
-import org.gradle.internal.extensibility.DefaultConvention
-import org.gradle.internal.reflect.DirectInstantiator
+import org.gradle.api.initialization.Settings
 
 import static xapi.util.X_Namespace.XAPI_VERSION
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 30/07/19 @ 4:41 AM.
  */
-abstract class AbstractSchemaTest <S extends AbstractSchemaTest>  extends AbstractMultiBuildTest<S> implements MinimalProjectView {
-
-    private DefaultConvention convention
+abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends AbstractMultiBuildTest<S> implements MinimalProjectView {
 
     String getTestRepo() {
         return "$rootDir.absolutePath/build/test/repo"
     }
 
     void setup() {
-        convention = new DefaultConvention(DirectInstantiator.INSTANCE);
 
         settingsFile.text = """
 buildscript {
@@ -50,7 +46,7 @@ version = "1.0"
         // create a basic schema.xapi
         file('schema.xapi').text = """
 <xapi-schema
-    rootName = "xapiTest"
+    name = "$rootProjectName"
     defaultRepoUrl = "$testRepo"
     schemaLocation = "schema/schema.gradle"
     platforms = [
@@ -61,8 +57,8 @@ version = "1.0"
     modules = [
         <api />,
         <spi />,
-        <main require = [ api, "spi" ] />,
-        <test require = [ main ] />,
+        <main include = [ api, "spi" ] />,
+        <test include = [ main ] />,
     ]
     projects = {
         // the projects below all have a single "main" platform (potentially w/ multiple modules like api and testTools though!)
@@ -116,25 +112,35 @@ tasks.create 'testSchema', {
     }
 
     @Override
-    File getProjectDir() {
-        return rootDir
+    String getRootProjectName() {
+        return getClass().simpleName
     }
 
-    @Override
-    Object findProperty(String s) {
-        return System.getProperty(s, System.getenv(s.toUpperCase().replace('.', '_')));
-    }
+    Settings settings = Mock(Settings, {
+        // initialize the mock with some state...
+        Map<String, ProjectDescriptorView> mockProjects = new LinkedHashMap<>();
+        settings.findProject(_) >> { args ->
+            Object key = args[0]
+            if (key instanceof File) {
+                throw new UnsupportedOperationException("Only string keys are allowed for settings.findProject during tests.")
+            }
+            if (!key.startsWith(':')) {
+                key = ":$key"
+            }
+            final String k = "${ key.startsWith(':') ? '' : ':'}$key"
+            File projectDir = new File(rootDir, k.substring(1).replace(':' as char, File.separatorChar))
+            mockProjects.computeIfAbsent(k, { K ->
+                     new ProjectDescriptorView(k, settings, mockProjects, {projectDir})
+            })
+        }
 
-    @Override
-    ExtensionContainer getExtensions() {
-        return convention
-    }
+    })
 
     SchemaMap parseSchema() {
         SchemaParser parser = {this} as SchemaParser
         XapiLoaderPlugin plugin = new XapiLoaderPlugin()
         SchemaMetadata schema = parser.parseSchema(this)
-        return plugin.buildMap(parser, schema)
+        return plugin.buildMap(settings, parser, schema)
     }
 
     void generateSubprojects(String module='util', external = '') {
@@ -168,17 +174,69 @@ public class CommonApi {}
         }
     }
 
-    void addSourceUtil() {
+    void addSourceUtil(boolean xapiRequire = false) {
         withProject 'util', {
-            it.buildFile << '''
+            it.buildFile << """
 version='1.0'
-apply plugin: 'xapi-require'
-xapiRequire.project 'common'
-'''
+apply plugin: '${xapiRequire ? '''xapi-require'
+xapiRequire.project 'common''' : 'xapi-parser'}'
+"""
+            if (!xapiRequire) {
+                // create a util/schema.xapi which dependsOn common...
+                it.file('schema.xapi').text = """<xapi-schema
+    requires = {
+        project: common
+    }
+    platforms = [
+        <gwt
+            requires = {
+                external: "net.wti:gwt-user:3.0"
+            }
+        /gwt>
+    ]
+    modules = [
+        <main
+            requires = {
+                external: { "tld.ext:art:1.0" : "api" },
+                external: [ "tld.ext:ifact:1.0" ]
+            }
+        /main>,
+        <testIntegration
+            // this include makes this module "transitively extend" 'test' module.
+            // anyone consuming testIntegration will inherit test.
+            include = [ "test" ]
+            // these internal "extensions" are present at runtime within the scope of this xapi-schema document,
+            // but are otherwise non-transitive to the outside world (downstream consumers can just add the desired pieces they want).
+            // nobody consuming testIntegration will inherit requires={ internal: [...] } entries
+            requires = { internal : [ "jre", gwt, "android" ] }
+        /testIntegration>,
+    ]
+    projects = [
+        <some-project
+            requires = {
+                // applies to all modules of some-project
+                project: { "other-proj" : "main:api" },
+                project: [ "another-proj" ],
+
+                // applies only to the api module of some-project
+                api: {
+                    project: { "other-proj" : "spi" }
+                },
+                
+                // shorthand for test: { project: [ "another-proj", "main:test" ] },
+                // add a project dependency to main test module of another-proj.
+                project_test: [ "another-proj", "main:test" ],
+            }
+        /some-project>
+    ]
+/xapi-schema>
+"""
+            }
             it.addSource 'gwt', 'test.util.main', 'UtilMain', '''
 package test.util.main;
 class UtilMain extends test.common.api.CommonApi {}
 '''
         }
     }
+
 }

@@ -126,6 +126,14 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
     return adapt(key, value).toConsumer();
   }
 
+  default In1<Out2<I1, I2>> ioAdapter() {
+      return o-> {
+          if (o != null) {
+              in(o.out1(), o.out2());
+          }
+      };
+  }
+
   interface In2Unsafe <I1, I2> extends In2<I1, I2> {
     void inUnsafe(I1 in1, I2 in2) throws Throwable;
 

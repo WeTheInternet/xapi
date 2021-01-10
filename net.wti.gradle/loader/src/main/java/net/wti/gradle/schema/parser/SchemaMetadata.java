@@ -1,15 +1,20 @@
 package net.wti.gradle.schema.parser;
 
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.JsonPairExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
-import xapi.fu.In2;
+import net.wti.gradle.require.api.DependencyType;
+import net.wti.gradle.require.api.PlatformModule;
+import net.wti.gradle.schema.api.QualifiedModule;
 import xapi.fu.data.ListLike;
+import xapi.fu.data.MultiList;
 import xapi.fu.java.X_Jdk;
+import xapi.fu.log.Log;
 
 import java.io.File;
+
+import static xapi.gradle.fu.LazyString.lazyToString;
 
 /**
  * Example schema.xapi (edited snapshot of xapi project's main schema.xapi:
@@ -29,8 +34,12 @@ import java.io.File;
  *     modules = [
  *         <api />,
  *         <spi />,
- *         <main require = [ api, "spi" ] />,
+ *         <main include = [ api, "spi" ] />,
  *     ]
+ *
+ *     requires = {
+ *         project: common
+ *     }
  *
  *     projects = {
  *         // the projects below all have gwt, jre and other platforms
@@ -101,15 +110,24 @@ public class SchemaMetadata {
      * explicit == false == !schemaFile.exists()
      */
     private final boolean explicit;
+    private final SchemaMetadata parent;
 
     private String defaultUrl;
     private String schemaLocation;
     private String name;
+    private String group;
+    private String version;
     private ListLike<UiContainerExpr> platforms, modules, external, projects;
+    private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
 
-    public SchemaMetadata(File schemaFile) {
+    public SchemaMetadata(SchemaMetadata parent, File schemaFile) {
+        this.parent = parent;
         this.schemaFile = schemaFile;
         this.explicit = schemaFile.exists();
+        depsProject = X_Jdk.multiListOrderedInsertion();
+        depsInternal = X_Jdk.multiListOrderedInsertion();
+        depsExternal = X_Jdk.multiListOrderedInsertion();
+        group = version = QualifiedModule.UNKNOWN_VALUE;
     }
 
     public String getDefaultUrl() {
@@ -170,7 +188,37 @@ public class SchemaMetadata {
         return this;
     }
 
-    public void addPlatform(String platName, UiContainerExpr el) {
+    public MultiList<PlatformModule, Expression> getDepsProject() {
+        return depsProject;
+    }
+
+    public MultiList<PlatformModule, Expression> getDepsInternal() {
+        return depsInternal;
+    }
+
+    public MultiList<PlatformModule, Expression> getDepsExternal() {
+        return depsExternal;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public SchemaMetadata setGroup(String group) {
+        this.group = group;
+        return this;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public SchemaMetadata setVersion(String version) {
+        this.version = version;
+        return this;
+    }
+
+    public void addPlatform(UiContainerExpr el) {
         if (platforms == null) {
             platforms = X_Jdk.listArrayConcurrent();
         }
@@ -200,7 +248,7 @@ public class SchemaMetadata {
     }
 
     public File getSchemaDir() {
-        return schemaFile.isFile() ? schemaFile.getParentFile() == null ? new File(".") : schemaFile.getParentFile() : schemaFile;
+        return schemaFile.isFile() ? schemaFile.getAbsoluteFile().getParentFile() : schemaFile.isDirectory() ? schemaFile : new File(".").getAbsoluteFile();
     }
 
     public boolean isExplicit() {
@@ -208,62 +256,6 @@ public class SchemaMetadata {
     }
 
     public void addProject(Expression expr) {
-        final ComposableXapiVisitor<SchemaMetadata> v = ComposableXapiVisitor.whenMissingIgnore(SchemaParser.class);
-        boolean[] multiplatform = {isMultiPlatform()}; // default to multi-platform if this schema is multiplatform
-        boolean[] virtual = {false};
-
-        final In2<UiContainerExpr, SchemaMetadata> addProject = (module, parent)-> {
-            final ListLike<UiContainerExpr> platform = getProjects() == null ? (projects = X_Jdk.listArrayConcurrent()) : getProjects();
-            if (!module.hasAttribute("multiplatform")) {
-                module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
-            }
-            if (!module.hasAttribute("virtual")) {
-                module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
-            }
-            platform.add(module);
-        };
-
-        v   .withJsonContainerRecurse(In2.ignoreAll())
-            .withJsonPairTerminal((type, meta) -> {
-                if (type.getKeyExpr() instanceof IntegerLiteralExpr) {
-                    type.getValueExpr().accept(
-                    ComposableXapiVisitor.onMissingFail(SchemaMetadata.class)
-                        .withNameOrString((name, m) -> {
-                            // we have a project to add...
-                            UiContainerExpr newProject = new UiContainerExpr(name);
-                            addProject.in(newProject, m);
-                        })
-                        , meta);
-                    return; // source is an array, just carry on.
-                }
-                String key = type.getKeyString().toLowerCase();
-                switch (key) {
-                    case "multiplatform":
-                    case "multi":
-                        // children are default-multi-platform.
-                        multiplatform[0] = true;
-                        virtual[0] = false;
-                        break;
-                    case "standalone":
-                    case "single":
-                    case "singleplatform":
-                        multiplatform[0] = false;
-                        virtual[0] = false;
-                        break;
-                    case "virtual":
-                        multiplatform[0] = false;
-                        virtual[0] = true;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Cannot understand json key " + type.getKeyString() + " of:\n" + type.toSource());
-                }
-                type.getValueExpr().accept(v, meta);
-            })
-            .withUiContainerTerminal(addProject)
-        // TODO allow converting json { list: ..., of: ..., elements: ...} into array [ <list />, <of />, <elements /> ] form.
-        // This should probably be a method in ComposableXapiVistitor.
-        ;
-        expr.accept(v, this);
 
     }
 
@@ -275,7 +267,9 @@ public class SchemaMetadata {
     @Override
     public String toString() {
         return "SchemaMetadata{" +
-            "schemaFile=" + schemaFile +
+            "path=" + getPath() +
+            ", parent=" + (parent == null ? "''" : parent) +
+            ", schemaFile=" + schemaFile +
             ", explicit=" + explicit +
             ", defaultUrl='" + defaultUrl + '\'' +
             ", schemaLocation='" + schemaLocation + '\'' +
@@ -283,10 +277,92 @@ public class SchemaMetadata {
     }
 
     public String getName() {
-        return name == null ? getSchemaDir().getName() : name;
+        return name == null ? (name = getSchemaDir().getName()) : name;
+    }
+
+    public boolean hasName() {
+        return this.name != null;
     }
 
     public void setName(String name) {
+        if (this.name != null && !this.name.equals(name)) {
+            throw new IllegalArgumentException("Cannot change " + this.name + " to " + name);
+        }
         this.name = name;
+    }
+
+    public void addDependency(DependencyType type, PlatformModule into, JsonPairExpr from) {
+        Log.firstLog(into, this).log(SchemaMetadata.class,
+            lazyToString(this::getPath), "adding dependency ", type, " into ", into + " : " + from);
+        // hm... we should just be storing ast for the requires= of a top-level xapi-schema.
+        // all the other requires= elements will also be stored in other ast nodes, and visited as appropriate by SchemaParser.
+        switch (type) {
+            case unknown:
+            case project:
+                // hm... we need to actually be mutating a dependency graph.
+                // for now, we'll create a SchemaDependency object, to simply describe the source request;
+                // we'll handle turning it into a real dependency graph later.
+                (depsProject == null ? (depsProject = X_Jdk.multiListOrderedInsertion()) : depsProject)
+                    .get(into).add(from);
+                break;
+            case internal:
+                // internal will be
+                (depsInternal == null ? (depsInternal = X_Jdk.multiListOrderedInsertion()) : depsInternal)
+                    .get(into).add(from);
+                break;
+            case external:
+                (depsExternal == null ? (depsExternal = X_Jdk.multiListOrderedInsertion()) : depsExternal)
+                    .get(into).add(from);
+                break;
+            default:
+                throw new UnsupportedOperationException("Dependency type " + type + " not (yet?) supported");
+        }
+    }
+
+    public final SchemaMetadata getParent() {
+        return parent;
+    }
+
+    public void addDependency(JsonPairExpr pair, PlatformModule platMod) {
+        if (pair.getKeyExpr() instanceof IntegerLiteralExpr) {
+            // requires is in "array form":
+            // requires = [ 'a', 'b' ]
+            // which implies, by default, requires = { project: [ 'a', 'b' ] }
+            // TODO: add optional structure if transitivity / other values are desired.  requires = [ { name: 'a', transitivity: 'api' }, ... ]
+            addDependency(DependencyType.project, platMod, pair);
+        } else {
+            String type = pair.getKeyString();
+            DependencyType t = DependencyType.unknown;
+            String coord = null;
+            for (DependencyType value : DependencyType.values()) {
+                if (type.startsWith(value.name())){
+                    if (value.name().equals(type)) {
+                        t = value;
+                        break;
+                    }
+                    coord = type.substring(value.name().length());
+                    if (coord.startsWith("_")) {
+                        coord = coord.substring(1);
+                    } else if (Character.isUpperCase(coord.charAt(0))) {
+                        coord = Character.toLowerCase(coord.charAt(0)) +
+                            (coord.length() == 1 ? "" : coord.substring(1));
+                    }
+                    break;
+                }
+            }
+            addDependency(t, platMod.edit(null, coord), pair);
+        }
+    }
+
+    public String getPath() {
+        String me = getName();
+        if (parent == null) {
+            if (":".equals(me)) {
+                return ":";
+            }
+            return ":" + me;
+        }
+        String parentPath = parent.getPath();
+        return parentPath + (parentPath.endsWith(":") ? "" : ":") + me;
     }
 }

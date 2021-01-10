@@ -237,9 +237,20 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     return (ignored, i) -> in(i);
   }
 
-  default Filter1<I> filtered(Filter1<I> filter) {
+  default Filter1<I> filtered(In1Out1<I, Boolean> filter) {
     return i-> {
-      if (filter.filter1(i)) {
+      if (filter.io(i)) {
+        in(i);
+        return true;
+      }
+      return false;
+    };
+  }
+
+  default <To> Filter1<I> filteredMapped(In1Out1<I, To> mapper, In1Out1<To, Boolean> filter) {
+    return i-> {
+        To mapped = mapper.io(i);
+      if (filter.io(mapped)) {
         in(i);
         return true;
       }

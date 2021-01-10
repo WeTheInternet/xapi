@@ -11,13 +11,21 @@ apply from: "$xapiHome/gradle/int-test.gradle"
 
 
 xapiRequire.main().configure {
-    external "net.wti.gradle.tools:xapi-gradle-tools:${->version}", 'main'
     external "net.wti.core:xapi-gen:${->version}", 'main'
     external "net.wti.core:xapi-lang-core:${->version}", 'main'
 }
 
+xapiRequire.module('api').configure {
+    external "net.wti.gradle.tools:xapi-gradle-tools:${->version}", 'main'
+    external "net.wti.core:xapi-fu:${->version}", 'main'
+}
+
 xapiRequire.module('test').configure {
     external "net.wti.gradle.tools:xapi-gradle-test:${->version}", 'main'
+}
+
+xapiRequire.module('spi').configure {
+    internal 'main:api'
 }
 
 dependencies {
@@ -46,11 +54,18 @@ description = settingsPluginDoc
 xapiSchema.whenReady {
     // java-gradle-plugin relies on task jar being defined.  Lets use the schema to realize it early.
     xapiSchema.module('main', 'main').jarTask.get()
+
+    // eagerly realize this so the apiCompile / apiCompileOnly configurations are created eagerly
+    xapiSchema.module('main', 'api').tasks.javacTask.get()
+    // apiCompileOnly won't exist before we perform (sloppy) eager initialization above.
+    dependencies.add('apiCompileOnly', dependencies.gradleApi())
+
     setProperty('skip.java.plugin', 'true')
     setProperty('skip.java.component', 'true')
     plugins.apply 'java-gradle-plugin'
     GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
     plugin.publishComponent = '_main_main'
+//    println configurations.names
     plugin.plugins.register('xapi-loader', {
         PluginDeclaration decl->
             decl.id = 'xapi-loader'

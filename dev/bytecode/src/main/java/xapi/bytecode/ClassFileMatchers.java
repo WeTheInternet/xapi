@@ -39,7 +39,7 @@ public class ClassFileMatchers {
     }
 
     @Override
-    public boolean filter1(ClassFile value) {
+    public Boolean io(ClassFile value) {
       for (String annotation : annotations) {
         if (value.getAnnotation(annotation) != null) {
           return true;

@@ -10,15 +10,15 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
 }
 
 setProperty('xapi.main.component', 'shadow')
 apply from: "$rootDir/gradle/xapi-env.gradle"
-plugins.apply 'xapi-require'
 plugins.apply 'com.github.johnrengelman.shadow'
+plugins.apply 'xapi-require'
 
 (tasks.jar as Jar).archiveClassifier.set 'default'
 

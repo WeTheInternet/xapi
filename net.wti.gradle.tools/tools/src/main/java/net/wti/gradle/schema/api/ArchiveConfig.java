@@ -1,6 +1,8 @@
 package net.wti.gradle.schema.api;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.ArchiveRequest;
+import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import org.gradle.api.Named;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.provider.Provider;
@@ -19,6 +21,8 @@ import xapi.gradle.fu.LazyString;
 public interface ArchiveConfig extends Named {
 
     void require(Object ... units);
+
+    ArchiveRequest request(ArchiveConfig other, ArchiveRequestType type);
 
     SetProperty<LazyString> required();
 
@@ -39,4 +43,8 @@ public interface ArchiveConfig extends Named {
     ImmutableAttributes getAttributes(ProjectView view);
 
     PlatformConfig getPlatform();
+
+    default String getPath() {
+        return getPlatform().getName() + ":" + getName();
+    }
 }

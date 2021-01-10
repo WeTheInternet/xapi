@@ -1,9 +1,17 @@
 package net.wti.gradle.test
 
-
+import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.test.api.TestBuild
+import net.wti.gradle.test.api.TestBuildDir
 import net.wti.gradle.test.api.TestFileTools
+import org.gradle.api.Action
+import org.gradle.api.internal.CollectionCallbackActionDecorator
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.plugins.ExtensionContainer
+import org.gradle.internal.extensibility.DefaultConvention
+import org.gradle.internal.reflect.DirectInstantiator
+import org.gradle.internal.reflect.Instantiator
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import spock.lang.Specification
@@ -15,8 +23,7 @@ import static org.gradle.api.logging.LogLevel.*
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:04 AM.
  */
-abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools {
-
+abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools, TestBuildDir, MinimalProjectView {
 
     LogLevel LOG_LEVEL = QUIET
     Boolean XAPI_DEBUG = true// Boolean.getBoolean("xapi.debug")
@@ -27,12 +34,19 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
     private String rootProjectName
     private boolean initializedSettings
 
+    DefaultConvention convention
+    Gradle gradle = Mock(Gradle)
+
     File getRootDir() {
         this.@rootDir ?: (this.@rootDir = newTmpDir())
     }
 
     File newTmpDir() {
         Files.createTempDirectory(selfSpec().class.simpleName).toFile()
+    }
+
+    void setup() {
+        convention = new DefaultConvention(DirectInstantiator.INSTANCE)
     }
 
     BuildResult runSucceed(
@@ -105,7 +119,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
             initializedSettings = true
             initSettings(settingsFile)
             settingsFile << """
-// from ${getClass().simpleName} ($name)
+// from ${getClass().simpleName} ${name ? "($name)" : ''}
 rootProject.name='${getRootProjectName()}'
 """
         }
@@ -135,6 +149,11 @@ rootProject.name='${getRootProjectName()}'
         return rootDir.name
     }
 
+    @Override
+    MinimalProjectView getRootProject() {
+        return this
+    }
+
     String setRootProjectName(String name) {
         if (rootProjectName) {
             if (rootProjectName != name) {
@@ -145,4 +164,43 @@ rootProject.name='${getRootProjectName()}'
         }
         return rootProjectName
     }
+
+    @Override
+    File getProjectDir() {
+        return rootDir
+    }
+
+    @Override
+    Object findProperty(String s) {
+        return System.getProperty(s, System.getenv(s.toUpperCase().replace('.', '_')));
+    }
+
+    @Override
+    ExtensionContainer getExtensions() {
+        return convention
+    }
+
+    @Override
+    Instantiator getInstantiator() {
+        return DirectInstantiator.INSTANCE
+    }
+
+    @Override
+    CollectionCallbackActionDecorator getDecorator() {
+        return CollectionCallbackActionDecorator.NOOP;
+    }
+
+    @Override
+    MinimalProjectView findView(String s) {
+        if (s != ':') {
+            println "Ignoring request for view $s and just returning $this"
+        }
+        return this
+    }
+
+    @Override
+    void whenReady(Action<? super MinimalProjectView> action) {
+        action.execute(this)
+    }
+
 }

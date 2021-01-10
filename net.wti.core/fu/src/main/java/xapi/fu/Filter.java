@@ -36,12 +36,13 @@ public interface Filter<T> {
 
   interface Filter1 <T> extends Filter<T>, In1Out1<T, Boolean> {
 
-    boolean filter1(T item); // makes the lambda a primitive; does not allow null.  hm...  good and bad.
+    default boolean filter1(T item) {
+        Boolean result = io(item);
+        return result == null ? false : result;
+    }
 
     @Override
-    default Boolean io(T in) {
-      return filter1(in);
-    }
+    Boolean io(T in);
 
     default Filter1<T> inverse() {
       return i->!filter1(i);
@@ -61,7 +62,7 @@ public interface Filter<T> {
     boolean filter1Unsafe(T item) throws Exception;
 
     @Override
-    default boolean filter1(T args) {
+    default Boolean io(T args) {
       try {
         return filter1Unsafe(args);
       } catch (Exception e) {

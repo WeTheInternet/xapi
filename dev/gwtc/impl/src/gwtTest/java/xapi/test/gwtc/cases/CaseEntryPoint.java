@@ -42,6 +42,9 @@ import com.google.gwt.dom.client.Element;
     @Dependency(dependencyType=DependencyType.MAVEN,
       groupId="net.wetheinter", value="xapi-gwtc-impl",version=X_Namespace.XAPI_VERSION),
     @Dependency(dependencyType=DependencyType.MAVEN,
+      // we should not have to declare this classifier'ed dependency, yet, we do...
+      groupId="net.wetheinter", value="xapi-gwtc-impl",version=X_Namespace.XAPI_VERSION, classifier = "sources"),
+    @Dependency(dependencyType=DependencyType.MAVEN,
       groupId="net.wetheinter", value="xapi-gwt-test",version=X_Namespace.XAPI_VERSION),
     @Dependency(dependencyType=DependencyType.MAVEN,
       groupId="net.wetheinter", value="xapi-gwt-api",version=X_Namespace.XAPI_VERSION),

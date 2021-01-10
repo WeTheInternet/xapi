@@ -7,7 +7,7 @@ import xapi.fu.Filter.Filter1;
  */
 public class IfNotNull<T> implements Filter1<T> {
   @Override
-  public boolean filter1(T args) {
+  public Boolean io(T args) {
     return args != null;
   }
 }

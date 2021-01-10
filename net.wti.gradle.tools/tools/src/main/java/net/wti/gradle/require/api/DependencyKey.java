@@ -36,11 +36,10 @@ public enum DependencyKey {
      */
     composite,
     /**
-     * Set to `true` when this archive node is backed by externally downloaded resources.
-     *
-     * This is set for you when using XapiRequire
+     * Set to "project", "internal", "external" or "unknown".
+     * Normally stores a {@link DependencyType} value.
      */
-    external,
+    category,
     /**
      * Set to a Map containing new coordinates for this artifact.
      * Not really supported yet, just leaving it here as an idea.
@@ -53,4 +52,9 @@ public enum DependencyKey {
      * this should point to a map with a less restrictive key type (String).
      */
     extra,
+    /**
+     * A $platform:$module pair, if no : present, assume implicit main:$module.
+     * Normally store a {@link PlatformModule} value.
+     */
+    platformModule,
 }

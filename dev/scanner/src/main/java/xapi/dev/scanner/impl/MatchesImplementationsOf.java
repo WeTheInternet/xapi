@@ -33,7 +33,7 @@ public class MatchesImplementationsOf implements Filter1<ClassFile> {
   }
 
   @Override
-  public boolean filter1(ClassFile value) {
+  public Boolean io(ClassFile value) {
     for (String iface : value.getInterfaces()) {
       for (String subclass : interfaces) {
         if (iface.equals(subclass)) {

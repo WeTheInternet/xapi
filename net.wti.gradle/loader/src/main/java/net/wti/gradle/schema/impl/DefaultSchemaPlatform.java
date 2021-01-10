@@ -1,25 +1,41 @@
-package net.wti.gradle.schema.map;
+package net.wti.gradle.schema.impl;
+
+import net.wti.gradle.schema.api.SchemaPlatform;
 
 /**
  * Abstraction layer over a platform descriptor, like <mod-name replace=["main"] published=true />
  *
- * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-06 @ 4:39 a.m..
+ * Created by James X. Nelson (James@WeTheInter.net) on 2020-06-14 @ 1:34 a.m..
  */
-public class SchemaPlatform {
+public class DefaultSchemaPlatform implements SchemaPlatform {
     private final String name;
     private final String replace;
-    private final boolean published;
-    private final boolean test;
+    private String publishPattern;
+    private boolean published;
+    private boolean test;
 
-    public SchemaPlatform(String name, String replace, boolean published, boolean test) {
+    public DefaultSchemaPlatform(
+        String name,
+        String publishPattern,
+        String replace,
+        boolean published,
+        boolean test
+    ) {
         this.name = name;
+        this.publishPattern = publishPattern;
         this.replace = replace;
         this.published = published;
         this.test = test;
     }
 
+    @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getPublishPattern() {
+        return publishPattern;
     }
 
     public String getReplace() {
@@ -30,6 +46,11 @@ public class SchemaPlatform {
         return published;
     }
 
+    @Override
+    public void setPublished(boolean published) {
+        this.published = published;
+    }
+
     public boolean isTest() {
         return test;
     }
@@ -38,10 +59,10 @@ public class SchemaPlatform {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof SchemaPlatform))
+        if (!(o instanceof DefaultSchemaPlatform))
             return false;
 
-        final SchemaPlatform that = (SchemaPlatform) o;
+        final DefaultSchemaPlatform that = (DefaultSchemaPlatform) o;
 
         return getName().equals(that.getName());
     }
@@ -51,14 +72,20 @@ public class SchemaPlatform {
         return getName().hashCode();
     }
 
+    @Override
     public SchemaPlatform update(SchemaPlatform module) {
-        return new SchemaPlatform(name, module.replace, published || module.published, test || module.test);
+        return new DefaultSchemaPlatform(name,
+            publishPattern,
+            module.getReplace(),
+            published || module.isPublished(),
+            test || module.isTest());
     }
 
     @Override
     public String toString() {
         return "SchemaPlatform{" +
             "name='" + name + '\'' +
+            ", publishPattern=" + publishPattern +
             ", replace=" + replace +
             ", published=" + published +
             ", test=" + test +

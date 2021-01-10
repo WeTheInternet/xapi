@@ -12,7 +12,7 @@ public class MatchesDirectSubclasses implements Filter1<ClassFile> {
   }
 
   @Override
-  public boolean filter1(ClassFile value) {
+  public Boolean io(ClassFile value) {
     if (value.isInterface()) {
       for (String iface : value.getInterfaces()) {
         for (String subclass : subclasses) {

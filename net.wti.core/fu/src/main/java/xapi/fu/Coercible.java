@@ -166,10 +166,17 @@ public interface Coercible {
     return String.valueOf(obj);
   }
 
-  default boolean isAddNewlines(Object next) {
-    return next instanceof Iterable || X_Fu.getLength(next) > 0 ||
-        (next instanceof String && ((String)next).startsWith("\n//x"));
-  }
+    default boolean isAddNewlines(Object next) {
+        if (next == null) {
+            return false;
+        }
+        return next instanceof Iterable ||
+            (
+                next instanceof String
+                    ? ((String) next).startsWith("\n//x")
+                    : next.getClass().getComponentType() != null && X_Fu.getLength(next) > 0
+            );
+    }
 
   default String perIndent() {
     return "  ";

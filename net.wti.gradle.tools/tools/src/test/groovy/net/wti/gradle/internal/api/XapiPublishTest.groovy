@@ -182,6 +182,7 @@ xapiRequire {
 
         then:
         result.task(':compileGwtTestJava').outcome == TaskOutcome.UP_TO_DATE
+        // TODO: verify that source jars or on test classpath
 
     }
 

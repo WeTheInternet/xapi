@@ -50,13 +50,6 @@ public class DefaultArchiveGraph extends DefaultWorker implements ArchiveGraph {
     }
 
     @Override
-    public ArchiveRequest request(
-        ArchiveGraph other, ArchiveRequestType type
-    ) {
-        throw new UnsupportedOperationException("ArchiveGraph.request() not yet implemented");
-    }
-
-    @Override
     public Map<DependencyKey, ?> id() {
         throw new UnsupportedOperationException("ArchiveGraph.id() not yet implemented");
     }

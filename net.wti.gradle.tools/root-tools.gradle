@@ -54,20 +54,32 @@ gradle.beforeProject {
             repo.url = "file://$xapiHome/repo"
     }
     SourceSet main = p.sourceSets.main
-    Jar sourceJar = p.tasks.create 'sourceJar', Jar.class, {
+    SourceSet test = p.sourceSets.test
+    Jar sourceJar = p.tasks.create 'sourceJar', Jar, {
         Jar jar ->
             jar.archiveClassifier.set('sources')
             jar.from main.allSource
             return
     }
 
-    PublishArtifact art = p.project.artifacts.add('archives', sourceJar)
+    TaskProvider<Jar> testJar = p.tasks.register('testJar', Jar, {
+        Jar jar ->
+            jar.archiveClassifier.set('tests')
+            jar.from test.output
+            return
+    })
 
+    PublishArtifact art = p.project.artifacts.add('archives', sourceJar)
+    boolean publishTests = p.findProperty('publishTests') == 'true'
+    PublishArtifact testArt = !publishTests ? null : p.project.artifacts.add('archives', testJar.get())
     ext.publications.create("main", MavenPublication, {
         pub ->
             pub.from(p.components.getByName('java'))
             pub.groupId = 'net.wti.gradle.tools'
             pub.artifact(art)
+            if (testArt != null) {
+                pub.artifact(testArt)
+            }
     })
 
     p.configurations.apiElements.attributes {

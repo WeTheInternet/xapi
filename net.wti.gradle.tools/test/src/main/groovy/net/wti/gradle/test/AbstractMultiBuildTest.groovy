@@ -14,7 +14,7 @@ import static groovy.lang.Closure.OWNER_FIRST
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/17/18 @ 4:54 AM.
  */
-abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> extends AbstractMultiProjectTest<S> implements TestBuild, TestBuildDir {
+abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> extends AbstractMultiProjectTest<S> {
 
 
     private final LinkedHashMap<Object, Action<? super IncludedTestBuild>> pendingBuilds = [:]

@@ -1,5 +1,8 @@
 <xapi-schema
 
+    name = "net.wetheinter"
+    group = "net.wetheinter"
+
     defaultRepoUrl = jcenter()
 
     schemaLocation = "schema/schema.gradle"
@@ -21,10 +24,10 @@
     modules = [
         <api />,
         <spi />,
-        <main require = [ api, spi ] />,
-        <sample require = "main" published = true />,
-        <testTools require = "main" published = true />,
-        <test require = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
+        <main include = [ api, spi ] />,
+        <sample include = "main" published = true />,
+        <testTools include = "main" published = true />,
+        <test include = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
     ]
 
     projects = {

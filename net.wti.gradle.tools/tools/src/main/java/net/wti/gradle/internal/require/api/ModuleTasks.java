@@ -97,6 +97,7 @@ public class ModuleTasks {
     }
     public TaskProvider<Jar> getJarTask() {
         if (jarTask == null) {
+            view().ensureEvaluated();
             final TaskContainer tasks = view().getTasks();
             String name = meta().getSrc().getJarTaskName();
             if (tasks.findByName(name) != null || ("jar".equals(name) && view().isJavaCompatibility())) {

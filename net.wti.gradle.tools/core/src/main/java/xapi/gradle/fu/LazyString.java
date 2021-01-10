@@ -114,6 +114,16 @@ public class LazyString implements Callable<String>, Comparable<LazyString>, Cha
         return new LazyString(value, false);
     }
 
+    public static LazyString nullableString(Callable<? extends CharSequence> value, Callable<? extends CharSequence> backup) {
+        return new LazyString(()-> {
+            CharSequence val = value.call();
+            if (val == null) {
+                return backup.call();
+            }
+            return val;
+        }, false);
+    }
+
     public static LazyString nonNullString(Callable<? extends CharSequence> value) {
         return new LazyString(value, true);
     }

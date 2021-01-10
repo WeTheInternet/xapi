@@ -1,6 +1,8 @@
 package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.ArchiveRequest;
+import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
@@ -92,6 +94,13 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     }
 
     @Override
+    public ArchiveRequest request(
+        ArchiveConfig other, ArchiveRequestType type
+    ) {
+        return null;
+    }
+
+    @Override
     public SetProperty<LazyString> required() {
         return requires;
     }
@@ -111,7 +120,7 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
             '}';
     }
 
-    protected String getPath() {
+    public String getPath() {
         return platform.getName() + ":" + getName();
     }
 

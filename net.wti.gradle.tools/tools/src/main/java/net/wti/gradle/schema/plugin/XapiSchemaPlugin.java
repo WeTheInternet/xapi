@@ -12,6 +12,7 @@ import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.attributes.Attribute;
+import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.internal.reflect.Instantiator;
 
@@ -156,6 +157,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         String path = schemaRootPath(project);
         final ProjectView root = path == null ? project.getRootProject() : project.findProject(path);
         if (project != root) {
+            root.ensureEvaluated();
             root.getPlugins().apply(XapiSchemaPlugin.class);
             GradleService.buildOnce(root, XapiSchema.EXT_NAME, XapiSchema::new);
         }

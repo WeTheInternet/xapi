@@ -109,7 +109,7 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
     // it for the time being by using an explicit anonymous class.
     final Filter1<Out2<Integer, T>> filter = new Filter1<Out2<Integer, T>>() {
       @Override
-      public boolean filter1(Out2<Integer, T> e) {
+      public Boolean io(Out2<Integer, T> e) {
         return value.filter1(e.out2());
       }
     };

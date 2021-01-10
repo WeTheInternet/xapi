@@ -1,3 +1,0 @@
-This file is here to have a non-empty src/gwt/java directory.
-When we fix the bug about missing transitivity through no-source modules,
-we can delete this hackaround.

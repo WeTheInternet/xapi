@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.api;
 
+import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.impl.DefaultProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
@@ -23,10 +24,8 @@ import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
@@ -57,7 +56,6 @@ public interface ProjectView extends MinimalProjectView {
 
     String getPath();
     ObjectFactory getObjects();
-    Instantiator getInstantiator();
     ProviderFactory getProviders();
     Logger getLogger();
     TaskContainer getTasks();
@@ -74,6 +72,13 @@ public interface ProjectView extends MinimalProjectView {
     String getGroup();
     String getName();
     String getVersion();
+    PluginContainer getPlugins();
+    BuildGraph getBuildGraph();
+    FileTree zipTree(Object from);
+    GradleService getService();
+    DefaultComponentMetadataHandler getComponentMetadata();
+    boolean isWtiGradle();
+    ProjectLayout getLayout();
 
     static ProjectView fromProject(Project project) {
         return GradleService.buildOnce(project, ProjectView.EXT_NAME, ignored-> {
@@ -90,12 +95,6 @@ public interface ProjectView extends MinimalProjectView {
         return GradleService.buildOnce(this, XapiSchema.EXT_NAME, XapiSchema::new);
     }
 
-    CollectionCallbackActionDecorator getDecorator();
-
-    PluginContainer getPlugins();
-
-    BuildGraph getBuildGraph();
-
     default NamedDomainObjectProvider<ProjectGraph> projectGraph() {
         return getBuildGraph().project(getPath());
     }
@@ -104,11 +103,11 @@ public interface ProjectView extends MinimalProjectView {
         return projectGraph().get();
     }
 
+    @Override
     default ProjectView getRootProject() {
         return findProject(":");
     }
 
-    ProjectLayout getLayout();
 
     default File getProjectDir() {
         return getLayout().getProjectDirectory().getAsFile();
@@ -118,15 +117,11 @@ public interface ProjectView extends MinimalProjectView {
         return getLayout().getProjectDirectory().getAsFile();
     }
 
-    Gradle getGradle();
-
     default File file(String path) {
         return new File(getProjectDir(), path);
     }
 
     ConfigurableFileCollection files(Object ... from);
-
-    FileTree zipTree(Object from);
 
     default Dependency dependencyFor(String path, Configuration config) {
         final DependencyHandler deps = getDependencies();
@@ -175,17 +170,10 @@ public interface ProjectView extends MinimalProjectView {
         });
     }
 
-    void whenReady(Action<? super ProjectView> callback);
-
-    GradleService getService();
-
     default boolean isJavaCompatibility() {
         return getPlugins().hasPlugin(JavaPlugin.class);
     }
 
-    DefaultComponentMetadataHandler getComponentMetadata();
-
-    boolean isWtiGradle();
 
     default String getDebugPath() {
         return getPath() +
@@ -196,4 +184,22 @@ public interface ProjectView extends MinimalProjectView {
     default SourceSet getMainSources() {
         return getProjectGraph().mainModule().getSource().getSrc();
     }
+
+    @Override
+    default MinimalProjectView findView(String name) {
+        if (!name.startsWith(":")) {
+            name = ":" + name;
+        }
+        if (name.equals(getPath())) {
+            return this;
+        }
+        return findProject(name);
+    }
+
+    @Override
+    default void whenSettingsReady(Action<? super MinimalProjectView> callback) {
+        callback.execute(this);
+    }
+
+    void ensureEvaluated();
 }
