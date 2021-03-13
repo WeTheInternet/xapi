@@ -72,7 +72,7 @@ public class ManifestGenerator {
         final SourceSet src = config.getSource().getSrc();
         if (!ap.isMutateOnAbsorb()) {
             // We may undo this if we see fit, but it's appropriate for now.
-            throw new IllegalStateException("Only a child AllPaths may add sources; call parent.absorb(child) on " + this);
+            throw new IllegalStateException("Only a child AllPaths may add sources; call parent.absorb(child) on " + ap);
         }
         ap.mutate();
         for (File srcDir : src.getJava().getSrcDirs()) {
@@ -133,7 +133,9 @@ public class ManifestGenerator {
         ArchiveGraph mod = view.getProjectGraph().mainModule();
         final String module = mod.getNameCore();
         final File subDir = new File(dir, module);
-        subDir.mkdirs();
+        if (!subDir.isDirectory() && !subDir.mkdirs()) {
+            mod.getView().getLogger().quiet("Failed to mkdirs() on {}; check filesystem permissions and disk space", subDir);
+        }
         final ArchiveGraph type = getArchiveType();
 
         // Write out each individual archive type, @ META-INF/xapi/module-name/archiveType.xapi

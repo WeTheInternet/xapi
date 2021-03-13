@@ -485,12 +485,19 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         String classpathProp = "gwt.classpath." + manifest.getModuleShortName();
         String classpathValue = System.getProperty(classpathProp);
         if (classpathValue != null) {
+            if (new File(classpathValue).isFile()) {
+                try {
+                    classpathValue = X_IO.toStringUtf8(new FileInputStream(classpathValue));
+                } catch (IOException e) {
+                    throw new UncheckedIOException("Classpath file " + classpathValue + " from system property " + classpathProp + " does not exist!", e);
+                }
+            }
             try {
                 manifest.addDependencies(immutable(iterate(
-                    X_IO.toStringUtf8(new FileInputStream(classpathValue))
+                        classpathValue
                 .split(pathSeparator))));
-            } catch (IOException e) {
-                throw new UncheckedIOException("Classpath file " + classpathValue + " from system property " + classpathProp + " does not exist!", e);
+            } catch (Exception e) {
+                throw new RuntimeException("Error loading classpath items " + classpathValue + " from system property " + classpathProp, e);
             }
         }
         assert tempDir.exists() : "No usable directory " + tempDir.getAbsolutePath();

@@ -12,6 +12,7 @@ import xapi.fu.X_Fu;
 import xapi.util.impl.AbstractPair;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -58,7 +59,13 @@ public class IntToSet <V> implements IntTo<V>, Serializable {
   }
 
   private V[] newArray(int s) {
-    V[] arr = X_Fu.<V>array();
+//    V[] arr = X_Fu.<V>array();
+    V[] arr;
+    try {
+      arr = (V[]) Array.newInstance(store.valueType(), 0);
+    } catch (Exception e) {
+      arr = X_Fu.<V>array();
+    }
     arr = X_Fu.blank(arr, s);
     return arr;
   }

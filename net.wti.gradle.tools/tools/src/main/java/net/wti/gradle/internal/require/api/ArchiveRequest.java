@@ -50,10 +50,32 @@ public interface ArchiveRequest extends Named {
         }
     }
 
+    /**
+     * An ArchiveRequest models a dependency as being from a producer, to a consumer.
+     *
+     * Data (files) from() the producer are provided to() the consumer.
+     *
+     * @return the producer who is expected to produce dependencies.
+     */
     ProducerConfiguration from();
 
+
+    /**
+     * An ArchiveRequest models a dependency as being from a producer, to a consumer.
+     *
+     * Data (files) from() the producer are provided to() the consumer.
+     *
+     * @return the consumer who is expected to reference dependency files.
+     */
     ConsumerConfiguration to();
 
+    /**
+     * A request may earmark particular dependencies for a particular purpose.
+     *
+     * This functionality is not yet hooked up to anything.
+     *
+     * @return an ArchiveRequestType enum member of our particular dependency relationship
+     */
     ArchiveRequestType type();
 
     @Override
@@ -62,6 +84,6 @@ public interface ArchiveRequest extends Named {
     }
 
     default boolean isSelectable() {
-        return from().getModule().isSelectable() || to().getModule().isSelectable();
+        return from().getProducerModule().isSelectable() || to().getConsumerModule().isSelectable();
     }
 }

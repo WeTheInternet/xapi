@@ -8,6 +8,8 @@ import net.wti.gradle.settings.ProjectDescriptorView
 import net.wti.gradle.test.AbstractMultiBuildTest
 import org.gradle.api.initialization.Settings
 
+import java.util.concurrent.Callable
+
 import static xapi.util.X_Namespace.XAPI_VERSION
 
 /**
@@ -15,13 +17,25 @@ import static xapi.util.X_Namespace.XAPI_VERSION
  */
 abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends AbstractMultiBuildTest<S> implements MinimalProjectView {
 
+    static final String VERSION = "1.51"
+    protected String extraProjects
+
     String getTestRepo() {
         return "$rootDir.absolutePath/build/test/repo"
     }
 
-    void setup() {
+    Callable initProject
+    @Override
+    void doWork() {
+        initProject.call()
+        initProject = {}
+        super.doWork()
+    }
 
-        settingsFile.text = """
+    @Override
+    void setup() {
+        initProject = {
+            settingsFile.text = """
 buildscript {
     dependencies {
         classpath files(
@@ -32,7 +46,7 @@ buildscript {
 apply plugin: 'xapi-loader'
 """
 
-        buildFile.text = """
+            buildFile.text = """
 buildscript {
     dependencies {
         classpath files(
@@ -40,13 +54,14 @@ buildscript {
         )
     }
 }
-version = "1.0"
+version = "$VERSION"
 """
 
-        // create a basic schema.xapi
-        file('schema.xapi').text = """
+            // create a basic schema.xapi
+            file('schema.xapi').text = """
 <xapi-schema
     name = "$rootProjectName"
+    version = "$VERSION"
     defaultRepoUrl = "$testRepo"
     schemaLocation = "schema/schema.gradle"
     platforms = [
@@ -72,7 +87,7 @@ version = "1.0"
         // the projects below have no source of their own; they are effectively parents of multiple child projects.
         // it will be left to the schema.xapi of these projects to determine whether
         // the child modules are multiPlatform, standalone, or nested virtual
-        virtual: ["gwt", "jre", "demo"],
+        virtual: ["gwt", "jre", "demo" ${extraProjects ?: ''}],
     }
     // declare any external dependencies here,
     // so we can handle pre-emptively syncing jars (and maybe source checkouts) to a local cache,
@@ -97,7 +112,7 @@ version = "1.0"
 /xapi-schema>
 
 """
-        file('schema', 'schema.gradle').text = """
+            file('schema', 'schema.gradle').text = """
 plugins {
     id 'xapi-schema'
 }
@@ -108,7 +123,11 @@ tasks.create 'testSchema', {
     }
 }
 """
+        }
+    }
 
+    String getExtraProjects() {
+        return this.@extraProjects ?: ''
     }
 
     @Override
@@ -137,6 +156,8 @@ tasks.create 'testSchema', {
     })
 
     SchemaMap parseSchema() {
+        // make sure we actually write out any generated project files before we try parsing
+        doWork()
         SchemaParser parser = {this} as SchemaParser
         XapiLoaderPlugin plugin = new XapiLoaderPlugin()
         SchemaMetadata schema = parser.parseSchema(this)
@@ -163,10 +184,10 @@ tasks.create 'testSchema', {
 
     void addSourceCommon() {
         withProject'common', {
-            it.buildFile << '''
-version='1.0'
+            it.buildFile << """
+version='$VERSION'
 apply plugin: 'xapi-parser'
-'''
+"""
             it.addSource 'api', 'test.common.api', 'CommonApi', '''
 package test.common.api;
 public class CommonApi {}
@@ -177,7 +198,7 @@ public class CommonApi {}
     void addSourceUtil(boolean xapiRequire = false) {
         withProject 'util', {
             it.buildFile << """
-version='1.0'
+version='$VERSION'
 apply plugin: '${xapiRequire ? '''xapi-require'
 xapiRequire.project 'common''' : 'xapi-parser'}'
 """

@@ -67,7 +67,8 @@ public interface PlatformGraph extends Named, HasWork {
     SourceMeta sourceFor(SourceSetContainer srcs, ArchiveGraph archive);
 
     default String getPath() {
-        return project().getPath() + ":" + getName();
+        String projPath = project().getPath();
+        return projPath + ":" + getName();
     }
 
     default String asGroup(String group) {

@@ -1,14 +1,17 @@
 package net.wti.gradle.parser.plugin;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
+import net.wti.gradle.internal.require.api.BuildGraph;
+import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.map.*;
-import net.wti.gradle.schema.map.internal.SchemaDependency;
+import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.api.SchemaModule;
 import net.wti.gradle.schema.api.SchemaProject;
 import net.wti.gradle.system.plugin.XapiBasePlugin;
@@ -35,6 +38,11 @@ public class XapiParserPlugin implements Plugin<Project> {
         if (proj != proj.getRootProject()) {
             proj.getRootProject().getPlugins().apply("xapi-parser");
         }
+        proj.getLogger().info("Setting up xapi parser plugin for {}", proj.getPath());
+        // always eagerly initialize build graph
+        BuildGraph buildGraph = BuildGraph.findBuildGraph(proj);
+        final ProjectGraph projectGraph = buildGraph.getProject(proj.getPath());
+
         Object strictProp = proj.findProperty("xapi.strict");
         switch (String.valueOf(strictProp)) {
             case "false":
@@ -103,13 +111,13 @@ public class XapiParserPlugin implements Plugin<Project> {
             initializeProject(proj, map, schemaProject);
         });
 
-        proj.afterEvaluate(ready -> {
+        projectGraph.whenReady(ReadyState.AFTER_CREATED, i->{
             map.getCallbacks().flushCallbacks(map);
         });
 
         proj.getGradle().buildFinished(result -> {
             if (!foundMe[0]) {
-                proj.getLogger().quiet("No schema project entry found for {} in {}; known projects: {}",
+                proj.getLogger().info("No schema project entry found for {} in {}; known projects: {}",
                     proj.getPath(),
                     map.getRootSchema().isExplicit() ? map.getRootSchema().getSchemaFile() : "virtual schema " + proj.getPath(),
                     map.getAllProjects().map(SchemaProject::getPathGradle).join(", ")
@@ -202,14 +210,16 @@ public class XapiParserPlugin implements Plugin<Project> {
 
     private void addDependency(
         ProjectView view,
-        ArchiveConfig mod,
+        ArchiveConfig consumerConfig,
         SchemaMap map,
         SchemaProject schemaProject,
         SchemaDependency dep
     ) {
+        String consumerPlatform = consumerConfig.getPlatform().getName();
+        String consumerModule = consumerConfig.getName();
         // dirty... we _probably_ shouldn't be resolving these so eagerly....
         final ArchiveGraph owner = view.getProjectGraph().platform(
-            mod.getPlatform().getName()).archive(mod.getName());
+            consumerPlatform).archive(consumerModule);
         switch(dep.getType()) {
             case unknown:
                 // for unknown types, we should probably log a warning, or try for multiple sources...
@@ -219,7 +229,7 @@ public class XapiParserPlugin implements Plugin<Project> {
                 String name = dep.getName();
                 final Maybe<SchemaProject> result = map.findProject(name);
                 if (result.isPresent()) {
-                    view.getLogger().info("Adding {} {} {}", result.get(), " to ", mod.getPath());
+                    view.getLogger().info("Adding {} {} {}", result.get(), " to ", consumerConfig.getPath());
                     SchemaProject toRequire = result.get();
                     PlatformModule requiredPlatform = dep.getCoords();
                     if (requiredPlatform.getPlatform() == null) {
@@ -279,6 +289,6 @@ public class XapiParserPlugin implements Plugin<Project> {
                 // here is where we'll need to depend on a at-settings-time index of the world to be pre-built...
 
         }
-        mod.request(null, ArchiveRequestType.COMPILE);
+        consumerConfig.request(dep.withCoords(consumerPlatform, consumerModule), ArchiveRequestType.COMPILE);
     }
 }

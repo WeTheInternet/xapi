@@ -782,7 +782,7 @@ public class GwtManifest {
   public String[] toClasspath(
       String gwtVersion
   ) {
-    IntTo<String> cp = newList(String.class);
+    IntTo<String> cp = X_Collect.newSet(String.class, MUTABLE_INSERTION_ORDERED_SET);
     prefixClasspath(cp);
     if (includeGenDir) {
       cp.add(getGenDir());

@@ -114,18 +114,30 @@ public class LazyString implements Callable<String>, Comparable<LazyString>, Cha
         return new LazyString(value, false);
     }
 
-    public static LazyString nullableString(Callable<? extends CharSequence> value, Callable<? extends CharSequence> backup) {
-        return new LazyString(()-> {
+    private static Callable<? extends CharSequence> condense(Callable<? extends CharSequence> value, Callable<? extends CharSequence>[] backup) {
+        return ()->{
             CharSequence val = value.call();
-            if (val == null) {
-                return backup.call();
+            if (val == null || val.length() == 0) {
+                for (Callable<? extends CharSequence> alt : backup) {
+                    val = alt.call();
+                    if (val != null && val.length() > 0) {
+                        return val;
+                    }
+                }
             }
             return val;
-        }, false);
+        };
+    }
+
+    public static LazyString nullableString(Callable<? extends CharSequence> value, Callable<? extends CharSequence> ... backup) {
+        return new LazyString(condense(value, backup), false);
     }
 
     public static LazyString nonNullString(Callable<? extends CharSequence> value) {
         return new LazyString(value, true);
+    }
+    public static LazyString nonNullString(Callable<? extends CharSequence> value, Callable<? extends CharSequence> ... backup) {
+        return new LazyString(condense(value, backup), true);
     }
 
     public static LazyString lazyToString(Callable<? extends Object> value) {

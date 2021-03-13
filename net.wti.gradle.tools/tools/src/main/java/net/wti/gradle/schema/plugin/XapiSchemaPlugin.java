@@ -63,6 +63,8 @@ public class XapiSchemaPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        // eagerly initialize the buildgraph, so it can hook up lifecycle events asap
+        BuildGraph.findBuildGraph(project);
         final PluginContainer plugins = project.getPlugins();
         plugins.apply(XapiBasePlugin.class);
 

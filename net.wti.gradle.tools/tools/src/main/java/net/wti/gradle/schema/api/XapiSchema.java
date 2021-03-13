@@ -9,6 +9,7 @@ import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.DefaultUsageType;
 import net.wti.gradle.internal.require.api.PlatformGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
+import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
@@ -16,7 +17,6 @@ import net.wti.gradle.system.tools.GradleCoerce;
 import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.ConfigurationPublications;
-import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.internal.GradleInternal;
@@ -29,7 +29,6 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.ide.idea.IdeaPlugin;
 import org.gradle.plugins.ide.idea.model.IdeaModule;
 import org.gradle.util.ConfigureUtil;
@@ -297,7 +296,8 @@ public class XapiSchema {
 
         final ConfigurationPublications exportedApi = archGraph.configExportedApi().getOutgoing();
         final ConfigurationPublications exportedRuntime = archGraph.configExportedRuntime().getOutgoing();
-        if (archGraph.srcExists()) {
+        view.getLogger().info("Configuring {}; realized? {}", archGraph.getPath(), archGraph.realized());
+        if (archGraph.realized()) {
 
             if (archConfig.isTest()) {
                 archGraph.whenReady(ReadyState.AFTER_CREATED, done->{
@@ -384,7 +384,8 @@ public class XapiSchema {
                                                                                 // as we want to avoid devolving into a jar, from source
         }
 
-        platGraph.project().whenReady(ReadyState.BEFORE_READY+0x10, ready->{
+        platGraph.project().whenReady(ReadyState.READY, ready->{
+//        platGraph.project().whenReady(ReadyState.BEFORE_READY + 0x40, ready->{
 
             // TODO: turn resolveNeeded into onNeeded(()->{});
             final Set<LazyString> needed = resolveNeeded(archConfig);
@@ -415,11 +416,14 @@ public class XapiSchema {
                     need = GUtil.toLowerCamelCase(need.replace(platName, ""));
                 }
                 final PlatformGraph needPlat = platGraph.project().platform(platName);
-                final ArchiveGraph neededArchive = needPlat.archive(need);
+                final ArchiveGraph neededModule = needPlat.archive(need);
 
-                if (neededArchive.srcExists()) {
-                    archGraph.importLocal(neededArchive, DefaultUsageType.Api, only ? Transitivity.compile_only : Transitivity.api, lenient);
-                    archGraph.importLocal(neededArchive, DefaultUsageType.Runtime, only ? Transitivity.runtime_only : Transitivity.runtime, lenient);
+                // neededModule.realized() checks if our module has source code, or is any transitive dependency of a module with source code.
+                if (neededModule.realized()) {
+                    archGraph.getView().getLogger().info("Realizing {}", new LazyString(archGraph::getPath));
+                    archGraph.getSource();
+                    archGraph.importLocal(neededModule, DefaultUsageType.Api, only ? Transitivity.compile_only : Transitivity.api, lenient);
+                    archGraph.importLocal(neededModule, DefaultUsageType.Runtime, only ? Transitivity.runtime_only : Transitivity.runtime, lenient);
                 } else {
                     // we need to depend on transitive dependencies of missing-src modules.
                     // idea / solution: move all archGraph.import* calls behind a ModuleRequest (ArchiveRequest),
@@ -430,7 +434,7 @@ public class XapiSchema {
                     // This will allow us to skip through a missing sourceSet (that we avoid paying to create),
                     // and directly inherit any existing transitive dependencies.
 
-                    view.getLogger().trace("{}.{} ignoring no-source module {}", archGraph.getModuleName(), archGraph.getSrcName(), neededArchive.getSrcName());
+                    view.getLogger().trace("{}.{} ignoring no-source module {}", archGraph.getModuleName(), archGraph.getSrcName(), neededModule.getSrcName());
                 }
 
 
@@ -612,7 +616,8 @@ public class XapiSchema {
     }
 
     public void whenReady(Action<? super XapiSchema> o) {
-        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED+1, ready-> {
+        view.getProjectGraph().whenReady(ReadyState.BEFORE_READY + 0x60, ready-> {
+//        view.getProjectGraph().whenReady(ReadyState.AFTER_CREATED + 0x10, ready-> {
             o.execute(this);
         });
     }
@@ -634,7 +639,7 @@ public class XapiSchema {
 
     public String getMainPlatformName() {
         String s = GradleCoerce.unwrapStringNonNull(mainPlatform);
-        return s.isEmpty() ? "main" : s;
+        return s.isEmpty() ? PlatformModule.defaultPlatform.call() : s;
     }
 
     public void setMainPlatform(Object mainPlatform) {

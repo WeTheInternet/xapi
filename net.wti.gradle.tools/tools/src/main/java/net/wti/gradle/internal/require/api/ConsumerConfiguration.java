@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.require.api;
 
+import net.wti.gradle.require.api.PlatformModule;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.Configuration;
 
@@ -18,12 +19,14 @@ import org.gradle.api.artifacts.Configuration;
  */
 public interface ConsumerConfiguration extends Named {
 
-    Configuration getConfig();
+    default PlatformModule getConsumerCoords() {
+        return getConsumerModule().asCoords();
+    }
 
-    ArchiveGraph getModule();
+    ArchiveGraph getConsumerModule();
 
     @Override
     default String getName() {
-        return getConfig().getName();
+        return getConsumerModule().getPath();
     }
 }

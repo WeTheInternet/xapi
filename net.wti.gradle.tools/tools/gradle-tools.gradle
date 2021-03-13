@@ -31,6 +31,10 @@ gradlePlugin {
             id = 'xapi-schema'
             implementationClass = 'net.wti.gradle.schema.plugin.XapiSchemaPlugin'
         }
+        xapiClasspath {
+            id = 'xapi-classpath'
+            implementationClass = 'net.wti.gradle.classpath.plugin.XapiClasspathPlugin'
+        }
         xapiRequire {
             id = 'xapi-require'
             implementationClass = 'net.wti.gradle.require.plugin.XapiRequirePlugin'

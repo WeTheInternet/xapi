@@ -5,6 +5,7 @@ import net.wti.gradle.internal.require.impl.DefaultBuildGraph
 import net.wti.gradle.system.service.GradleService
 import org.gradle.api.internal.CollectionCallbackActionDecorator
 import org.gradle.api.invocation.Gradle
+import org.gradle.api.logging.Logger
 import spock.lang.Specification
 import spock.lang.Unroll
 /**
@@ -20,9 +21,13 @@ class BuildGraphTest extends Specification {
         given:
         Gradle g = Mock(Gradle)
         GradleService s = Mock(GradleService)
+        Logger log = Mock(Logger) {
+            _ * quiet(_, _)
+        }
         ProjectView p = Mock(ProjectView) {
             1 * getDecorator() >> CollectionCallbackActionDecorator.NOOP
-            2 * getGradle() >> g
+            1 * getGradle() >> g
+            _ * getLogger() >> log
         }
         BuildGraph b = new DefaultBuildGraph(s, p)
         def prev = Integer.MIN_VALUE
@@ -51,6 +56,7 @@ class BuildGraphTest extends Specification {
         all.isEmpty()
 
         where:
+        // magic below is combining an int[] and max integer as lists of graph readystates to test
         upTo << [*ReadyState.all()] + Integer.MAX_VALUE
     }
 }

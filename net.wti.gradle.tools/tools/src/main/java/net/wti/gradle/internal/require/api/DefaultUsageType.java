@@ -86,6 +86,7 @@ public enum DefaultUsageType implements UsageType {
                 return module.configRuntime();
             }
             switch (trans) {
+                case compile_only:
                 case runtime_only:
                 case execution:
                     module.configRuntimeOnly();
@@ -93,7 +94,6 @@ public enum DefaultUsageType implements UsageType {
                 case internal:
                 case api:
                     return module.configRuntime();
-                case compile_only:
                 case stub:
                 case impl:
             }

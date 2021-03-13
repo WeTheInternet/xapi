@@ -2,7 +2,6 @@ package net.wti.gradle.schema.api;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.PlatformModule;
-import net.wti.gradle.schema.map.internal.SchemaDependency;
 import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.internal.DefaultNamedDomainObjectSet;

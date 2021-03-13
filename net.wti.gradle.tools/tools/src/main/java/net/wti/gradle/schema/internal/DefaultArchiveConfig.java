@@ -1,10 +1,12 @@
 package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.internal.require.api.ArchiveRequest;
+import net.wti.gradle.internal.require.api.*;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
+import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.schema.api.PlatformConfig;
+import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
@@ -60,13 +62,13 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
                     result.add(new LazyString("spiSource"));
                     break;
                 case "stub":
-                    result.add(new LazyString("main"));
+                    result.add(PlatformModule.defaultModule);
                     break;
                 case "stubSource":
                     result.add(new LazyString("mainSource"));
                     break;
                 case "impl":
-                    result.add(new LazyString("main"));
+                    result.add(PlatformModule.defaultModule);
                     result.add(new LazyString("stub*"));
                     break;
                 case "implSource":
@@ -95,9 +97,45 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     @Override
     public ArchiveRequest request(
-        ArchiveConfig other, ArchiveRequestType type
+            SchemaDependency dep, ArchiveRequestType type
     ) {
-        return null;
+        ConsumerConfiguration consumer = ()->findGraph(view.getProjectGraph());
+        final ProducerConfiguration producer;
+
+        switch (dep.getType()) {
+            case unknown:
+                // unknown should either be an error, or something that can call helper methods trying all three below:
+                // for now, fallthrough to project: below
+            case project:
+                // a project producer is some other project in our local build.
+                ProjectGraph producerProject = view.getBuildGraph().getProject(dep.getName());
+                PlatformGraph producerPlatform = producerProject.platform(dep.getPlatformOrDefault());
+                ArchiveGraph producerModule = producerPlatform.archive(dep.getModuleOrDefault());
+                producer = ()->producerModule;
+                break;
+            case internal:
+                // an internal producer is same project, pointing at some other module.
+                producerProject = view.getProjectGraph();
+                producerPlatform = producerProject.platform(dep.getCoords().getPlatform());
+                producerModule = producerPlatform.archive(dep.getCoords().getModule());
+                producer = ()->producerModule;
+                break;
+            case external:
+                // an external producer will be translated to an included build, or downloaded using a local configuration
+                // TODO: finish the indexer, and then have a way to check said index, to decide what to do here...
+                // Perhaps an ExternalProducerConfiguration would be in order?
+                producer = new ExternalProducerConfiguration(dep);
+                break;
+            default:
+                throw new UnsupportedOperationException(dep.getType() + " not supported for ( " + dep.getCoords() + " )" + " " + dep.getName());
+        }
+        DefaultArchiveRequest req = new DefaultArchiveRequest(producer, consumer, ArchiveRequestType.COMPILE);
+        consumer.getConsumerModule().getIncoming().add(req);
+        ArchiveGraph prodMod = producer.getProducerModule();
+        if (prodMod != null) {
+            prodMod.getOutgoing().add(req);
+        }
+        return req;
     }
 
     @Override

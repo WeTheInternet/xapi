@@ -13,12 +13,15 @@ import net.wti.gradle.schema.api.QualifiedModule;
 import net.wti.gradle.schema.api.SchemaPlatform;
 import net.wti.gradle.schema.impl.DefaultSchemaPlatform;
 import net.wti.gradle.schema.map.*;
-import net.wti.gradle.schema.map.internal.SchemaDependency;
+import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.api.SchemaModule;
 import net.wti.gradle.schema.api.SchemaProject;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.GradleException;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
+import org.gradle.api.logging.LoggingManager;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MultiList;
@@ -37,7 +40,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -66,9 +68,12 @@ public interface SchemaParser {
      * @return A parsed {@link SchemaMetadata} file.
      */
     default SchemaMetadata parseSchema(MinimalProjectView p) {
-        String schemaFile = GradleCoerce.unwrapStringOr(p.findProperty("xapiSchema"), "schema.xapi");
+        String schemaFile = GradleCoerce.unwrapStringOr(p.findProperty("xapiSchema"), p.getProjectDir() + File.separator + "schema.xapi");
         File f = new File(schemaFile);
-        return parseSchemaFile(null, p.getProjectDir(), f);
+        if (f.exists()) {
+            return parseSchemaFile(null, p.getProjectDir(), f);
+        }
+        return new SchemaMetadata(null, f);
     }
 
     /**
@@ -259,14 +264,31 @@ public interface SchemaParser {
 
     default void addModules(SchemaMetadata meta, Expression expression) {
         /*
+    modules can be a single big list of all elements:
     modules = [
         <main require = [ api, spi ] />,
         <sample require = "main" published = true />,
-        <testTools require = "main" published = true />,
-        <test require = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
+        // purposely mixing strings and name references, to ensure visitor is robust
+        <testTools require = main published = true />,
+        <test require = ["sample", testTools ] />,
     ]
+
+    or simply, the default:
+    modules = main
+
+    as well as simply listing many modules=attributes:
+    <xapi-schema
+    modules = <main require = [api, spi ] />
+    modules = <api />
+    modules = spi
+    modules = [ <test require = testFixtures />, <testFixtures require = main /> ]
+    /xapi-schema>
+
+    TODO: conditional modules, perhaps w/ generator-time macros to statically analyze methods like fileExists("path"):
+    modules = fileExists("src/api") ?  [ <api ... />, <main requires=api /> ] : <main />
+    // just got to make sure that re-declaring a module is additive, rather than destructive
         */
-        final ComposableXapiVisitor<?> visitor = whenMissingFail(SchemaParser.class)
+        final ComposableXapiVisitor<?> visitor = whenMissingFail(SchemaParser.class, ()->"Expected <elements/> or \"strings\" or names")
             .withUiContainerTerminal((el, val) -> {
                 String modName = el.getName();
                 meta.addModule(modName, el);
@@ -288,15 +310,15 @@ public interface SchemaParser {
             } else {
                 // a map from name to require= values:
                 // { main: "", gwt: "main", jre: "main", etc: "..." }
-                whenMissingFail(SchemaParser.class)
+                whenMissingFail(SchemaParser.class, ()->"At least one attributes=required in json container " + expression.toSource())
                     .withUiAttrTerminal((attr, val) -> {
                         String platName = attr.getNameString();
                         attr.accept(
-                            whenMissingFail(SchemaParser.class)
+                            whenMissingFail(SchemaParser.class, ()->"Attribute " + platName + " may only =\"string\" or =name")
                                 .nameOrString(require -> {
                                     final UiContainerExpr expr = new UiContainerExpr(platName);
                                     if (!require.isEmpty()) {
-                                        expr.addAttribute("require", NameExpr.of(require));
+                                        expr.addAttribute("requires", NameExpr.of(require));
                                     }
                                     meta.addModule(platName, expr);
                                 })
@@ -567,7 +589,7 @@ public interface SchemaParser {
 
                 CharSequence platModStr = deps.get(DependencyKey.platformModule);
                 if (platModStr == null || platModStr.length() == 0) {
-                    platModStr = "main";
+                    platModStr = PlatformModule.defaultPlatform;
                 }
                 final PlatformModule platMod;
                 if (platModStr instanceof PlatformModule) {
@@ -803,6 +825,7 @@ public interface SchemaParser {
         if (platforms == null) {
             return;
         }
+        final Logger LOG = Logging.getLogger(SchemaParser.class);
         for (UiContainerExpr platform : platforms) {
             String name = platform.getName();
             boolean published = platform.getAttribute("published")
@@ -826,12 +849,54 @@ public interface SchemaParser {
 
             assert replace.isEmpty() || replace.size() == 1 : "Cannot replace more than one other platform; " + name + " tries to replace " + replace;
 
+            // hm, this should be get-or-create semantics, to allow re-declaring a platform in an additive manner.
             final SchemaPlatform tailPlatform = new DefaultSchemaPlatform(name,
                 groupPattern.out1(),
                 replace.isEmpty() ? null : replace.first(),
                 published,
                 test);
             insertPlatform(project, metadata, tailPlatform, platform);
+
+            Maybe<UiAttrExpr> require = platform.getAttribute("requires"); // TODO: handle require= too
+            if (require.isPresent()) {
+                Expression toRequire = require.get().getExpression();
+                LOG.quiet("Found requires: {}", require.get());
+                project.forAllModules(mod->{
+                    PlatformModule key = new PlatformModule(name, mod.getName());
+                    ComposableXapiVisitor<Object> vis = whenMissingFail(SchemaParser.class, () -> "");
+                    toRequire.accept(vis
+                        .withJsonContainerRecurse(In2.ignoreAll())
+                        .withJsonPairTerminal((pair, ctx)->{
+                            switch (pair.getKeyString()) {
+                                case "unknown":
+                                case "project":
+                                    metadata.getDepsProject()
+                                            .get(key).add(pair.getValueExpr());
+                                    break;
+                                case "internal":
+                                    metadata.getDepsInternal()
+                                            .get(key).add(pair.getValueExpr());
+                                    break;
+                                case "external":
+                                    metadata.getDepsExternal()
+                                            .get(key).add(pair.getValueExpr());
+                                    break;
+                                case "platform":
+
+                                default:
+                                    try {
+                                        Integer.parseInt(pair.getKeyString());
+                                        metadata.getDepsInternal()
+                                                .get(key).add(pair.getValueExpr());
+                                    } catch (NumberFormatException failed) {
+                                        throw new UnsupportedOperationException(pair.getKeyString() + " is not a valid requires = {} key");
+                                    }
+                            }
+                        })
+                    , null);
+
+                });
+            }
         }
         // now, go through all published platforms, and make sure all predecessors are also published.
         final Set<String> once = new HashSet<>();

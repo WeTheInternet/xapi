@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.require.api;
 
+import net.wti.gradle.require.api.PlatformModule;
 import org.gradle.api.Named;
 import org.gradle.api.artifacts.Configuration;
 
@@ -18,12 +19,14 @@ import org.gradle.api.artifacts.Configuration;
  */
 public interface ProducerConfiguration extends Named {
 
-    Configuration getConfig();
+    default PlatformModule getProducerCoords() {
+        return getProducerModule().asCoords();
+    }
 
-    ArchiveGraph getModule();
+    ArchiveGraph getProducerModule();
 
     @Override
     default String getName() {
-        return getConfig().getName();
+        return getProducerModule().getPath();
     }
 }

@@ -5,6 +5,7 @@ import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.require.api.DependencyKey;
+import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.Transitivity;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
@@ -298,7 +299,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             transitive.setVisible(false);
             transitive.setCanBeConsumed(false);
             transitive.setCanBeResolved(false);
-            if (srcExists()) {
+            if (realized()) {
                 configCompile().extendsFrom(transitive);
                 config("compile", transitive::extendsFrom);
                 config("api", transitive::extendsFrom);
@@ -686,5 +687,9 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default String getDefaultModule() {
         return platform().config().getMainModuleName();
+    }
+
+    default PlatformModule asCoords() {
+        return new PlatformModule(platform().getName(), getName());
     }
 }

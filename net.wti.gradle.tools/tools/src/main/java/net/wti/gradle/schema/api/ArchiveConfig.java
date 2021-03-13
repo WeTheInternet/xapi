@@ -22,7 +22,7 @@ public interface ArchiveConfig extends Named {
 
     void require(Object ... units);
 
-    ArchiveRequest request(ArchiveConfig other, ArchiveRequestType type);
+    ArchiveRequest request(SchemaDependency other, ArchiveRequestType type);
 
     SetProperty<LazyString> required();
 

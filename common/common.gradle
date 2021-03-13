@@ -12,9 +12,13 @@ String v = version
 // perform project-local alterations to our schema;
 // we don't make spi depend on api by default, since it's plausible to chose dependency in either direction
 xapiSchema.archives.getByName('spi').require('api')
-xapiSchema.archives.getByName('test').published = true
+
+//xapiSchema.archives.getByName('test').published = true
+
 // dirty hack...  the gwt:testTools module is _not_ getting created properly.
 // the nasty .baseOn() timing of xapiSchema resolution is to blame
+
+xapiSchema.findPlatform('main').getArchive('testTools').published = true
 xapiSchema.findPlatform('gwt').getArchive('testTools').published = true
 
 xapiRequire {

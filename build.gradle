@@ -3,6 +3,9 @@ plugins {
     id 'idea'
 }
 
+afterEvaluate {
+    plugins.apply 'xapi-schema'
+}
 
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
@@ -10,6 +13,8 @@ import org.gradle.internal.jvm.Jvm
 group = 'net.wetheinter'
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
+
+version = findProperty('xapiVersion')
 
 tasks.create 'publishRequired', { req ->
     allprojects {
@@ -38,7 +43,7 @@ gradle.beforeProject {
         p.buildscript.repositories.jcenter()
     }
 }
-allprojects {
+gradle.beforeProject {
     Project p -> p.with {
         if (p.group != 'net.wetheinter') {
             p.logger.info "allprojects group was $p.group"
@@ -56,7 +61,7 @@ allprojects {
 
 }
 
-subprojects {
+gradle.beforeProject {
     Project p ->
 
         p.with {
@@ -113,6 +118,8 @@ subprojects {
                 if (tools) {
                     p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
                             p.files(tools)
+                    p.dependencies.add JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME,
+                            p.files(tools)
                 }
 
                 artifacts {
@@ -124,7 +131,6 @@ subprojects {
 }
 
 GradleServiceFinder.getService(project).configureWrapper(project)
-
 
 idea {
     module {

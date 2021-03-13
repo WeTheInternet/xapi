@@ -7,7 +7,7 @@ import net.wti.gradle.schema.api.SchemaModule;
 import net.wti.gradle.schema.api.SchemaPlatform;
 import net.wti.gradle.schema.api.SchemaProject;
 import net.wti.gradle.schema.map.SchemaMap;
-import net.wti.gradle.schema.map.internal.SchemaDependency;
+import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.parser.SchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.schema.spi.SchemaIndex;
@@ -215,76 +215,79 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
                 // modules should probably come from the platform, not the project...
                 for (SchemaModule module : project.getAllModules()) {
-                    if (platform.isPublished() && module.isPublished()) {
-                        // setup a publishing target.
+                    if (!platform.isPublished() || !module.isPublished()) {
+                        // TODO: write out a non-published, "private module" file, so we can accurately say "your coordinates exist, but the target is private"
+                        //   instead of "coordinates not found".
+                        continue;
+                    }
+                    // setup a publishing target.
 
-                        // ...need to teach SchemaModule about computing group:name coordinates.
-                        String nameResolved = module.getPublishPattern()
-                            .replaceAll("[$]build", index.getBuildName())
-                            .replaceAll("[$]name", project.getPublishedName())
-                            .replaceAll("[$]module", module.getName())
-                            .replaceAll("[$]version", index.getVersion().toString())
-                            .replaceAll("[$]platform", platform.getName())
-                            ;
+                    // ...need to teach SchemaModule about computing group:name coordinates.
+                    String nameResolved = module.getPublishPattern()
+                        .replaceAll("[$]build", index.getBuildName())
+                        .replaceAll("[$]name", project.getPublishedName())
+                        .replaceAll("[$]module", module.getName())
+                        .replaceAll("[$]version", index.getVersion().toString())
+                        .replaceAll("[$]platform", platform.getName())
+                        ;
 
-                        Log.firstLog(this, map, index, view) // none of these objects, by default implement Log, but you can intercept them to add Log interface
-                            .log(SchemaIndexerImpl.class, LogLevel.INFO, Out1.newOut1( ()-> // make the string below lazily-computer
-                                groupResolved+":"+nameResolved+":" + map.getVersion() +
-                                 " -> " +
-                                project.getPublishedName() +":" + platform.getName()+":"+module.getName()+"?" + platform.isPublished() + ":" + module.isPublished()
-                        ));
+                    Log.firstLog(this, map, index, view) // none of these objects, by default implement Log, but you can intercept them to add Log interface
+                        .log(SchemaIndexerImpl.class, LogLevel.INFO, Out1.newOut1( ()-> // make the string below lazily-computer
+                            groupResolved+":"+nameResolved+":" + map.getVersion() +
+                             " -> " +
+                            project.getPublishedName() +":" + platform.getName()+":"+module.getName()+"?" + platform.isPublished() + ":" + module.isPublished()
+                    ));
 
-                        File groupDir = new File(byCoord, groupResolved);
-                        File nameDir = new File(groupDir, nameResolved);
-                        File versionDir = new File(nameDir, map.getVersion());
-                        versionDir.mkdirs();
-                        if (!versionDir.isDirectory()) {
-                            throw new IllegalStateException("Unable to create index publishing directory " + versionDir);
+                    File groupDir = new File(byCoord, groupResolved);
+                    File nameDir = new File(groupDir, nameResolved);
+                    String version = map.getVersion();
+                    File versionDir = new File(nameDir, map.getVersion());
+                    versionDir.mkdirs();
+                    if (!versionDir.isDirectory()) {
+                        throw new IllegalStateException("Unable to create index publishing directory " + versionDir);
+                    }
+
+                    // Ok, we now have a coords/group/name/version directory, place our dependency information there.
+                    for (SchemaDependency dep : project.getDependenciesOf(platform, module)) {
+                        switch (dep.getType()) {
+                            case unknown:
+                            case project:
+                                File projectDeps = new File(versionDir, "project");
+                                if (!projectDeps.isDirectory() && !projectDeps.mkdirs()) {
+                                    // we should throw some generic "can't write files" error here...
+                                    throw new IllegalStateException("Unable to create project directory " + projectDeps + "; check disk usage and filesystem permissions");
+                                }
+                                String name = dep.getName();
+                                File depFile = new File(projectDeps, name);
+                                // hm, we actually have nothing interesting to write into the file atm...
+                                // we should, actually, have platform:module coordinate
+                                extractCoords(platform, module, dep, depFile);
+                                break;
+                            case internal:
+                                File internalDeps = new File(versionDir, "internal");
+                                if (!internalDeps.isDirectory() && !internalDeps.mkdirs()) {
+                                    // we should throw some generic "can't write files" error here...
+                                    throw new IllegalStateException("Unable to create projects directory " + internalDeps + "; check disk usage and filesystem permissions");
+                                }
+                                name = dep.getName();
+                                depFile = new File(internalDeps, name);
+                                // hm, we have nothing interesting to write into internal dependencies, the filename is a key...
+                                GFileUtils.touch(depFile);
+                                if (!depFile.isFile()) {
+                                    throw new IllegalStateException(depFile + " does not exist after touching it; check filesystem usage (df -h) or existence+permissions (ls -la)");
+                                }
+                                break;
+                            case external:
+                                String depGroup = dep.getGroup();
+                                String depVersion = dep.getVersion();
+                                name = dep.getName();
+                                depFile = new File(versionDir, depGroup + ":" + name +  ":" + depVersion);
+                                extractCoords(platform, module, dep, depFile);
+                                break;
                         }
 
-                        // Ok, we now have a coords/group/name/version directory, place our dependency information there.
-                        for (SchemaDependency dep : project.getDependenciesOf(platform, module)) {
-                            switch (dep.getType()) {
-                                case unknown:
-                                case project:
-                                    File projectDeps = new File(versionDir, "project");
-                                    if (!projectDeps.isDirectory() && !projectDeps.mkdirs()) {
-                                        // we should throw some generic "can't write files" error here...
-                                        throw new IllegalStateException("Unable to create project directory " + projectDeps + "; check disk usage and filesystem permissions");
-                                    }
-                                    String name = dep.getName();
-                                    File depFile = new File(projectDeps, name);
-                                    // hm, we actually have nothing interesting to write into the file atm...
-                                    // we should, actually, have platform:module coordinate
-                                    extractCoords(platform, module, dep, depFile);
-                                    break;
-                                case internal:
-                                    File internalDeps = new File(versionDir, "internal");
-                                    if (!internalDeps.isDirectory() && !internalDeps.mkdirs()) {
-                                        // we should throw some generic "can't write files" error here...
-                                        throw new IllegalStateException("Unable to create projects directory " + internalDeps + "; check disk usage and filesystem permissions");
-                                    }
-                                    name = dep.getName();
-                                    depFile = new File(internalDeps, name);
-                                    // hm, we have nothing interesting to write into internal dependencies, the filename is a key...
-                                    GFileUtils.touch(depFile);
-                                    if (!depFile.isFile()) {
-                                        throw new IllegalStateException(depFile + " does not exist after touching it; check filesystem usage (df -h) or existence+permissions (ls -la)");
-                                    }
-                                    break;
-                                case external:
-                                    String depGroup = dep.getGroup();
-                                    String depVersion = dep.getVersion();
-                                    name = dep.getName();
-                                    depFile = new File(versionDir, depGroup + ":" + name +  ":" + depVersion);
-                                    extractCoords(platform, module, dep, depFile);
-                                    break;
-                            }
+                    } // end all getDependenciesOf(platform, module)
 
-                        }
-
-
-                    } // end if (published)
 
                     // all modules should record a little state about themselves into the index,
                     // in such a way that a single file read can reveal a single piece of information about this module.

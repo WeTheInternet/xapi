@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.require.impl;
 
+import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.BuildGraph;
@@ -10,14 +11,27 @@ import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.BuildAdapter;
 import org.gradle.BuildResult;
 import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.Project;
+import org.gradle.api.ProjectEvaluationListener;
+import org.gradle.api.ProjectState;
+import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.api.logging.Logger;
 import org.gradle.internal.build.IncludedBuildState;
+import xapi.gradle.fu.LazyString;
 
 import javax.inject.Inject;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
+ * There is only one instance of our BuildGraph created per gradle build (the main build plus any --included-build).
+ *
+ * As such, we will use this class to bind to key {@link Gradle} lifecycle events,
+ * so "less important" classes can submit callback requests to the BuildGraph,
+ * without registering
+ *
  * Created by James X. Nelson (James@WeTheInter.net) on 1/1/19 @ 12:29 AM.
  */
 public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> implements BuildGraph {
@@ -31,20 +45,67 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
         this.service = service;
         this.project = project;
 
+        Gradle gradle = project.getGradle();
+
+        Logger log = project.getLogger();
+        log.info("Build graph created by {} {}", new LazyString(project::getDebugPath),
+                        new LazyString(() -> "already executed? " + gradle.getRootProject().project(project.getPath()).getState().getExecuted()));
+
+        gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
+            @Override
+            public void beforeEvaluate(Project gradleProject) {
+                MinimalProjectView view = project.findView(gradleProject.getPath());
+                if (view instanceof ProjectView) {
+                    ProjectGraph graph = ((ProjectView) view).getProjectGraph();
+                    graph.drainTasks(ReadyState.BEFORE_CREATED);
+                }
+            }
+
+            @Override
+            public void afterEvaluate(Project gradleProject, ProjectState projectState) {
+                MinimalProjectView view = project.findView(gradleProject.getPath());
+                if (view instanceof ProjectView) {
+                    ProjectGraph graph = ((ProjectView) view).getProjectGraph();
+                    graph.drainTasks(ReadyState.AFTER_CREATED);
+                    view.whenReady(ready->
+                            // would love to make this ReadyState.READY, but ugly timing bugs in old XapiSchema code is fragile.
+                            // once we can survive off precomputed on-disk index, we can remove most of our usage of callbacks,
+                            // so we can be free to invoke callbacks in "the most correct order" rather than "the order that does not break".
+                        graph.drainTasks(ReadyState.BEFORE_READY)
+                    );
+                }
+            }
+        });
+
+        gradle.beforeProject(gradleProject -> {
+            MinimalProjectView view = project.findView(gradleProject.getPath());
+            if (view instanceof ProjectView) {
+                ProjectGraph graph = ((ProjectView) view).getProjectGraph();
+                graph.drainTasks(ReadyState.CREATED);
+            }
+        });
+
+        gradle.afterProject(gradleProject -> {
+            MinimalProjectView view = project.findView(gradleProject.getPath());
+            if (view instanceof ProjectView) {
+                ProjectGraph graph = ((ProjectView) view).getProjectGraph();
+                graph.drainTasks(ReadyState.BEFORE_READY);
+            }
+        });
+
         project.whenReady(ready-> {
             drainTasks(ReadyState.BEFORE_CREATED);
             drainTasks(ReadyState.CREATED);
             drainTasks(ReadyState.AFTER_CREATED);
         });
 
-        project.getGradle().projectsEvaluated(done->finalizeGraph());
 
-        project.getGradle().addBuildListener(new BuildAdapter(){
+        gradle.addBuildListener(new BuildAdapter(){
             @Override
             public void projectsEvaluated(Gradle gradle) {
-                drainTasks(ReadyState.BEFORE_FINISHED);
-                drainTasks(ReadyState.FINISHED);
-                drainTasks(ReadyState.AFTER_FINISHED);
+                drainTasks(ReadyState.READY);
+                drainTasks(ReadyState.AFTER_READY);
+                assert !hasWork(ReadyState.AFTER_READY) : "Failed to flush all work up to " + ReadyState.AFTER_READY;
             }
 
             @Override
@@ -52,12 +113,18 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
                 drainTasks(Integer.MAX_VALUE);
             }
         });
+
+        gradle.projectsEvaluated(done-> finalizeGraph());
     }
 
     public void finalizeGraph() {
+        drainTasks(ReadyState.BEFORE_FINISHED);
+        drainTasks(ReadyState.FINISHED);
+        drainTasks(ReadyState.AFTER_FINISHED);
         drainTasks(
             ReadyState.EXECUTE - 1 // == Short.MAX_VALUE
         );
+        assert !hasWork(ReadyState.EXECUTE - 1) : "Failed to flush all work up to " + (ReadyState.EXECUTE - 1);
     }
 
     public RealizableNamedObjectContainer<ProjectGraph> getProjects() {
@@ -89,7 +156,7 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
             // next, check if this path exists in an included build.
             // you really shouldn't even get here...
             project.getGradle().getIncludedBuilds().stream().anyMatch(
-                // the Law of Demeter weeps...
+                // the Law of Demeter weeps... but we this is an assert statement, so we don't want to assign variables
                 build -> ((IncludedBuildState)build).getConfiguredBuild().getRootProject().findProject(projectPath) != null
             );
         return getOrRegister(projectPath);

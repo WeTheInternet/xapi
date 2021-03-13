@@ -245,4 +245,13 @@ public class AllPaths {
     public int mutate() {
         return mutated.incrementAndGet();
     }
+
+    @Override
+    public String toString() {
+        return "AllPaths{" +
+                "mutated=" + mutated +
+                ", mutateOnAbsorb=" + mutateOnAbsorb +
+                ", summary=" + summary() +
+                '}';
+    }
 }

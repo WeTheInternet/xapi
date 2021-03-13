@@ -51,6 +51,7 @@ public interface ProjectGraph extends Named, GraphNode {
     }
 
     default String getPath() {
+        // consider including the gradle build name here too
         return project().getPath();
     }
 

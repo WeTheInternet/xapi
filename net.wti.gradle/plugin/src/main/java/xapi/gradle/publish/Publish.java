@@ -62,14 +62,13 @@ public class Publish {
         p.getPlugins().apply(SigningPlugin.class);
         // This cast is safer than extensions.getByType; extensions are only unique by name, not type.
         SigningExtension sign = (SigningExtension) p.getExtensions().getByName("signing");
+        final Mutable<Boolean> ready = new Mutable<>(false);
+        final TaskExecutionGraph graph = p.getGradle().getTaskGraph();
+        graph.whenReady(g->{
+            ready.in(true);
+        });
 
-        // TODO: get xapi-fu in here, so we can use Lazy<Boolean>
         Lazy<Boolean> required = Lazy.deferred1(()->{
-            final TaskExecutionGraph graph = p.getGradle().getTaskGraph();
-            final Mutable<Boolean> ready = new Mutable<>(false);
-            graph.whenReady(g->{
-                ready.in(true);
-            });
             if (ready.out1()) {
                 // graph is available to be read...
                 String pathRoot = p == p.getRootProject() ? ":" : p.getPath() + ":";

@@ -1,11 +1,25 @@
 package net.wti.gradle.require.api;
 
+import net.wti.gradle.system.tools.GradleCoerce;
+import xapi.gradle.fu.LazyString;
+
+import static net.wti.gradle.system.tools.GradleCoerce.isEmptyString;
+
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-10 @ 4:38 a.m..
  */
 public class PlatformModule implements CharSequence {
 
     public static final PlatformModule UNKNOWN = new PlatformModule(null, null);
+
+    public static final LazyString defaultPlatform = LazyString.nonNullString(
+            ()->System.getenv("XAPI_DEFAULT_PLATFORM"),
+            ()->System.getProperty("xapi.default.platform", "main")
+    );
+    public static final LazyString defaultModule = LazyString.nonNullString(
+            ()->System.getenv("XAPI_DEFAULT_MODULE"),
+            ()->System.getProperty("xapi.default.module", "main")
+    );
 
     private final String platform, module;
 
@@ -75,6 +89,17 @@ public class PlatformModule implements CharSequence {
 
     @Override
     public String toString() {
-        return platform == null ? module == null ? "main" : module : platform + ':' + module;
+        return platform == null ? module == null ? defaultModule.toString() : module : platform + ':' + module;
+    }
+    public String toStringStrict() {
+        return toStringStrict(defaultPlatform, defaultModule);
+    }
+    public String toStringStrict(CharSequence defaultPlatform, CharSequence defaultModule) {
+        return isEmptyString(platform) ? isEmptyString(module) ?
+                defaultPlatform + ":" + defaultModule :
+                defaultPlatform + ":" + module :
+                isEmptyString(module) ?
+                platform + ':' + defaultModule :
+                platform + ':' + module;
     }
 }

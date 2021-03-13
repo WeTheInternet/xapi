@@ -68,6 +68,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     }
 
     public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingFail(Class<?> logTo) {
+        return whenMissingFail(logTo, Out1.EMPTY_STRING);
+    }
+
+    public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingFail(Class<?> logTo, Out1<String> extraLog) {
         final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>(logTo);
         return visitor
             .withDefaultCallback((node, ctx, next)-> {
@@ -77,7 +81,17 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
                 if (logTo != null) {
                     log.log(logTo, LogLevel.ERROR, "<- visitor invoked from");
                 }
-                throw new UnsupportedOperationException("Node " + node + " of type " + node.getClass() + " not handled by " + visitor);
+                String extra = extraLog.out1();
+                if (X_String.isEmpty(extra)) {
+                    // coerce null to ""
+                    extra = "";
+                } else {
+                    // log user's extra log string
+                    extra = extraLog + "\n";
+                    log.log(ComposableXapiVisitor.class, LogLevel.ERROR, extra);
+                }
+                // Append user log string, if any, to exception message.
+                throw new UnsupportedOperationException(extra + "Node " + node + " of type " + node.getClass() + " not handled by " + visitor);
             });
     }
 
@@ -1122,7 +1136,7 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
             if (json.isArray()) {
                 callback.in(json, ctx);
             } else if (!allowFail) {
-                throw new IllegalArgumentException("Found illegal {json: map} " + json.toSource());
+                throw new IllegalArgumentException("Expected [array,] found illegal {json: map} " + json.toSource());
             }
             return true;
         });

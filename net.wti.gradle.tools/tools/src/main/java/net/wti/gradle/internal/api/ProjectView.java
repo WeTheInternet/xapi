@@ -12,6 +12,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.component.BuildIdentifier;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
@@ -20,6 +21,7 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
@@ -34,6 +36,7 @@ import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.internal.build.BuildState;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.GUtil;
 
@@ -202,4 +205,10 @@ public interface ProjectView extends MinimalProjectView {
     }
 
     void ensureEvaluated();
+
+    default String getBuildName() {
+        final BuildState owner = ((GradleInternal) getGradle()).getOwner();
+        final BuildIdentifier id = owner.getBuildIdentifier();
+        return id.getName();
+    }
 }

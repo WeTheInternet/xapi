@@ -257,12 +257,12 @@ public class XapiPublishPlugin implements Plugin<Project> {
         // Anything with source to publish is selectable.
         // Should also likely include anything that has been xapiRequire'd.
         // Should also check for a platform-only build to filter ignored platforms.
-//        if (module.srcExists()) {
+        if (module.realized() && module.isSelectable()) {
             final boolean published = module.config().isPublished();
             module.getView().getLogger().trace("Publishing {}? {}", LazyString.nonNullString(module::getModuleName), published);
             return published;
-//        }
-//        return false;
+        }
+        return false;
     }
 
 }

@@ -20,6 +20,7 @@ import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.api.tasks.wrapper.Wrapper.DistributionType;
 import org.gradle.util.Path;
+import xapi.gradle.fu.LazyString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -285,6 +286,7 @@ public interface GradleService {
             .newInstance(typeBuildGraph(), this, view);
         // add a traceable "this is where constructor is being used" (above) for IDE tracing support (and refactoring support!)
         assert GradleMessages.noOpForAssertion(()->new DefaultBuildGraph(this, view));
+        view.getLogger().info("Initializing build graph for {}", new LazyString(self::getDebugPath));
         return graph;
     }
 

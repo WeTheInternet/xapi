@@ -81,7 +81,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             // We will talk to the other thread a shared monitor that has reflection proxies built in.
             job = new GwtcLocalProcessJob(manifest, classpath, serializer);
         } else {
-            // When using a new process, we want must launch the process and bind it to a monitor
+            // When using a new process, we must launch the process and bind it to a monitor
             job = new GwtcRemoteProcessJob(manifest, service, serializer);
 
         }
@@ -289,6 +289,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
         Result dir;
         final Outbox box;
         try {
+            logger.log(TreeLogger.INFO, "Creating outbox for " + opts.getPreferredHost() +" on port " + opts.getPort());
             box = new Outbox(moduleName, recompiler, opts, logger);
         } catch (UnableToCompleteException e) {
             logger.log(TreeLogger.ERROR, "Unable to prepare recompiler", e);

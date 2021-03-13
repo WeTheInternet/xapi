@@ -26,6 +26,7 @@ import org.gradle.api.internal.component.MultiCapabilitySoftwareComponent;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.project.ProjectStateInternal;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionContainer;
@@ -100,6 +101,7 @@ public class DefaultProjectView implements ProjectView {
     private final Provider<PublishingExtension> publishing;
     private final Provider<GradleService> service;
     private final DefaultComponentMetadataHandler componentMetadata;
+    private static volatile Throwable lastTrace;
 
     public DefaultProjectView(
         Project project,
@@ -137,14 +139,19 @@ public class DefaultProjectView implements ProjectView {
 
             // only immutable values should go above here.
             runOnce(()-> {
-
-//                if (!project.getState().getExecuted()) {
-                project.getLogger().quiet(project.getPath() + " executed? " + project.getState().getExecuted());
-                if (!((ProjectStateInternal)project.getState()).isConfiguring() && !project.getState().getExecuted()) {
+                final boolean configuring = ((ProjectStateInternal)project.getState()).isConfiguring();
+                final boolean executed = project.getState().getExecuted();
+                project.getLogger().info("project {} already executed? {}; isConfiguring? {}", project.getPath(), executed, configuring);
+                if (!configuring && !project.getState().getExecuted()) {
+                    Logger log = project.getLogger();
+                    log.quiet("forcibly evaluating project " + project.getPath());
+                    if (log.isEnabled(LogLevel.INFO)) {
+                        log.info("Evaluation occurred via debugging stack trace:", new Exception("project evaluation trace", lastTrace));
+                    }
                     ((ProjectInternal)project).evaluate();
                 }
-//                }
             }),
+            // whenReady lambda definition: try to execute as eagerly as possible
             done-> {
                 if (project.getState().getExecuted()) {
                     // Hm. Consider making this always-async using a higher level queue somewhere.
@@ -181,8 +188,8 @@ public class DefaultProjectView implements ProjectView {
             synchronized (pntr) {
                 task = pntr[0];
                 pntr[0] = ()->{};
+                task.run();
             }
-            task.run();
         };
     }
 
@@ -418,7 +425,22 @@ public class DefaultProjectView implements ProjectView {
 
     @Override
     public void whenReady(Action<? super MinimalProjectView> callback) {
-        whenReady.execute(immediate->callback.execute(this));
+        Throwable check = new Throwable();
+        // make this semi-expensive operation contingent upon info log levels
+        if (gradle.getRootProject().getLogger().isEnabled(LogLevel.INFO)) {
+            check.fillInStackTrace();
+        }
+        whenReady.execute(immediate-> {
+            Throwable was = lastTrace;
+            lastTrace = check;
+            try {
+                callback.execute(this);
+            } finally {
+                if (lastTrace == check) {
+                    lastTrace = was;
+                }
+            }
+        });
     }
 
     @Override

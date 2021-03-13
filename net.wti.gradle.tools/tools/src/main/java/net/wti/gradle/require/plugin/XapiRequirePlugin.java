@@ -22,6 +22,8 @@ import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 import javax.inject.Inject;
 import java.util.Arrays;
 
+import static net.wti.gradle.system.tools.GradleCoerce.isEmptyString;
+
 /**
  * A plugin which adds the xapiRequire {} dsl object to your build scripts.
  *
@@ -173,7 +175,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
     ) {
 
         final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
-        incProject.whenReady(ReadyState.BEFORE_READY, other->{
+        incProject.whenReady(ReadyState.BEFORE_READY , other->{
 
             final String projName = incProject.getName();
             final String coord = GradleCoerce.unwrapStringNonNull(reg.getFrom());
@@ -206,13 +208,15 @@ public class XapiRequirePlugin implements Plugin<Project> {
         final BuildGraph bg = self.getBuildGraph();
         if (coords.length < 2) {
             graph = self.getProjectGraph();
-            platName = reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform();
-            archName = projId.isEmpty() ? reg.getArchive() == null ? arch.getName() : arch.getDefaultModule() : coords[coords.length - 1];
+//            platName = reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform();
+//            archName = projId.isEmpty() ? reg.getArchive() == null ? arch.getName() : arch.getDefaultModule() : coords[coords.length - 1];
+            platName = isEmptyString(reg.getPlatform()) ? arch.platform().getName() : reg.getPlatform();
+            archName = projId.isEmpty() ? isEmptyString(reg.getArchive()) ? arch.getDefaultModule() : reg.getArchive() : coords[coords.length - 1];
         } else if (coords.length == 2) {
             final String plat = coords[coords.length - 2];
             archName = coords[coords.length - 1];
             if (bg.hasProject(plat)) {
-                platName = reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform();
+                platName = isEmptyString(reg.getPlatform()) ? arch.platform().getName() : arch.getDefaultPlatform();
                 graph = bg.getProject(plat);
             } else {
                 platName = plat;

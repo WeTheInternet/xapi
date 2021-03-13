@@ -306,7 +306,7 @@ public class SchemaMetadata {
                     .get(into).add(from);
                 break;
             case internal:
-                // internal will be
+                // internal will be references to other modules within a single project graph
                 (depsInternal == null ? (depsInternal = X_Jdk.multiListOrderedInsertion()) : depsInternal)
                     .get(into).add(from);
                 break;

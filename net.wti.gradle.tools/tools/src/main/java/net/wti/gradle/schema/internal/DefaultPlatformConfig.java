@@ -2,6 +2,7 @@ package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
+import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.ArchiveConfigContainer;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.PlatformConfigContainer;
@@ -166,7 +167,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
             // if published is not set, the heuristic is to only publish "root",
             //  or anything that root replaces (for cases when you manually set root to a derived platform)
             final PlatformConfigInternal root = getRoot();
-            if (!"main".equals(root.getName())) {
+            if (!PlatformModule.defaultPlatform.toString().equals(root.getName())) {
                 return false;
             }
             return root.isOrReplaces(this);

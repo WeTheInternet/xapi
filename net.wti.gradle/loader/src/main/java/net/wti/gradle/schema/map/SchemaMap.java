@@ -91,7 +91,7 @@ public class SchemaMap implements HasAllProjects {
         // but still give time for user configuration from settings.gradle to be fully parsed
         resolver = Lazy.deferred1(()->{
 
-            System.out.println("Settings are ready, loading children for " + view);
+            System.out.println("Settings are ready, loading children for file://" + view.getProjectDir());
             loadChildren(getRootProject(), parser, root);
             callbacks.flushCallbacks(this);
 
@@ -230,7 +230,14 @@ public class SchemaMap implements HasAllProjects {
                 .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                 .ifAbsentReturn(false);
 
+            // TODO: load this project if it's UiElement
+
             final SchemaProject oldTail = tailProject;
+
+            MinimalProjectView projectView = parser.getView().findView(name);
+            if (projectView == null) {
+                throw new IllegalArgumentException("No view found named " + name);
+            }
             tailProject = new SchemaProject(oldTail, parser.getView().findView(name), name, multiplatform, virtual);
             this.projects.put(tailProject.getPath(), tailProject);
             insertChild(oldTail, parser, metadata, tailProject);
@@ -246,6 +253,7 @@ public class SchemaMap implements HasAllProjects {
             child.addPlatform(platform);
         }
 
+        // TODO: have a property to be able to specify the project path, for cases when project name != directory name
         into.getChildren().add(child);
         File childSchema = new File(parent.getSchemaDir(), child.getName());
         if (!childSchema.exists()) {

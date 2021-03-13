@@ -60,7 +60,7 @@ public class XapiRegistration implements Named {
         return new XapiRegistration(project, platform, archive, into, mode, trans);
     }
 
-    private void maybeResolve() {
+    private synchronized void maybeResolve() {
         if (!resolved) {
             resolved = true;
             project = resolveProject(project);

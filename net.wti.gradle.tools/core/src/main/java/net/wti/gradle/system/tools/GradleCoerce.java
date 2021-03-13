@@ -24,7 +24,19 @@ public class GradleCoerce {
 
     private static final Function<Object, Object> DEFAULT_FALLBACK = item->{
         try {
-            final Method method = item.getClass().getMethod("out1");
+            Method method;
+            try {
+                // prefer xapi types (Out1.out())
+                method = item.getClass().getMethod("out1");
+            } catch (NoSuchMethodException e) {
+                try {
+                    // next, plain get()
+                    method = item.getClass().getMethod("get");
+                } catch (NoSuchMethodException ee) {
+                    // then, call() w/ no arguments (Callable)
+                    method = item.getClass().getMethod("call");
+                }
+            }
             item = method.invoke(item);
         } catch (IllegalAccessException e) {
             throw new AssertionError("Found method out1(), but it was not visible", e);
@@ -144,5 +156,9 @@ public class GradleCoerce {
 
     public static boolean isEmpty(Object value) {
         return unwrapStringNonNull(value).isEmpty();
+    }
+
+    public static boolean isEmptyString(CharSequence value) {
+        return value == null || value.length() == 0;
     }
 }
