@@ -18,4 +18,8 @@ xapiRequire.main().configure {
         req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
 }
 
+dependencies {
+    compile files('lib/jfxrt.jar')
+}
+
 description = 'XApi - Jre JavaFx UI'
