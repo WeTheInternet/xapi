@@ -89,17 +89,8 @@ public interface ArchiveGraph extends Named, GraphNode {
         return srcRoot().exists();
     }
 
-    default String getConfigName() {
-        String platName = platform().getName();
-        return
-            "main".equals(platName)
-                ? getName() : platName + GUtil.toCamelCase(getName());
-
-    }
-
     default String getSrcName() {
-        String name = getConfigName().replace("Main", "");
-        return name.isEmpty() ? platform().getName() : name;
+        return PlatformModule.unparse(platform().getName(), getName());
     }
 
     Set<ArchiveRequest> getIncoming();
@@ -177,7 +168,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         return config("ExportCompile", exportCompile -> {
             exportCompile.extendsFrom(configTransitive());
             exportCompile.setVisible(true);
-            exportCompile.setDescription("The compile output and transitive dependencies for " + getConfigName());
+            exportCompile.setDescription("The compile output and transitive dependencies for " + getSrcName());
             exportCompile.setCanBeResolved(true);
             exportCompile.setCanBeConsumed(true);
             exportCompile.getOutgoing().capability(getCapability("compile"));
@@ -438,8 +429,13 @@ public interface ArchiveGraph extends Named, GraphNode {
 
     default Configuration config(String suffix, Action<? super Configuration> whenCreated) {
         final String srcName = getSrcName();
-        String name = "main".equals(srcName) || srcName.equals(suffix) || suffix.startsWith(srcName) ? GUtil.toLowerCamelCase(suffix) : srcName + GUtil.toCamelCase(suffix);
+
+        String name = ArchiveGraph.toConfigName(srcName, suffix);
         return configNamed(name, whenCreated);
+    }
+
+    static String toConfigName(String srcName, String suffix) {
+        return "main".equals(srcName) || srcName.equals(suffix) || suffix.startsWith(srcName) ? GUtil.toLowerCamelCase(suffix) : srcName + GUtil.toCamelCase(suffix);
     }
 
     default Configuration configNamed(String name, Action<? super Configuration> whenCreated) {
@@ -535,7 +531,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         final ArchiveGraph into = targetPlatform.archive(modName);
         // TODO: consider extra signifigance when modName or platName are empty (i.e. use a wider target like "all modules", "all platforms", etc.)
 
-        targetPlatform.whenReady(ReadyState.BEFORE_FINISHED, ready->{
+        targetPlatform.whenReady(ReadyState.BEFORE_FINISHED - 0x20, ready->{
 
             importLocal(into, DefaultUsageType.Api, only, lenient);
             importLocal(into, DefaultUsageType.Runtime, only, lenient);

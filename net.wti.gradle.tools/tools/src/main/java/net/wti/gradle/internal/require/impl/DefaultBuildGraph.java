@@ -158,7 +158,8 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
             project.getGradle().getIncludedBuilds().stream().anyMatch(
                 // the Law of Demeter weeps... but we this is an assert statement, so we don't want to assign variables
                 build -> ((IncludedBuildState)build).getConfiguredBuild().getRootProject().findProject(projectPath) != null
-            );
+            ) :
+                "No project found for " + projectPath + " as computed from " + path.getClass() +" : " + path;
         return getOrRegister(projectPath);
     }
 

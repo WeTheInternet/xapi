@@ -70,6 +70,7 @@ public interface ReadyState {
             BEFORE_CREATED, CREATED, AFTER_CREATED,
             BEFORE_READY, READY, AFTER_READY,
             BEFORE_FINISHED, FINISHED, AFTER_FINISHED,
+            Short.MAX_VALUE,
             EXECUTE
         };
     }

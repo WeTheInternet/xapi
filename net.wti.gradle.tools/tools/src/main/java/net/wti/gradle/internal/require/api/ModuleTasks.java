@@ -166,7 +166,7 @@ public class ModuleTasks {
 
     public TaskProvider<Test> getTestTask() {
         if (testTask == null) {
-            String name = "test" + GUtil.toCamelCase(source.getConfigName());
+            String name = "test" + GUtil.toCamelCase(source.getSrcName());
             if ("testTest".equals(name)) {
                 // main jar needs special casing.
                 name = "test";

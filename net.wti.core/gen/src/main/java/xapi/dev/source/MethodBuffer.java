@@ -37,6 +37,7 @@ package xapi.dev.source;
 
 import xapi.collect.impl.SimpleStack;
 import xapi.fu.Printable;
+import xapi.fu.java.X_Jdk;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaModel.IsParameter;
 import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
@@ -45,9 +46,7 @@ import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static xapi.fu.itr.ArrayIterable.iterate;
@@ -120,7 +119,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       // remove public and abstract for interface methods, as they are implicit.
       mods = mods.replace("public", "").replace("abstract", "").replaceAll("\\s{2,}", " ");
     }
-    if (mods.startsWith(" ")) {
+    while (mods.startsWith(" ")) {
       mods = mods.substring(1);
     }
     b.append(mods);
@@ -181,6 +180,10 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       suffix = (once ? Printable.NEW_LINE : "") + origIndent + "}\n";
     }
     return b.toString() + prefix + super.toSource() + suffix;
+  }
+
+  public String toStringBodyOnly() {
+    return super.toSource();
   }
 
   public MethodBuffer addExceptions(final String... exceptions) {
@@ -724,8 +727,12 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return variables.containsKey(name);
   }
 
+  public Map<String, LocalVariable> getVariables() {
+    return Collections.unmodifiableMap(variables);
+  }
+
   public ClassBuffer getEnclosingClass() {
-    MemberBuffer<?> enclosed = super.getEnclosing();
+    MemberBuffer<?> enclosed = getEnclosing();
     while (enclosed != null) {
       if (enclosed instanceof ClassBuffer) {
         return (ClassBuffer) enclosed;
@@ -734,5 +741,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       enclosed = enclosed.getEnclosing();
     }
     return null;
+  }
+
+  public SourceBuilder<?> getContext() {
+    return context;
   }
 }

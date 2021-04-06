@@ -9,26 +9,20 @@ import net.wti.gradle.require.api.DependencyKey;
 import net.wti.gradle.require.api.DependencyMap;
 import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
-import net.wti.gradle.schema.api.QualifiedModule;
-import net.wti.gradle.schema.api.SchemaPlatform;
+import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.impl.DefaultSchemaPlatform;
 import net.wti.gradle.schema.map.*;
-import net.wti.gradle.schema.api.SchemaDependency;
-import net.wti.gradle.schema.api.SchemaModule;
-import net.wti.gradle.schema.api.SchemaProject;
+import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
-import org.gradle.api.logging.LoggingManager;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MultiList;
 import xapi.fu.data.SetLike;
-import xapi.fu.itr.Chain;
-import xapi.fu.itr.ChainBuilder;
-import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.*;
 import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
@@ -39,14 +33,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
 /**
- * Converts schema.xapi files into {@link SchemaMetadata} classes.
+ * Converts schema.xapi files into {@link DefaultSchemaMetadata} classes.
  *
  * Not really a parser as much as it is a visitor of parsed xapi,
  * which fills in an instance of SchemaMetadata from said file.
@@ -57,42 +49,67 @@ public interface SchemaParser {
 
     MinimalProjectView getView();
 
-    default SchemaMetadata getSchema() {
-        return GradleService.buildOnce(getView().getRootProject(), SchemaMetadata.EXT_NAME, this::parseSchema);
+    default DefaultSchemaMetadata getSchema() {
+        return GradleService.buildOnce(getView().getRootProject(), DefaultSchemaMetadata.EXT_NAME, this::parseSchema);
     }
 
     /**
      * Find the schema.xapi file for a given project, and parse it.
      *
      * @param p - A MinimalProjectView, to be able to look up properties and locate a project directory.
-     * @return A parsed {@link SchemaMetadata} file.
+     * @return A parsed {@link DefaultSchemaMetadata} file.
      */
-    default SchemaMetadata parseSchema(MinimalProjectView p) {
+    default DefaultSchemaMetadata parseSchema(MinimalProjectView p) {
         String schemaFile = GradleCoerce.unwrapStringOr(p.findProperty("xapiSchema"), p.getProjectDir() + File.separator + "schema.xapi");
         File f = new File(schemaFile);
+        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, f);
         if (f.exists()) {
-            return parseSchemaFile(null, p.getProjectDir(), f);
+            return parseSchemaFile(null, metadata, p.getProjectDir());
         }
-        return new SchemaMetadata(null, f);
+        return metadata;
     }
 
     /**
      * Parse a supplied "schema.xapi" file.
      *
-     * @return A parsed {@link SchemaMetadata} file.
-     * @param parent
+     * @return A parsed {@link DefaultSchemaMetadata} file.
+     * @param parent Optional parent of the target metadata.
+     * @param metadata A schema metadata instance for us to fill out.
      * @param relativeRoot In case the schemaFile is relative, where to try resolving it.
-     * @param schemaFile A relative-or-absolute path to a schema.xapi file (can be named anything)
-     * @return A parsed {@link SchemaMetadata} file.
+     * @return A parsed {@link DefaultSchemaMetadata} file.
      *
      * We will throw illegal argument exceptions if you provide a non-existent absolute-path-to-a-schema-file.
      * Relative paths will be more forgiving.
      */
-    default SchemaMetadata parseSchemaFile(
-        SchemaMetadata parent,
-        File relativeRoot,
-        File schemaFile
+    default DefaultSchemaMetadata parseSchemaFile(
+        DefaultSchemaMetadata parent,
+        DefaultSchemaMetadata metadata,
+        File relativeRoot
     ) {
+        File schemaFile = normalizeSchemaFile(relativeRoot, metadata.getSchemaFile());
+        if (!schemaFile.exists()) {
+            return new DefaultSchemaMetadata(parent, schemaFile);
+        }
+        final UiContainerExpr expr;
+        try (
+            FileInputStream fio = new FileInputStream(schemaFile)
+        ) {
+            expr = JavaParser.parseUiContainerMergeMany(schemaFile.getAbsolutePath(), fio, LogLevel.INFO);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to load file://" + schemaFile.getAbsolutePath(), e);
+        } catch (ParseException e) {
+            throw new GradleException("Invalid xapi source in file://" + schemaFile.getAbsolutePath(), e);
+        }
+
+        // hm, we're getting duplication of root schema as :name and :name:schema.xapi...
+        // TODO: find out if above comment is even true, and do we even care?
+
+        final DefaultSchemaMetadata result = parseSchemaElement(parent, metadata, expr);
+        result.setSchemaLocation(schemaFile.getPath());
+        return result;
+    }
+
+    default File normalizeSchemaFile(File relativeRoot, File schemaFile) {
         if (!schemaFile.exists()) {
             if (schemaFile.isAbsolute()) {
                 throw new IllegalArgumentException("Non-existent absolute-path xapiSchema file " + schemaFile);
@@ -102,92 +119,101 @@ public interface SchemaParser {
         if (schemaFile.isDirectory()) {
             schemaFile = new File(schemaFile, "schema.xapi");
         }
-        if (!schemaFile.exists()) {
-            return new SchemaMetadata(parent, schemaFile);
-        }
-        final UiContainerExpr expr;
-        try (
-            FileInputStream fio = new FileInputStream(schemaFile)
-        ) {
-            expr = JavaParser.parseUiContainer(schemaFile.getAbsolutePath(), fio, LogLevel.INFO);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Unable to load file:" + schemaFile.getAbsolutePath(), e);
-        } catch (ParseException e) {
-            throw new GradleException("Invalid xapi source in file:" + schemaFile.getAbsolutePath(), e);
-        }
-
-        // hm, we're getting duplication of root schema as :name and :name:schema.xapi...
-
-
-        return parseSchemaElement(parent, schemaFile, expr);
+        return schemaFile;
     }
 
-    default SchemaMetadata parseSchemaElement(
-        SchemaMetadata parent,
-        File schemaFile,
+    default DefaultSchemaMetadata parseSchemaElement(
+        DefaultSchemaMetadata parent,
+        final DefaultSchemaMetadata metadata,
         UiContainerExpr schema
     ) {
-        final SchemaMetadata metadata = new SchemaMetadata(parent, schemaFile);
-        ComposableXapiVisitor.<SchemaMetadata>whenMissingFail(SchemaParser.class)
+        File schemaFile = metadata.getSchemaFile();
+        ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(SchemaParser.class)
             .withUiContainerRecurse(In2.ignoreAll())
             .withNameExpr((ctr, meta)-> {
                 if (!ctr.getName().equals("xapi-schema")) {
-                    throw new IllegalArgumentException("Bad schema file, " + schemaFile.getAbsolutePath() + "; " +
+                    throw new IllegalArgumentException("Bad schema file, " + (schemaFile == null ? "<virtual>" : schemaFile.getAbsolutePath()) + "; " +
                         "does not start with <xapi-schema; instead, starts with: " + ctr.getName() + ":\n" + ctr.toSource());
                 }
                 return false;
             })
-            .withUiAttrTerminal((attr, meta)->{
-                switch (attr.getNameString()) {
-                    case "platforms":
-                        // definition of platforms
-                        addPlatforms(meta, attr.getExpression());
-                        break;
-                    case "modules":
-                        // definition of modules per platform
-                        addModules(meta, attr.getExpression());
-                        break;
-                    case "projects":
-                        // definition of child projects
-                        addProjects(meta, attr.getExpression());
-                        break;
-                    case "external":
-                        // definition of external dependencies (move to settings.xapi?)
-                        addExternal(meta, attr.getExpression());
-                        break;
-                    case "defaultRepoUrl":
-                        // definition of the default repo url to use for external dependency resolution
-                        addDefaultRepoUrl(meta, attr.getExpression());
-                        break;
-                    case "schemaLocation":
-                        // location of a generated schema script. If it's a directory, a file named build.gradle will be created.
-                        addSchemaLocation(meta, attr.getExpression());
-                        break;
-                    case "name":
-                        // the name of the root project, for use it paths
-                        meta.setName(attr.getStringExpression(false, true));
-                        break;
-                    case "group":
-                        // the group of the project, for use in publishing / dependency references
-                        meta.setGroup(attr.getStringExpression(false, true));
-                        break;
-                    case "version":
-                        // the group of the project, for use in publishing / dependency references
-                        meta.setVersion(attr.getStringExpression(false, true));
-                        break;
-                    case "require":
-                    case "requires":
-                        addRequires(meta, PlatformModule.UNKNOWN, attr.getExpression());
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
-                }
-            })
+            .withUiAttrTerminal(readProjectAttributes())
             .visit(schema, metadata);
+        schema.addExtra("xapi-schema-meta", metadata);
         return metadata;
     }
 
-    default void addRequires(final SchemaMetadata meta, final PlatformModule platMod, Expression expression) {
+    default DefaultSchemaMetadata parseProjectElement(
+        DefaultSchemaMetadata parent,
+        final DefaultSchemaMetadata metadata,
+        UiContainerExpr schema
+    ) {
+        ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(SchemaParser.class)
+            .withUiContainerRecurse(In2.ignoreAll())
+            .withNameTerminal((ctr, meta)-> {
+                // the only name we visit is the <opening-element attrName=not-visited /opening-element>
+                metadata.setName(ctr.getName());
+            })
+            .withUiAttrTerminal(readProjectAttributes())
+            .visit(schema, metadata);
+        schema.addExtra("xapi-schema-meta", metadata);
+        return metadata;
+    }
+
+    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes() {
+        return (attr, meta)->{
+            switch (attr.getNameString()) {
+                case "multiplatform":
+                case "virtual":
+                    // ignored, only apply to xapi-schema. Should likely be a static set checked in `default:`
+                    break;
+                case "platforms":
+                    // definition of platforms
+                    addPlatforms(meta, attr.getExpression());
+                    break;
+                case "modules":
+                    // definition of modules per platform
+                    addModules(meta, attr.getExpression());
+                    break;
+                case "projects":
+                    // definition of child projects
+                    addProjects(meta, attr.getExpression());
+                    break;
+                case "external":
+                    // definition of external dependencies (move to settings.xapi?)
+                    addExternal(meta, attr.getExpression());
+                    break;
+                case "defaultRepoUrl":
+                    // definition of the default repo url to use for external dependency resolution
+                    addDefaultRepoUrl(meta, attr.getExpression());
+                    break;
+                case "schemaLocation":
+                    // location of a generated schema script. If it's a directory, a file named build.gradle will be created.
+                    addSchemaLocation(meta, attr.getExpression());
+                    break;
+                case "name":
+                    // the name of the root project, for use it paths
+                    meta.setName(attr.getStringExpression(false, true));
+                    break;
+                case "group":
+                    // the group of the project, for use in publishing / dependency references
+                    meta.setGroup(attr.getStringExpression(false, true));
+                    break;
+                case "version":
+                    // the group of the project, for use in publishing / dependency references
+                    meta.setVersion(attr.getStringExpression(false, true));
+                    break;
+                case "require":
+                case "requires":
+                    addRequires(meta, PlatformModule.UNKNOWN, attr.getExpression());
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
+            }
+        };
+    }
+
+    default void addRequires(final DefaultSchemaMetadata meta, final PlatformModule platMod, Expression expression) {
 
         ComposableXapiVisitor<SchemaParser> v = ComposableXapiVisitor.onMissingFail(SchemaParser.class);
         v
@@ -206,11 +232,11 @@ public interface SchemaParser {
         */
     }
 
-    default void insertDependencyRaw(SchemaMetadata meta, JsonPairExpr pair, PlatformModule platMod) {
+    default void insertDependencyRaw(DefaultSchemaMetadata meta, JsonPairExpr pair, PlatformModule platMod) {
         meta.addDependency(pair, platMod);
     }
 
-    default void addPlatforms(SchemaMetadata meta, Expression expression) {
+    default void addPlatforms(DefaultSchemaMetadata meta, Expression expression) {
         /*
     platforms = [
         <main />,
@@ -262,7 +288,10 @@ public interface SchemaParser {
         }
     }
 
-    default void addModules(SchemaMetadata meta, Expression expression) {
+    default void addModules(DefaultSchemaMetadata meta, Expression expression) {
+        addModules(meta, expression, In1.ignored());
+    }
+    default void addModules(DefaultSchemaMetadata meta, Expression expression, In1<UiContainerExpr> massager) {
         /*
     modules can be a single big list of all elements:
     modules = [
@@ -291,11 +320,14 @@ public interface SchemaParser {
         final ComposableXapiVisitor<?> visitor = whenMissingFail(SchemaParser.class, ()->"Expected <elements/> or \"strings\" or names")
             .withUiContainerTerminal((el, val) -> {
                 String modName = el.getName();
+                massager.in(el);
                 meta.addModule(modName, el);
             })
-            .nameOrString(modName ->
-                meta.addModule(modName, new UiContainerExpr(modName))
-            );
+            .nameOrString(modName -> {
+                final UiContainerExpr el = new UiContainerExpr(modName);
+                massager.in(el);
+                meta.addModule(modName, el);
+            });
         if (expression instanceof JsonContainerExpr) {
             final JsonContainerExpr json = (JsonContainerExpr) expression;
             if (json.isArray()) {
@@ -320,6 +352,7 @@ public interface SchemaParser {
                                     if (!require.isEmpty()) {
                                         expr.addAttribute("requires", NameExpr.of(require));
                                     }
+                                    massager.in(expr);
                                     meta.addModule(platName, expr);
                                 })
                             , val);
@@ -329,22 +362,22 @@ public interface SchemaParser {
         } else if (expression instanceof UiContainerExpr) {
             expression.accept(visitor, null);
         } else {
-            throw new GradleException("Invalid platforms expression " + expression.getClass() +" :\n" + expression.toSource());
+            throw new GradleException("Invalid modules expression " + expression.getClass() +" :\n" + expression.toSource());
         }
 
     }
-    default void addProjects(SchemaMetadata meta, Expression expression) {
-        final ComposableXapiVisitor<SchemaMetadata> v = ComposableXapiVisitor.whenMissingIgnore(SchemaParser.class);
+    default void addProjects(DefaultSchemaMetadata meta, Expression expression) {
+        final ComposableXapiVisitor<DefaultSchemaMetadata> v = ComposableXapiVisitor.whenMissingIgnore(SchemaParser.class);
         boolean[] multiplatform = {meta.isMultiPlatform()}; // default to multi-platform if this schema is multiplatform
         boolean[] virtual = {false};
 
-        final In2<UiContainerExpr, SchemaMetadata> addProject = (module, parent)-> {
-            final ListLike<UiContainerExpr> platform;
+        final In2<UiContainerExpr, DefaultSchemaMetadata> addProject = (module, parent)-> {
+            final ListLike<UiContainerExpr> projects;
             if (meta.getProjects() == null) {
-                platform = X_Jdk.listArrayConcurrent();
-                meta.setProjects(platform);
+                projects = X_Jdk.listArrayConcurrent();
+                meta.setProjects(projects);
             } else {
-                platform = meta.getProjects();
+                projects = meta.getProjects();
             }
             if (!module.hasAttribute("multiplatform")) {
                 module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
@@ -352,14 +385,14 @@ public interface SchemaParser {
             if (!module.hasAttribute("virtual")) {
                 module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
             }
-            platform.add(module);
+            projects.add(module);
         };
 
         v   .withJsonContainerRecurse(In2.ignoreAll())
             .withJsonPairTerminal((type, meta1) -> {
                 if (type.getKeyExpr() instanceof IntegerLiteralExpr) {
                     type.getValueExpr().accept(
-                        ComposableXapiVisitor.<SchemaMetadata>whenMissingFail(SchemaParser.class)
+                        ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(SchemaParser.class)
                             .withUiContainerTerminal(addProject)
                             .withNameOrString((name, meta2) -> {
                                 // we have a project to add...
@@ -400,8 +433,8 @@ public interface SchemaParser {
 
     }
 
-    default void addExternal(SchemaMetadata meta, Expression expression) {
-        ComposableXapiVisitor<SchemaMetadata> v = whenMissingFail(SchemaParser.class);
+    default void addExternal(DefaultSchemaMetadata meta, Expression expression) {
+        ComposableXapiVisitor<DefaultSchemaMetadata> v = whenMissingFail(SchemaParser.class);
         v  .withJsonArrayRecurse(In2.ignoreAll())
            .withUiContainerTerminal(meta::addExternal);
         expression.accept(v, meta);
@@ -432,7 +465,7 @@ public interface SchemaParser {
         */
     }
 
-    default void addDefaultRepoUrl(SchemaMetadata meta, Expression expression) {
+    default void addDefaultRepoUrl(DefaultSchemaMetadata meta, Expression expression) {
         // add a string describing the default repo url
         expression.accept(
             whenMissingFail(SchemaParser.class)
@@ -447,7 +480,7 @@ public interface SchemaParser {
             , null);
     }
 
-    default void addSchemaLocation(SchemaMetadata meta, Expression expression) {
+    default void addSchemaLocation(DefaultSchemaMetadata meta, Expression expression) {
         // define where to produce a generated schema.  default is $meta.schemaFile.parentDir/schema.gradle
         expression.accept(
             whenMissingFail(SchemaParser.class)
@@ -455,9 +488,9 @@ public interface SchemaParser {
             , null);
     }
 
-    default void loadMetadata(SchemaMap map, SchemaProject project, SchemaMetadata metadata) {
-        loadPlatforms(project, metadata);
-        loadModules(project, metadata);
+    default void loadMetadata(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata, final SchemaParser parser) {
+        loadPlatforms(project, metadata, parser);
+        loadModules(project, metadata, parser);
         loadExternals(project, metadata);
         final ListLike<UiContainerExpr> projects = metadata.getProjects();
         if (projects != null) {
@@ -466,7 +499,7 @@ public interface SchemaParser {
         loadDependencies(map, project, metadata);
     }
 
-    default void loadDependencies(SchemaMap map, SchemaProject project, SchemaMetadata metadata) {
+    default void loadDependencies(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata) {
 
         DependencyMap<CharSequence> depMap = new DependencyMap<>();
         depMap.put(DependencyKey.group, LazyString.nullableString(metadata::getGroup));
@@ -495,7 +528,7 @@ public interface SchemaParser {
             }
 
             Log.tryLog(SchemaParser.class, this,
-                project.getPath(), " adding ", type, " dependencies: ", deps.map(o->o.join("->")));
+                project.getPath(), " adding ", type, " dependencies: ", deps.map(o->o.join("->").replace("\n", " ")));
 
             for (Out2<PlatformModule, ListLike<Expression>> entry : deps.forEachItem()) {
                 final PlatformModule mod = entry.out1();
@@ -512,6 +545,7 @@ public interface SchemaParser {
                     insertDependencies(project, metadata, mod, dep);
                 }
             }
+            // do not insert new code here w/o considering the early continue; above
         }
 
     }
@@ -532,25 +566,50 @@ public interface SchemaParser {
                 absorbAnnotations(deps, annos);
 
                 String type = pair.getKeyString();
-                final CharSequence was;
-                final DependencyType is;
+                final CharSequence is;
+                final DependencyKey depType;
+                final MappedIterable<Expression> exprs;
                 switch (type) {
-                    case "project":
                     case "internal":
+                    case "project":
                     case "external":
                     case "unknown":
                         is = DependencyType.valueOf(type);
-                        was = deps.put(DependencyKey.category, is);
+                        depType = DependencyKey.category;
+                        exprs = SingletonIterator.singleItem(pair.getValueExpr());
+                        deps.put(DependencyKey.name, pair.getKeyString());
                         break;
+                    case "module":
                     case "platform":
+                        throw new IllegalArgumentException(type + " is not yet supported in SchemaParser.extractDependencies()");
+//                        break;
                     default:
-                        throw new IllegalArgumentException(type + " is not supported in SchemaParser.extractDependencies()");
+                        // if there is a string, it may be a key to a known module name.
+                        // in this case, we are applying the dependency in the value element to a particular resolved module name:
+                        // i.e.: gwtApi : { project: { something : gwtMain } }
+                        // will put :something:gwtMain on the classpath of our project:gwtApi configurations.
+                        // arguable, we should maybe require `module: { gwtApi : { project: { actual : deps } } }`,
+                        // but it's already too {}-y already.
+                        // platform: { gwt : { module : { api : { project: { actual : deps } } } }
+                        // really ugly on one line, but nice and declarative, at least.
+                        final Expression value = pair.getValueExpr();
+                        if (!(value instanceof JsonContainerExpr)) {
+                            throw new IllegalArgumentException("platformModule-specific dependency " + type + " may only have json [array] or {map:children}. Debugging: " + expr.toSource());
+                        }
+                        JsonContainerExpr json = (JsonContainerExpr) value;
+                        depType = DependencyKey.platformModule;
+                        exprs = json.getValues();
+                        is = pair.getKeyString();
                 }
-                pair.getValueExpr().accept(vis, parser);
-                if (was == null) {
-                    deps.remove(DependencyKey.category);
-                } else if (is != was) {
-                    deps.put(DependencyKey.category, was);
+                final CharSequence was = deps.put(depType, is);
+                try {
+                    exprs.forAll(Expression::accept, vis, parser);
+                } finally {
+                    if (was == null) {
+                        deps.remove(depType);
+                    } else if (is != was) {
+                        deps.put(depType, was);
+                    }
                 }
             })
             .withJsonContainerTerminal((container, parser) -> {
@@ -591,7 +650,8 @@ public interface SchemaParser {
                 if (platModStr == null || platModStr.length() == 0) {
                     platModStr = PlatformModule.defaultPlatform;
                 }
-                final PlatformModule platMod;
+
+                PlatformModule platMod;
                 if (platModStr instanceof PlatformModule) {
                     platMod = (PlatformModule) platModStr;
                 } else {
@@ -601,27 +661,32 @@ public interface SchemaParser {
                 CharSequence gId = deps.getOrDefault(DependencyKey.group, QualifiedModule.UNKNOWN_VALUE);
                 CharSequence version = deps.getOrDefault(DependencyKey.version, QualifiedModule.UNKNOWN_VALUE);
 
-                if (type == DependencyType.external) {
-                    // extract gId and version from name, reducing name to a simple(r) string
-                    String[] bits = name.split(":");
-                    switch (bits.length) {
-                        case 3:
-                            // g:n:v
-                            version = bits[2];
-                            // fallthrough
-                        case 2:
-                            // g:n
-                            gId = bits[0];
-                            name = bits[1];
-                            break;
-                        default:
-                            throw new IllegalArgumentException(
-                                    "Invalid external dependencies, has " + bits.length + " colons, only 2 or 3 expected in " + name
-                                    + "\nfrom expression:\n" + expr.toSource());
-                    }
-                } // todo: extract corrected group/version for local projects as well
+                switch (type) {
+                    case internal:
+                        platMod = platMod.edit(null, name);
+                        break;
+                    case external:
+                        // extract gId and version from name, reducing name to a simple(r) string
+                        String[] bits = name.split(":");
+                        switch (bits.length) {
+                            case 3:
+                                // g:n:v
+                                version = bits[2];
+                                // fallthrough
+                            case 2:
+                                // g:n
+                                gId = bits[0];
+                                name = bits[1];
+                                break;
+                            default:
+                                throw new IllegalArgumentException(
+                                        "Invalid external dependencies, has " + bits.length + " colons, only 2 or 3 expected in " + name
+                                        + "\nfrom expression:\n" + expr.toSource());
+                        }
+                        break;
+                }
+                // todo: extract corrected group/version for local projects as well
                 SchemaDependency dep = new SchemaDependency(type, platMod, gId.toString(), version.toString(), name);
-
                 dependencies.add(dep);
 
             }), null);
@@ -662,18 +727,19 @@ public interface SchemaParser {
 
     default void insertDependencies(
         SchemaProject project,
-        SchemaMetadata metadata,
+        DefaultSchemaMetadata metadata,
         PlatformModule mod,
         SchemaDependency dep
     ) {
         project.getDependencies().get(mod).add(dep);
     }
 
-    default void loadModules(SchemaProject project, SchemaMetadata metadata) {
+    default void loadModules(SchemaProject project, DefaultSchemaMetadata metadata, final SchemaParser parser) {
         final ListLike<UiContainerExpr> modules = metadata.getModules();
         if (modules == null) {
             return;
         }
+        final ListLike<SchemaModule> added = X_Jdk.listArray();
         for (UiContainerExpr module : modules) {
             String name = module.getName();
             boolean published = module.getAttribute("published")
@@ -683,54 +749,43 @@ public interface SchemaParser {
                 .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                 .ifAbsentReturn(false);
             final SetLike<String> include = X_Jdk.setLinked();
-            final Maybe<UiAttrExpr> includeAttr = module.getAttribute("include");
-            if (includeAttr.isPresent()) {
-                includeAttr.get().getExpression().accept(
-                    whenMissingFail(SchemaParser.class).extractNames(include::add)
-                    , metadata);
-            }
-            final Maybe<UiAttrExpr> publishPattern = module.getAttribute("publishPattern");
-            Pointer<String> publish = Pointer.pointerTo("main".equals(name) ? "$build-$name" : "$build-$name-$module");
-            if (publishPattern.isPresent()) {
-                publishPattern.get().getExpression().accept(
-                    whenMissingFail(SchemaParser.class).nameOrString(publish)
-                    , metadata);
-            }
-            final Maybe<UiAttrExpr> requires = module.getAttribute("requires");
-            if (requires.isPresent()) {
-                requires.get().getExpression().accept(
+
+            final String publishNamePattern = parser.getProperties().getPublishNamePattern(project.getView(), name);
+
+            In1<Expression> processRequire = requireExpr -> {
+                requireExpr.accept(
                         whenMissingFail(SchemaParser.class)
                                 .withJsonContainerRecurse(In2.ignoreAll())
                                 .withJsonPairTerminal((pair, ctx) -> {
-                            PlatformModule[] platMod = { new PlatformModule("main", name) };
-                            String typeStr = pair.getKeyString();
-                            if ("platform".equals(typeStr)) {
-                                // when a platform dependency is defined, expect value to be a json container
-                                if (pair.getValueExpr() instanceof JsonContainerExpr) {
-                                    JsonContainerExpr platformDeps = (JsonContainerExpr) pair.getValueExpr();
-                                    whenMissingFail(SchemaParser.class)
-                                            .withJsonContainerRecurse(In2.ignoreAll())
-                                            .withJsonPairTerminal((platform, ignored) -> {
-                                        if (platform.getKeyExpr() instanceof IntegerLiteralExpr) {
-                                            throw new IllegalArgumentException("All platform : {} dependencies MUST be a map; you sent list item: " + platform.getKeyString() + " : " + platform.getValueExpr());
-                                        }
-                                        PlatformModule specificPlatform = platMod[0].edit(platform.getKeyString(), null);
-                                        if (platform.getValueExpr() instanceof JsonContainerExpr) {
-                                            platform.getValueExpr().accept(
-                                                whenMissingFail(SchemaParser.class)
-                                                        .withJsonContainerRecurse(In2.ignoreAll())
-                                                        .withJsonPairTerminal((dep, ignore) -> {
-                                                    insertDependencyRaw(metadata, dep, specificPlatform);
-                                                }), ctx);
+                                    PlatformModule[] platMod = { new PlatformModule("main", name) };
+                                    String typeStr = pair.getKeyString();
+                                    if ("platform".equals(typeStr)) {
+                                        // when a platform dependency is defined, expect value to be a json container
+                                        if (pair.getValueExpr() instanceof JsonContainerExpr) {
+                                            JsonContainerExpr platformDeps = (JsonContainerExpr) pair.getValueExpr();
+                                            whenMissingFail(SchemaParser.class)
+                                                    .withJsonContainerRecurse(In2.ignoreAll())
+                                                    .withJsonPairTerminal((platform, ignored) -> {
+                                                        if (platform.getKeyExpr() instanceof IntegerLiteralExpr) {
+                                                            throw new IllegalArgumentException("All platform : {} dependencies MUST be a map; you sent list item: " + platform.getKeyString() + " : " + platform.getValueExpr());
+                                                        }
+                                                        PlatformModule specificPlatform = platMod[0].edit(platform.getKeyString(), null);
+                                                        if (platform.getValueExpr() instanceof JsonContainerExpr) {
+                                                            platform.getValueExpr().accept(
+                                                                    whenMissingFail(SchemaParser.class)
+                                                                            .withJsonContainerRecurse(In2.ignoreAll())
+                                                                            .withJsonPairTerminal((dep, ignore) -> {
+                                                                                insertDependencyRaw(metadata, dep, specificPlatform);
+                                                                            }), ctx);
+                                                        } else {
+                                                            throw new IllegalArgumentException("Children of a platform : {} dependencies must have maps for values!, you sent " + platform.getKeyString() + " : " + platform.getValueExpr());
+                                                        }
+                                                    }).visit(platformDeps, ctx);
                                         } else {
-                                            throw new IllegalArgumentException("Children of a platform : {} dependencies must have maps for values!, you sent " + platform.getKeyString() + " : " + platform.getValueExpr());
+                                            throw new IllegalArgumentException("All platform : {} dependencies MUST use a map for a value, you sent: " + pair.getValueExpr());
                                         }
-                                    }).visit(platformDeps, ctx);
-                                } else {
-                                    throw new IllegalArgumentException("All platform : {} dependencies MUST use a map for a value, you sent: " + pair.getValueExpr());
-                                }
-                            } else {
-                                // if it's not a platform dependency, then the key better be of type DependencyType
+                                    } else {
+                                        // if it's not a platform dependency, then the key better be of type DependencyType
 //                                final DependencyType type;
 //                                try {
 //                                    type = DependencyType.valueOf(typeStr);
@@ -739,64 +794,98 @@ public interface SchemaParser {
 //                                            " associated value:\n" + pair.getValueExpr() + "\n" +
 //                                            e.getMessage(), e.getCause());
 //                                }
-                                // next, apply this dependency to all platforms...
-                                project.forAllPlatforms(perPlat -> {
-                                    PlatformModule specificPlatform = platMod[0].edit(perPlat.getName(), null);
-                                    insertDependencyRaw(metadata, pair, specificPlatform);
-                                });
-                            }
+                                        // next, apply this dependency to all platforms...
+                                        final Maybe<UiAttrExpr> forPlatform = module.getAttribute("forPlatform");
+                                        if (forPlatform.isPresent()) {
+                                            final ComposableXapiVisitor<Object> vis = whenMissingFail(SchemaParser.class);
+                                            vis.nameOrString(platName -> {
+                                                PlatformModule specificPlatform = platMod[0].edit(platName, null);
+                                                insertDependencyRaw(metadata, pair, specificPlatform);
+                                            });
+                                            forPlatform.get().getExpression().accept(vis, null);
+                                        } else {
+                                            project.forAllPlatforms(perPlat -> {
+                                                PlatformModule specificPlatform = platMod[0].edit(perPlat.getName(), null);
+                                                insertDependencyRaw(metadata, pair, specificPlatform);
+                                            });
+                                        }
 
-                            // example module-with-requires:
-                            //    modules = [
-                            //        <main
-                            //            requires = {
-                            //                // A top-level external / internal / project dependency applies to all platforms.
-                            //                // internal dependencies are other modules which, per platform, the current module (main in this example) depends on
-                            //                internal: [ "api", "impl", ], // so, jre8:main depends on jre8:api and jre8:impl.
-                            //                // For all platforms, module $moduleName depends on $perPlatform:$moduleName of the listed projects:
-                            //                project: [ "a", "b", "c" ],
-                            //                // A list of external dependencies assumes either a hit in schema index, or a plain, non-xapi dependency string
-                            //                external: [ "tld.ext:art:1.0" ],
-                            //                // Prefer maps for selecting specific platform:module coordinates.
-                            //                external: { "tld.ext:ifact" : "main:spi" },
-                            //                // for platform-specific dependencies, specify platform, then use a map structure:
-                            //                platform: {
-                            //                    jre8 : {
-                            //                        // external dependencies as arrays will select main:main, unless this g:n:v is present in schema index.
-                            //                        external : [ "tld.ext:something:1.0", "tld.ext:something-else:1.1", ],
-                            //                        // it's best to always use a map and just select what you want specifically.
-                            //                        external : {
-                            //                            "tld.ext:ifact:1.0" : "main:spi",
-                            //                        },
-                            //                        // project lists take the "current platform" (jre8 in this example) over listed project names.
-                            //                        project : [ "x", "y", "z", ],
-                            //                        // use a map to select specific platform / module combinations
-                            //                        project : {
-                            //                              a: "main:spi", b: "main", c: "jre:api", ],
-                            //                        },
-                            //                        // internal is only ever a list of project-local module names
-                            //                        internal : [ "main:api", "impl" ],  // impl == jre8:impl, if not :, assumes current platform, or main, if outside platform:{}
-                            //                    },
-                            //                    jre11: {
-                            //                          // experimental: use annotation to specify defaults.
-                            //                          @Version("2.0")
-                            //                          @Group("tld.ext")
-                            //                          external: [ "name-api", "name-spi", "etc", ],
-                            //                    }
-                            //                }
-                            //            }
-                            //        /main> ]
+                                    }
 
-                        })
-                , metadata);
-            }
+                                    // example module-with-requires:
+                                    //    modules = [
+                                    //        <main
+                                    //            requires = {
+                                    //                // A top-level external / internal / project dependency applies to all platforms.
+                                    //                // internal dependencies are other modules which, per platform, the current module (main in this example) depends on
+                                    //                internal: [ "api", "impl", ], // so, jre8:main depends on jre8:api and jre8:impl.
+                                    //                // For all platforms, module $moduleName depends on $perPlatform:$moduleName of the listed projects:
+                                    //                project: [ "a", "b", "c" ],
+                                    //                // A list of external dependencies assumes either a hit in schema index, or a plain, non-xapi dependency string
+                                    //                external: [ "tld.ext:art:1.0" ],
+                                    //                // Prefer maps for selecting specific platform:module coordinates.
+                                    //                external: { "tld.ext:ifact" : "main:spi" },
+                                    //                // for platform-specific dependencies, specify platform, then use a map structure:
+                                    //                platform: {
+                                    //                    jre8 : {
+                                    //                        // external dependencies as arrays will select main:main, unless this g:n:v is present in schema index.
+                                    //                        external : [ "tld.ext:something:1.0", "tld.ext:something-else:1.1", ],
+                                    //                        // it's best to always use a map and just select what you want specifically.
+                                    //                        external : {
+                                    //                            "tld.ext:ifact:1.0" : "main:spi",
+                                    //                        },
+                                    //                        // project lists take the "current platform" (jre8 in this example) over listed project names.
+                                    //                        project : [ "x", "y", "z", ],
+                                    //                        // use a map to select specific platform / module combinations
+                                    //                        project : {
+                                    //                              a: "main:spi", b: "main", c: "jre:api", ],
+                                    //                        },
+                                    //                        // internal is only ever a list of project-local module names
+                                    //                        internal : [ "main:api", "impl" ],  // impl == jre8:impl, if not :, assumes current platform, or main, if outside platform:{}
+                                    //                    },
+                                    //                    jre11: {
+                                    //                          // experimental: use annotation to specify defaults.
+                                    //                          @Version("2.0")
+                                    //                          @Group("tld.ext")
+                                    //                          external: [ "name-api", "name-spi", "etc", ],
+                                    //                    }
+                                    //                }
+                                    //            }
+                                    //        /main> ]
 
-            final SchemaModule tailModule = new SchemaModule(name, publish.out1(), include, published, test);
-            insertModule(project, metadata, tailModule, module);
+                                })
+                        , metadata);
+            };
+            // annoying to support both require= and requires=, but it's easy to forget which is which...
+            module.getAttribute("requires").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
+            module.getAttribute("require").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
+
+            SchemaModule schemaMod = new SchemaModule(name, publishNamePattern, include, published, test);
+
+            project.forAllPlatforms(plat -> {
+                // an include = [ list, "of", modules ] is an automatic internal dependency on said module.
+                // we also put these into the SchemaModule.includes list, which is a "very transitive" part of the model.
+                // an internal dependency can be scoped down to compile_only, but an includes is the "official" transitive view of model.
+                final In1<UiAttrExpr> insertInclude = In4.in4(this::insertModuleIncludes)
+                        .provide1(schemaMod)
+                        .provide1(plat.getName())
+                        .provide1(metadata)
+                        .useAfterMe(attr-> {
+                            attr.getExpression().accept(
+                                whenMissingFail(SchemaParser.class).extractNames(include::add)
+                                , metadata);
+
+                        });
+                module.getAttribute("include").readIfPresent(insertInclude);
+                module.getAttribute("includes").readIfPresent(insertInclude);
+            });
+
+            final SchemaModule result = insertModule(project, metadata, schemaMod, module);
+            added.add(result);
         }
         // make all required-by-published modules also published.
         final Set<String> once = new HashSet<>();
-        for (SchemaModule module : project.getAllModules()) {
+        for (SchemaModule module : added) {
             if (module.isPublished()) {
                 publishChildren(project, module, once);
             }
@@ -816,15 +905,16 @@ public interface SchemaParser {
         }
     }
 
-    default void insertModule(SchemaProject project, SchemaMetadata metadata, SchemaModule module, UiContainerExpr source) {
-        project.addModule(module);
+    default SchemaModule insertModule(SchemaProject project, DefaultSchemaMetadata metadata, SchemaModule module, UiContainerExpr source) {
+        return project.addModule(module);
     }
 
-    default void loadPlatforms(SchemaProject project, SchemaMetadata metadata) {
+    default void loadPlatforms(SchemaProject project, DefaultSchemaMetadata metadata, final SchemaParser parser) {
         final ListLike<UiContainerExpr> platforms = metadata.getPlatforms();
         if (platforms == null) {
             return;
         }
+        final ListLike<SchemaPlatform> added = X_Jdk.listArray();
         final Logger LOG = Logging.getLogger(SchemaParser.class);
         for (UiContainerExpr platform : platforms) {
             String name = platform.getName();
@@ -841,70 +931,143 @@ public interface SchemaParser {
                 addRequire.nameOrString(replace::add);
                 replaceAttr.get().getExpression().accept(addRequire, metadata);
             }
-            Pointer<String> groupPattern = Pointer.pointerTo("main".equals(name) ? "$group" : "$group.$platform");
-            final Maybe<UiAttrExpr> publishPatternAttr = platform.getAttribute("publishPattern");
-            if (publishPatternAttr.isPresent()) {
-                whenMissingFail(SchemaParser.class).nameOrString(groupPattern);
-            }
+            final String groupPattern = parser.getProperties().getPublishGroupPattern(project.getView(), name);
 
             assert replace.isEmpty() || replace.size() == 1 : "Cannot replace more than one other platform; " + name + " tries to replace " + replace;
 
             // hm, this should be get-or-create semantics, to allow re-declaring a platform in an additive manner.
-            final SchemaPlatform tailPlatform = new DefaultSchemaPlatform(name,
-                groupPattern.out1(),
-                replace.isEmpty() ? null : replace.first(),
-                published,
-                test);
-            insertPlatform(project, metadata, tailPlatform, platform);
+            SchemaPlatform tailPlatform = new DefaultSchemaPlatform(name,
+                    groupPattern,
+                    replace.isEmpty() ? null : replace.first(),
+                    published,
+                    test);
+            final SchemaPlatform result = insertPlatform(project, metadata, tailPlatform, platform);
+            added.add(result);
 
-            Maybe<UiAttrExpr> require = platform.getAttribute("requires"); // TODO: handle require= too
-            if (require.isPresent()) {
-                Expression toRequire = require.get().getExpression();
-                LOG.quiet("Found requires: {}", require.get());
-                project.forAllModules(mod->{
-                    PlatformModule key = new PlatformModule(name, mod.getName());
-                    ComposableXapiVisitor<Object> vis = whenMissingFail(SchemaParser.class, () -> "");
-                    toRequire.accept(vis
-                        .withJsonContainerRecurse(In2.ignoreAll())
-                        .withJsonPairTerminal((pair, ctx)->{
-                            switch (pair.getKeyString()) {
-                                case "unknown":
-                                case "project":
-                                    metadata.getDepsProject()
-                                            .get(key).add(pair.getValueExpr());
-                                    break;
-                                case "internal":
-                                    metadata.getDepsInternal()
-                                            .get(key).add(pair.getValueExpr());
-                                    break;
-                                case "external":
-                                    metadata.getDepsExternal()
-                                            .get(key).add(pair.getValueExpr());
-                                    break;
-                                case "platform":
+            final In1<UiAttrExpr> insertModule = In4.in4(this::insertModuleRequires)
+                    .provide1(name)
+                    .provide1(metadata)
+                    .provide2(project::forAllModules);
 
-                                default:
-                                    try {
-                                        Integer.parseInt(pair.getKeyString());
-                                        metadata.getDepsInternal()
-                                                .get(key).add(pair.getValueExpr());
-                                    } catch (NumberFormatException failed) {
-                                        throw new UnsupportedOperationException(pair.getKeyString() + " is not a valid requires = {} key");
-                                    }
-                            }
-                        })
-                    , null);
-
-                });
+            platform.getAttribute("requires").readIfPresent(insertModule);
+            platform.getAttribute("require").readIfPresent(insertModule);
+            // allow each platform to configure individual modules as well.
+            Maybe<UiAttrExpr> modules = platform.getAttribute("modules");
+            if (modules.isPresent()) {
+                // we need to stash something that says "this module configuration applies only to our scoped platform".
+                ListLike<UiContainerExpr> extracted = extractModuleForPlatform(platform.getName(), metadata, modules.get());
             }
         }
         // now, go through all published platforms, and make sure all predecessors are also published.
         final Set<String> once = new HashSet<>();
-        for (SchemaPlatform platform : project.getAllPlatforms()) {
+        for (SchemaPlatform platform : added) {
             if (platform.isPublished()) {
                 publishChildren(project, platform, once);
             }
         }
+    }
+
+    default void insertModuleIncludes(SchemaModule module, String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr) {
+        // easiest way to construct internal dependency
+        // is to just build some ast.  We resolved down to a string of module name,
+        // now, build:
+        // requires = { internal : [ expr ] }
+        // and send that to insertModule
+        final UiAttrExpr copy = (UiAttrExpr) attr.clone();
+        copy.setName(new NameExpr("requires"));
+
+        JsonPairExpr synth = new JsonPairExpr("internal", copy.getExpression());
+        JsonContainerExpr ctr = new JsonContainerExpr(false, Collections.singletonList(synth));
+        copy.setExpression(ctr);
+        insertModuleRequires(platform, metadata, copy, In1.receiver(module));
+
+    }
+    default void insertModuleRequires(String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr, In1<In1<SchemaModule>> moduleSource) {
+        Expression toRequire = attr.getExpression();
+        Pointer<String> platValue = Pointer.pointerTo(platform);
+        Pointer<String> modValue = Pointer.pointer();
+        Out1<PlatformModule> keyBuilder = () -> new PlatformModule(platValue.out1(), modValue.out1());
+        final In1<SchemaModule> insertModule = mod -> {
+            modValue.in(mod.getName());
+            ComposableXapiVisitor<Object> vis = whenMissingFail(SchemaParser.class, () -> "Illegal contents for a require=... attribute");
+            toRequire.accept(vis
+                            .withJsonContainerRecurse(In2.ignoreAll())
+                            .withJsonPairTerminal((pair, ctx)->{
+                                switch (pair.getKeyString()) {
+                                    case "unknown":
+                                    case "project":
+                                        metadata.getDepsProject()
+                                                .get(keyBuilder.out1())
+                                                .add(pair.getValueExpr());
+                                        break;
+                                    case "internal":
+                                        metadata.getDepsInternal()
+                                                .get(keyBuilder.out1())
+                                                .add(pair.getValueExpr());
+                                        break;
+                                    case "external":
+                                        metadata.getDepsExternal()
+                                                .get(keyBuilder.out1())
+                                                .add(pair.getValueExpr());
+                                        break;
+                                    case "platform":
+                                        // expect map-only children
+                                        ComposableXapiVisitor<Object> descender = whenMissingFail(SchemaParser.class)
+                                                .withJsonMapOnly((json, ignore) -> {
+                                                    for (JsonPairExpr childPair : json.getPairs()) {
+                                                        try (Do lease = platValue.borrow(childPair.getKeyString())) {
+                                                            childPair.getValueExpr().accept(vis, null);
+                                                        }
+                                                    }
+                                                    // do not recurse, we sent the children to main visitor (vis) already.
+                                                    return false;
+                                                });
+                                        pair.getValueExpr().accept(descender, null);
+                                        return;
+                                    case "module":
+                                        // platform / module is handled like: platform { gwt: { module : { api : [ ... ] } } }
+                                        // expect map-only children
+                                        descender = whenMissingFail(SchemaParser.class)
+                                                .withJsonMapOnly((json, ignore) -> {
+                                                    for (JsonPairExpr childPair : json.getPairs()) {
+                                                        try (Do lease = modValue.borrow(childPair.getKeyString())) {
+                                                            childPair.getValueExpr().accept(vis, null);
+                                                        }
+                                                    }
+                                                    // do not recurse, we sent the children to main visitor (vis) already.
+                                                    return false;
+                                                });
+                                        pair.getValueExpr().accept(descender, null);
+                                        return;
+                                    default:
+                                        try {
+                                            Integer.parseInt(pair.getKeyString());
+                                            metadata.getDepsInternal()
+                                                    .get(keyBuilder.out1())
+                                                    .add(pair.getValueExpr());
+                                        } catch (NumberFormatException failed) {
+                                            throw new UnsupportedOperationException(pair.getKeyString() + " is not a valid requires = {} key");
+                                        }
+                                }
+                            })
+                    , null); // end toRequire.accept
+        };
+        moduleSource.in(insertModule);
+    }
+
+
+    default ListLike<UiContainerExpr> extractModuleForPlatform(final String platformName, final DefaultSchemaMetadata metadata, UiAttrExpr uiAttrExpr) {
+        final ListLike<UiContainerExpr> list = X_Jdk.list();
+
+        addModules(metadata, uiAttrExpr.getExpression(), mod->{
+            mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
+        });
+
+        return list;
+    }
+
+    default SchemaProperties getProperties() {
+        return SchemaProperties.getInstance();
     }
 
     default void publishChildren(SchemaProject project, SchemaPlatform platform, Set<String> once) {
@@ -920,11 +1083,11 @@ public interface SchemaParser {
         }
     }
 
-    default void insertPlatform(SchemaProject project, SchemaMetadata metadata, SchemaPlatform platform, UiContainerExpr source) {
-        project.addPlatform(platform);
+    default SchemaPlatform insertPlatform(SchemaProject project, DefaultSchemaMetadata metadata, SchemaPlatform platform, UiContainerExpr source) {
+        return project.addPlatform(platform);
     }
 
-    default void loadExternals(SchemaProject project, SchemaMetadata metadata) {
+    default void loadExternals(SchemaProject project, DefaultSchemaMetadata metadata) {
         final ListLike<UiContainerExpr> externals = metadata.getExternal();
         if (externals == null) {
             return;

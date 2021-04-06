@@ -563,7 +563,13 @@ public interface X_Fu {
     static In1Out1<String, String> toUpperCase() {
       return ToUpperCase.INST;
     }
+
+  static StackTraceElement[] currentStack() {
+    return Fu.jutsu.currentStack();
+  }
 }
+
+// Some utility classes x_Fu exposes
 final class ToLowerCase implements In1Out1<String, String> {
 
   static final ToLowerCase INST = new ToLowerCase();

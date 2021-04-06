@@ -85,3 +85,10 @@ xapiRequire.module('test').configure {
 }
 
 description = 'XApi - Dev uber jar'
+
+tasks.withType(Test).configureEach {
+    Test t ->
+        t.maxHeapSize("4G")
+        t.forkEvery(1)
+        t.maxParallelForks(4)
+}

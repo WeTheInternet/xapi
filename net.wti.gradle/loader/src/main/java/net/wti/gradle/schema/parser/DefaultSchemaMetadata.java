@@ -7,10 +7,12 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.QualifiedModule;
+import net.wti.gradle.schema.api.SchemaMetadata;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MultiList;
 import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
+import xapi.gradle.fu.LazyString;
 
 import java.io.File;
 
@@ -93,7 +95,7 @@ import static xapi.gradle.fu.LazyString.lazyToString;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 29/07/19 @ 5:09 AM.
  */
-public class SchemaMetadata {
+public class DefaultSchemaMetadata implements SchemaMetadata {
     public static final String EXT_NAME = "_xapi_schema";
     /**
      * The location where a backing schema.xapi file exists.
@@ -110,7 +112,7 @@ public class SchemaMetadata {
      * explicit == false == !schemaFile.exists()
      */
     private final boolean explicit;
-    private final SchemaMetadata parent;
+    private final DefaultSchemaMetadata parent;
 
     private String defaultUrl;
     private String schemaLocation;
@@ -120,10 +122,10 @@ public class SchemaMetadata {
     private ListLike<UiContainerExpr> platforms, modules, external, projects;
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
 
-    public SchemaMetadata(SchemaMetadata parent, File schemaFile) {
+    public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile) {
         this.parent = parent;
         this.schemaFile = schemaFile;
-        this.explicit = schemaFile.exists();
+        this.explicit = schemaFile != null && schemaFile.exists();
         depsProject = X_Jdk.multiListOrderedInsertion();
         depsInternal = X_Jdk.multiListOrderedInsertion();
         depsExternal = X_Jdk.multiListOrderedInsertion();
@@ -134,20 +136,26 @@ public class SchemaMetadata {
         return defaultUrl;
     }
 
-    public SchemaMetadata setDefaultUrl(String defaultUrl) {
+    public DefaultSchemaMetadata setDefaultUrl(String defaultUrl) {
         this.defaultUrl = defaultUrl;
         return this;
     }
 
     public String getSchemaLocation() {
         if (schemaLocation == null) {
+            if (schemaFile == null) {
+                if (!explicit) {
+                    return "<virtual>";
+                }
+                throw new IllegalStateException("Must set either schemaFile or schemaLocation to non-null in " + this);
+            }
             final File parent = schemaFile.isFile() ? schemaFile.getParentFile() : schemaFile;
             return parent.getPath() + "/schema.gradle";
         }
         return schemaLocation;
     }
 
-    public SchemaMetadata setSchemaLocation(String schemaLocation) {
+    public DefaultSchemaMetadata setSchemaLocation(String schemaLocation) {
         this.schemaLocation = schemaLocation;
         return this;
     }
@@ -156,7 +164,7 @@ public class SchemaMetadata {
         return projects;
     }
 
-    public SchemaMetadata setProjects(ListLike<UiContainerExpr> projects) {
+    public DefaultSchemaMetadata setProjects(ListLike<UiContainerExpr> projects) {
         this.projects = projects;
         return this;
     }
@@ -165,7 +173,7 @@ public class SchemaMetadata {
         return platforms;
     }
 
-    public SchemaMetadata setPlatforms(ListLike<UiContainerExpr> platforms) {
+    public DefaultSchemaMetadata setPlatforms(ListLike<UiContainerExpr> platforms) {
         this.platforms = platforms;
         return this;
     }
@@ -174,7 +182,7 @@ public class SchemaMetadata {
         return modules;
     }
 
-    public SchemaMetadata setModules(ListLike<UiContainerExpr> modules) {
+    public DefaultSchemaMetadata setModules(ListLike<UiContainerExpr> modules) {
         this.modules = modules;
         return this;
     }
@@ -183,7 +191,7 @@ public class SchemaMetadata {
         return external;
     }
 
-    public SchemaMetadata setExternal(ListLike<UiContainerExpr> external) {
+    public DefaultSchemaMetadata setExternal(ListLike<UiContainerExpr> external) {
         this.external = external;
         return this;
     }
@@ -204,7 +212,7 @@ public class SchemaMetadata {
         return group;
     }
 
-    public SchemaMetadata setGroup(String group) {
+    public DefaultSchemaMetadata setGroup(String group) {
         this.group = group;
         return this;
     }
@@ -213,7 +221,7 @@ public class SchemaMetadata {
         return version;
     }
 
-    public SchemaMetadata setVersion(String version) {
+    public DefaultSchemaMetadata setVersion(String version) {
         this.version = version;
         return this;
     }
@@ -248,7 +256,10 @@ public class SchemaMetadata {
     }
 
     public File getSchemaDir() {
-        return schemaFile.isFile() ? schemaFile.getAbsoluteFile().getParentFile() : schemaFile.isDirectory() ? schemaFile : new File(".").getAbsoluteFile();
+        return schemaFile != null && schemaFile.isFile() ?
+               schemaFile.getAbsoluteFile().getParentFile() :
+               schemaFile != null && schemaFile.isDirectory() ?
+               schemaFile : new File(".").getAbsoluteFile();
     }
 
     public boolean isExplicit() {
@@ -276,6 +287,7 @@ public class SchemaMetadata {
             '}';
     }
 
+    @Override
     public String getName() {
         return name == null ? (name = getSchemaDir().getName()) : name;
     }
@@ -292,8 +304,10 @@ public class SchemaMetadata {
     }
 
     public void addDependency(DependencyType type, PlatformModule into, JsonPairExpr from) {
-        Log.firstLog(into, this).log(SchemaMetadata.class,
-            lazyToString(this::getPath), "adding dependency ", type, " into ", into + " : " + from);
+        Log.firstLog(into, this).log(DefaultSchemaMetadata.class,
+            lazyToString(this::getPath), "adding dependency ", type, " into ", into + " : " +
+                        lazyToString(from::toSource).map(s->new LazyString(s.toString().replace("\n", " ")))
+        );
         // hm... we should just be storing ast for the requires= of a top-level xapi-schema.
         // all the other requires= elements will also be stored in other ast nodes, and visited as appropriate by SchemaParser.
         switch (type) {
@@ -319,7 +333,7 @@ public class SchemaMetadata {
         }
     }
 
-    public final SchemaMetadata getParent() {
+    public final DefaultSchemaMetadata getParent() {
         return parent;
     }
 

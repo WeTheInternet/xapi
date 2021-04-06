@@ -30,15 +30,14 @@ import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import com.github.javaparser.ast.comments.CommentsParser;
 import com.github.javaparser.ast.comments.LineComment;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.In2;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 import xapi.source.X_Source;
@@ -379,6 +378,53 @@ public final class JavaParser {
             throw e;
         }
     }
+    public static UiContainerExpr parseUiContainerMergeMany(final String path, final InputStream uiContainer, LogLevel level) throws ParseException {
+        final String src = SourcesHelper.streamToString(uiContainer);
+        if (X_String.isEmptyTrimmed(src)) {
+            return null;
+        }
+        UiContainerExpr result = null;
+        StringReader stringReader = new StringReader(src);
+        final ASTParser parser = new ASTParser(stringReader);
+        try {
+            final SimpleCharStream jjis = parser.jj_input_stream;
+            do {
+                int c;
+                while (Character.isWhitespace((c = jjis.readChar() ))) {}
+                if (c == '<') {
+                    jjis.backup(1);
+                } else {
+                    throw new IllegalArgumentException("Illegal character found " + c + " ");
+                }
+                UiContainerExpr newElement = parseUiContainer(path, parser, level);
+                result = merge(result, newElement);
+            } while (parser.jj_input_stream.available > 0);
+        } catch (IOException ignored) {
+        } finally {
+            stringReader.close();
+        }
+        return result;
+    }
+
+    private static UiContainerExpr merge(final UiContainerExpr result, final UiContainerExpr newElement) {
+        if (result == null) {
+            return newElement;
+        }
+        final ComposableXapiVisitor<Object> vis = ComposableXapiVisitor.whenMissingFail(JavaParser.class, () -> "");
+        // ok... we are just going to stick all the attributes from newElement into result.
+        newElement.accept(vis
+                .withUiContainerRecurse(In2.ignoreAll())
+                .withNameTerminal(In2.ignoreAll())
+                .withUiAttrTerminal((attr, ignore) -> {
+                    // just copy the attributes over; it's up to the visitor of the original expression to handle duplication.
+                    // in almost all cases, the visitor pattern will naturally handle this, assuming you don't have additional
+                    // requirements around the order of attribute parsing, or do some destructive put/set when you shouldn't.
+                    result.addAttribute(false, attr);
+                })
+                , null);
+        return result;
+    }
+
     public static UiContainerExpr parseUiContainer(final String path, final InputStream uiContainer, LogLevel level) throws ParseException {
         final String src = SourcesHelper.streamToString(uiContainer);
         if (X_String.isEmptyTrimmed(src)) {
@@ -386,19 +432,29 @@ public final class JavaParser {
         }
         StringReader sr = new StringReader(src);
         try {
-            final UiContainerExpr e = new ASTParser(sr).RootUiContainer();
-            e.addExtra("location", path);
+            return parseUiContainer(path, new ASTParser(sr), level);
+        } finally {
             sr.close();
+        }
+    }
+    private static UiContainerExpr parseUiContainer(final String path, final ASTParser parser, LogLevel level) throws ParseException {
+        try {
+            final UiContainerExpr e = parser.RootUiContainer();
+            e.addExtra("location", path);
             return e;
         } catch (ParseException e) {
-            String linkToDoc = e.currentToken == null ? path : X_Source.pathToLogLink(path, e.currentToken.beginLine);
-            final Log log = Log.defaultLogger();
-            log.log(level, "Parse error at document: " + linkToDoc);
-            // We do two separate logs, because the "who is logging this" link
-            // created from JavaParser.class argument will prevent the linkToDoc from rendering
-            log.log(JavaParser.class, level, "\n[" + level + "] parsing", e);
-            throw e;
+            throw throwFailure(e, path, level);
         }
+    }
+
+    private static RuntimeException throwFailure(final ParseException e, final String path, final LogLevel level) throws ParseException {
+        String linkToDoc = e.currentToken == null ? path : X_Source.pathToLogLink(path, e.currentToken.beginLine);
+        final Log log = Log.defaultLogger();
+        log.log(level, "Parse error at document: " + linkToDoc);
+        // We do two separate logs, because the "who is logging this" link
+        // created from JavaParser.class argument will prevent the linkToDoc from rendering
+        log.log(JavaParser.class, level, "\n[" + level + "] parsing", e);
+        throw e;
     }
 
     public static TypeParameter parseTypeParameter(final String typeParam) throws ParseException {

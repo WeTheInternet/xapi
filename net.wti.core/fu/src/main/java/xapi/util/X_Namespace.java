@@ -7,7 +7,8 @@ package xapi.util;
  *
  */
 public class X_Namespace {
-  private X_Namespace() {}//static only.
+
+    private X_Namespace() {}//static only.
 
   /**
    * The current version of XApi, updated after releases;
@@ -244,6 +245,26 @@ public class X_Namespace {
    * as they must be shared across all classworlds.
    */
   public static String PROPERTY_UNIVERSAL_COORDS = "xapi.universal.coord";
+
+  /**
+   * The location where the xapi schema index will be written and read.
+   *
+   * If not supplied, we'll check XAPI_INDEX environment variable.
+   */
+  public static String PROPERTY_INDEX_PATH = "xapiIndex";
+  /**
+   * The pattern to use when selecting groupId for published modules.
+   *
+   * Default is: if platform == main, group=
+   */
+  public static String PROPERTY_PUBLISH_GROUP_PATTERN = "xapiPublishGroupPattern";
+  public static String PROPERTY_PUBLISH_NAME_PATTERN = "xapiPublishNamePattern";
+
+  public static String PROPERTY_SCHEMA_PROPERTIES_INJECT = "xinject.net.wti.gradle.schema.spi.SchemaProperties";
+
+  public static String PROPERTY_GROUP_ID = "xapiGroupId";
+
+  public static String PROPERTY_VERSION = "xapiVersion";
 
 
 }

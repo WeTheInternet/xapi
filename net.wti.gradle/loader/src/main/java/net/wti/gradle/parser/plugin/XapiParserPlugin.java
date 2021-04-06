@@ -8,12 +8,14 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
+import net.wti.gradle.schema.index.SchemaIndexerImpl;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.map.*;
 import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.api.SchemaModule;
 import net.wti.gradle.schema.api.SchemaProject;
+import net.wti.gradle.schema.spi.SchemaIndexer;
 import net.wti.gradle.system.plugin.XapiBasePlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -21,9 +23,12 @@ import xapi.fu.Maybe;
 import xapi.fu.data.MultiList;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
+import xapi.util.X_Namespace;
+import xapi.util.X_String;
 
 import java.io.File;
 
+import static net.wti.gradle.internal.require.api.ArchiveGraph.toConfigName;
 import static xapi.fu.itr.SingletonIterator.singleItem;
 
 /**
@@ -36,12 +41,15 @@ public class XapiParserPlugin implements Plugin<Project> {
     @Override
     public void apply(Project proj) {
         if (proj != proj.getRootProject()) {
+            // we _always_ want to make the very first xapi-parser plugin an invocation on root project.
+            // This ensures consistent timing w.r.t. when build graph callbacks are invoked.
             proj.getRootProject().getPlugins().apply("xapi-parser");
         }
         proj.getLogger().info("Setting up xapi parser plugin for {}", proj.getPath());
         // always eagerly initialize build graph
         BuildGraph buildGraph = BuildGraph.findBuildGraph(proj);
         final ProjectGraph projectGraph = buildGraph.getProject(proj.getPath());
+        projectGraph.drainTasks(ReadyState.BEFORE_CREATED);
 
         Object strictProp = proj.findProperty("xapi.strict");
         switch (String.valueOf(strictProp)) {
@@ -111,7 +119,11 @@ public class XapiParserPlugin implements Plugin<Project> {
             initializeProject(proj, map, schemaProject);
         });
 
-        projectGraph.whenReady(ReadyState.AFTER_CREATED, i->{
+        projectGraph.whenReady(ReadyState.BEFORE_CREATED, i->{
+            map.getCallbacks().flushCallbacks(map);
+        });
+
+        projectGraph.whenReady(ReadyState.EXECUTE - 1, i->{
             map.getCallbacks().flushCallbacks(map);
         });
 
@@ -124,6 +136,52 @@ public class XapiParserPlugin implements Plugin<Project> {
                 );
             }
         });
+
+        if (":".equals(view.getPath())) {
+            loadFromIndex(view, map, projectGraph);
+        }
+    }
+
+    /**
+     * Initialize the given project graph based on pre-computed on-disk xapi index.
+     *
+     * This allows us to pre-populate all exposed dependency Configurations very early
+     * during the configuration evaluation phase of the gradle build.
+     *
+     * Whenever anybody adds the xapi-parser plugin, we force root project to have xapi-parser,
+     * and then when we get to root project loadFromIndex, we pre-create all "live"
+     * configurations for all gradle projects.
+     *  @param rootView The ProjectView that we will use to get access to a ProjectView for all relevant projects.
+     * @param map
+     * @param graph The graph of the project to initialize. When it is the root project,
+     */
+    private void loadFromIndex(final ProjectView rootView, final SchemaMap map, final ProjectGraph graph) {
+        for (SchemaProject proj : map.getAllProjects()) {
+            ProjectView view = rootView.findProject(proj.getPathGradle());
+            for (SchemaPlatform platform : proj.getAllPlatforms()) {
+                for (SchemaModule module : proj.getAllModules()) {
+                    // create incoming and outgoing configurations.
+                    final String configRoot = PlatformModule.unparse(platform.getName(), module.getName());
+                    String configTransitive = toConfigName(configRoot, "Transitive");
+                    String configIntransitive = toConfigName(configRoot, "Intransitive");
+                    String configOut = toConfigName(configRoot, "Out");
+
+                    // we'll leave the actual setup of these Configuration instances to ArchiveGraph class.
+                    // very many of these configurations may not actually be needed,
+                    // and we can/should check the index to decide whether to skip this work.
+                    // TODO: XapiIndexReader
+                    view.getLogger().trace("{}, creating i/o configurations {}, {} and {}", proj.getPathGradle(), configTransitive, configIntransitive, configOut);
+                    view.getConfigurations().maybeCreate(configTransitive);
+                    view.getConfigurations().maybeCreate(configIntransitive);
+                    view.getConfigurations().maybeCreate(configOut);
+                    view.getSourceSets().maybeCreate(configRoot);
+
+                }
+
+            }
+        }
+
+
     }
 
     private void initializeProject(
@@ -161,6 +219,8 @@ public class XapiParserPlugin implements Plugin<Project> {
 
         }
 
+        // hm.... this dependency processing needs to happen _inside_ the SchemaProject, or a tool adjacent to it
+        // in order for us to use it when evaluating settings.gradle (that, or really wholly on index to find edges).
         dependencies.forEachPair((modKey, dep)->{
             SizedIterable<PlatformConfig> plats;
             if (modKey.getPlatform() == null) {
@@ -171,6 +231,9 @@ public class XapiParserPlugin implements Plugin<Project> {
                 );
             } else {
                 plats = singleItem(schema.findPlatform(modKey.getPlatform()));
+                if (plats.isEmpty()) {
+                    throw new IllegalStateException("No such platform " + modKey.getPlatform() + " found in " + schema);
+                }
                 if (plats.first() == null) {
                     if (strict) {
                         throw new IllegalArgumentException("No platform found named " + modKey.getPlatform() + " in " + schema.getPlatforms() + "\n" +

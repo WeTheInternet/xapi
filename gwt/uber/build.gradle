@@ -83,3 +83,9 @@ s.whenReady {
         }
     }
 }
+tasks.withType(Test).configureEach {
+    Test t ->
+        t.forkEvery(1)
+        t.maxParallelForks(3)
+        t.maxHeapSize("4G")
+}

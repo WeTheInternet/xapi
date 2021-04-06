@@ -9,7 +9,16 @@ import org.gradle.api.tasks.SourceSetContainer;
  */
 public class Java {
     public static SourceSetContainer sources(Project p) {
-        JavaPluginConvention java = p.getConvention().getPlugin(JavaPluginConvention.class);
+        JavaPluginConvention java;
+        try {
+            java = p.getConvention().getPlugin(JavaPluginConvention.class);
+        } catch (IllegalStateException e) {
+            if (!e.getMessage().contains("find any convention")) {
+                throw e;
+            }
+            p.getPlugins().apply("java-base");
+            java = p.getConvention().getPlugin(JavaPluginConvention.class);
+        }
         final SourceSetContainer sourceSets = java.getSourceSets();
         return sourceSets;
     }

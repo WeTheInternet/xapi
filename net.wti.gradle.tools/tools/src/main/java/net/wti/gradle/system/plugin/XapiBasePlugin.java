@@ -5,14 +5,21 @@ import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.spi.GradleServiceFinder;
+import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
 import org.gradle.api.attributes.AttributesSchema;
 import org.gradle.api.plugins.*;
+import xapi.gradle.fu.LazyString;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * This plugin is responsible for making sure basic schema wiring is setup,
@@ -129,6 +136,8 @@ public class XapiBasePlugin implements Plugin<Project> {
             });
         }
 
+        self.whenReady(ready->validateProperties(self));
+
         // Whenever we apply any plugins, we should, as soon as possible, parse our schema.xapi / SchemaMap,
         // so other processes can rely on finding / visiting the SchemaMap to construct project graphs.
         // Unfortunately, the parser we need for that is published with these tools,
@@ -140,6 +149,102 @@ public class XapiBasePlugin implements Plugin<Project> {
                 project.getLogger().warn("Unable to find xapi-parser plugin on classpath");
             }
         }
+
+    }
+
+    private void validateProperties(final ProjectView self) {
+        final String skipProp = "xapiSkipPropValidation";
+        try {
+            if (!"true".equals(self.findProperty(skipProp))) {
+                doValidateProperties(self);
+            }
+        } catch (RuntimeException e) {
+            String oldMessage = e.getMessage();
+            throw new IllegalStateException("Failed gradle property validation; if you wish to suppress this check (not recommended), set " +
+                    skipProp + "=true in file://" + self.getRootProject().getProjectDir() + "/gradle.properties.\nError: " + e.getMessage(), e);
+        }
+    }
+    private void doValidateProperties(final ProjectView self) {
+        // we want to make sure our various properties all agree.
+        // in order to get a group and a version from
+        String projectGroup = self.getGroup();
+        String projectVersion = self.getVersion();
+        Supplier<Properties>[] getProps = new Supplier[1];
+        getProps[0] = () ->{
+            Properties props = new Properties();
+            File propFile;
+            propFile = new File(self.getRootProject().getProjectDir(), "gradle.properties");
+            if (propFile.exists()) {
+                try {
+                    props.load(new FileInputStream(propFile));
+                } catch (IOException e) {
+                    throw new IllegalStateException("Unable to read propFile " + propFile.getAbsolutePath(), e);
+                }
+            }
+            propFile = new File(self.getProjectDir(), "gradle.properties");
+            if (propFile.exists()) {
+                try {
+                    props.load(new FileInputStream(propFile));
+                } catch (IOException e) {
+                    throw new IllegalStateException("Unable to read propFile " + propFile.getAbsolutePath(), e);
+                }
+            }
+            getProps[0] = ()->props;
+            return props;
+        };
+        String propGroupId = self.getGradle().getStartParameter().getProjectProperties().get("xapiGroupId");
+        if (propGroupId == null) {
+            propGroupId = (String)getProps[0].get().get("xapiGroupId");
+        }
+        String propVersion = self.getGradle().getStartParameter().getProjectProperties().get("xapiVersion");
+        if (propVersion == null) {
+            propVersion = (String)getProps[0].get().get("xapiVersion");
+        }
+        Object propProjectGroupId = self.findProperty("xapiGroupId");
+        Object propVersionFile = self.findProperty("xapiVersionFile");
+        Object propProjectVersion = self.findProperty("xapiVersion");
+        if (propVersionFile != null) {
+            // yay, there is a version file! Make this version file the source of truth
+            File versionFile = self.file(String.valueOf(propVersionFile));
+            if (!versionFile.exists()) {
+                versionFile = self.getRootProject().file(String.valueOf(propVersionFile));
+            }
+            if (!versionFile.exists()) {
+                throw new IllegalStateException("Version file " + propVersionFile + " cannot be found by " + self.getDebugPath());
+            }
+            // TODO: actually hook up the xapiVersionFile.  There is a huge mess of specifying xapiVersion and gradle version and schema.xapi version...
+            //  replace all of it with a definitive, single-file source of truth: xapiVersionFile
+        }
+        if (propGroupId == null) {
+            // if there's no xapiGroupId, then make the root project name match group.
+            if (!projectGroup.equals(self.getRootProject().getName())) {
+                throw new IllegalStateException("gradle root project name (" + self.getRootProject().getName() + ") illegally disagrees with gradle-configured group (" + projectGroup + ").\n" +
+                        "To allow these values to differ, please add to file://" + self.getRootProject().getProjectDir() + "/gradle.properties xapiGroupId=" + projectGroup);
+            }
+            if (propProjectGroupId != null) {
+                throw new IllegalStateException("Value of xapiGroupId must be set in root gradle.properties: file://" + self.getRootProject().getProjectDir() + "/gradle.properties not in " + self.getPath() + " or on command line");
+            }
+        } else {
+            if (!projectGroup.equals(propGroupId)) {
+                throw new IllegalStateException("gradle property xapiGroupId (" + propGroupId + ") illegally disagrees with gradle-configured group (" + projectGroup + ") in file://" + self.getProjectDir());
+            }
+            if (!propGroupId.equals(propProjectGroupId)) {
+                throw new IllegalStateException("root gradle.properties value xapiGroupId (" + propGroupId + ") illegally disagrees with project-specific group (" + propProjectGroupId + ") in file://" + self.getProjectDir());
+            }
+        }
+        if (propVersion == null) {
+            if (propProjectVersion != null) {
+                throw new IllegalStateException("Value of xapiVersion must be set in root gradle.properties: file://" + self.getRootProject().getProjectDir() + "/gradle.properties not in " + self.getPath() + " or on command line");
+            }
+        } else {
+            if (!projectVersion.equals(propVersion)) {
+                throw new IllegalStateException("gradle property xapiVersion (" + propVersion + ") illegally disagrees with gradle-configured version (" + projectVersion + ") in file://" + self.getProjectDir());
+            }
+            if (!propVersion.equals(propProjectVersion)) {
+                throw new IllegalStateException("root gradle.properties value xapiVersion (" + propVersion + ") illegally disagrees with project-specific version (" + propProjectVersion + ") in file://" + self.getProjectDir());
+            }
+        }
+
 
     }
 

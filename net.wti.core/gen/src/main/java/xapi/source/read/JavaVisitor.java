@@ -3,6 +3,7 @@ package xapi.source.read;
 
 public class JavaVisitor {
   // There is not a java.lang.reflect.Modifier field for default methods, so we use this unused value instead.
+  // TODO: check above, probably not true any more.
   public static final int MODIFIER_DEFAULT = 0x00010000;
 
   /**

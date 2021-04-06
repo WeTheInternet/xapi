@@ -23,4 +23,8 @@ class Fu implements Jutsu {
   public Type[] getGenericInterfaces(Class<?> c) {
     return c == null ? new Type[0] : c.getInterfaces();
   }
+
+  public StackTraceElement[] currentStack() {
+    return Thread.currentThread().getStackTrace();
+  }
 }

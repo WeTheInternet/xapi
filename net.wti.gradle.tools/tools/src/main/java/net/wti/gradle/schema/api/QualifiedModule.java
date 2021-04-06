@@ -20,6 +20,14 @@ public class QualifiedModule extends PlatformModule {
         this.project = project;
     }
 
+    public static String mangleProjectPath(String path) {
+        if (!path.startsWith(":")) {
+            path = ":" + path;
+        }
+        path = path.replace(':', '_');
+        return path;
+    }
+
     public String getBuild() {
         return build;
     }

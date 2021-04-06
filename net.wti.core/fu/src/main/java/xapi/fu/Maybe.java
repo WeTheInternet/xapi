@@ -11,7 +11,7 @@ import java.util.Optional;
  */
 public interface Maybe <V> extends Rethrowable {
 
-    Maybe NULL = ()->null;
+    Maybe NULL = new ImmutableMaybe(null);
 
     V get();
 
@@ -31,6 +31,11 @@ public interface Maybe <V> extends Rethrowable {
         public V get() {
             return value;
         }
+
+        @Override
+        public String toString() {
+            return "Immutable{" + value + '}';
+        }
     }
 
     class DeferredMaybe<V> implements Maybe<V>, IsImmutable {
@@ -44,6 +49,13 @@ public interface Maybe <V> extends Rethrowable {
         @Override
         public V get() {
             return value.out1();
+        }
+
+        @Override
+        public String toString() {
+            return "DeferredMaybe{" +
+                    "value=" + (IsImmutable.isImmutable(value) ? value.out1() : "<resolve skipped>") +
+                    '}';
         }
     }
 

@@ -18,9 +18,13 @@ class XapiSchemaTest extends AbstractMultiBuildTest<XapiSchemaTest> {
         return "xapi-schema"
     }
 
+    void setup() {
+        setGroup("test")
+    }
+
     private String setupSimpleGwt(String name="gwtP", String plugin='', String rootProject=':', String version="1.0") {
         boolean isRoot = name == rootProject
-
+        String localGroup = rootProject == ':' ? 'testgroup' : rootProject
         Closure<?> configure = {
             def use = plugin ?: defaultPlugin
             buildFile << """
@@ -36,9 +40,13 @@ repositories {
   }
 }
 version = $version
-group = '${rootProject == ':' ? 'testgroup' : rootProject}'
+group = '${localGroup}'
 """
-            propertiesFile << "xapi.home=${topDir}"
+            propertiesFile << """
+xapi.home=${topDir}
+xapiGroupId=$localGroup
+xapiVersion=$version
+"""
             addSource("com.foo.$name", 'Main', """
 package com.foo.$name;
 

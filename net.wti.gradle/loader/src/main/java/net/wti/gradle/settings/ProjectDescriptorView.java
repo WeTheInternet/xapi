@@ -2,6 +2,7 @@ package net.wti.gradle.settings;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.system.InternalProjectCache;
+import net.wti.gradle.schema.api.QualifiedModule;
 import net.wti.gradle.system.service.GradleService;
 import org.gradle.api.Action;
 import org.gradle.api.initialization.ProjectDescriptor;
@@ -14,11 +15,16 @@ import org.gradle.internal.extensibility.DefaultConvention;
 import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
+import xapi.fu.Lazy;
 import xapi.fu.Out1;
+import xapi.util.X_Namespace;
+import xapi.util.X_String;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static net.wti.gradle.system.service.GradleService.buildOnce;
 
@@ -35,6 +41,8 @@ public class ProjectDescriptorView implements MinimalProjectView {
     private final Instantiator instantiator;
     private final String projectPath;
     private boolean evaluated;
+    private Lazy<String> group, version;
+    private Lazy<Properties> props;
 
     public ProjectDescriptorView(Settings settings, ProjectDescriptor descriptor) {
         this(descriptor.getPath(), settings, new LinkedHashMap<>(), descriptor::getProjectDir);
@@ -61,6 +69,36 @@ public class ProjectDescriptorView implements MinimalProjectView {
         this.allProjects.put(projectPath, this);
         evaluated = false;
         whenReady(ready->evaluated=true);
+        this.props = Lazy.deferred1Unsafe(()->{
+            File root = settings.getRootDir();
+            File prop = new File(root, "gradle.properties");
+            Properties result = new Properties();
+            if (prop.exists()) {
+                result.load(new FileInputStream(prop));
+            }
+            return result;
+        });
+        this.group = Lazy.deferred1(()->{
+            String groupId = getGradle().getStartParameter().getProjectProperties().get(X_Namespace.PROPERTY_GROUP_ID);
+            if (X_String.isEmpty(groupId)) {
+                groupId = (String) props.out1().get(X_Namespace.PROPERTY_GROUP_ID);
+                if (X_String.isEmpty(groupId)) {
+                    return settings.getRootProject().getName();
+                }
+            }
+            return groupId;
+        });
+
+        this.version = Lazy.deferred1(()->{
+            String version = getGradle().getStartParameter().getProjectProperties().get(X_Namespace.PROPERTY_VERSION);
+            if (X_String.isEmpty(version)) {
+                version = (String) props.out1().get(X_Namespace.PROPERTY_VERSION);
+                if (X_String.isEmpty(version)) {
+                    return QualifiedModule.UNKNOWN_VALUE;
+                }
+            }
+            return version;
+        });
 
     }
 
@@ -97,6 +135,16 @@ public class ProjectDescriptorView implements MinimalProjectView {
         } else {
             settings.getGradle().settingsEvaluated(ready->action.execute(this));
         }
+    }
+
+    @Override
+    public String getGroup() {
+        return group.out1();
+    }
+
+    @Override
+    public String getVersion() {
+        return version.out1();
     }
 
     @Override

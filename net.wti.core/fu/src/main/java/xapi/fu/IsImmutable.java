@@ -5,6 +5,13 @@ package xapi.fu;
  */
 public interface IsImmutable extends HasMutability {
 
+  static boolean isImmutable(Out1<?> value) {
+      if (value instanceof IsImmutable) {
+        return value.isImmutable();
+      }
+      return false;
+  }
+
   @Override
   default boolean isImmutable() {
     return true;

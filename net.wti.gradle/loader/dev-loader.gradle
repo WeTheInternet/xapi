@@ -57,6 +57,8 @@ xapiSchema.whenReady {
 
     // eagerly realize this so the apiCompile / apiCompileOnly configurations are created eagerly
     xapiSchema.module('main', 'api').tasks.javacTask.get()
+    xapiSchema.module('main', 'spi').tasks.javacTask.get()
+    dependencies.add('spiCompileOnly', dependencies.gradleApi())
     // apiCompileOnly won't exist before we perform (sloppy) eager initialization above.
     dependencies.add('apiCompileOnly', dependencies.gradleApi())
 

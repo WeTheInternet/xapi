@@ -45,6 +45,19 @@ public interface Pointer <T> extends In1<T>, Out1<T>, In1Out1<T, T> {
     return out1();
   }
 
+  default Do borrow(final T value) {
+    final T current = out1();
+
+    return () -> {
+      final T later = out1();
+      if (later == value) {
+        in(current);
+      } else {
+        throw new IllegalStateException("Illegal Pointer.borrow, when we borrowed " + current + " and tried to return value, pointer moved to " + later);
+      }
+    };
+  }
+
   static <T> Pointer <T> pointer() {
     T[] value = X_Fu.array((T)null);
     final In1<T> in = In1.from1(X_Fu::setZeroeth, value);
@@ -156,7 +169,7 @@ public interface Pointer <T> extends In1<T>, Out1<T>, In1Out1<T, T> {
     }
   }
 
-  class PointerImmutable <T> implements Pointer<T> {
+  class PointerImmutable <T> implements Pointer<T>, IsImmutable {
     private final T value;
 
     public PointerImmutable(T value) {

@@ -601,6 +601,9 @@ public class JavaLexer {
    */
   public static TypeDef extractType(final CharSequence chars, int pos)
   {
+    if (chars == null || chars.length() == 0) {
+      return new TypeDef("");
+    }
     int start = pos = eatWhitespace(chars, pos);
     int lastPeriod = -1;
     final int max = chars.length()-1;

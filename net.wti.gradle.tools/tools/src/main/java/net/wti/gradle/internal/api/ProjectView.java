@@ -72,9 +72,7 @@ public interface ProjectView extends MinimalProjectView {
     ProjectView findProject(String named);
     ImmutableAttributesFactory getAttributesFactory();
     PublishingExtension getPublishing();
-    String getGroup();
     String getName();
-    String getVersion();
     PluginContainer getPlugins();
     BuildGraph getBuildGraph();
     FileTree zipTree(Object from);
@@ -206,9 +204,9 @@ public interface ProjectView extends MinimalProjectView {
 
     void ensureEvaluated();
 
+    @Override
     default String getBuildName() {
-        final BuildState owner = ((GradleInternal) getGradle()).getOwner();
-        final BuildIdentifier id = owner.getBuildIdentifier();
-        return id.getName();
+        return MinimalProjectView.super.getBuildName();
     }
+
 }

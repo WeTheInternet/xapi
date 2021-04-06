@@ -1,6 +1,5 @@
 package net.wti.gradle.schema.api;
 
-import net.wti.gradle.require.api.PlatformModule;
 import org.gradle.api.Named;
 import xapi.fu.data.SetLike;
 
@@ -17,7 +16,7 @@ public class SchemaModule implements Named {
     private boolean test;
 
     public SchemaModule(String name, SetLike<String> include, boolean published, boolean test) {
-        this(name, "main".equals(name) ? "$build-$name" : "$build-$module-$name", include, published, test);
+        this(name, "main".equals(name) ? "$name" : "$module-$name", include, published, test);
     }
 
     public SchemaModule(String name, String publishPattern, SetLike<String> include, boolean published, boolean test) {

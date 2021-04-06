@@ -1,8 +1,7 @@
 package xapi.gradle.plugin;
 
-import com.github.javaparser.ParseException;
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.schema.parser.SchemaMetadata;
+import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleMessages;
@@ -20,7 +19,6 @@ import xapi.gradle.task.XapiInit;
 import xapi.gradle.task.XapiPreload;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -75,7 +73,7 @@ public class XapiRootPlugin implements Plugin<Project> {
 
     private void loadSchemas(ProjectView view) {
         SchemaParser parser = ()->view;
-        final SchemaMetadata meta = parser.getSchema();
+        final DefaultSchemaMetadata meta = parser.getSchema();
     }
 
     private void loadSettings() {

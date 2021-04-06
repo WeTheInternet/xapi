@@ -37,8 +37,14 @@ xapiSchema {
 """
 
     def setup() {
+        this.version = "1.0"
+        this.group = "com.consumer"
         withComposite('comp', {
-            propertiesFile << """xapi.home=$topDir"""
+            propertiesFile << """
+xapi.home=$topDir
+xapiGroupId=com.producer
+xapiVersion=1.0
+"""
             withProject(':', {
                 buildFile << """
 $BUILD_HEADER
@@ -55,7 +61,11 @@ version = '1.0'
 
         }) // end composite 'comp'
         withProject(':consumer', {
-            propertiesFile << """xapi.home=$topDir"""
+            propertiesFile << """
+xapi.home=$topDir
+xapiVersion=1.1
+xapiGroupId=com.consumer
+"""
             buildFile << """
 $BUILD_HEADER
 group = 'com.consumer'

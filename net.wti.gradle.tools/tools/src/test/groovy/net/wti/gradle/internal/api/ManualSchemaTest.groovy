@@ -29,11 +29,13 @@ Attribute adapter = Attribute.of('xapi-adapter', Attrs)
     }
 
     def setup() {
+        group = "test"
+        getGroup()
         buildFile << """
 $attributes
 allprojects {
-    group = 'test'
-    version = '1'
+    group = '$group'
+    version = '$version'
     
    dependencies {
        attributesSchema {
@@ -180,5 +182,10 @@ dependencies {
     @Override
     ManualSchemaTest selfSpec() {
         return this
+    }
+
+    @Override
+    String getVersion() {
+        return "1"
     }
 }

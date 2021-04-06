@@ -81,9 +81,9 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
     private void configureSourceSets(JavaPluginConvention pluginConvention, final BuildOutputCleanupRegistry buildOutputCleanupRegistry) {
         Project project = pluginConvention.getProject();
 
-        SourceSet main = pluginConvention.getSourceSets().create(SourceSet.MAIN_SOURCE_SET_NAME);
+        SourceSet main = pluginConvention.getSourceSets().maybeCreate(SourceSet.MAIN_SOURCE_SET_NAME);
 
-        SourceSet test = pluginConvention.getSourceSets().create(SourceSet.TEST_SOURCE_SET_NAME);
+        SourceSet test = pluginConvention.getSourceSets().maybeCreate(SourceSet.TEST_SOURCE_SET_NAME);
         test.setCompileClasspath(project.getLayout().configurableFiles(main.getOutput(), project.getConfigurations().getByName(TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME)));
         test.setRuntimeClasspath(project.getLayout().configurableFiles(test.getOutput(), main.getOutput(), project.getConfigurations().getByName(TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME)));
 

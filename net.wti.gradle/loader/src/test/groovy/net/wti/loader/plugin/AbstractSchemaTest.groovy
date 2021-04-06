@@ -2,7 +2,7 @@ package net.wti.loader.plugin
 
 import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.schema.map.SchemaMap
-import net.wti.gradle.schema.parser.SchemaMetadata
+import net.wti.gradle.schema.parser.DefaultSchemaMetadata
 import net.wti.gradle.schema.parser.SchemaParser
 import net.wti.gradle.settings.ProjectDescriptorView
 import net.wti.gradle.test.AbstractMultiBuildTest
@@ -19,6 +19,7 @@ abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends Abstrac
 
     static final String VERSION = "1.51"
     protected String extraProjects
+    protected List<CharSequence> pluginList
 
     String getTestRepo() {
         return "$rootDir.absolutePath/build/test/repo"
@@ -34,6 +35,9 @@ abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends Abstrac
 
     @Override
     void setup() {
+        version = VERSION
+        group = rootProjectName
+        pluginList = initPlugins()
         initProject = {
             settingsFile.text = """
 buildscript {
@@ -54,7 +58,13 @@ buildscript {
         )
     }
 }
-version = "$VERSION"
+plugins {
+${massagePlugins(pluginList)}
+}
+allprojects {
+    version = "$VERSION"
+    group = "${rootProjectName}"
+}
 """
 
             // create a basic schema.xapi
@@ -87,7 +97,7 @@ version = "$VERSION"
         // the projects below have no source of their own; they are effectively parents of multiple child projects.
         // it will be left to the schema.xapi of these projects to determine whether
         // the child modules are multiPlatform, standalone, or nested virtual
-        virtual: ["gwt", "jre", "demo" ${extraProjects ?: ''}],
+        virtual: ["gwt", "jre", "consumer", "producer" ${extraProjects ?: ''}],
     }
     // declare any external dependencies here,
     // so we can handle pre-emptively syncing jars (and maybe source checkouts) to a local cache,
@@ -126,6 +136,14 @@ tasks.create 'testSchema', {
         }
     }
 
+    protected static String massagePlugins(List<CharSequence> list) {
+    return "    " + list.collect {
+        item ->
+            item.startsWithAny("id ") ? item : item.startsWithAny('"', "'") ?
+                    "id $item" : "id \"$item\""
+        }.join("\n    ")
+    }
+
     String getExtraProjects() {
         return this.@extraProjects ?: ''
     }
@@ -160,7 +178,7 @@ tasks.create 'testSchema', {
         doWork()
         SchemaParser parser = {this} as SchemaParser
         XapiLoaderPlugin plugin = new XapiLoaderPlugin()
-        SchemaMetadata schema = parser.parseSchema(this)
+        DefaultSchemaMetadata schema = parser.parseSchema(this)
         return plugin.buildMap(settings, parser, schema)
     }
 
@@ -195,7 +213,7 @@ public class CommonApi {}
         }
     }
 
-    void addSourceUtil(boolean xapiRequire = false) {
+    void addSourceUtil(boolean xapiRequire = false, boolean extraDeps = true) {
         withProject 'util', {
             it.buildFile << """
 version='$VERSION'
@@ -211,15 +229,15 @@ xapiRequire.project 'common''' : 'xapi-parser'}'
     platforms = [
         <gwt
             requires = {
-                external: "net.wti:gwt-user:3.0"
+                ${extraDeps ? 'external: "net.wti:gwt-user:3.0"' : ""}
             }
         /gwt>
     ]
     modules = [
         <main
             requires = {
-                external: { "tld.ext:art:1.0" : "api" },
-                external: [ "tld.ext:ifact:1.0" ]
+                ${extraDeps ? 'external: { "tld.ext:art:1.0" : "api" },' : ""}
+                ${extraDeps ? 'external: [ "tld.ext:ifact:1.0" ]' : ""}
             }
         /main>,
         <testIntegration
@@ -231,7 +249,7 @@ xapiRequire.project 'common''' : 'xapi-parser'}'
             // nobody consuming testIntegration will inherit requires={ internal: [...] } entries
             requires = { internal : [ "jre", gwt, "android" ] }
         /testIntegration>,
-    ]
+    ]${!extraDeps ? '' : """
     projects = [
         <some-project
             requires = {
@@ -250,6 +268,7 @@ xapiRequire.project 'common''' : 'xapi-parser'}'
             }
         /some-project>
     ]
+"""}
 /xapi-schema>
 """
             }
@@ -260,4 +279,7 @@ class UtilMain extends test.common.api.CommonApi {}
         }
     }
 
+    List<CharSequence> initPlugins() {
+        []
+    }
 }

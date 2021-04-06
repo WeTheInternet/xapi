@@ -36,17 +36,17 @@
 package xapi.dev.source;
 
 import xapi.fu.In1;
+import xapi.util.X_String;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static xapi.dev.source.PatternPrinter.NEW_LINE;
 import static xapi.fu.itr.ArrayIterable.iterate;
+import static xapi.util.X_String.isNotEmptyTrimmed;
 
 public class ImportSection implements CanAddImports {
+
+  private String skipImportRegex;
 
   public static class PackageAwareImports extends ImportSection implements HasPackage {
 
@@ -93,7 +93,11 @@ public class ImportSection implements CanAddImports {
   }
 
   public String addStaticImport(final Class<?> cls, final String importName) {
-    return addStaticImport(cls.getCanonicalName(), importName);
+    //noinspection UnnecessaryLocalVariable
+    final String value = addStaticImport(cls.getCanonicalName(), importName);
+    // hm, would be nice to assert that this method exists on the class, but that would hurt our ability to be transpiled
+    // should have a nice AssertClass.maybeReflect()
+    return value;
   }
 
   public String addStaticImport(final String cls, final String importName) {
@@ -410,10 +414,13 @@ public class ImportSection implements CanAddImports {
         "|" +  // also discard primitives
           "(void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
         + "|extends|super|import|static|[?]"
-        + "|(String)|(Class)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double)|(Iterable))"
+        + "|(String)|(Class)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double)|(Iterable)" +
+           (isNotEmptyTrimmed(skipImportRegex) ? skipImportRegex.startsWith("(") ? skipImportRegex : "(" + skipImportRegex + ")" : "") +
+          ")"
         + "[;]*")) {
       return true;
     }
+
     return skipSingleNames && importName.indexOf('.') == -1;
   }
 
@@ -451,4 +458,13 @@ public class ImportSection implements CanAddImports {
     }
     return val;
   }
+
+  public String getSkipImportRegex() {
+    return skipImportRegex;
+  }
+
+  public void setSkipImportRegex(final String skipImportRegex) {
+    this.skipImportRegex = skipImportRegex;
+  }
+
 }

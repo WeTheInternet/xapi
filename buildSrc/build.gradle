@@ -11,7 +11,7 @@ plugins {
     id 'idea'
 }
 apply plugin: 'xapi-require'
-
+group = "xapi-buildSrc"
 xapiSchema {
     platforms { main }
     archives { main }

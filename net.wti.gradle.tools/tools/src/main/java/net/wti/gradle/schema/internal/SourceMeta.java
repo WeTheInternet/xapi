@@ -63,7 +63,7 @@ public class SourceMeta {
     }
 
     public boolean isRuntime(ArchiveGraph into) {
-        return into.getConfigName().toLowerCase().contains("runtime");
+        return into.getSrcName().toLowerCase().contains("runtime");
     }
 
 }

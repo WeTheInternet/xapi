@@ -36,7 +36,8 @@ xapiSchema {
 """
 
     def setup() {
-
+        group = "com.consumer"
+        version = "1.0"
         withProject(':', {
             buildFile << """
 allprojects {
@@ -51,8 +52,8 @@ allprojects {
         withProject(':producer', {
             buildFile << """
 $BUILD_HEADER
-group = 'com.consumer'
-version = '1.0'
+group = '$group'
+version = '$version'
 apply plugin: 'xapi-require'
 xapiRequire.module('gwt', 'api').configure {
   external 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
@@ -67,7 +68,10 @@ xapiRequire.module('gwt', 'api').configure {
         }) // end project ':producer'
 
         withProject(':consumer', {
-            propertiesFile << """xapi.home=$topDir"""
+            propertiesFile << """xapi.home=$topDir
+xapiGroupId=com.consumer
+xapiVersion=1.1
+"""
             buildFile << """
 $BUILD_HEADER
 group = 'com.consumer'

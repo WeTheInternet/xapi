@@ -16,6 +16,7 @@ import net.wti.gradle.schema.tasks.XapiReport;
 import net.wti.gradle.system.tools.GradleCoerce;
 import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
+import org.gradle.api.UnknownTaskException;
 import org.gradle.api.artifacts.ConfigurationPublications;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Usage;
@@ -233,7 +234,8 @@ public class XapiSchema {
                 });
             });
         }
-        self.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
+//        self.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
+        spg.whenReady(ReadyState.AFTER_CREATED, p->{
             platforms.configureEach(plat -> {
                 plat.getArchives().configureEach(arch -> {
                     final ArchiveGraph archive = self.getProjectGraph()
@@ -306,11 +308,13 @@ public class XapiSchema {
                             &&
                             view.getSchema().getMainPlatformName().equals(platConfig.getName())
                     )) {
-                        // a non main:main test module _should_ have a Test task hooked up!
-                        final TaskProvider<Test> testTask = archGraph.getTasks().getTestTask();
-                        view.getTasks().named(CHECK_TASK_NAME, check->
-                            check.dependsOn(testTask));
-                        testTask.get();
+                        try {
+                            // a non main:main test module _should_ have a Test task hooked up! ...but is not required.
+                            final TaskProvider<Test> testTask = archGraph.getTasks().getTestTask();
+                            view.getTasks().named(CHECK_TASK_NAME, check->
+                                check.dependsOn(testTask));
+                            testTask.get();
+                        } catch (UnknownTaskException ignored) {}
                     }
                 });
             }
@@ -336,7 +340,6 @@ public class XapiSchema {
             exportedRuntime.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
 
             view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
-
 
             exportedApi.variants(variants -> {
                 variants.create("assembled", variant -> {

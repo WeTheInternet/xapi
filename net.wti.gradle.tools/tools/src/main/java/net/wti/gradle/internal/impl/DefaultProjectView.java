@@ -28,6 +28,7 @@ import org.gradle.api.internal.project.ProjectStateInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.PluginContainer;
@@ -237,7 +238,7 @@ public class DefaultProjectView implements ProjectView {
         this.extensions = extensions;
         this.plugins = plugins;
         this.providers = providers;
-        this.logger = logger;
+        this.logger = logger == null ? defaultLogger() : logger;
         this.tasks = tasks;
         this.configurations = configurations;
         this.repositories = repositories;
@@ -265,6 +266,12 @@ public class DefaultProjectView implements ProjectView {
         this.name = lazyProvider(name, true);
         this.version = lazyProvider(version, true);
         this.publishing = lazyProvider(publishing);
+    }
+
+    private Logger defaultLogger() {
+        final Logger log = Logging.getLogger(DefaultProjectView.class);
+        log.warn("Project View {} did not have a logger, using a generic for-class logger", getPath());
+        return log;
     }
 
     @Override
@@ -334,6 +341,9 @@ public class DefaultProjectView implements ProjectView {
 
     @Override
     public ProjectView findProject(String named) {
+        if (named.isEmpty()) {
+            named = ":";
+        }
         if (named.equals(getPath())) {
             return this;
         }
@@ -445,8 +455,11 @@ public class DefaultProjectView implements ProjectView {
 
     @Override
     public String getVersion() {
-        final Object v = version.get();
+        Object v = version.get();
         if ("unspecified".equals(v)) {
+            v = findProperty("xapiVersion");
+        }
+        if (v == null || "".equals(v)) {
             // TODO: get a decent default version
             getLogger().warn("Version accessed but not configured in {} of build {}", getPath(), GradleService.buildId(gradle), new RuntimeException());
             return "0.0.1";
@@ -476,4 +489,5 @@ public class DefaultProjectView implements ProjectView {
             ", version=" + getVersion() +
             '}';
     }
+
 }

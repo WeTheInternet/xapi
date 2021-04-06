@@ -12,8 +12,8 @@ plugins {
     id 'wrapper'
     id 'groovy'
 }
+group = "net.wti.gradle"
 apply plugin: 'xapi-schema'
-
 xapiSchema {
     platforms {
         main

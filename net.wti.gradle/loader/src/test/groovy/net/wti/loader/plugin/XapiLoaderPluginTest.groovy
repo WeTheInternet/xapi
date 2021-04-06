@@ -8,6 +8,7 @@ import net.wti.gradle.test.api.TestProject
 import net.wti.gradle.test.api.TestProjectDir
 import org.gradle.api.Action
 import org.gradle.api.invocation.Gradle
+import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 import xapi.util.X_Namespace
@@ -121,9 +122,9 @@ public interface SpiContract {
         SchemaMap map = parseSchema()
         expect:
         // one root project, five children
-        map.allProjects.size() == 6
-        map.getRootProject().children.size() == 5
-        map.allProjects.collect { it.name }.toSet().containsAll getClass().getSimpleName(), 'common', 'util', 'gwt', 'jre', 'demo'
+        map.allProjects.size() == 7
+        map.getRootProject().children.size() == 6
+        map.allProjects.collect { it.name }.toSet().containsAll getClass().getSimpleName(), 'common', 'util', 'gwt', 'jre', 'consumer', 'producer'
     }
 
     def "A SchemaMap will pick up schema files in any included module"() {
@@ -131,9 +132,62 @@ public interface SpiContract {
         generateSubprojects('jre')
         SchemaMap map = parseSchema()
         expect:
-        map.allProjects.size() == 8
-        map.allProjects.collect { it.name }.toSet().containsAll getClass().getSimpleName(), 'common', 'util', 'gwt', 'jre', 'demo', 'jreMulti', 'jreSingle'
+        map.allProjects.size() == 9
+        map.allProjects.collect { it.name }.toSet().containsAll getClass().getSimpleName(), 'common', 'util', 'gwt', 'jre', 'consumer', 'producer', 'jreMulti', 'jreSingle'
     }
+
+    // TODO: make a multiplatform=true project, and verify that we can hook up dependencies to/through it via schema.xapi
+    //  hm... should really be multiproject=true, and multiplatform simply computed from "is there more than one platform"
+    def "A multiplatform equal true project will have a gradle project hooked up per realized module"() {
+        given:
+        addSourceCommon()
+        addSourceUtil(false, false)
+        BuildResult result = runSucceed(':util:gwt:compileJava')
+        expect:
+        result.task(':util:gwt:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':common:compileApiJava').outcome == TaskOutcome.SUCCESS
+    }
+
+    def "A multiplatform equal true project will receive dependency hookup through modules without sources"() {
+        given:
+        addSourceCommon()
+        addSourceUtil(false, false)
+        withProject ':consumer', {
+            TestProject p ->
+                p.file('schema.xapi') << """<xapi-schema
+    multiplatform = true
+    requires = { project : "producer" }
+/xapi-schema>"""
+        }
+        withProject ':producer', {
+            TestProject p ->
+                p.sourceFile('spi', 'com.prod', 'SpiType') << """package com.prod;
+interface SpiType { }"""
+                p.file('schema.xapi') << """<xapi-schema
+    multiplatform = true
+/xapi-schema>"""
+        }
+        withProject ':util', {
+            TestProject p ->
+                p.addSource("jre", "com.jre", "Cls", """ package com.jre;
+import com.prod.SpiType;
+class Cls implements SpiType {}""")
+                p.file("schema.xapi") << """<xapi-schema
+    platforms = <jre
+        modules = <spi
+            require = {
+                project: { "consumer": "spi" }
+            }
+        /spi>
+    /jre>
+/xapi-schema>"""
+        }
+        BuildResult result = runSucceed(LogLevel.INFO,':util:jre:compileJava')
+        expect:
+        result.task(':util:jre:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':common:api:compileJava').outcome == TaskOutcome.SUCCESS
+    }
+
 
     def "A SchemaMap will collect all external preloads from child schemas"() {
         given:
@@ -157,9 +211,19 @@ public interface SpiContract {
 """)
         SchemaMap map = parseSchema()
         expect:
-        map.allProjects.size() == 8
+        map.allProjects.size() == 9
         map.allPreloads.size() == 2
         map.allPreloads.map({it.name}).contains('gwt')
         map.allPreloads.map({it.name}).contains('util')
+    }
+
+    @Override
+    String getGroup() {
+        return ""
+    }
+
+    @Override
+    String getVersion() {
+        return ""
     }
 }

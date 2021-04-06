@@ -12,6 +12,8 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
+import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.artifacts.result.ResolutionResult;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.ProviderFactory;
@@ -107,8 +109,12 @@ public abstract class AbstractXapiClasspath extends DefaultTask {
 
 
             final Configuration config = view.getConfigurations().maybeCreate(exposed);
-            config.setCanBeResolved(true);
-            config.setCanBeConsumed(true);
+            if (!config.isCanBeResolved()) {
+                config.setCanBeResolved(true);
+            }
+            if (!config.isCanBeConsumed()) {
+                config.setCanBeConsumed(true);
+            }
             config.getIncoming().beforeResolve(dependencies -> {
                 // make sure to add our dependencies just-in-time!
             });
@@ -198,7 +204,9 @@ public abstract class AbstractXapiClasspath extends DefaultTask {
         detachedResolver.finalizeValue();
         Configuration detached = detachedResolver.get();
 
-        LenientConfiguration lenient = detached.getResolvedConfiguration().getLenientConfiguration();
+        final ResolvedConfiguration resolvedConfig = detached.getResolvedConfiguration();
+        resolvedConfig.rethrowFailure();
+        LenientConfiguration lenient = resolvedConfig.getLenientConfiguration();
 
         Map<File, ResolvedArtifact> allResolved = new LinkedHashMap<>();
         for (ResolvedDependency resolved : lenient.getAllModuleDependencies()) {
@@ -288,10 +296,12 @@ public abstract class AbstractXapiClasspath extends DefaultTask {
         return detached;
     }
 
+    @Internal
     public ProjectView getView() {
         return ProjectView.fromProject(getProject());
     }
 
+    @Internal
     public BuildGraph getBuildGraph() {
         return getView().getBuildGraph();
     }

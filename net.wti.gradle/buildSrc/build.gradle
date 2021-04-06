@@ -7,3 +7,4 @@ apply from: "$rootDir.parentFile.parent/gradle/xapi-env.gradle"
 dependencies {
     api "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
 }
+group = "net.wti.gradle"

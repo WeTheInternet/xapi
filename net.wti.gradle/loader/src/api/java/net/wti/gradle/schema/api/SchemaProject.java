@@ -6,10 +6,13 @@ import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.internal.DefaultNamedDomainObjectSet;
 import xapi.fu.In1;
+import xapi.fu.In2;
 import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.data.MultiList;
 import xapi.fu.data.SetLike;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 
 /**
@@ -19,13 +22,14 @@ import xapi.fu.java.X_Jdk;
  */
 public class SchemaProject implements Named, HasPath {
     private final String name;
-    private final SetLike<SchemaProject> children;
+    private final MapLike<String, SchemaProject> children;
     private final NamedDomainObjectSet<SchemaModule> modules;
     private final NamedDomainObjectSet<SchemaPlatform> platforms;
     private final MultiList<PlatformModule, SchemaDependency> dependencies;
-    private final boolean multiplatform, virtual;
+    private boolean multiplatform, virtual;
     private final SchemaProject parent;
     private final MinimalProjectView view;
+    private boolean loaded;
 
     public SchemaProject(
         MinimalProjectView view,
@@ -42,7 +46,7 @@ public class SchemaProject implements Named, HasPath {
         this.parent = parent;
         this.multiplatform = multiplatform;
         this.virtual = virtual;
-        children = X_Jdk.setLinked();
+        children = X_Jdk.mapOrderedInsertion();
         modules = new DefaultNamedDomainObjectSet<>(SchemaModule.class, view.getInstantiator(), view.getDecorator());
         platforms = new DefaultNamedDomainObjectSet<>(SchemaPlatform.class, view.getInstantiator(), view.getDecorator());
         dependencies = X_Jdk.multiListOrderedInsertion();
@@ -56,8 +60,8 @@ public class SchemaProject implements Named, HasPath {
         return name; // for now just return name; we'll wire this up properly when we bother to make it configurable
     }
 
-    public SetLike<SchemaProject> getChildren() {
-        return children;
+    public SizedIterable<SchemaProject> getChildren() {
+        return children.mappedValues();
     }
 
     public boolean isMultiplatform() {
@@ -68,30 +72,36 @@ public class SchemaProject implements Named, HasPath {
         return virtual;
     }
 
-    public void addModule(SchemaModule module) {
+    public SchemaModule addModule(SchemaModule module) {
+        final SchemaModule result;
         if (modules.contains(module)) {
             final SchemaModule existing = modules.getByName(module.getName());
             modules.remove(existing);
+            result = existing.update(module);
             modules.add(existing.update(module));
         } else {
-            modules.add(module);
+            modules.add((result = module));
         }
-        for (SchemaProject child : children) {
+        for (SchemaProject child : children.mappedValues()) {
             child.addModule(module);
         }
+        return result;
     }
 
-    public void addPlatform(SchemaPlatform platform) {
+    public SchemaPlatform addPlatform(SchemaPlatform platform) {
+        SchemaPlatform result;
         if (platforms.contains(platform)) {
             final SchemaPlatform existing = platforms.getByName(platform.getName());
             platforms.remove(platform);
+            result = existing.update(platform);
             platforms.add(existing.update(platform));
         } else {
-            platforms.add(platform);
+            platforms.add((result = platform));
         }
-        for (SchemaProject child : children) {
+        for (SchemaProject child : children.mappedValues()) {
             child.addPlatform(platform);
         }
+        return result;
     }
 
     @Override
@@ -140,7 +150,7 @@ public class SchemaProject implements Named, HasPath {
             "path='" + getPath() + '\'' +
             ", multiplatform=" + multiplatform +
             ", virtual=" + virtual +
-            ", children=[" + children.map(SchemaProject::getName).join(" , ") + "]" +
+            ", children=[" + children.keys().join(" , ") + "]" +
             '}';
     }
 
@@ -176,6 +186,12 @@ public class SchemaProject implements Named, HasPath {
         modules.all(callback::in);
     }
 
+    public void forAllPlatformsAndModules(In2<SchemaPlatform, SchemaModule> callback) {
+        forAllPlatforms(plat -> forAllModules(mod -> callback.in(plat, mod)));
+    }
+
+
+
     public SchemaPlatform getPlatform(String platform) {
         return platforms.getByName(platform);
     }
@@ -210,5 +226,36 @@ public class SchemaProject implements Named, HasPath {
             }
         });
         return result;
+    }
+
+    public boolean hasProject(final String name) {
+        return children.has(name);
+    }
+
+    public SchemaProject getProject(final String name) {
+        return children.get(name);
+    }
+
+    public void addProject(final SchemaProject child) {
+        final SchemaProject result = children.put(child.name, child);
+        if (result != null && result != child) {
+            throw new IllegalArgumentException("Cannot overwrite project " + child.getName() + "; you should instead get + mutate existing children!");
+        }
+    }
+
+    public void setLoaded(final boolean loaded) {
+        this.loaded = loaded;
+    }
+
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    public void setMultiplatform(final boolean multiplatform) {
+        this.multiplatform = multiplatform;
+    }
+
+    public void setVirtual(final boolean virtual) {
+        this.virtual = virtual;
     }
 }

@@ -12,4 +12,19 @@ public interface SchemaIndexer {
 
     Out1<SchemaIndex> index(MinimalProjectView view, String buildName, File rootDir);
 
+    static String getIndexLocation(MinimalProjectView view) {
+        return getIndexLocation(view, SchemaProperties.getInstance());
+    }
+
+    static String getIndexLocation(MinimalProjectView view, SchemaProperties properties) {
+        Object prop = properties.getIndexLocation(view);
+        if (prop == null && view != null) {
+            prop = view.getRootProject().getProjectDir();
+            if (prop != null) {
+                prop = new File((File)prop, "build/index");
+            }
+        }
+        assert prop != null || view == null: view + " has root project with null projectDir";
+        return prop == null ? new File("./build/index").getAbsolutePath() : String.valueOf(prop);
+    }
 }

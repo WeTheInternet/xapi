@@ -46,7 +46,7 @@ public abstract class XapiClasspathTask extends AbstractXapiClasspath {
 
         classpath = getObjects().fileCollection();
         // add the detached configuration we'll use to resolve dependencies to our output classpath FileCollection
-        getView().getProjectGraph().whenReady(ReadyState.BEFORE_FINISHED + 0x40, init -> {
+        getView().getProjectGraph().whenReady(ReadyState.BEFORE_FINISHED - 0x05, init -> {
             // using a callback to give user scripts time to configure us...
             // even if the readystate is well-beyond CREATED, this will defer changes in constructor until after we're called.
             // This gives you time to set things up before we try resolving settings on you

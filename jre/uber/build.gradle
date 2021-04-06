@@ -20,3 +20,8 @@ xapiRequire.main().configure {
 xapiRequire.module('test').project 'xapi-common', 'testTools'
 
 description = 'XApi - Jre uber jar'
+
+tasks.named('test', Test).configure {
+    Test t ->
+        t.maxHeapSize("6G")
+}

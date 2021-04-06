@@ -232,7 +232,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
             self.getLogger().warn("{} is using `Requirable.internal '{}'` instead of `Requirable.project '{}', '{}:{}'` ", self.getPath(), projId, proj, platName, archName);
             graph = bg.getProject(proj);
         }
-        graph.whenReady(ReadyState.BEFORE_FINISHED, ready->{
+        graph.whenReady(ReadyState.BEFORE_FINISHED - 0x20, ready->{
             final PlatformGraph reqPlatform = graph.platform(platName);
             final ArchiveGraph reqModule = reqPlatform.archive(archName);
 

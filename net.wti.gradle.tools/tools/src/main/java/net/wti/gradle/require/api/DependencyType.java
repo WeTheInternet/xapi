@@ -46,6 +46,7 @@ public enum DependencyType implements CharSequence {
      *
      */
     external,
+    // foreign, TODO: an external g:n:v that we reconstituted into a project-level dependency of an included gradle build.
     /**
      * Value not specified, use the default for whatever scope we are declared in (probably project() ).
      */

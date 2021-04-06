@@ -62,6 +62,8 @@ public class SchemaDependency {
     private final DependencyType type;
     private final CharSequence group, name, version;
     private final PlatformModule coords;
+    private Transitivity transitivity;
+    private String extraGnv;
 
     public SchemaDependency(
         DependencyType type,
@@ -87,7 +89,35 @@ public class SchemaDependency {
 
     public String getGNV() {
         String v = getVersion();
-        return getGroup() + ":" + getName() + (QualifiedModule.UNKNOWN_VALUE.equals(v) ? "" : ":" + v);
+        return getGroup() + ":" + getName() +
+                (QualifiedModule.UNKNOWN_VALUE.equals(v) ? "" : ":" + v) +
+                (GradleCoerce.isEmptyString(extraGnv) ? "" : extraGnv.startsWith(":") ? extraGnv : ":" + extraGnv);
+    }
+    public String getPPM(CharSequence defaultProject) {
+        final PlatformModule platMod = getCoords();
+        return getPPM(defaultProject, platMod.getPlatform(), platMod.getModule());
+    }
+    public String getPPM(CharSequence defaultProject, CharSequence defaultPlatform, CharSequence defaultModule) {
+        PlatformModule platMod = getCoords();
+        final String projectName;
+        String name = getName();
+        switch (type) {
+            case internal:
+                platMod = platMod.edit(null, getName());
+            case external:
+                projectName = QualifiedModule.mangleProjectPath(defaultProject.toString());
+                break;
+            case project:
+            case unknown:
+                if (!name.startsWith(":")) {
+                    name = ":" + name;
+                }
+                projectName = QualifiedModule.mangleProjectPath(name);
+                break;
+            default:
+                throw new IllegalArgumentException("Dependency type " + type + " not yet supported by getPPM");
+        }
+        return projectName + ":" + platMod.toStringStrict(defaultPlatform, defaultModule);
     }
 
     // TODO: consider making this a structured object with a name and a transitivity / other options? or just put single item on SchemaDependency itself?
@@ -159,5 +189,21 @@ public class SchemaDependency {
 
     public SchemaDependency withCoords(String plat, String mod) {
         return new SchemaDependency(type, new PlatformModule(plat, mod), group, version, name);
+    }
+
+    public Transitivity getTransitivity() {
+        return transitivity == null ? Transitivity.impl : transitivity;
+    }
+
+    public void setTransitivity(final Transitivity transitivity) {
+        this.transitivity = transitivity;
+    }
+
+    public String getExtraGnv() {
+        return extraGnv;
+    }
+
+    public void setExtraGnv(final String extraGnv) {
+        this.extraGnv = extraGnv;
     }
 }

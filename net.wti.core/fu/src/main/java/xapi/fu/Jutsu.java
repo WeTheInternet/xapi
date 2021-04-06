@@ -121,6 +121,14 @@ interface Jutsu {
     return new Type[0];
   }
 
+  default StackTraceElement[] currentStack() {
+    // This is naive, and necessary for platforms like GWT, where there is no Thread to request a stacktrace.
+    Throwable t = new Throwable();
+    final StackTraceElement[] elements = t.getStackTrace();
+    // chop off the end.
+    return arrayCopy(elements, 1, elements.length - 1);
+  }
+
   default Object newArray(Class<?> type, int size) {
     return Array.newInstance(type, size);
   }

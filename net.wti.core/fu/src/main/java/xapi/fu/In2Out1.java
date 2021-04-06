@@ -136,7 +136,24 @@ public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
     };
   }
 
-  interface In2Out1Unsafe <I1, I2, O> extends In2Out1<I1, I2, O> {
+    default In2Out1<I1, I2, O> spyBefore(In2<I1, I2> spy) {
+      final In2Out1<I1, I2, O> self = this::io;
+      return (i1, i2) -> {
+          spy.in(i1, i2);
+          return self.io(i1, i2);
+      };
+    }
+
+    default In2Out1<I1, I2, O> spyAfter(In3<I1, I2, O> spy) {
+      final In2Out1<I1, I2, O> self = this::io;
+      return (i1, i2) -> {
+          final O result = self.io(i1, i2);
+          spy.in(i1, i2, result);
+          return result;
+      };
+    }
+
+    interface In2Out1Unsafe <I1, I2, O> extends In2Out1<I1, I2, O> {
     O ioUnsafe(I1 i1, I2 i2) throws Throwable;
 
     default O io(I1 i1, I2 i2) {

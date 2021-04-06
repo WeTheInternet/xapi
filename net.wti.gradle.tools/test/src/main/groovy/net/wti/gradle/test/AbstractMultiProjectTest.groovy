@@ -32,6 +32,8 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
     private File rootDir
     private String rootProjectName
+    private String version = "1.0"
+    private String group = "test"
     private boolean initializedSettings
 
     DefaultConvention convention
@@ -122,8 +124,15 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 // from ${getClass().simpleName} ${name ? "($name)" : ''}
 rootProject.name='${getRootProjectName()}'
 """
+            propertiesFile << """
+xapiGroupId=$group
+xapiVersion=$version
+"""
         }
         TestBuild.super.doWork()
+        buildFile << """
+allprojects { group = "$group" }
+"""
     }
 
     String toFlag(LogLevel logLevel) {
@@ -203,4 +212,21 @@ rootProject.name='${getRootProjectName()}'
         action.execute(this)
     }
 
+    @Override
+    String getGroup() {
+        return this.@group ?: rootProjectName
+    }
+
+    void setGroup(String group) {
+        this.@group = group
+    }
+
+    @Override
+    String getVersion() {
+        return this.@version
+    }
+
+    void setVersion(String version) {
+        this.@version = version
+    }
 }

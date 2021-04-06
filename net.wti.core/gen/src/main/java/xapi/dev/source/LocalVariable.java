@@ -40,7 +40,7 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
       enclosing.getImports().tryReserveSimpleName(simple, simple);
     }
     this.methodType = JavaLexer.extractType(simpleType, 0);
-    this.fieldType = this.methodType;
+    this.fieldType = this.methodType.getSimpleName().isEmpty() ? TypeData.NONE : methodType;
   }
 
   @Override
@@ -161,6 +161,14 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
   protected String coerceParens(String expr) {
     final String trimmed = expr.trim();
     return trimmed.endsWith(";") ? expr : trimmed.endsWith(")") ? expr + ";" : expr + "();";
+  }
+
+  public void access(String mthd, Object ... more) {
+    enclosing.patternln("$1." + mthd, name, more);
+  }
+
+  public void accessLns(String mthd, Object ... more) {
+    enclosing.patternlns("$1." + mthd, name, more);
   }
 
   public void invoke(String mthd, Object ... more) {

@@ -100,7 +100,7 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     private final Object source;
 
     public ComposableXapiVisitor(){
-        final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        final StackTraceElement[] trace = X_Fu.currentStack();
         source = new Object() {
             @Override
             public String toString() {
@@ -1064,6 +1064,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return this;
     }
 
+    public ComposableXapiVisitor<Ctx> withUiAttrRecurse(In1<UiAttrExpr> callback) {
+        withUiAttrRecurse(callback.ignore2());
+        return this;
+    }
+
     public ComposableXapiVisitor<Ctx> withUiAttrRecurse(In2<UiAttrExpr, Ctx> callback) {
         putCallback(UiAttrExpr.class, callback.supply1(true));
         return this;
@@ -1123,6 +1128,32 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(JsonContainerExpr.class, callback);
         return this;
     }
+
+    public ComposableXapiVisitor<Ctx> withJsonListRecurse() {
+        return withJsonListOnly(Out1.immutable(true).ignoreIn2());
+    }
+
+    public ComposableXapiVisitor<Ctx> withJsonMapRecurse() {
+        return withJsonListOnly(Out1.immutable(true).ignoreIn2());
+    }
+    public ComposableXapiVisitor<Ctx> withJsonListOnly(In2Out1<JsonContainerExpr, Ctx, Boolean> callback) {
+        putCallback(JsonContainerExpr.class, callback.spyBefore((json, ctx)->{
+            if (!json.isArray()) {
+                throw new IllegalStateException("Expected only [json, array], got map: " + json.toSource());
+            }
+        }));
+        return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withJsonMapOnly(In2Out1<JsonContainerExpr, Ctx, Boolean> callback) {
+        putCallback(JsonContainerExpr.class, callback.spyBefore((json, ctx)->{
+            if (json.isArray()) {
+                throw new IllegalStateException("Expected only {json: map}, got list: " + json.toSource());
+            }
+        }));
+        return this;
+    }
+
     public ComposableXapiVisitor<Ctx> withJsonContainerRecurse(In2<JsonContainerExpr, Ctx> callback) {
         putCallback(JsonContainerExpr.class, callback.supply1(true));
         return this;

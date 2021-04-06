@@ -92,7 +92,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
                 if (!canMutate[0]) {
                     throw new IllegalStateException("Module added to " + view.getPath() + " after publishing finalized: " + module);
                 }
-                project.whenReady(ReadyState.BEFORE_FINISHED, p-> {
+                project.whenReady(ReadyState.AFTER_FINISHED, p-> {
                     canMutate[0] = false;
                     if (shouldSelect(module)) {
                         selectModule(view, lib, xapiPublish, module);
@@ -101,7 +101,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
             });
 
         });
-        project.whenReady(ReadyState.BEFORE_FINISHED + 0x10, p-> {
+        project.whenReady(ReadyState.AFTER_FINISHED + 0x10, p-> {
             finalizeLibrary(view, lib, xapiPublish);
         });
         return xapiPublish;

@@ -28,6 +28,22 @@ public class PlatformModule implements CharSequence {
         this.module = module;
     }
 
+    public static String unparse(PlatformModule platMod) {
+        return unparse(platMod.getPlatform(), platMod.getModule());
+    }
+    public static String unparse(CharSequence platform, CharSequence module) {
+        String plat = platform.toString();
+        String mod = module.toString();
+        if ("main".equals(plat)) {
+            return mod;
+        }
+        if ("main".equals(mod)) {
+            return plat;
+        }
+        return plat + Character.toUpperCase(mod.charAt(0)) +
+                (mod.length() > 1 ? mod.substring(1) : "");
+    }
+
     public static PlatformModule parse(CharSequence platModStr) {
         final String[] bits = platModStr.toString().split(":");
         if (bits.length > 2) {
@@ -92,14 +108,22 @@ public class PlatformModule implements CharSequence {
         return platform == null ? module == null ? defaultModule.toString() : module : platform + ':' + module;
     }
     public String toStringStrict() {
-        return toStringStrict(defaultPlatform, defaultModule);
+        return toStringStrict(null, null);
     }
     public String toStringStrict(CharSequence defaultPlatform, CharSequence defaultModule) {
         return isEmptyString(platform) ? isEmptyString(module) ?
-                defaultPlatform + ":" + defaultModule :
-                defaultPlatform + ":" + module :
+                fixPlat(defaultPlatform) + ":" + fixMod(defaultModule) :
+                fixPlat(defaultPlatform) + ":" + module :
                 isEmptyString(module) ?
-                platform + ':' + defaultModule :
+                platform + ':' + fixMod(defaultModule) :
                 platform + ':' + module;
+    }
+
+    private static CharSequence fixPlat(CharSequence supplied) {
+        return supplied == null || supplied.length() == 0 ? defaultPlatform : supplied;
+    }
+
+    private static CharSequence fixMod(CharSequence supplied) {
+        return supplied == null || supplied.length() == 0 ? defaultModule : supplied;
     }
 }
