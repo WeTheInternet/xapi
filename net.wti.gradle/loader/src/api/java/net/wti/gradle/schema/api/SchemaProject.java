@@ -15,6 +15,8 @@ import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 
+import java.io.File;
+
 /**
  * Abstraction layer over a project descriptor, like <project-name virtual=true multiplatform=false />
  *
@@ -30,6 +32,7 @@ public class SchemaProject implements Named, HasPath {
     private final SchemaProject parent;
     private final MinimalProjectView view;
     private boolean loaded;
+    private String parentGradlePath;
 
     public SchemaProject(
         MinimalProjectView view,
@@ -78,7 +81,7 @@ public class SchemaProject implements Named, HasPath {
             final SchemaModule existing = modules.getByName(module.getName());
             modules.remove(existing);
             result = existing.update(module);
-            modules.add(existing.update(module));
+            modules.add(result);
         } else {
             modules.add((result = module));
         }
@@ -129,6 +132,27 @@ public class SchemaProject implements Named, HasPath {
             path.append(':');
         }
         path.append(getName());
+        return path.toString();
+    }
+
+    public String getPathIndex() {
+        String pathIndex = calcPathIndex();
+        if ("_".equals(pathIndex)) {
+            return "_" + getName();
+        }
+        return pathIndex;
+    }
+
+    private String calcPathIndex() {
+        final String name = getName();
+        if (parent == null) {
+            return "_";
+        }
+        StringBuilder path = new StringBuilder(parent.calcPathIndex());
+        if (path.length() > 1) {
+            path.append("_");
+        }
+        path.append(name);
         return path.toString();
     }
 
@@ -257,5 +281,13 @@ public class SchemaProject implements Named, HasPath {
 
     public void setVirtual(final boolean virtual) {
         this.virtual = virtual;
+    }
+
+    public void setParentGradlePath(final String parentGradlePath) {
+        this.parentGradlePath = parentGradlePath;
+    }
+
+    public String getParentGradlePath() {
+        return parentGradlePath;
     }
 }

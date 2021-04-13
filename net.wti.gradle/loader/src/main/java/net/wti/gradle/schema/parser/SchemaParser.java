@@ -36,6 +36,7 @@ import java.io.UncheckedIOException;
 import java.util.*;
 
 import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static net.wti.gradle.schema.api.QualifiedModule.UNKNOWN_VALUE;
 
 /**
  * Converts schema.xapi files into {@link DefaultSchemaMetadata} classes.
@@ -137,8 +138,10 @@ public interface SchemaParser {
                 }
                 return false;
             })
-            .withUiAttrTerminal(readProjectAttributes())
+            .withUiAttrTerminal(readProjectAttributes(metadata, schema))
             .visit(schema, metadata);
+        // we should consider flushing a work queue here.
+
         schema.addExtra("xapi-schema-meta", metadata);
         return metadata;
     }
@@ -154,16 +157,18 @@ public interface SchemaParser {
                 // the only name we visit is the <opening-element attrName=not-visited /opening-element>
                 metadata.setName(ctr.getName());
             })
-            .withUiAttrTerminal(readProjectAttributes())
+            .withUiAttrTerminal(readProjectAttributes(metadata, schema))
             .visit(schema, metadata);
         schema.addExtra("xapi-schema-meta", metadata);
         return metadata;
     }
 
-    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes() {
+    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes(final DefaultSchemaMetadata metadata, final UiContainerExpr projEl) {
         return (attr, meta)->{
             switch (attr.getNameString()) {
                 case "multiplatform":
+                    metadata.setExplicitMultiplatform("true".equals(attr.getStringExpression(false)));
+                case "parentPath":
                 case "virtual":
                     // ignored, only apply to xapi-schema. Should likely be a static set checked in `default:`
                     break;
@@ -177,7 +182,7 @@ public interface SchemaParser {
                     break;
                 case "projects":
                     // definition of child projects
-                    addProjects(meta, attr.getExpression());
+                    addProjects(meta, attr.getExpression(), metadata);
                     break;
                 case "external":
                     // definition of external dependencies (move to settings.xapi?)
@@ -233,7 +238,34 @@ public interface SchemaParser {
     }
 
     default void insertDependencyRaw(DefaultSchemaMetadata meta, JsonPairExpr pair, PlatformModule platMod) {
-        meta.addDependency(pair, platMod);
+        if (pair.getKeyExpr() instanceof IntegerLiteralExpr) {
+            // requires is in "array form":
+            // requires = [ 'a', 'b' ]
+            // which implies, by default, requires = { project: [ 'a', 'b' ] }
+            // TODO: add optional structure if transitivity / other values are desired.  requires = [ { name: 'a', transitivity: 'api' }, ... ]
+            meta.addDependency(DependencyType.project, platMod, pair);
+        } else {
+            String type = pair.getKeyString();
+            DependencyType t = DependencyType.unknown;
+            String coord = null;
+            for (DependencyType value : DependencyType.values()) {
+                if (type.startsWith(value.name())){
+                    if (value.name().equals(type)) {
+                        t = value;
+                        break;
+                    }
+                    coord = type.substring(value.name().length());
+                    if (coord.startsWith("_")) {
+                        coord = coord.substring(1);
+                    } else if (Character.isUpperCase(coord.charAt(0))) {
+                        coord = Character.toLowerCase(coord.charAt(0)) +
+                                (coord.length() == 1 ? "" : coord.substring(1));
+                    }
+                    break;
+                }
+            }
+            meta.addDependency(t, platMod.edit(null, coord), pair);
+        }
     }
 
     default void addPlatforms(DefaultSchemaMetadata meta, Expression expression) {
@@ -366,7 +398,7 @@ public interface SchemaParser {
         }
 
     }
-    default void addProjects(DefaultSchemaMetadata meta, Expression expression) {
+    default void addProjects(DefaultSchemaMetadata meta, Expression expression, DefaultSchemaMetadata ancestor) {
         final ComposableXapiVisitor<DefaultSchemaMetadata> v = ComposableXapiVisitor.whenMissingIgnore(SchemaParser.class);
         boolean[] multiplatform = {meta.isMultiPlatform()}; // default to multi-platform if this schema is multiplatform
         boolean[] virtual = {false};
@@ -379,11 +411,19 @@ public interface SchemaParser {
             } else {
                 projects = meta.getProjects();
             }
-            if (!module.hasAttribute("multiplatform")) {
-                module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
-            }
             if (!module.hasAttribute("virtual")) {
                 module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
+            }
+            if (meta.isMultiPlatform()) {
+                module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(true));
+            } else if (!module.hasAttribute("multiplatform")) {
+                module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
+            }
+            String rootPath = meta.getRoot().getPath();
+            String myPath = meta.getPath();
+            String parentPath = myPath.replace(rootPath, "");
+            if (X_String.isNotEmpty(parentPath)) {
+                module.addAttribute("parentPath", StringLiteralExpr.stringLiteral(parentPath));
             }
             projects.add(module);
         };
@@ -404,6 +444,8 @@ public interface SchemaParser {
                 }
                 String key = type.getKeyString().toLowerCase();
                 switch (key) {
+                    case "parentPath":
+                        break;
                     case "multiplatform":
                     case "multi":
                         // children are default-multi-platform.
@@ -538,9 +580,11 @@ public interface SchemaParser {
                 localCopy.put(DependencyKey.platformModule, mod);
                 localCopy.put(DependencyKey.category, type);
                 SizedIterable<SchemaDependency> extracted = entry.out2().map(expr ->
-                    extractDependencies(localCopy, expr)
+                    extractDependencies(localCopy, expr, project, mod)
                 ).flatten(In1Out1.identity()).cached();
-                Log.tryLog(SchemaParser.class, this, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
+                Log.loggerFor(SchemaParser.class, this)
+                        .log(SchemaParser.class, LogLevel.INFO, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
+//                        .log(LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
                 for (SchemaDependency dep : extracted) {
                     insertDependencies(project, metadata, mod, dep);
                 }
@@ -556,7 +600,7 @@ public interface SchemaParser {
             .extractNames(expr, this);
     }
 
-    default SizedIterable<SchemaDependency> extractDependencies(DependencyMap<CharSequence> deps, Expression expr) {
+    default SizedIterable<SchemaDependency> extractDependencies(DependencyMap<CharSequence> deps, Expression expr, final SchemaProject project, final PlatformModule mod) {
         ChainBuilder<SchemaDependency> dependencies = Chain.startChain();
         final ComposableXapiVisitor<SchemaParser> vis = ComposableXapiVisitor.onMissingFail(SchemaParser.class);
         expr.accept(vis
@@ -658,12 +702,12 @@ public interface SchemaParser {
                     platMod = PlatformModule.parse(platModStr);
                 }
 
-                CharSequence gId = deps.getOrDefault(DependencyKey.group, QualifiedModule.UNKNOWN_VALUE);
-                CharSequence version = deps.getOrDefault(DependencyKey.version, QualifiedModule.UNKNOWN_VALUE);
+                CharSequence gId = deps.getOrDefault(DependencyKey.group, UNKNOWN_VALUE);
+                CharSequence version = deps.getOrDefault(DependencyKey.version, UNKNOWN_VALUE);
 
                 switch (type) {
                     case internal:
-                        platMod = platMod.edit(null, name);
+                        platMod = platMod.edit(name);
                         break;
                     case external:
                         // extract gId and version from name, reducing name to a simple(r) string
@@ -878,9 +922,31 @@ public interface SchemaParser {
                         });
                 module.getAttribute("include").readIfPresent(insertInclude);
                 module.getAttribute("includes").readIfPresent(insertInclude);
+
             });
 
             final SchemaModule result = insertModule(project, metadata, schemaMod, module);
+//
+//            project.forAllPlatforms(plat -> {
+//                PlatformModule myPlatMod = new PlatformModule(plat.getName(), result.getName());
+//                String platReplace = plat.getReplace();
+//                if (X_String.isNotEmpty(platReplace)) {
+//                    // Need to bind gwt:api to main:api or jre:main to main:main
+//                    PlatformModule intoPlatMod = myPlatMod.edit(plat.getReplace(), null);
+//                    StringLiteralExpr value = new StringLiteralExpr(intoPlatMod.getPlatform() + ":" + intoPlatMod.getModule());
+//                    final JsonPairExpr pair = new JsonPairExpr("internal", value);
+//                    insertDependencyRaw(metadata, pair, myPlatMod);
+//                }
+//                // bind, say, jre:main to jre:api, or main:test to main:main
+//                for (String includes : result.getInclude()) {
+//                    // build an { internal: "dependency" }
+//                    PlatformModule intoPlatMod = myPlatMod.edit(null, includes);
+//                    StringLiteralExpr value = new StringLiteralExpr(intoPlatMod.getPlatform() + ":" + intoPlatMod.getModule());
+//                    final JsonPairExpr pair = new JsonPairExpr("internal", value);
+//                    insertDependencyRaw(metadata, pair, myPlatMod);
+//                }
+//            });
+
             added.add(result);
         }
         // make all required-by-published modules also published.
@@ -969,7 +1035,7 @@ public interface SchemaParser {
 
     default void insertModuleIncludes(SchemaModule module, String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr) {
         // easiest way to construct internal dependency
-        // is to just build some ast.  We resolved down to a string of module name,
+        // is to just build some ast.  We resolved down to a string of module name, includes=expr
         // now, build:
         // requires = { internal : [ expr ] }
         // and send that to insertModule
@@ -980,6 +1046,8 @@ public interface SchemaParser {
         JsonContainerExpr ctr = new JsonContainerExpr(false, Collections.singletonList(synth));
         copy.setExpression(ctr);
         insertModuleRequires(platform, metadata, copy, In1.receiver(module));
+
+        // HMMM... this entire insertion is kinda obviated by a later search through all platforms for each module...
 
     }
     default void insertModuleRequires(String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr, In1<In1<SchemaModule>> moduleSource) {

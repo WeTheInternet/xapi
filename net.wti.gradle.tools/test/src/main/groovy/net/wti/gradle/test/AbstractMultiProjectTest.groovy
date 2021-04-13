@@ -117,7 +117,8 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
     @Override
     void doWork() {
-        if (!initializedSettings) {
+        boolean firstTime = !initializedSettings
+        if (firstTime) {
             initializedSettings = true
             initSettings(settingsFile)
             settingsFile << """
@@ -130,9 +131,11 @@ xapiVersion=$version
 """
         }
         TestBuild.super.doWork()
-        buildFile << """
+        if (firstTime) {
+            buildFile << """
 allprojects { group = "$group" }
 """
+        }
     }
 
     String toFlag(LogLevel logLevel) {

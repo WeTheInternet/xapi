@@ -1,13 +1,9 @@
-package net.wti.gradle.schema.index;
+package net.wti.gradle.schema.spi;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.PlatformModule;
-import net.wti.gradle.schema.api.QualifiedModule;
-import net.wti.gradle.schema.api.SchemaModule;
-import net.wti.gradle.schema.api.SchemaPlatform;
-import net.wti.gradle.schema.map.SchemaMap;
-import net.wti.gradle.schema.spi.SchemaIndexer;
-import net.wti.gradle.schema.spi.SchemaProperties;
+import net.wti.gradle.schema.api.*;
+import org.gradle.util.GFileUtils;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 
@@ -26,13 +22,42 @@ import static net.wti.gradle.schema.api.QualifiedModule.mangleProjectPath;
  * <p>
  * Created by James X. Nelson (James@WeTheInter.net) on 16/03/2021 @ 1:39 a.m..
  */
-public class SchemaIndexReader {
+public class SchemaIndexReader implements SchemaDirs {
 
-    private final SchemaMap map;
+    private final CharSequence version;
     private SchemaProperties properties;
 
-    public boolean isMultiPlatform(final MinimalProjectView view, final String path) {
+    public boolean isMultiPlatform(final MinimalProjectView view, final String path, final PlatformModule coords) {
+        File pathDir = new File(getDirIndex(), "path");
+        File projectDir = new File(pathDir, QualifiedModule.mangleProjectPath(path));
+        if ("_".equals(projectDir.getName())) {
+            projectDir = new File(pathDir, "_" + view.getBuildName());
+        }
+        // if the parent project-wide directory is marked as multiplatform=true, we treat it as multiplatform
+        File multiplatformFile;
+        multiplatformFile = new File(projectDir, "multiplatform");
+        if (multiplatformFile.exists() && "true".equals(GFileUtils.readFile(multiplatformFile).trim())) {
+            return true;
+        }
+        // also allow the modules themselves to specify "I am multiplatform"
+        final String key = PlatformModule.unparse(coords);
+        File moduleDir = new File(projectDir, key);
+        multiplatformFile = new File(moduleDir, "multiplatform");
+        if (multiplatformFile.exists() && "true".equals(GFileUtils.readFile(multiplatformFile).trim())) {
+            return true;
+        }
         return false;
+    }
+
+    public boolean dependencyExists(final SchemaDependency dependency, final SchemaProject project, final SchemaPlatform plat, final SchemaModule mod) {
+        final File dir = calcDependencyProjectDir(dependency, project, plat, mod);
+        final File live = new File(dir, "live");
+        return live.exists() && !"0".equals(GFileUtils.readFile(live, "utf-8"));
+    }
+
+    @Override
+    public File getDirIndex() {
+        return new File(indexDir);
     }
 
     public static class IndexResult implements Iterable<File> {
@@ -61,14 +86,14 @@ public class SchemaIndexReader {
     private final String indexDir;
     private final MapLike<String, IndexResult> indexResults;
 
-    public SchemaIndexReader(SchemaProperties props, MinimalProjectView view, SchemaMap map) {
+    public SchemaIndexReader(SchemaProperties props, MinimalProjectView view, CharSequence version) {
         // consider gradle properties in addition to env vars and sys props.
-        this(props == null || props == SchemaProperties.getInstance() ? SchemaIndexer.getIndexLocation(view) : props.getIndexLocation(view), map);
+        this(props == null || props == SchemaProperties.getInstance() ? SchemaIndex.getIndexLocation(view) : props.getIndexLocation(view), version);
         setProperties(props);
     }
 
-    public SchemaIndexReader(final String indexDir, final SchemaMap map) {
-        this.map = map;
+    public SchemaIndexReader(final String indexDir, final CharSequence version) {
+        this.version = version;
         this.indexDir = indexDir;
         this.indexResults = X_Jdk.mapHashConcurrent();
     }
@@ -81,10 +106,15 @@ public class SchemaIndexReader {
         File pathDir = new File(indexDir, "path");
         File projectDir = new File(pathDir, projectPath);
         final String platMod = PlatformModule.unparse(platform.getName(), module.getName());
-        File moduleDir = new File(projectDir, platMod);
+        File moduleDir;
         moduleDir = new File(projectDir, platMod);
         // hm... we may want to get more picky, like "check for sources file", "check for explicit 'create this' flag", etc.
-        return moduleDir.isDirectory() && Objects.requireNonNull(moduleDir.list()).length > 0;
+//        return moduleDir.isDirectory() && Objects.requireNonNull(moduleDir.list()).length > 0;
+        File liveFile = new File(moduleDir, "live");
+        if (liveFile.exists() && !"0".equals(GFileUtils.readFile(liveFile, "utf-8"))) {
+            return true;
+        }
+        return false;
     }
 
     public IndexResult getEntries(MinimalProjectView view, String projectName, SchemaPlatform platform, SchemaModule module) {
@@ -99,7 +129,7 @@ public class SchemaIndexReader {
         final String namePattern = module.getPublishPattern();
         final String group = properties.resolvePattern(groupPattern, view.getBuildName(), projectName, view.getGroup(), view.getVersion(), platform.getName(), module.getName());
         final String name = properties.resolvePattern(namePattern, view.getBuildName(), projectName, view.getGroup(), view.getVersion(), platform.getName(), module.getName());
-        final String version = map.getVersion();
+        final String version = this.version.toString();
         final List<File> files = new ArrayList<>();
 
         File coord = new File(indexRoot, "coord");

@@ -35,8 +35,8 @@ public interface SchemaCallbacks extends Serializable {
 
     void perProject(In1<SchemaProject> callback);
     @DoNotOverride("unless you also override perProject and all other forProject methods")
-    default void forProject(In1Out1<CharSequence, Boolean> key, In1<SchemaProject> callback) {
-        perProject(callback.filteredMapped(HasPath::getPath, key).ignoreOutput());
+    default void forProject(In1Out1<CharSequence, Boolean> filter, In1<SchemaProject> callback) {
+        perProject(callback.filteredMapped(HasPath::getPath, filter).ignoreOutput());
     }
 
     @DoNotOverride("unless you also override perProject and all other forProject methods")

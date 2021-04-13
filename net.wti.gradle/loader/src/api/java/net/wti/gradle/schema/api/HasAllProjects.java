@@ -1,5 +1,6 @@
 package net.wti.gradle.schema.api;
 
+import net.wti.gradle.api.MinimalProjectView;
 import xapi.fu.data.SetLike;
 
 /**
@@ -7,6 +8,17 @@ import xapi.fu.data.SetLike;
  */
 public interface HasAllProjects {
 
+    SchemaCallbacks getCallbacks();
+
+    default void flushWork() {
+        getCallbacks().flushCallbacks(this);
+    }
+
     SetLike<SchemaProject> getAllProjects();
 
+    String getGroup();
+
+    String getVersion();
+
+    MinimalProjectView getView();
 }

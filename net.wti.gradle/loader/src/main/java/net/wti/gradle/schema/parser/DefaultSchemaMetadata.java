@@ -121,6 +121,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     private String version;
     private ListLike<UiContainerExpr> platforms, modules, external, projects;
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
+    private Boolean explicitMultiplatform;
 
     public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile) {
         this.parent = parent;
@@ -271,8 +272,15 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     }
 
     public boolean isMultiPlatform() {
-        // LATER: take into account parent schemas + platform disablement properties
+        // LATER: take into account parent schemas + platform disablement properties (getAvailablePlatforms() would do it)
+        if (Boolean.TRUE.equals(explicitMultiplatform)) {
+            return true;
+        }
         return platforms != null && platforms.isNotEmpty();
+    }
+
+    public void setExplicitMultiplatform(Boolean explicit) {
+        this.explicitMultiplatform = explicit;
     }
 
     @Override
@@ -305,9 +313,10 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
 
     public void addDependency(DependencyType type, PlatformModule into, JsonPairExpr from) {
         Log.firstLog(into, this).log(DefaultSchemaMetadata.class,
-            lazyToString(this::getPath), "adding dependency ", type, " into ", into + " : " +
+            lazyToString(this::getPath), "adding dependency ", type, " into ", into, " : ",
                         lazyToString(from::toSource).map(s->new LazyString(s.toString().replace("\n", " ")))
         );
+
         // hm... we should just be storing ast for the requires= of a top-level xapi-schema.
         // all the other requires= elements will also be stored in other ast nodes, and visited as appropriate by SchemaParser.
         switch (type) {
@@ -337,35 +346,8 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         return parent;
     }
 
-    public void addDependency(JsonPairExpr pair, PlatformModule platMod) {
-        if (pair.getKeyExpr() instanceof IntegerLiteralExpr) {
-            // requires is in "array form":
-            // requires = [ 'a', 'b' ]
-            // which implies, by default, requires = { project: [ 'a', 'b' ] }
-            // TODO: add optional structure if transitivity / other values are desired.  requires = [ { name: 'a', transitivity: 'api' }, ... ]
-            addDependency(DependencyType.project, platMod, pair);
-        } else {
-            String type = pair.getKeyString();
-            DependencyType t = DependencyType.unknown;
-            String coord = null;
-            for (DependencyType value : DependencyType.values()) {
-                if (type.startsWith(value.name())){
-                    if (value.name().equals(type)) {
-                        t = value;
-                        break;
-                    }
-                    coord = type.substring(value.name().length());
-                    if (coord.startsWith("_")) {
-                        coord = coord.substring(1);
-                    } else if (Character.isUpperCase(coord.charAt(0))) {
-                        coord = Character.toLowerCase(coord.charAt(0)) +
-                            (coord.length() == 1 ? "" : coord.substring(1));
-                    }
-                    break;
-                }
-            }
-            addDependency(t, platMod.edit(null, coord), pair);
-        }
+    public final DefaultSchemaMetadata getRoot() {
+        return parent == null ? this : parent.getRoot();
     }
 
     public String getPath() {

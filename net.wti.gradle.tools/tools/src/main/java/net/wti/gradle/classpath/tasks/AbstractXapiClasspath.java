@@ -75,7 +75,7 @@ public abstract class AbstractXapiClasspath extends DefaultTask {
         }
         getBuildGraph().whenReady(ReadyState.BEFORE_CREATED + 0x40, i->{
             if (resolve.get()) {
-                if (trap[0]) {
+                if (trap[0] && !getState().isConfigurable()) {
                     throw new GradleException("Requested task " + getPath() + " to resolve dependencies, but this task " +
                             "was not resolved until the execution phase, when it is too late to add more task dependencies.\n" +
                             "To resolve this issue, eagerly resolve project('" + getProject().getPath() + "').tasks.named('" + getName() + "')");

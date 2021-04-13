@@ -92,12 +92,12 @@ allprojects {
         ],
         // the projects below all have gwt, jre and other platforms
         multiPlatform: [
-            "util"
+            "util", "consumer", "producer" ${extraProjects ?: ''}
         ],
         // the projects below have no source of their own; they are effectively parents of multiple child projects.
         // it will be left to the schema.xapi of these projects to determine whether
         // the child modules are multiPlatform, standalone, or nested virtual
-        virtual: ["gwt", "jre", "consumer", "producer" ${extraProjects ?: ''}],
+        virtual: ["gwt", "jre" ],
     }
     // declare any external dependencies here,
     // so we can handle pre-emptively syncing jars (and maybe source checkouts) to a local cache,
@@ -200,11 +200,11 @@ tasks.create 'testSchema', {
 """
     }
 
-    void addSourceCommon() {
+    void addSourceCommon(boolean withParser = true) {
         withProject'common', {
             it.buildFile << """
-version='$VERSION'
-apply plugin: 'xapi-parser'
+version='$VERSION'${withParser ? """
+apply plugin: 'xapi-parser'""" : ''}
 """
             it.addSource 'api', 'test.common.api', 'CommonApi', '''
 package test.common.api;
@@ -213,12 +213,12 @@ public class CommonApi {}
         }
     }
 
-    void addSourceUtil(boolean xapiRequire = false, boolean extraDeps = true) {
+    void addSourceUtil(boolean xapiRequire = false, boolean extraDeps = true, boolean noPlugins = false) {
         withProject 'util', {
             it.buildFile << """
 version='$VERSION'
 apply plugin: '${xapiRequire ? '''xapi-require'
-xapiRequire.project 'common''' : 'xapi-parser'}'
+xapiRequire.project 'common''' : noPlugins ? 'base' : 'xapi-parser'}'
 """
             if (!xapiRequire) {
                 // create a util/schema.xapi which dependsOn common...

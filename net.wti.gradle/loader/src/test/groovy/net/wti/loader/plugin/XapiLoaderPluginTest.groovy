@@ -7,6 +7,7 @@ import net.wti.gradle.test.api.IncludedTestBuild
 import net.wti.gradle.test.api.TestProject
 import net.wti.gradle.test.api.TestProjectDir
 import org.gradle.api.Action
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
@@ -27,6 +28,10 @@ class XapiLoaderPluginTest extends AbstractSchemaTest<XapiLoaderPluginTest> impl
         given:
         addSourceCommon()
         addSourceUtil(false)
+        withProject('util') {
+            TestProject tp ->
+                tp.buildFile << "net.wti.gradle.internal.api.ProjectView.fromProject(project).getSchema()"
+        }
 
         when:
         BuildResult res = runSucceed(
@@ -98,6 +103,9 @@ public interface SpiContract {
   void doStuff(int value);
 }
 """
+                common.file('schema.xapi') << """
+<xapi-schema multiplatform=true /xapi-schema>
+"""
         }
 
         when:
@@ -142,36 +150,42 @@ public interface SpiContract {
         given:
         addSourceCommon()
         addSourceUtil(false, false)
-        BuildResult result = runSucceed(':util:gwt:compileJava')
+        BuildResult result = runSucceed(':util:util-gwt:compileJava')
         expect:
-        result.task(':util:gwt:compileJava').outcome == TaskOutcome.SUCCESS
-        result.task(':common:compileApiJava').outcome == TaskOutcome.SUCCESS
+        result.task(':util:util-gwt:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':common:common-api:compileJava').outcome == TaskOutcome.SUCCESS
     }
 
     def "A multiplatform equal true project will receive dependency hookup through modules without sources"() {
         given:
-        addSourceCommon()
-        addSourceUtil(false, false)
+        addSourceCommon(false)
+        addSourceUtil(false, false, true)
         withProject ':consumer', {
             TestProject p ->
                 p.file('schema.xapi') << """<xapi-schema
     multiplatform = true
     requires = { project : "producer" }
 /xapi-schema>"""
+                p.sourceFile('spi', 'com.prody', 'SpiType') << """package com.prody;
+public interface SpiType { }"""
+
         }
         withProject ':producer', {
             TestProject p ->
                 p.sourceFile('spi', 'com.prod', 'SpiType') << """package com.prod;
-interface SpiType { }"""
+public interface SpiType { }"""
                 p.file('schema.xapi') << """<xapi-schema
     multiplatform = true
 /xapi-schema>"""
         }
         withProject ':util', {
             TestProject p ->
+                p.addSource("jreSpi", "com.jre.spi", "Cls", """ package com.jre.spi;
+//import com.prod.SpiType;
+public class Cls  {}""")
                 p.addSource("jre", "com.jre", "Cls", """ package com.jre;
 import com.prod.SpiType;
-class Cls implements SpiType {}""")
+public class Cls implements SpiType {}""")
                 p.file("schema.xapi") << """<xapi-schema
     platforms = <jre
         modules = <spi
@@ -181,11 +195,26 @@ class Cls implements SpiType {}""")
         /spi>
     /jre>
 /xapi-schema>"""
+                p.file('src/gradle/jre', 'body') << """
+tasks.register('debugReport') {
+    doLast {
+        println "Printing some configurations"
+        println sourceSets.main.compileClasspath.asPath
+        println configurations.compile
+        println configurations.compile.dependencies
+        println configurations.compile.allDependencies
+    }
+}
+"""
         }
-        BuildResult result = runSucceed(LogLevel.INFO,':util:jre:compileJava')
+        BuildResult result
+        result = runSucceed(LogLevel.INFO, ':util:util-jre:compileJava',
+                ':util:util-jre:debugReport',
+                '--continue')
         expect:
-        result.task(':util:jre:compileJava').outcome == TaskOutcome.SUCCESS
-        result.task(':common:api:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':util:util-jre:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':producer:producer-spi:compileJava').outcome == TaskOutcome.SUCCESS
+        result.task(':consumer:consumer-spi:compileJava').outcome == TaskOutcome.SUCCESS
     }
 
 

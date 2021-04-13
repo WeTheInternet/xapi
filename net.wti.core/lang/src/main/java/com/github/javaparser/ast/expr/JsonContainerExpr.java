@@ -7,6 +7,7 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.fu.Maybe;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SingletonIterator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +24,10 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
 
   private List<JsonPairExpr> pairs;
   private boolean isArray;
+
+  public JsonContainerExpr(Expression expr) {
+    this(SingletonIterator.singleItem(expr));
+  }
 
   public JsonContainerExpr(
       Iterable<Expression> exprs

@@ -8,28 +8,30 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
-import net.wti.gradle.schema.index.SchemaIndexerImpl;
+import net.wti.gradle.schema.spi.SchemaIndexReader;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.map.*;
 import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.api.SchemaModule;
 import net.wti.gradle.schema.api.SchemaProject;
-import net.wti.gradle.schema.spi.SchemaIndexer;
+import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.system.plugin.XapiBasePlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.plugins.internal.JavaPluginsHelper;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.compile.JavaCompile;
 import xapi.fu.Maybe;
-import xapi.fu.data.MultiList;
 import xapi.fu.itr.MappedIterable;
-import xapi.fu.itr.SizedIterable;
-import xapi.util.X_Namespace;
-import xapi.util.X_String;
+import xapi.gradle.fu.LazyString;
 
 import java.io.File;
 
 import static net.wti.gradle.internal.require.api.ArchiveGraph.toConfigName;
-import static xapi.fu.itr.SingletonIterator.singleItem;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-09 @ 3:13 a.m..
@@ -43,7 +45,9 @@ public class XapiParserPlugin implements Plugin<Project> {
         if (proj != proj.getRootProject()) {
             // we _always_ want to make the very first xapi-parser plugin an invocation on root project.
             // This ensures consistent timing w.r.t. when build graph callbacks are invoked.
-            proj.getRootProject().getPlugins().apply("xapi-parser");
+            final PluginContainer rootPlugins = proj.getRootProject().getPlugins();
+            rootPlugins.apply("base");
+            rootPlugins.apply("xapi-parser");
         }
         proj.getLogger().info("Setting up xapi parser plugin for {}", proj.getPath());
         // always eagerly initialize build graph
@@ -120,11 +124,11 @@ public class XapiParserPlugin implements Plugin<Project> {
         });
 
         projectGraph.whenReady(ReadyState.BEFORE_CREATED, i->{
-            map.getCallbacks().flushCallbacks(map);
+            map.flushWork();
         });
 
         projectGraph.whenReady(ReadyState.EXECUTE - 1, i->{
-            map.getCallbacks().flushCallbacks(map);
+            map.flushWork();
         });
 
         proj.getGradle().buildFinished(result -> {
@@ -156,29 +160,63 @@ public class XapiParserPlugin implements Plugin<Project> {
      * @param graph The graph of the project to initialize. When it is the root project,
      */
     private void loadFromIndex(final ProjectView rootView, final SchemaMap map, final ProjectGraph graph) {
+        final SchemaProperties props = SchemaProperties.getInstance();
+        SchemaIndexReader reader = new SchemaIndexReader(props, rootView, new LazyString(map::getVersion));
+
         for (SchemaProject proj : map.getAllProjects()) {
             ProjectView view = rootView.findProject(proj.getPathGradle());
-            for (SchemaPlatform platform : proj.getAllPlatforms()) {
-                for (SchemaModule module : proj.getAllModules()) {
-                    // create incoming and outgoing configurations.
-                    final String configRoot = PlatformModule.unparse(platform.getName(), module.getName());
-                    String configTransitive = toConfigName(configRoot, "Transitive");
-                    String configIntransitive = toConfigName(configRoot, "Intransitive");
-                    String configOut = toConfigName(configRoot, "Out");
+            if (view == null) {
+                throw new IllegalStateException("No view found for " + proj.getPathGradle());
+            }
+            final ProjectGraph viewPg = view.getProjectGraph();
+            viewPg.whenReady(ReadyState.AFTER_CREATED, r->{
+                for (SchemaPlatform platform : proj.getAllPlatforms()) {
+                    for (SchemaModule module : proj.getAllModules()) {
 
-                    // we'll leave the actual setup of these Configuration instances to ArchiveGraph class.
-                    // very many of these configurations may not actually be needed,
-                    // and we can/should check the index to decide whether to skip this work.
-                    // TODO: XapiIndexReader
-                    view.getLogger().trace("{}, creating i/o configurations {}, {} and {}", proj.getPathGradle(), configTransitive, configIntransitive, configOut);
-                    view.getConfigurations().maybeCreate(configTransitive);
-                    view.getConfigurations().maybeCreate(configIntransitive);
-                    view.getConfigurations().maybeCreate(configOut);
-                    view.getSourceSets().maybeCreate(configRoot);
+                        if (reader.hasEntries(rootView, proj.getPathIndex(), platform, module)) {
+                            // create incoming and outgoing configurations.
+                            final String configRoot = PlatformModule.unparse(platform.getName(), module.getName());
+                            String configTransitive = toConfigName(configRoot, "Transitive");
+                            String configIntransitive = toConfigName(configRoot, "Intransitive");
+                            String configOut = toConfigName(configRoot, "Out");
+                            String configExportCompile = toConfigName(configRoot, "ExportCompile");
+                            String configExportRuntime = toConfigName(configRoot, "ExportRuntime");
+
+
+                            final Logger log = view.getLogger();
+                            if (log != null) {
+                                log.trace("{}, creating i/o configurations {}, {} and {}", proj.getPathGradle(), configTransitive, configIntransitive, configOut);
+                            }
+
+                            final Configuration transitive = view.getConfigurations().maybeCreate(configTransitive);
+                            //                    transitive.setCanBeResolved(false);
+                            //                    transitive.setCanBeConsumed(false);
+                            final Configuration intransitive = view.getConfigurations().maybeCreate(configIntransitive);
+                            //                    intransitive.setCanBeResolved(false);
+                            //                    intransitive.setCanBeConsumed(false);
+
+                            final Configuration out = view.getConfigurations().maybeCreate(configOut);
+                            //                    out.setCanBeResolved(false);
+                            //                    // the "out" configuration is for anyone
+                            //                    out.setCanBeConsumed(true);
+
+                            final SourceSet srcSet = view.getSourceSets().maybeCreate(configRoot);
+//                            final Configuration exportCompile = view.getConfigurations().maybeCreate(configExportCompile);
+//                            final Configuration exportRuntime = view.getConfigurations().maybeCreate(configExportRuntime);
+//                            final JavaCompile javac = view.getTasks().maybeCreate(srcSet.getCompileJavaTaskName(), JavaCompile.class);
+//                            javac.getSource().plus(srcSet.getAllJava());
+//                            javac.getClasspath().plus(srcSet.getCompileClasspath());
+//                            JavaPluginsHelper.registerClassesDirVariant(view.getTasks().named(srcSet.getCompileJavaTaskName(), JavaCompile.class), view.getObjects(), exportRuntime);
+//                            exportRuntime.setCanBeConsumed(true);
+                            //                    final Provider<? extends AbstractCompile> compile;
+                            //                    JavaPluginsHelper.registerClassesDirVariant(compile, view.getObjects(), out);
+
+                        }
+
+                    }
 
                 }
-
-            }
+            });
         }
 
 
@@ -192,7 +230,6 @@ public class XapiParserPlugin implements Plugin<Project> {
         final ProjectView view = ProjectView.fromProject(gradleProject);
         final MappedIterable<? extends SchemaPlatform> platforms = schemaProject.getAllPlatforms();
         final MappedIterable<? extends SchemaModule> modules = schemaProject.getAllModules();
-        final MultiList<PlatformModule, SchemaDependency> dependencies = schemaProject.getDependencies();
         final XapiSchema schema = view.getSchema();
 
         for (SchemaPlatform schemaPlatform : platforms) {
@@ -219,55 +256,67 @@ public class XapiParserPlugin implements Plugin<Project> {
 
         }
 
-        // hm.... this dependency processing needs to happen _inside_ the SchemaProject, or a tool adjacent to it
-        // in order for us to use it when evaluating settings.gradle (that, or really wholly on index to find edges).
-        dependencies.forEachPair((modKey, dep)->{
-            SizedIterable<PlatformConfig> plats;
-            if (modKey.getPlatform() == null) {
-                // null means "for all platforms"
-                plats = SizedIterable.of(
-                    schema.getPlatforms().size(),
-                    schema.getPlatforms()
-                );
-            } else {
-                plats = singleItem(schema.findPlatform(modKey.getPlatform()));
-                if (plats.isEmpty()) {
-                    throw new IllegalStateException("No such platform " + modKey.getPlatform() + " found in " + schema);
-                }
-                if (plats.first() == null) {
-                    if (strict) {
-                        throw new IllegalArgumentException("No platform found named " + modKey.getPlatform() + " in " + schema.getPlatforms() + "\n" +
-                            "to prevent this warning, set gradle property -Pxapi.strict=false");
-                    }
-                    plats = singleItem(schema.getMainPlatform());
-                }
-            }
-            for (PlatformConfig plat : plats) {
-                SizedIterable<ArchiveConfig> mods;
-                if (modKey.getModule() == null) {
-                    // null means "for all modules"
-                    mods = SizedIterable.of(
-                        plat.getArchives().size(),
-                        plat.getArchives()
-                    );
-                } else {
-                    mods = singleItem(plat.findArchive(modKey.getModule()));
-                    if (mods.first() == null) {
-                        if (strict) {
-                            throw new IllegalArgumentException("No module found named " + modKey.getPlatform() + ":" + modKey.getModule() + " in " + schema.getPlatforms() + "\n" +
-                                "to prevent this warning, set gradle property -Pxapi.strict=false");
-                        }
-                        mods = mods.map(nul-> plat.getMainModule());
-                    }
-                }
-                for (ArchiveConfig mod : mods) {
-                    // alright!  Add a Dependency for the given platform:module pair.
-                    addDependency(view, mod, map, schemaProject, dep);
+        for (PlatformConfig platform : schema.getPlatforms()) {
+            for (ArchiveConfig module : platform.getArchives()) {
+                final SchemaPlatform plat = schemaProject.getPlatform(platform.getName());
+                final SchemaModule mod = schemaProject.getModule(module.getName());
+                final PlatformModule platMod = new PlatformModule(plat.getName(), mod.getName());
+                for (SchemaDependency dep : schemaProject.getDependenciesOf(plat, mod)) {
+                    dep = dep.rebase(platMod);
+                    addDependency(view, module, map, schemaProject, dep);
                 }
 
             }
-        });
+        }
 
+//        // hm.... this dependency processing needs to happen _inside_ the SchemaProject, or a tool adjacent to it
+//        // in order for us to use it when evaluating settings.gradle (that, or really wholly on index to find edges).
+//        dependencies.forEachPair((modKey, dep)->{
+//            SizedIterable<PlatformConfig> plats;
+//            if (modKey.getPlatform() == null) {
+//                // null means "for all platforms"
+//                plats = SizedIterable.of(
+//                    schema.getPlatforms().size(),
+//                    schema.getPlatforms()
+//                );
+//            } else {
+//                plats = singleItem(schema.findPlatform(modKey.getPlatform()));
+//                if (plats.isEmpty()) {
+//                    throw new IllegalStateException("No such platform " + modKey.getPlatform() + " found in " + schema);
+//                }
+//                if (plats.first() == null) {
+//                    if (strict) {
+//                        throw new IllegalArgumentException("No platform found named " + modKey.getPlatform() + " in " + schema.getPlatforms() + "\n" +
+//                            "to prevent this warning, set gradle property -Pxapi.strict=false");
+//                    }
+//                    plats = singleItem(schema.getMainPlatform());
+//                }
+//            }
+//            for (PlatformConfig plat : plats) {
+//                SizedIterable<ArchiveConfig> mods;
+//                if (modKey.getModule() == null) {
+//                    // null means "for all modules"
+//                    mods = SizedIterable.of(
+//                        plat.getArchives().size(),
+//                        plat.getArchives()
+//                    );
+//                } else {
+//                    mods = singleItem(plat.findArchive(modKey.getModule()));
+//                    if (mods.first() == null) {
+//                        if (strict) {
+//                            throw new IllegalArgumentException("No module found named " + modKey.getPlatform() + ":" + modKey.getModule() + " in " + schema.getPlatforms() + "\n" +
+//                                "to prevent this warning, set gradle property -Pxapi.strict=false");
+//                        }
+//                        mods = mods.map(nul-> plat.getMainModule());
+//                    }
+//                }
+//                for (ArchiveConfig mod : mods) {
+//                    // alright!  Add a Dependency for the given platform:module pair.
+//                    addDependency(view, mod, map, schemaProject, dep);
+//                }
+//
+//            }
+//        });
 
     }
 
@@ -292,9 +341,9 @@ public class XapiParserPlugin implements Plugin<Project> {
                 String name = dep.getName();
                 final Maybe<SchemaProject> result = map.findProject(name);
                 if (result.isPresent()) {
-                    view.getLogger().info("Adding {} {} {}", result.get(), " to ", consumerConfig.getPath());
                     SchemaProject toRequire = result.get();
                     PlatformModule requiredPlatform = dep.getCoords();
+                    view.getLogger().quiet("Project {} platform {} adding {}", result.get(), requiredPlatform, consumerConfig.getPath());
                     if (requiredPlatform.getPlatform() == null) {
                         // all platforms
                         if (requiredPlatform.getModule() == null) {

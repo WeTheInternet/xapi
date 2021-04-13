@@ -28,17 +28,17 @@ public class SchemaCallbacksDefault implements SchemaCallbacks {
 
     @Override
     public void perModule(In1<SchemaModule> callback) {
-
+        perProject(proj -> proj.forAllModules(callback));
     }
 
     @Override
     public void perPlatform(In1<SchemaPlatform> callback) {
-
+        perProject(proj -> proj.forAllPlatforms(callback));
     }
 
     @Override
     public void perPlatformAndModule(In2<SchemaPlatform, SchemaModule> callback) {
-
+        perProject(proj -> proj.forAllPlatformsAndModules(callback));
     }
 
     @Override
@@ -66,7 +66,7 @@ public class SchemaCallbacksDefault implements SchemaCallbacks {
     @Override
     public void flushCallbacks(HasAllProjects map) {
         int recursionSickness = RECURSION_LIMIT;
-        while (!isDone()) {
+        do {
             if (recursionSickness--<=0) {
                throw new IllegalStateException("Callbacks for projects " + projectCallbacks.keySet() +" not called within " + RECURSION_LIMIT + " iterations");
             }
@@ -77,8 +77,7 @@ public class SchemaCallbacksDefault implements SchemaCallbacks {
                 }
             });
             flushAllProjects(map);
-        }
-        flushAllProjects(map);
+        } while (!isDone());
     }
 
     protected boolean isDone() {
@@ -94,11 +93,12 @@ public class SchemaCallbacksDefault implements SchemaCallbacks {
         In1<SchemaProject> task = projectCallbacks.get("*");
         int recursionSickness = RECURSION_LIMIT;
         while (task != current) {
+            current = task;
             if (recursionSickness--<=0) {
                 throw new IllegalArgumentException("Recursive all-projects callback blindly adding new all-projects callbacks; took " + RECURSION_LIMIT + " iterations to fail.");
             }
             map.getAllProjects().forEach(task.toConsumer());
-            current = projectCallbacks.get("*");
+            task = projectCallbacks.get("*");
         }
     }
 }

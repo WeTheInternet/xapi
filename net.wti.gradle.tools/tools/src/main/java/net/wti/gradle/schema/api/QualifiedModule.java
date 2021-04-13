@@ -21,7 +21,7 @@ public class QualifiedModule extends PlatformModule {
     }
 
     public static String mangleProjectPath(String path) {
-        if (!path.startsWith(":")) {
+        if (!path.startsWith(":") && !path.startsWith("_")) {
             path = ":" + path;
         }
         path = path.replace(':', '_');

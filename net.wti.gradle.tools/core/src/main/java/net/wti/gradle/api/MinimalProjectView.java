@@ -14,6 +14,13 @@ import org.gradle.util.Path;
 import java.io.File;
 
 /**
+ * The most basic form of a "universal grab bag of random utilities".
+ * <p><p>
+ * When settings.gradle is being evaluated, these will be a net.wti.gradle.settings.ProjectDescriptorView
+ * <p><p>
+ * Once the project build.gradle are being evaluated, these will be a net.wti.gradle.internal.impl.DefaultProjectView
+ * <p><p>
+ *
  * Created by James X. Nelson (James@WeTheInter.net) on 29/07/19 @ 5:33 AM.
  */
 public interface MinimalProjectView extends ExtensionAware {
@@ -41,7 +48,11 @@ public interface MinimalProjectView extends ExtensionAware {
     }
 
     default String getBuildName() {
-        final BuildState owner = ((GradleInternal) getGradle()).getOwner();
+        return extractBuildName(getGradle());
+    }
+
+    static String extractBuildName(Gradle gradle) {
+        final BuildState owner = ((GradleInternal) gradle).getOwner();
         final Path id = owner.getCurrentPrefixForProjectsInChildBuilds();
         return id.getPath();
     }

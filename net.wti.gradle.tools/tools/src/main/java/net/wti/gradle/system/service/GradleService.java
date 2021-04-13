@@ -1,5 +1,6 @@
 package net.wti.gradle.system.service;
 
+import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
@@ -8,9 +9,12 @@ import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.provider.Property;
@@ -27,6 +31,8 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import static java.lang.System.identityHashCode;
 
 /**
  * A system-wide set of gradle tools,
@@ -193,12 +199,29 @@ public interface GradleService {
     @SuppressWarnings("unchecked")
     static <T extends ExtensionAware> InternalProjectCache<T> getCache(T ext) {
         final ExtensionContainer extensions = ext.getExtensions();
-        InternalProjectCache<T> cache = (InternalProjectCache) extensions.findByName(InternalProjectCache.EXT_NAME);
+        InternalProjectCache<T> cache;
+        final String cacheSuffix = Integer.toString(identityHashCode(InternalProjectCache.class));
+        String key = InternalProjectCache.EXT_NAME + cacheSuffix;
+        try {
+            cache = (InternalProjectCache) extensions.findByName(key);
+        } catch (ClassCastException cce) {
+            Object o = extensions.findByName(key);
+            try {
+                cache = new InternalProjectCache<>(ext, o);
+            } catch (Exception ignored) {
+                // give up. stomp old cache (debugging shows this happens to be buildSrc leaving a cache on root project somehow)
+                cache = new InternalProjectCache<>(ext);
+            }
+        }
         if (cache == null || !cache.isFrom(ext)) {
             cache = new InternalProjectCache<>(ext);
-            extensions.add(InternalProjectCache.EXT_NAME, cache);
+            extensions.add(key, cache);
         }
         return cache;
+    }
+
+    static String extractBuildName(Gradle gradle) {
+        return ((GradleInternal)gradle).getPublicBuildPath().getBuildPath().toString();
     }
 
     default void configureWrapper(Project project) {
@@ -256,22 +279,24 @@ public interface GradleService {
                     zip.onlyIf(t->!zipLoc.isFile());
                 }
             );
-            rootTasks.named("wrapper", Wrapper.class, wrapper -> {
-                wrapper.whenSelected(selected->{
-                    final File loc = zipDir.get().getAsFile();
-                    if (loc.isDirectory()) {
-                        final File zipLoc = zipFile.get().getAsFile();
-                        project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", GRADLE_VERSION, zipLoc);
-                        wrapper.setGradleVersion(GRADLE_VERSION);
-                        wrapper.setDistributionType(DistributionType.ALL);
-                        project.getLogger().info("Using local gradle distribution: {}", loc);
-                        wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());
-                        if (!zipLoc.exists()) {
-                            project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
-                            wrapper.dependsOn(distZip.get());
-                        }
+            root.getPluginManager().withPlugin("wrapper", plugin -> {
+                rootTasks.named("wrapper", Wrapper.class, wrapper -> {
+                    wrapper.whenSelected(selected->{
+                        final File loc = zipDir.get().getAsFile();
+                        if (loc.isDirectory()) {
+                            final File zipLoc = zipFile.get().getAsFile();
+                            project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", GRADLE_VERSION, zipLoc);
+                            wrapper.setGradleVersion(GRADLE_VERSION);
+                            wrapper.setDistributionType(DistributionType.ALL);
+                            project.getLogger().info("Using local gradle distribution: {}", loc);
+                            wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());
+                            if (!zipLoc.exists()) {
+                                project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
+                                wrapper.dependsOn(distZip.get());
+                            }
 
-                    }
+                        }
+                    });
                 });
             });
             }

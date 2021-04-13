@@ -143,9 +143,9 @@ public class DefaultProjectView implements ProjectView {
                 final boolean configuring = ((ProjectStateInternal)project.getState()).isConfiguring();
                 final boolean executed = project.getState().getExecuted();
                 project.getLogger().info("project {} already executed? {}; isConfiguring? {}", project.getPath(), executed, configuring);
-                if (!configuring && !project.getState().getExecuted()) {
+                if (!configuring && !executed) {
                     Logger log = project.getLogger();
-                    log.quiet("forcibly evaluating project " + project.getPath());
+                    log.quiet("forcibly evaluating project {}", project.getPath());
                     if (log.isEnabled(LogLevel.INFO)) {
                         log.info("Evaluation occurred via debugging stack trace:", new Exception("project evaluation trace", lastTrace));
                     }
@@ -264,7 +264,17 @@ public class DefaultProjectView implements ProjectView {
         this.service = lazyProvider(service);
         this.group = lazyProvider(group, true);
         this.name = lazyProvider(name, true);
-        this.version = lazyProvider(version, true);
+        this.version = lazyProvider(version, true).map(v-> {
+            if ("unspecified".equals(v)) {
+                v = findProperty("xapiVersion");
+            }
+            if (v == null || "".equals(v)) {
+                // TODO: get a decent default version
+                getLogger().warn("Version accessed but not configured in {} of build {}", getPath(), GradleService.buildId(gradle), new RuntimeException());
+                return "0.0.1";
+            }
+            return v;
+        });
         this.publishing = lazyProvider(publishing);
     }
 
@@ -456,14 +466,6 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public String getVersion() {
         Object v = version.get();
-        if ("unspecified".equals(v)) {
-            v = findProperty("xapiVersion");
-        }
-        if (v == null || "".equals(v)) {
-            // TODO: get a decent default version
-            getLogger().warn("Version accessed but not configured in {} of build {}", getPath(), GradleService.buildId(gradle), new RuntimeException());
-            return "0.0.1";
-        }
         return String.valueOf(v);
     }
 
@@ -486,7 +488,7 @@ public class DefaultProjectView implements ProjectView {
     public String toString() {
         return "DefaultProjectView{" +
             "path='" + path + '\'' +
-            ", version=" + getVersion() +
+            ", version=" + (version.isPresent() ? getVersion() : "<not resolved yet>") +
             '}';
     }
 

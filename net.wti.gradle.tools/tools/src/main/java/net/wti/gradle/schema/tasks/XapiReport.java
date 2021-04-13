@@ -22,6 +22,8 @@ import xapi.gradle.java.Java;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -138,9 +140,18 @@ public class XapiReport extends DefaultTask {
                         .append(getProject().getPath())
                         .append(":")
                         .append(platform)
-                        .append(" ->\n\t\t")
-                        .append(fixPath(src.getRuntimeClasspath().getAsPath()))
-                    ;
+                        .append(" ->\n\t\t");
+                    try {
+                        b
+                            .append(fixPath(src.getRuntimeClasspath().getAsPath()))
+                        ;
+                    } catch (Exception e) {
+                        b.append(e.getClass().getName())
+                                .append(" resolving classpath: ")
+                                .append(e.getMessage())
+                                .append("\n")
+                         .append(Arrays.asList(e.getStackTrace()).stream().map(StackTraceElement::toString).collect(Collectors.joining("\n")));
+                    }
                 }
                 b.append(":\n\tConfigurations of ")
                     .append(getProject().getPath())

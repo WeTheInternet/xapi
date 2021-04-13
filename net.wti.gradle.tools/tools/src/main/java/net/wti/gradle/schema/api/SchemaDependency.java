@@ -79,6 +79,13 @@ public class SchemaDependency {
         this.version = version == null ? QualifiedModule.UNKNOWN_VALUE : version;
     }
 
+    public SchemaDependency rebase(PlatformModule toMod) {
+        SchemaDependency dep = new SchemaDependency(type, toMod, group, version, name);
+        dep.transitivity = transitivity;
+        dep.extraGnv = extraGnv;
+        return dep;
+    }
+
     public DependencyType getType() {
         return type;
     }
@@ -92,32 +99,6 @@ public class SchemaDependency {
         return getGroup() + ":" + getName() +
                 (QualifiedModule.UNKNOWN_VALUE.equals(v) ? "" : ":" + v) +
                 (GradleCoerce.isEmptyString(extraGnv) ? "" : extraGnv.startsWith(":") ? extraGnv : ":" + extraGnv);
-    }
-    public String getPPM(CharSequence defaultProject) {
-        final PlatformModule platMod = getCoords();
-        return getPPM(defaultProject, platMod.getPlatform(), platMod.getModule());
-    }
-    public String getPPM(CharSequence defaultProject, CharSequence defaultPlatform, CharSequence defaultModule) {
-        PlatformModule platMod = getCoords();
-        final String projectName;
-        String name = getName();
-        switch (type) {
-            case internal:
-                platMod = platMod.edit(null, getName());
-            case external:
-                projectName = QualifiedModule.mangleProjectPath(defaultProject.toString());
-                break;
-            case project:
-            case unknown:
-                if (!name.startsWith(":")) {
-                    name = ":" + name;
-                }
-                projectName = QualifiedModule.mangleProjectPath(name);
-                break;
-            default:
-                throw new IllegalArgumentException("Dependency type " + type + " not yet supported by getPPM");
-        }
-        return projectName + ":" + platMod.toStringStrict(defaultPlatform, defaultModule);
     }
 
     // TODO: consider making this a structured object with a name and a transitivity / other options? or just put single item on SchemaDependency itself?

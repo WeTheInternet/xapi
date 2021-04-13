@@ -52,7 +52,7 @@ public interface SchemaProperties {
 
     default String getProperty(String key, MinimalProjectView view) {
         if (DefaultSchemaProperties.recursion > 0) {
-            throw new IllegalStateException("SchemaProperties " + this + " is recursing into itself");
+            throw new IllegalStateException("SchemaProperties " + this + " is recursing into itself for key " + key);
         }
         String value = searchProperty(key, view);
         if (isNotEmpty(value)) {
@@ -62,35 +62,37 @@ public interface SchemaProperties {
     }
 
     static String searchProperty(String key, MinimalProjectView view) {
-        try {
-            if (DefaultSchemaProperties.recursion++ > 1) {
-                throw new IllegalStateException("SchemaProperties.searchProperty()  is recursing into itself");
-            }
-            String maybe = null;
-            if (view != null) {
-                Object candidate = view.findProperty(key);
-                if (candidate != null) {
-                    maybe = String.valueOf(candidate);
+        synchronized (SchemaProperties.class) {
+            try {
+                if (DefaultSchemaProperties.recursion++ > 1) {
+                    throw new IllegalStateException("SchemaProperties.searchProperty()  is recursing into itself");
                 }
+                String maybe = null;
+                if (view != null) {
+                    Object candidate = view.findProperty(key);
+                    if (candidate != null) {
+                        maybe = String.valueOf(candidate);
+                    }
+                }
+                if (isNotEmpty(maybe)) {
+                    return maybe;
+                }
+                maybe = System.getProperty(key);
+                if (isNotEmpty(maybe)) {
+                    return maybe;
+                }
+                String envKey = keyMap.computeIfAbsent(key, ()->
+                        // handle camelCase, snake-case and dot.case.
+                        key.replaceAll("([A-Z])", "_$1").replaceAll("[.-]", "_").toUpperCase()
+                );
+                maybe = System.getenv(envKey);
+                if (isNotEmpty(maybe)) {
+                    return maybe;
+                }
+                return null;
+            } finally {
+                DefaultSchemaProperties.recursion--;
             }
-            if (isNotEmpty(maybe)) {
-                return maybe;
-            }
-            maybe = System.getProperty(key);
-            if (isNotEmpty(maybe)) {
-                return maybe;
-            }
-            String envKey = keyMap.computeIfAbsent(key, ()->
-                    // handle camelCase, snake-case and dot.case.
-                    key.replaceAll("([A-Z])", "_$1").replaceAll("[.-]", "_").toUpperCase()
-            );
-            maybe = System.getenv(envKey);
-            if (isNotEmpty(maybe)) {
-                return maybe;
-            }
-            return null;
-        } finally {
-            DefaultSchemaProperties.recursion--;
         }
     }
 
@@ -117,7 +119,7 @@ public interface SchemaProperties {
     }
 }
 final class DefaultSchemaProperties implements SchemaProperties{
-    static int recursion;
+    static volatile int recursion;
     static final DefaultSchemaProperties INSTANCE = new DefaultSchemaProperties();
     static final MapLike<String, String> keyMap = X_Jdk.mapHashConcurrent();
     private DefaultSchemaProperties(){}

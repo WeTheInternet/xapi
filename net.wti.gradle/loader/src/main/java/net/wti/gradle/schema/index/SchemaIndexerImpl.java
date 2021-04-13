@@ -3,12 +3,7 @@ package net.wti.gradle.schema.index;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.PlatformModule;
-import net.wti.gradle.schema.api.QualifiedModule;
-import net.wti.gradle.schema.api.SchemaModule;
-import net.wti.gradle.schema.api.SchemaPlatform;
-import net.wti.gradle.schema.api.SchemaProject;
-import net.wti.gradle.schema.map.SchemaMap;
-import net.wti.gradle.schema.api.SchemaDependency;
+import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.schema.spi.SchemaIndex;
@@ -22,6 +17,11 @@ import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -61,6 +61,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 SchemaProject project, DefaultSchemaMetadata metadata, SchemaPlatform platform, UiContainerExpr source
         ) {
             project.addPlatform(platform);
+            // TODO: prepare recording of platform in index
             return platform;
         }
 
@@ -69,6 +70,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 SchemaProject project, DefaultSchemaMetadata metadata, SchemaModule module, UiContainerExpr source
         ) {
             project.addModule(module);
+            // TODO: prepare recording of module in index
             return module;
         }
 
@@ -80,14 +82,15 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     }
 
     @Override
-    public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, File rootDir) {
+    public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map) {
         ExecutorService exec = Executors.newWorkStealingPool(4);
         List<Future<?>> futures = new CopyOnWriteArrayList<>();
+        final File rootDir = view.getProjectDir();
 
         File indexDir = calculateIndex(view, buildName, rootDir);
         final SchemaIndexBuilder index = new SchemaIndexBuilder(view, rootDir, properties, exec, futures, indexDir);
 
-        populateIndex(view, index, buildName);
+        populateIndex(view, map, index, buildName);
 
         final Future<SchemaIndex> waiter = exec.submit(Out1.out1Unsafe(()->{
             // block until index is fully loaded.
@@ -130,6 +133,8 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 }
                 if (result == null) {
                     // finalize the index, but only once! after that, we just drain callbacks
+                    // now, run an analyze, so any transitive / interim dependencies
+                    analyzeIndex(view, index, map, properties);
                     result = index.build();
                 }
             } // end for(;;){}
@@ -140,8 +145,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         return Lazy.deferred1Unsafe(()-> {
             // wait for the main index parse
             final SchemaIndex result = waiter.get();
-            // now, run an analyze, so any transitive / interim dependencies
-            analyzeIndex(view, result, index);
             return result;
         });
     }
@@ -152,7 +155,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         final File indexDir;
         if (configuredLoc == null) {
             // user hasn't specified, start guessing-and-then-default-to ./build/index
-            final String loc = SchemaIndexer.getIndexLocation(view, properties);
+            final String loc = SchemaIndex.getIndexLocation(view, properties);
             indexDir = new File(loc);
         } else {
             indexDir = new File(configuredLoc);
@@ -167,11 +170,116 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         return indexDir;
     }
 
-    private void analyzeIndex(final MinimalProjectView view, final SchemaIndex result, final SchemaIndexBuilder index) {
+    private void analyzeIndex(final MinimalProjectView view, final SchemaIndexBuilder index, final HasAllProjects map, final SchemaProperties properties) {
         // search through, and discover the full set of "project:platform:module" that we want to consider realized.
         // we first want to mark anything with source or explicitly marked as included
         // next, anything which depends on said modules should be marked as included.
 
+        // to mark something as explicit, we should accept: anything adding via a require=... attribute,
+        // or anything w/ a schema property matching the ppm-name of the module (_mangled_project_path:platform:module)
+
+        // from there, transverse all "in" edges, marking such modules as required,
+        // also consider marking all "out" edges as "has live input", so said modules can quickly realize they have valid dependencies.
+
+        for (SchemaProject project : map.getAllProjects()) {
+            final MinimalProjectView pv = project.getView();
+            project.forAllPlatformsAndModules((plat, mod)-> {
+                // hokay! check if the module has sources, or is explicitly marked as live via properties.
+                File projDir = pv.getProjectDir();
+                File projSrc = new File(projDir, "src");
+                String modulePrefix = QualifiedModule.unparse(plat.getName(), mod.getName());
+                File moduleSrc = new File(projSrc, modulePrefix);
+                if (moduleSrc.exists()) {
+                    // This module is live due to having sources!
+                    index.markWithSource(project, plat, mod, moduleSrc);
+                } else {
+                    // check if this module should be live b/c of schema properties
+                    String mangleProject = QualifiedModule.mangleProjectPath(project.getPathGradle());
+                    String liveKey = "live_" + mangleProject + "_" + modulePrefix;
+                    final String liveValue = properties.getProperty(liveKey, view);
+                    if ("true".equals(liveValue)) {
+                        index.markExplicitInclude(project, plat, mod);
+                    }
+                    // TODO (maybe): have a schema.xapi means of marking specific project/platform/module as live.
+                }
+                // now... anybody who depends on us also needs to be a live module...
+            });
+        }
+        // flush callbacks so we mark all live modules.
+        map.flushWork();
+
+        // now, transverse all explicitly-live modules, and mark anything depending on these modules as also-live.
+        index.forAllLiveModules(liveness -> {
+            // increase the liveness level to 2 for each "this module is actually live",
+            // and liveness level 1 for "this module depends on something that is live".
+            File projectDir = liveness.getProjectDir();
+            File liveFile = new File(projectDir, "live");
+            GFileUtils.writeFile("2", liveFile, "utf-8");
+            // now, go through all of this project's out/ edges, marking each one as at-least-level-1
+            markOutEdges(map, index, liveness.getProjectDir());
+            // now, also write some other useful metadata
+            File multiplatformFile = new File(projectDir, "multiplatform");
+            File virtualFile = new File(projectDir, "virtual");
+            GFileUtils.writeFile(Boolean.toString(liveness.isMultiplatform()), multiplatformFile, "utf-8");
+            GFileUtils.writeFile(Boolean.toString(liveness.isVirtual()), virtualFile, "utf-8");
+        });
+
+        // next, inspect all index results with more than one live result, to mark as multiplatform.
+        final File[] allProjs = index.getDirByPpm().listFiles();
+        if (allProjs == null) {
+            throw new IllegalStateException("Unable to read directory file://" + index.getDirByPpm());
+        }
+        for (File projectDir : allProjs) {
+            int modCount = 0;
+            if (projectDir.isDirectory()) {
+                final File[] allPlatMods = projectDir.listFiles();
+                if (allPlatMods == null) {
+                    throw new IllegalStateException("Unable to read directory file://" + projectDir);
+                }
+                for (File platModDir : allPlatMods) {
+                    if (platModDir.isDirectory()) {
+                        File liveFile = new File(platModDir, "live");
+                        String contents = GFileUtils.readFile(liveFile);
+                        if (contents.isEmpty() || "0".equals(contents)) {
+                            // not live, do not count
+                        } else {
+                            modCount ++;
+                        }
+                    }
+                }
+            }
+            if (modCount > 1) {
+                // forcibly write a multiplatform file. TODO: validate it wasn't explicitly marked single-platform
+                File multiplatformFile = new File(projectDir, "multiplatform");
+                GFileUtils.writeFile("true", multiplatformFile, "utf-8");
+            }
+        }
+    }
+
+    private void markOutEdges(final HasAllProjects map, final SchemaIndexBuilder index, final File projectDir) {
+        File outDir = new File(projectDir, "out");
+        if (outDir.isDirectory()) {
+            for (File mangledProjects : outDir.listFiles()) {
+                for (File platMods : mangledProjects.listFiles()) {
+                    Path liveLink = Paths.get(new File(platMods, "live").toURI());
+                    final Path readLink;
+                    try {
+                        readLink = Files.readSymbolicLink(liveLink);
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Bad symbolic link " + liveLink, e);
+                    }
+                    Path target = readLink.resolve("live");
+                    String value = GFileUtils.readFile(target.toFile(), "utf-8");
+                    if (Integer.parseInt(value) < 1) {
+                        GFileUtils.writeFile("1", target.toFile(), "utf-8");
+                        // now, chain our out/ edges until there's no more out/
+                        markOutEdges(map, index, readLink.toFile());
+                    }
+                }
+
+            }
+
+        }
     }
 
     private long getMaxWaitMillis() {
@@ -189,9 +297,10 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     }
 
     protected void populateIndex(
-        MinimalProjectView view,
-        SchemaIndexBuilder index,
-        String buildName
+            MinimalProjectView view,
+            final HasAllProjects map,
+            SchemaIndexBuilder index,
+            String buildName
     ) {
         if (buildName == null) {
             buildName = view.getBuildName();//guessBuildName(rootDir);
@@ -209,10 +318,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             final Future<?>[] future = new Future[1];
 //            SchemaIndexBuilder localIndex = index.duplicate();
             future[0] = exec.submit(()->{
-                IndexingParser parser = new IndexingParser(view, index);
-                SchemaMap map = SchemaMap.fromView(view.findView(":"), parser);
-
-                map.getResolver().out1(); // ensure this lazy is initialized.
+                map.getView(); // ensure this lazy is initialized.
                 if (index.getGroupId() == null || QualifiedModule.UNKNOWN_VALUE.equals(index.getGroupId().toString())) {
                     index.setGroupId(map.getGroup());
                 }
@@ -238,12 +344,13 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     protected void writeIndex(
         MinimalProjectView view,
         SchemaIndexBuilder index,
-        SchemaMap map
+        HasAllProjects map
     ) {
 //        final File indexDir = index.getIndexDir();
         for (SchemaProject project : map.getAllProjects()) {
             File projectDir = index.calcProjectDir(project);
             projectDir.mkdirs();
+            // hm... we should use index.getReader(), so we can pre-prime our reader (save a set of disk reads later)
             if (!projectDir.isDirectory()) {
                 throw new IllegalStateException("Unable to create index project directory " + projectDir);
             }
@@ -306,7 +413,8 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                     throw new IllegalStateException("Unable to create projects directory " + internalDeps + "; check disk usage and filesystem permissions");
                                 }
                                 name = dep.getName();
-                                depFile = new File(internalDeps, name);
+                                String mangledName = PlatformModule.parse(name).toPlatMod();
+                                depFile = new File(internalDeps, mangledName);
                                 // hm, we have nothing interesting to write into internal dependencies, the filename is a key...
                                 GFileUtils.touch(depFile);
                                 if (!depFile.isFile()) {
@@ -332,7 +440,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
                     } // end all getDependenciesOf(platform, module)
 
-
                     // all modules should record a little state about themselves into the index,
                     // in such a way that a single file read can reveal a single piece of information about this module.
                     // This allows interested parties to register arbitrary index files as task inputs,
@@ -356,33 +463,63 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         // The out/ edge for module A is the modules which depend on module A
 
         File requestorDir = index.calcProjectDir(project, platform.getName(), module.getName());
-        File requestedDir = index.calcDependencyProjectDir(view, dep, project, platform, module);
+        File requestedDir = index.calcDependencyProjectDir(dep, project, platform, module);
         File inDir = new File(requestorDir, "in");
         File outDir = new File(requestedDir, "out");
 
-        System.out.println(inDir + " <-- " + outDir);
         // Now, create filesystem entries;
         // out metadata goes into the inDir
         // in metadata goes the outDir.
 
-        // in metadata is built from the declaring SchemaProject, SchemaPlatform and SchemaModule,
-        String ppmIn = index.calcPPM(project, platform, module);
+        // in metadata is always built from the declaring SchemaProject, SchemaPlatform and SchemaModule,
+        // thus, we always know these are going to be project-based addresses
+        File ppmOut = index.calcPPM(outDir, project, platform, module);
         // out metadata is built from the declaring SchemaDependency, with defaults based on the requesting project, platform and module.
+        // these will be separated between project types, and external dependency types (later: foreign types)
+        File ppmIn = index.calcPPM(inDir, dep, project.getPathIndex(), platform.getName(), module.getName());
 
+        // ok, for now, lets just create full directory structures,
+        // so we can touch/write to specific files within those directories,
+        // to denote whether the given node is live or dead (using symlinks, preferably, to avoid n^2 update costs)
+        ppmOut.mkdirs();
+        ppmIn.mkdirs();
 
+        File livenessIn = new File(requestorDir, "live");
+        File livenessOut = new File(requestedDir, "live");
 
-//        StringBuilder pathRequestor = new StringBuilder()
-//            .append(platform.getName())
-//            .append(File.separator)
-//            .append(module.getName())
-//            ;
-//        StringBuilder pathRequested = new StringBuilder()
-//            .append(dep.getPlatformOrDefault())
-//            .append(File.separator)
-//            .append(dep.getModuleOrDefault())
-//            .append(File.separator)
-//            .append(dep.getName())
-//            ;
+        // touch / initialize both liveness files, so we'll know if this is an active node or not.
+        if (livenessIn.isFile()) {
+            GFileUtils.touch(livenessIn);
+        } else {
+            GFileUtils.writeFile("0", livenessIn, "utf-8");
+        }
+        if (livenessOut.isFile()) {
+            GFileUtils.touch(livenessOut);
+        } else {
+            GFileUtils.writeFile("0", livenessOut, "utf-8");
+        }
+
+        // Now, write links from ppm directories to matching liveness file
+        Path inLink = Paths.get(new File(ppmIn, "live").toURI());
+        Path outLink = Paths.get(new File(ppmOut, "live").toURI());
+        if (!Files.isSymbolicLink(inLink)) {
+            try {
+                Files.createSymbolicLink(inLink, Paths.get(requestedDir.toURI()));
+            } catch (IOException e) {
+                // TODO: actually handle filesystems that can't create links? ......meh.
+                throw new UncheckedIOException("Unable to create link from " + inLink + " to " + requestedDir, e);
+            }
+        }
+
+        if (!Files.isSymbolicLink(outLink)) {
+            try {
+                Files.createSymbolicLink(outLink, Paths.get(requestorDir.toURI()));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Unable to create link from " + outLink + " to " + requestorDir, e);
+            }
+        }
+
+        // hm... submit a task that will check if this dependency is explicit or if the module has sources, and increase liveness count.
     }
 
     private void extractCoords(SchemaPlatform platform, SchemaModule module, SchemaDependency dep, File depFile) {

@@ -7,26 +7,32 @@ import net.wti.gradle.loader.impl.ClosureBuffer;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.QualifiedModule;
 import net.wti.gradle.schema.api.SchemaDependency;
-import net.wti.gradle.schema.index.SchemaIndexReader;
+import net.wti.gradle.schema.api.SchemaProject;
 import net.wti.gradle.schema.index.SchemaIndexerImpl;
 import net.wti.gradle.schema.map.SchemaMap;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.schema.spi.SchemaIndex;
+import net.wti.gradle.schema.spi.SchemaIndexReader;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.settings.ProjectDescriptorView;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Plugin;
+import org.gradle.api.Project;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.GFileUtils;
 import xapi.dev.source.LocalVariable;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
+import xapi.fu.Maybe;
 import xapi.fu.Out1;
+import xapi.fu.data.ListLike;
+import xapi.fu.java.X_Jdk;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
 
@@ -91,15 +97,15 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
             final Out1<SchemaIndex> index = indexer.index(
                 root,
                 properties.getBuildName(root, metadata),
-                root.getProjectDir()
+                map
             );
 
 
             root.whenReady(view -> {
                 // resolve the block-until-index-done task
-                index.out1();
+                final SchemaIndex result = index.out1();
                 // Setup callback for each project to add buildable / publishable component with multiple modules / platforms.
-                prepareProjects(view, properties, settings, map);
+                prepareProjects(view, result, properties, settings, map);
                 // Flush out callbacks in the priorities they were declared
                 map.getCallbacks().flushCallbacks(map);
             });
@@ -118,12 +124,35 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
         return map;
     }
 
-    private void prepareProjects(final MinimalProjectView view, final SchemaProperties properties, Settings settings, SchemaMap map) {
-        SchemaIndexReader index = new SchemaIndexReader(properties, view, map);
+    private void prepareProjects(final MinimalProjectView view, final SchemaIndex fullIndex, final SchemaProperties properties, Settings settings, SchemaMap map) {
+        SchemaIndexReader index = fullIndex.getReader();
+
+        // In order to access Project objects from within code running while settings.gradle is being processed,
+        // we'll just setup beforeProject/afterProject listeners:
+
+        settings.getGradle().beforeProject(p->{
+            final Maybe<SchemaProject> match = map.getAllProjects()
+                    .firstMatch(m -> m.getPathGradle().equals(p.getPath()));
+            if (match.isPresent()) {
+                // This is a gradle project who matches one of our schema-backed project declarations.
+                // Lets setup some support utilities
+
+                setupProject(p, match.get(), properties, index, map);
+            }
+        });
+        settings.getGradle().afterProject(p->{
+            final Maybe<SchemaProject> match = map.getAllProjects()
+                    .firstMatch(m -> m.getPathGradle().equals(p.getPath()));
+            if (match.isPresent()) {
+                // This is a gradle project who matches one of our schema-backed project declarations.
+                // Lets setup some support utilities
+
+                finalizeProject(p, match.get(), properties, index, map);
+            }
+        });
 
         map.getCallbacks().perProject(project -> {
             logger.info("Processing xapi schema for project {}", project);
-
             String gradlePath = ":" + project.getSubPath().replace('/', ':');
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
@@ -141,165 +170,278 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                     }
                 }
             }
-            // Now, check if this project is configured to be multi-project...
-            if (project.isMultiplatform()) {
-                // create sub-projects; one for each platform/module pair.
-                project.forAllPlatformsAndModules((plat, mod) -> {
-                    String key = QualifiedModule.unparse(plat.getName(), mod.getName());
-                    String projectName = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + key;
-                    String projectSrcPath = "src/gradle/" + key;
-                    String projectOutputPath = "mods/" + key;
-
-                    if (index.hasEntries(view, project.getName(), plat, mod)) {
-                        // to be able to avoid creating gradle projects we don't _need_,
-                        // we'll check on the written index to decide whether to create said projects or not.
-                        // user may freely create and check in their own projects, and we'll happily hook them up,
-                        // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
+            // create sub-projects; one for each platform/module pair.
+            final int[] liveCnt = {0};
+            project.forAllPlatformsAndModules((plat, mod) -> {
+                String key = QualifiedModule.unparse(plat.getName(), mod.getName());
+                String modKey = project.getName() + "-" + key;
+                String projectName = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + key;
+                String projectSrcPath = "src/gradle/" + key;
+                String projectOutputPath = "mods/" + key;
+                boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
+                if (isLive) {
+                    if (++liveCnt[0] > 1) {
+                        if (!project.isMultiplatform()) {
+                            throw new IllegalStateException("A project (" + project.getPathGradle() + ") with more than one live module must be multiplatform=true (cannot be standalone)");
+                        }
+                    }
+                    // to be able to avoid creating gradle projects we don't _need_,
+                    // we'll check on the written index to decide whether to create said projects or not.
+                    // user may freely create and check in their own projects, and we'll happily hook them up,
+                    // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
+                    final File projectRoot = project.getView().getProjectDir();
+                    String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
+                    final File projDir = new File(projectRoot, projectOutputPath);
+                    if (new File(projDir, buildFileName + ".kts").exists()) {
+                        buildFileName = buildFileName + ".kts";
+                    }
+                    final File buildFile = new File(projDir, buildFileName);
+                    if (project.isMultiplatform()) {
+                        System.out.println("MULTIPLATFORM: " + project.getPathGradle() + ":" + modKey + " file://" + buildFile + " @ " + key);
                         settings.include(projectName);
                         final ProjectDescriptor proj = settings.findProject(projectName);
-                        final File projectRoot = project.getView().getProjectDir();
-                        final File projDir = new File(projectRoot, projectOutputPath);
                         proj.setProjectDir(projDir);
-                        String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
-                        if (new File(projDir, buildFileName + ".kts").exists()) {
-                            buildFileName = buildFileName + ".kts";
-                        }
-                        File buildFile = new File(projDir, buildFileName);
                         proj.setBuildFileName(buildFileName);
-                        File projectSource = new File(projectRoot, projectSrcPath);
+                        proj.setName(modKey);
+                    } else {
+                        // intentionally not using MONOPLATFORM; it blends into MULTIPLATFORM too easily in logs
+                        System.out.println("SINGLEPLATFORM: " + project.getPathGradle() + " file://" + buildFile + " @ " + key);
+                    }
 
-                        // TODO: BuildScriptBuffer
-                        BuildScriptBuffer out = new BuildScriptBuffer();
-                        if (projectSource.exists()) {
-                            // Use src/gradle/key path to look for files to use to assemble a build script for us.
-                            // since we don't need any such thing yet, just leaving a space here for it to be done later.
+                    File projectSource = new File(projectRoot, projectSrcPath);
 
-                            maybeRead(projectSource, "imports", imports -> {
-                                for (String s : imports.split("[\\n\\r]+")) {
-                                    out.addImport(s);
-                                }
-                            });
-                            final In1<String> addBuildscript = imports ->
-                                    out.getBuildscript().printlns(imports);
-                            maybeRead(projectSource, "buildscript.start", addBuildscript);
-                            maybeRead(projectSource, "buildscript", addBuildscript);
-                            maybeRead(projectSource, "buildscript.end", addBuildscript);
-                            final In1<String> addPlugin = imports -> {
-                                for (String s : imports.split("[\\n\\r]+")) {
-                                    out.addPlugin(s);
-                                }
-                            };
-                            maybeRead(projectSource, "plugins.start", addPlugin);
-                            maybeRead(projectSource, "plugins", addPlugin);
-                            maybeRead(projectSource, "plugins.end", addPlugin);
+                    // TODO: BuildScriptBuffer
+                    BuildScriptBuffer out = new BuildScriptBuffer();
+                    if (projectSource.exists()) {
+                        // Use src/gradle/key path to look for files to use to assemble a build script for us.
+                        // since we don't need any such thing yet, just leaving a space here for it to be done later.
 
-                            final In1<String> addBody = out::printlns;
-                            maybeRead(projectSource, "body.start", addBody);
-                            maybeRead(projectSource, "body", addBody);
-                            maybeRead(projectSource, "body.end", addBody);
-                        }
-                        // To start, setup the sourceset!
-                        String pv = out.addImport(ProjectView.class);
-                        String fromProject = out.addImportStatic(ProjectView.class, "fromProject");
-//                        ProjectView v = null; // just here to check autocomplete
-                        out.println(pv + " view = " + fromProject + "(project)");
-                        LocalVariable main = out.addVariable(SourceSet.class, "main", true);
-                        main.setInitializer("view.sourceSets.maybeCreate('main')");
-
-                        // lets have a look at the types of source dirs to decide what sourcesets to create.
-                        File moduleSource = new File(projectRoot, "src" + File.separator + key);
-                        if (moduleSource.isDirectory()) {
-                            for (String sourceDir : moduleSource.list()) {
-                                switch (sourceDir) {
-                                    case "java":
-                                    case "groovy":
-                                    case "kotlin":
-                                        main.access("java.srcDir(\"$2/$3\")", moduleSource.getAbsolutePath(), sourceDir);
-                                        break;
-                                    case "resources":
-                                        main.access("resources.srcDir(\"$2/resources\")", moduleSource.getAbsolutePath());
-                                        break;
-                                    default:
-                                        // perhaps warn about unused source directory? ...not really worth it.
-                                        // check for java-versioned directories...
-                                        if (sourceDir.startsWith("javaGT")) {
-                                            // applies to java versions greater than $N
-                                            // TODO: option to autogen module.java for javaGT8
-                                        } else if (sourceDir.startsWith("javaLT")) {
-                                            // applies to java versions less than $N
-                                        } else if (sourceDir.startsWith("java")) {
-                                            // applies to java version equals $N
-                                        }
-                                }
+                        maybeRead(projectSource, "imports", imports -> {
+                            for (String s : imports.split("[\\n\\r]+")) {
+                                out.addImport(s);
                             }
-                        }
-                        Lazy<ClosureBuffer> dependencies = Lazy.deferred1(()->
-                            out.startClosure("dependencies")
-                        );
-                        for (SchemaDependency dependency : project.getDependenciesOf(plat, mod)) {
-                            final ClosureBuffer depOut = dependencies.out1();
-                            switch (dependency.getTransitivity()) {
-                                case api:
-                                    out.addPlugin("java-library");
-                                    depOut.append("api ");
+                        });
+                        final In1<String> addBuildscript = imports ->
+                                out.getBuildscript().printlns(imports);
+                        maybeRead(projectSource, "buildscript.start", addBuildscript);
+                        maybeRead(projectSource, "buildscript", addBuildscript);
+                        maybeRead(projectSource, "buildscript.end", addBuildscript);
+                        final In1<String> addPlugin = imports -> {
+                            for (String s : imports.split("[\\n\\r]+")) {
+                                out.addPlugin(s);
+                            }
+                        };
+                        maybeRead(projectSource, "plugins.start", addPlugin);
+                        maybeRead(projectSource, "plugins", addPlugin);
+                        maybeRead(projectSource, "plugins.end", addPlugin);
+
+                        final In1<String> addBody = out::printlns;
+                        maybeRead(projectSource, "body.start", addBody);
+                        maybeRead(projectSource, "body", addBody);
+                        maybeRead(projectSource, "body.end", addBody);
+                    }
+                    out.println("apply plugin: 'java-library'");
+                    // To start, setup the sourceset!
+                    String srcSetName = project.isMultiplatform() ? "main" : key;
+                    LocalVariable main = out.addVariable(SourceSet.class, srcSetName, true);
+                    main.setInitializerPattern("sourceSets.maybeCreate('$1')", srcSetName);
+                    main.invoke("java.setSrcDirs($2)", "[]");
+                    main.invoke("resources.setSrcDirs($2)", "[]");
+
+                    // lets have a look at the types of source dirs to decide what sourcesets to create.
+                    File moduleSource = new File(projectRoot, "src" + File.separator + key);
+                    if (moduleSource.isDirectory()) {
+                        for (String sourceDir : moduleSource.list()) {
+                            switch (sourceDir) {
+                                case "java":
+                                case "groovy":
+                                case "kotlin":
+                                    main.access("java.srcDir(\"$2/$3\")", moduleSource.getAbsolutePath(), sourceDir);
                                     break;
-                                case compile_only:
-                                    depOut.append("compileOnly ");
-                                    break;
-                                case impl:
-                                    depOut.append("implementation ");
-                                    break;
-                                case runtime:
-                                    depOut.append("runtime ");
-                                    break;
-                                case runtime_only:
-                                    depOut.append("runtimeOnly ");
+                                case "resources":
+                                    main.access("resources.srcDir(\"$2/resources\")", moduleSource.getAbsolutePath());
                                     break;
                                 default:
-                                    throw new IllegalArgumentException("transitivity " + dependency.getTransitivity() + " is not supported!");
-                            }
-                            switch (dependency.getType()) {
-                                case unknown:
-                                case project:
-                                    String path = dependency.getName();
-                                    if (!path.startsWith(":")) {
-                                        path = ":" + path;
+                                    // perhaps warn about unused source directory? ...not really worth it.
+                                    // check for java-versioned directories...
+                                    if (sourceDir.startsWith("javaGT")) {
+                                        // applies to java versions greater than $N
+                                        // TODO: option to autogen module.java for javaGT8
+                                    } else if (sourceDir.startsWith("javaLT")) {
+                                        // applies to java versions less than $N
+                                    } else if (sourceDir.startsWith("java")) {
+                                        // applies to java version equals $N
                                     }
-                                    PlatformModule coords = dependency.getCoords();
-                                    if (coords.getPlatform() == null) {
-                                        coords = coords.edit(plat.getName(), null);
-                                    }
-                                    if (coords.getModule() == null) {
-                                        coords = coords.edit(null, mod.getName());
-                                    }
-                                    // compute whether the target project is not-multiplatform / needs configuration: set too.
-                                    final String unparsed = QualifiedModule.unparse(coords);
-                                    if (index.isMultiPlatform(view, path)) {
-                                        // multi-platform needs to convert to a subproject dependency.
-                                        path = path + ":" + unparsed;
-                                    } else {
-                                        // not multi-platform, we need to depend on sane configuration
-                                        path = path + "\" configuration: \"" + unparsed + "Out";
-                                    }
-                                    depOut.println("project(path: \"" + path + "\")");
-                                    break;
-                                case internal:
-                                    path = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + dependency.getName();
-                                    depOut.println("project(path: \"" + path + "\")");
-                                    break;
-                                case external:
-                                    depOut.println("\"" + dependency.getGNV() + "\"");
-                                    break;
                             }
                         }
-
-
-                        // all done writing generated project
-                        GFileUtils.writeFile(out.toSource(), buildFile, "UTF-8");
                     }
-                });
-            }
+                    Lazy<ClosureBuffer> dependencies = Lazy.deferred1(()->
+                        out.startClosure("dependencies")
+                    );
+                    for (SchemaDependency dependency : project.getDependenciesOf(plat, mod)) {
+                        if (!index.dependencyExists(dependency, project, plat, mod)) {
+                            // skipping a non-live dependency.
+                            continue;
+                        }
+                        final ClosureBuffer depOut = dependencies.out1();
+                        switch (dependency.getTransitivity()) {
+                            case api:
+                                out.addPlugin("java-library");
+                                depOut.append(
+                                        project.isMultiplatform() || "main".equals(key) ?
+                                        "compile" : key + "Compile"
+                                );
+                                break;
+                            case compile_only:
+                                depOut.append("compileOnly");
+                                depOut.append(
+                                        project.isMultiplatform() || "main".equals(key) ?
+                                                "compileOnly" : key + "CompileOnly"
+                                );
+                                break;
+                            case impl:
+                                depOut.append(
+                                        project.isMultiplatform() || "main".equals(key) ?
+                                                "compile" : key + "Compile"
+                                );
+                                break;
+                            case runtime:
+                                depOut.append(
+                                        project.isMultiplatform() || "main".equals(key) ?
+                                                "runtime" : key + "Runtime"
+                                );
+                                break;
+                            case runtime_only:
+                                depOut.append(
+                                        project.isMultiplatform() || "main".equals(key) ?
+                                                "runtimeOnly" : key + "RuntimeOnly"
+                                );
+                                break;
+                            default:
+                                throw new IllegalArgumentException("transitivity " + dependency.getTransitivity() + " is not supported!");
+                        }
+                        depOut.append(" ");
+                        switch (dependency.getType()) {
+                            case unknown:
+                            case project:
+                                String path = dependency.getName();
+                                if (!path.startsWith(":")) {
+                                    path = ":" + path;
+                                }
+                                PlatformModule coords = dependency.getCoords();
+                                if (coords.getPlatform() == null) {
+                                    coords = coords.edit(plat.getName(), null);
+                                }
+                                if (coords.getModule() == null) {
+                                    coords = coords.edit(null, mod.getName());
+                                }
+                                // compute whether the target project is not-multiplatform / needs configuration: set too.
+                                final String unparsed = QualifiedModule.unparse(coords);
+                                if (index.isMultiPlatform(view, path, coords)) {
+                                    // multi-platform needs to convert to a subproject dependency.
+                                    String simpleName = path.substring(path.lastIndexOf(":") + 1);
+                                    path = path + ":" + simpleName + "-" + unparsed;
+                                } else {
+                                    // not multi-platform, we expect this to be a single-module dependency,
+                                    // so, for now, no need to do anything; a plain project dependency is correct.
+//                                    path = path + "\", configuration: \"" + unparsed + "Out";
+                                }
+                                depOut.println("project(path: \"" + path + "\")");
+                                break;
+                            case internal:
+                                // to have an internal dependency is to inherently be multiplatform
+                                // (there is no distinction between platform and module when it comes to "do you have more than one module")
+                                path = project.getPathGradle();
+                                String simpleName = path.substring(path.lastIndexOf(":") + 1);
+                                PlatformModule platMod = PlatformModule.parse(dependency.getName());
+                                if (index.isMultiPlatform(view, project.getPathIndex(), platMod)) {
+                                    path = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + simpleName + "-" + platMod.toPlatMod();
+                                }
+                                depOut.println("project(path: \"" + path + "\")");
+                                break;
+                            case external:
+                                depOut.println("\"" + dependency.getGNV() + "\"");
+                                continue;
+                        } // end switch(dep.getType())
+                    } // end for (dep :
+
+                    if (!project.isMultiplatform()) {
+                        out.println()
+                           .startClosure("configurations")
+                           .println(key + "Out");
+                        // TODO: actually hook this up in the generated code
+                    }
+
+                    // all done writing generated project
+                    GFileUtils.writeFile(out.toSource(), buildFile, "UTF-8");
+                }
+            });
         });
+    }
+
+    private void finalizeProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
+        if (!project.isMultiplatform()) {
+//            gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
+            gradleProject.getGradle().projectsEvaluated(g->{
+                gradleProject.apply(o-> {
+                    gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
+//                    o.plugin(XapiParserPlugin.class);
+                });
+            });
+        }
+    }
+
+    private void setupProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
+        if (!project.isMultiplatform()) {
+            gradleProject.apply(o-> {
+                o.plugin(JavaLibraryPlugin.class);
+//                o.plugin(XapiJavaPlugin.class);
+            });
+        }
+        final ProjectView view = ProjectView.fromProject(gradleProject);
+        view.getLogger().quiet("Setting up schema for project {}", view.getPath());
+        ListLike<SchemaDependency> externals = X_Jdk.list();
+//        project.getDependencies().forEachPair((mod, dep) -> {
+//            switch (dep.getType()) {
+//                case external:
+//                    externals.add(dep);
+//                    break;
+//            }
+//        });
+        if (externals.isNotEmpty()) {
+//            view.getTasks().register("resolveExternals", ResolveExternalsTask.class);
+//            TaskSpy.spy(view, "resolveExternals", ResolveExternalsTask.class, resolve->{
+//                // make all classpaths / configuration resolution depend on resolveExternals.
+//            });
+        }
+        if (project.isMultiplatform()) {
+            // If we are multi-platform, then we have sub-projects for each of our modules.
+            // These subprojects will not match the SchemaProject, nor will they need to:
+            // these subprojects contain generated dependency / general wiring;
+            // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
+
+        } else {
+
+            // A non-multi-platform project needs to have a bit more "hidden surgery".
+            project.forAllPlatformsAndModules((plat, mod) -> {
+                if (index.hasEntries(view, project.getPathIndex(), plat, mod)) {
+                    // for now, lets apply our generated gradle source...
+                    // if this gets too yucky, we can just replace it w/ direct (but hidden) "act on Project" object code
+                    String key = QualifiedModule.unparse(plat.getName(), mod.getName());
+                    String path = view.getProjectDir().getAbsolutePath() +
+                            File.separator + "mods" + File.separator + key + File.separator +
+                            project.getName() + X_String.toTitleCase(key) + ".gradle";
+                    if (new File(path + ".kts").exists()) {
+                        path = path + ".kts";
+                    }
+                    final String finalPath = path;
+                    view.getLogger().quiet("{} is sourcing generated path {}", view.getPath(), finalPath);
+                    gradleProject.apply(o-> {
+                        o.from(finalPath);
+                    });
+                }
+            });
+        }
     }
 
     private void maybeRead(final File dir, final String file, final In1<String> callback) {

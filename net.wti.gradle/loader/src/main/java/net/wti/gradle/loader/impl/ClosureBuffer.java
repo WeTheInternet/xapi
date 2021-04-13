@@ -66,9 +66,8 @@ public class ClosureBuffer extends GradleBuffer {
         b.append("{");
         final String body = super.toSource();
 
-        final String trimmed = body.trim();
-        final String[] lines = trimmed.split("[\\n\\r]+");
-        boolean multiline = lines.length > 1;
+        final String[] lines = body.split("[\\n\\r]+");
+        boolean multiline = lines.length > 1 || isIndentNeeded();
 
         printParameters(b, multiline);
 

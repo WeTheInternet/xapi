@@ -2,6 +2,7 @@ package net.wti.gradle.schema.index;
 
 import net.wti.gradle.schema.api.QualifiedModule;
 import net.wti.gradle.schema.spi.SchemaIndex;
+import net.wti.gradle.schema.spi.SchemaIndexReader;
 
 import java.util.Objects;
 
@@ -13,11 +14,13 @@ public class SchemaIndexImmutable implements SchemaIndex {
     private final String buildName;
     private final String groupId;
     private final String version;
+    private final SchemaIndexReader reader;
 
-    public SchemaIndexImmutable(String buildName, CharSequence groupId, CharSequence version) {
+    public SchemaIndexImmutable(String buildName, CharSequence groupId, CharSequence version, final SchemaIndexReader reader) {
         this.buildName = buildName;
         this.groupId = groupId == null ? QualifiedModule.UNKNOWN_VALUE : groupId.toString();
         this.version = version == null ? QualifiedModule.UNKNOWN_VALUE : version.toString();
+        this.reader = reader;
     }
 
     @Override
@@ -33,6 +36,11 @@ public class SchemaIndexImmutable implements SchemaIndex {
     @Override
     public CharSequence getVersion() {
         return version;
+    }
+
+    @Override
+    public SchemaIndexReader getReader() {
+        return reader;
     }
 
     @Override

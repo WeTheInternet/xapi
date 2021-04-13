@@ -136,7 +136,6 @@ public class XapiBasePlugin implements Plugin<Project> {
             });
         }
 
-        self.whenReady(ready->validateProperties(self));
 
         // Whenever we apply any plugins, we should, as soon as possible, parse our schema.xapi / SchemaMap,
         // so other processes can rely on finding / visiting the SchemaMap to construct project graphs.
@@ -150,6 +149,8 @@ public class XapiBasePlugin implements Plugin<Project> {
             }
         }
 
+        self.whenReady(ready->self.getProjectGraph().whenReady(ReadyState.BEFORE_FINISHED, ignored->validateProperties(self)));
+
     }
 
     private void validateProperties(final ProjectView self) {
@@ -161,7 +162,7 @@ public class XapiBasePlugin implements Plugin<Project> {
         } catch (RuntimeException e) {
             String oldMessage = e.getMessage();
             throw new IllegalStateException("Failed gradle property validation; if you wish to suppress this check (not recommended), set " +
-                    skipProp + "=true in file://" + self.getRootProject().getProjectDir() + "/gradle.properties.\nError: " + e.getMessage(), e);
+                    skipProp + "=true in file://" + self.getRootProject().getProjectDir() + "/gradle.properties.\nError: " + oldMessage, e);
         }
     }
     private void doValidateProperties(final ProjectView self) {

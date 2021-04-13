@@ -12,7 +12,7 @@ class SchemaIndexerImplTest extends AbstractSchemaTest<SchemaIndexerImplTest> {
 
     File indexDir
     void setup() {
-        indexDir = new File(rootDir, 'index')
+        indexDir = new File(rootDir, 'build/index')
         if (indexDir.isDirectory()) {
             indexDir.deleteDir()
         }
@@ -21,7 +21,8 @@ class SchemaIndexerImplTest extends AbstractSchemaTest<SchemaIndexerImplTest> {
 
     def "A schema is written for a single module project"() {
         given:
-        addSourceUtil(false)
+        addSourceCommon(false)
+        addSourceUtil(false, false)
         runSucceed("compileJava")
         expect:
         new File(indexDir, 'path').listFiles()?.length == 7

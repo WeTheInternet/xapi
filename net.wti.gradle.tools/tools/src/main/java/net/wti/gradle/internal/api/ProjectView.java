@@ -82,7 +82,7 @@ public interface ProjectView extends MinimalProjectView {
     ProjectLayout getLayout();
 
     static ProjectView fromProject(Project project) {
-        return GradleService.buildOnce(project, ProjectView.EXT_NAME, ignored-> {
+        return GradleService.buildOnce(ProjectView.class, project, ProjectView.EXT_NAME, ignored-> {
             ProjectInternal p = (ProjectInternal) project;
             final Instantiator inst = p.getServices().get(Instantiator.class);
             final CollectionCallbackActionDecorator dec = p.getServices().get(CollectionCallbackActionDecorator.class);
