@@ -6,7 +6,7 @@ import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/25/16.

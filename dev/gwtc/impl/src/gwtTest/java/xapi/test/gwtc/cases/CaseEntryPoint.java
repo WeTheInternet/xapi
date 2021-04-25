@@ -16,7 +16,7 @@ import xapi.log.api.LogService;
 import xapi.platform.GwtPlatform;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.dom.client.Document;

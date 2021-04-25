@@ -6,10 +6,9 @@ import xapi.util.api.ReceivesValue;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import static xapi.util.X_String.toMetricSuffix;
+import static xapi.string.X_String.toMetricSuffix;
 
 public class Benchmark {
 

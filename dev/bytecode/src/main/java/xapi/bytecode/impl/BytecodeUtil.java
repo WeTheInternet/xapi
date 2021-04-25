@@ -31,7 +31,7 @@ import xapi.source.api.IsType;
 import xapi.source.impl.ImmutableAnnotationValue;
 import xapi.source.service.SourceService;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.ConvertsValue;
 
 public class BytecodeUtil {

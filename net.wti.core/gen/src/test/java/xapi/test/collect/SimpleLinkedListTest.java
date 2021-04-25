@@ -4,7 +4,7 @@
 package xapi.test.collect;
 
 import org.junit.Test;
-import xapi.collect.impl.SimpleLinkedList;
+import xapi.collect.simple.SimpleLinkedList;
 
 import static org.junit.Assert.assertEquals;
 

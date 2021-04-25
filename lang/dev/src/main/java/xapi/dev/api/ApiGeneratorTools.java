@@ -34,7 +34,7 @@ import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.api.HasSourceBuilder;
 import xapi.source.write.Template;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1136,8 +1136,8 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
 
         "SimpleFifo", "xapi.collect.impl.SimpleFifo",
         "xapi.collect.impl.SimpleFifo", "xapi.collect.impl.SimpleFifo",
-        "SimpleLinkedList", "xapi.collect.impl.SimpleLinkedList",
-        "xapi.collect.impl.SimpleLinkedList", "xapi.collect.impl.SimpleLinkedList"
+        "SimpleLinkedList", "xapi.collect.simple.SimpleLinkedList",
+        "xapi.collect.simple.SimpleLinkedList", "xapi.collect.simple.SimpleLinkedList"
     );//TODO: .immutable()
 
     StringTo<String> DEFAULT_ITERATING_TYPES = X_Collect.newStringMap(

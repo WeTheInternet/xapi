@@ -5,7 +5,7 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.fu.X_Fu;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
 

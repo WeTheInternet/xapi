@@ -1,0 +1,29 @@
+plugins {
+    id 'java-library'
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+description = '''Xapi Gradle Deprecated: Older tools from the days of configure-during-project-evaluation.'''
+
+repositories.jcenter()
+
+sourceCompatibility = '1.8'
+
+dependencies {
+    compileOnly gradleApi()
+    testCompile project(':xapi-gradle-test')
+    compile project(':xapi-gradle-core')
+    compile project(':xapi-gradle-tools')
+}
+
+sourceSets.main.groovy.srcDirs = []
+
+gradlePlugin {
+    plugins {
+        xapiPublish {
+            id = 'xapi-publish'
+            implementationClass = 'net.wti.gradle.publish.plugin.XapiPublishPlugin'
+        }
+    }
+}

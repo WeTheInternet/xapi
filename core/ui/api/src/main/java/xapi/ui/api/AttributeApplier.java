@@ -1,6 +1,6 @@
 package xapi.ui.api;
 
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 public interface AttributeApplier {
 

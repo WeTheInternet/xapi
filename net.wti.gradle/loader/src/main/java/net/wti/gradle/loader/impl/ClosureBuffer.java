@@ -3,7 +3,7 @@ package net.wti.gradle.loader.impl;
 import xapi.dev.source.LocalVariable;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * ClosureBuffer:

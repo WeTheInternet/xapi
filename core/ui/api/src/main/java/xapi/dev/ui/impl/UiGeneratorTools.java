@@ -7,7 +7,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.SimpleLinkedList;
+import xapi.collect.simple.SimpleLinkedList;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.ui.api.*;
@@ -23,7 +23,7 @@ import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.Arrays;
 import java.util.List;

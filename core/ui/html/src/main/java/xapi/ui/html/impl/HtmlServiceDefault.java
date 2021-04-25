@@ -10,7 +10,7 @@ import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlService;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.ui.html.api.Style;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 @SingletonDefault(implFor=HtmlService.class)
 public class HtmlServiceDefault implements HtmlService {

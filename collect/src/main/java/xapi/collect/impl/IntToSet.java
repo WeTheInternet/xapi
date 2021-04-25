@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.api.CollectionProxy;
 import xapi.fu.In1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;

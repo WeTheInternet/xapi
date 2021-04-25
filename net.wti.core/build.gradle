@@ -5,6 +5,7 @@ buildscript {
     apply from: "$xapiHome/gradle/xapi-env.gradle"
     dependencies {
         classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
+        classpath "net.wti.gradle.tools:xapi-gradle-deprecated:${->version}"
     }
 }
 
@@ -25,7 +26,7 @@ xapiSchema {
         main
     }
     archives {
-        main
+        main.required().set([])
     }
     archives.create('test').require 'main'
 }

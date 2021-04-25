@@ -3,7 +3,7 @@ package xapi.ui.impl;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
-import xapi.except.NotImplemented;
+import xapi.error.NotImplemented;
 import xapi.fu.Lazy;
 import xapi.fu.itr.SizedIterable;
 import xapi.ui.api.UiElement;

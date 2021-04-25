@@ -13,7 +13,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
-import xapi.except.NotImplemented;
+import xapi.error.NotImplemented;
 import xapi.fu.*;
 import xapi.fu.data.MapLike;
 import xapi.source.X_Source;

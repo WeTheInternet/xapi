@@ -35,7 +35,7 @@
 
 package xapi.dev.source;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 import xapi.fu.Printable;
 import xapi.source.read.JavaLexer;
 

@@ -3,16 +3,11 @@ package net.wti.loader.plugin
 
 import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.schema.map.SchemaMap
-import net.wti.gradle.test.api.IncludedTestBuild
 import net.wti.gradle.test.api.TestProject
-import net.wti.gradle.test.api.TestProjectDir
-import org.gradle.api.Action
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
-import xapi.util.X_Namespace
+import xapi.constants.X_Namespace
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 30/07/19 @ 4:41 AM.

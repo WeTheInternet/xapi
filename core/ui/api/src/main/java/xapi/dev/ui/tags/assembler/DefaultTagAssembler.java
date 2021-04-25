@@ -18,7 +18,7 @@ import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.Maybe;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 

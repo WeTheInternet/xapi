@@ -16,7 +16,7 @@ import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlTemplate;
 import xapi.ui.html.api.Style;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.ConvertsValue;
 
 import static xapi.collect.X_Collect.newStringMap;

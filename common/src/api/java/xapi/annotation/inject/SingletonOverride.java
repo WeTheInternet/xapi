@@ -41,7 +41,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 
 /**
  * An annotation used to override a {@link SingletonDefault} used in dependency injection.

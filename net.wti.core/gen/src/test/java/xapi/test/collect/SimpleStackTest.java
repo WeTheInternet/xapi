@@ -3,7 +3,7 @@
  */
 package xapi.test.collect;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"

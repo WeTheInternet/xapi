@@ -1,6 +1,6 @@
 package xapi.dev.gwt.gui;
 
-import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.init.AbstractMultiInitMap;
 import xapi.dev.gwt.CodeServerGuiOptions;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;

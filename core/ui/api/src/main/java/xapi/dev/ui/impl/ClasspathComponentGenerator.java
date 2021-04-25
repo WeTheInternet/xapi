@@ -7,7 +7,7 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 import xapi.dev.X_Dev;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.FileBasedSourceHelper;
@@ -35,7 +35,7 @@ import xapi.source.read.JavaModel.IsQualified;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.Digester;
 
 import java.io.File;

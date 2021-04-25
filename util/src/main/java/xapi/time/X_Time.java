@@ -6,7 +6,7 @@ import xapi.fu.Out1;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.service.TimeService;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.inject.X_Inject.singleton;
 

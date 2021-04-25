@@ -8,8 +8,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static xapi.util.X_String.isEmpty;
-import static xapi.util.X_String.toTitleCase;
+import static xapi.string.X_String.isEmpty;
+import static xapi.string.X_String.toTitleCase;
 
 public class X_Source {
 

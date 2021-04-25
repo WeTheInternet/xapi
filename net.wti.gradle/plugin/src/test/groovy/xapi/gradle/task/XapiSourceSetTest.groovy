@@ -1,8 +1,6 @@
 package xapi.gradle.task
 
 import net.wti.gradle.test.AbstractMultiProjectTest
-import org.gradle.testkit.runner.BuildResult
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.GFileUtils
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -44,7 +42,7 @@ class XapiSourceSetTest extends AbstractMultiProjectTest<XapiSourceSetTest> {
         new File(buildFile.parentFile, 'src/main/java').mkdirs()
 
         when:
-        def result = exec('build', '--stacktrace')
+        def result = runSucceed('build', '--stacktrace')
         then:
         result.task(":xapiDevJar").outcome == SUCCESS
 
@@ -78,15 +76,6 @@ includes={  api: "$root.name/api",
 
     File getBuiltManifest() {
         new File(testProjectDir.root, 'build/xapi-paths/META-INF/xapi/paths.xapi')
-    }
-
-    BuildResult exec(String ... s) {
-        GradleRunner.create()
-                .withProjectDir(testProjectDir.root)
-                .withPluginClasspath()
-                .withDebug(true)
-                .withArguments(s)
-                .build()
     }
 
     private File getRoot() {

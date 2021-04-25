@@ -14,8 +14,8 @@ import xapi.collect.impl.IntToSet;
 import xapi.collect.impl.ObjectToManyList;
 import xapi.collect.impl.StringToAbstract;
 import xapi.collect.impl.StringToManyList;
-import xapi.collect.proxy.CollectionProxy;
-import xapi.collect.proxy.MapOf;
+import xapi.collect.proxy.api.CollectionProxy;
+import xapi.collect.proxy.impl.MapOf;
 import xapi.collect.service.CollectionService;
 import xapi.fu.X_Fu;
 import xapi.platform.GwtPlatform;
@@ -41,7 +41,7 @@ public class CollectionServiceGwt implements CollectionService{
 
   @Override
   public <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(Class<Key> key, Class<Value> cls, CollectionOptions opts) {
-    return new xapi.collect.proxy.MapOf<>(newMap(opts), key, cls);
+    return new MapOf<>(newMap(opts), key, cls);
   }
 
   private <K, V> Map<K, V> newMap(CollectionOptions opts) {

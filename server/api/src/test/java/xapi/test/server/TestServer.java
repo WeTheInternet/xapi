@@ -17,7 +17,7 @@ import xapi.server.X_Server;
 import xapi.server.annotation.XapiServlet;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;

@@ -2,7 +2,7 @@ package xapi.dev.scanner.impl;
 
 import xapi.bytecode.*;
 import xapi.collect.api.Fifo;
-import xapi.collect.impl.MultithreadedStringTrie;
+import xapi.collect.trie.MultithreadedStringTrie;
 import xapi.collect.impl.SimpleFifo;
 import xapi.dev.resource.api.ClasspathResource;
 import xapi.dev.resource.impl.ByteCodeResource;

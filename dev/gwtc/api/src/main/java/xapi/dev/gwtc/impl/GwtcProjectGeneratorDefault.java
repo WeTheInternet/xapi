@@ -20,7 +20,6 @@ import xapi.except.NotYetImplemented;
 import xapi.file.X_File;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
-import xapi.fu.itr.ArrayIterable;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
@@ -32,7 +31,7 @@ import xapi.log.api.LogLevel;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.*;
 import java.lang.reflect.AnnotatedElement;

@@ -63,7 +63,11 @@ public class DefaultPlatformGraph extends AbstractChildGraphNode<ArchiveGraph, P
 
     @Override
     public void realizedArchives(Action<? super ArchiveGraph> action) {
-        whenRealized(action);
+        whenRealized(arch-> {
+            if (arch.realized() && arch.isSelectable()) {
+                action.execute(arch);
+            }
+        });
     }
 
     @Override

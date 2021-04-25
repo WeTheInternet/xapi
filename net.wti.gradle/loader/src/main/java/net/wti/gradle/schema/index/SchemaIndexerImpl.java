@@ -6,7 +6,7 @@ import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
-import net.wti.gradle.schema.spi.SchemaIndex;
+import net.wti.gradle.schema.api.SchemaIndex;
 import net.wti.gradle.schema.spi.SchemaIndexer;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
@@ -17,21 +17,18 @@ import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static xapi.util.X_String.isNotEmptyTrimmed;
+import static xapi.string.X_String.isNotEmptyTrimmed;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 2020-07-20 @ 2:17 a.m..
  */
 public class SchemaIndexerImpl implements SchemaIndexer {
+
+    public static final String EXT_NAME = "xapiSchemaIndexer";
 
     private final SchemaProperties properties;
 
@@ -83,6 +80,9 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
     @Override
     public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map) {
+        String indexProp = properties.getIndexIdProp(view);
+        boolean alreadyDone = "true".equals(properties.getProperty(indexProp, view));
+
         ExecutorService exec = Executors.newWorkStealingPool(4);
         List<Future<?>> futures = new CopyOnWriteArrayList<>();
         final File rootDir = view.getProjectDir();
@@ -90,6 +90,14 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         File indexDir = calculateIndex(view, buildName, rootDir);
         final SchemaIndexBuilder index = new SchemaIndexBuilder(view, rootDir, properties, exec, futures, indexDir);
 
+        if ("true".equals(System.getProperty(indexProp))) {
+            return Out1.immutable(index);
+        }
+        try {
+            System.setProperty(indexProp, "running");
+        } catch (Exception e) {
+            view.getLogger().info("Unable to set indexProp {} to running {}", indexProp, e);
+        }
         populateIndex(view, map, index, buildName);
 
         final Future<SchemaIndex> waiter = exec.submit(Out1.out1Unsafe(()->{
@@ -98,7 +106,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             long tooLong = System.currentTimeMillis() + ttl;
             final List<Throwable> failures = new ArrayList<>();
             SchemaIndex result = null;
-            for (;result == null || !futures.isEmpty();) {
+            for (;!futures.isEmpty();) {
                 // clean out stale / complete futures
                 futures.removeIf(future -> {
                     if (future.isDone()) {
@@ -110,6 +118,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                             Thread.currentThread().interrupt();
                             failures.add(e);
                         } catch (ExecutionException | TimeoutException e) {
+                            // really shouldn't timeout if future.isDone() is true, above
                             failures.add(e);
                         }
                     }
@@ -131,13 +140,12 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 if (System.currentTimeMillis() > tooLong) {
                     throw new TimeoutException("Took " + ttl + " millis to build index for " + rootDir + " (" + buildName + ")");
                 }
-                if (result == null) {
-                    // finalize the index, but only once! after that, we just drain callbacks
-                    // now, run an analyze, so any transitive / interim dependencies
-                    analyzeIndex(view, index, map, properties);
-                    result = index.build();
-                }
             } // end for(;;){}
+            // now, run an analyze, so we can mark all live transitive / interim dependencies
+            analyzeIndex(view, index, map, properties);
+            // TODO: mark/sweep old modules somehow... in case some poor soul tries to read all "/live" files or something silly
+            // finalize our index results
+            result = index.build();
             return result;
 
         })::out1);
@@ -145,21 +153,20 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         return Lazy.deferred1Unsafe(()-> {
             // wait for the main index parse
             final SchemaIndex result = waiter.get();
+            // set a system property to say "this index is done".
+            // hmm... Lazy framework can get dirty, if somebody composes our caller in Lazy code, our markDone() might be premature.
+            properties.markDone(indexProp, view, "index job");
+            // TODO: composable Lazy where .whenDone() waits until root-most lazy is finished...
+            //   this way, if we need to do something thread-sensitive, like acquire a lock or launch off-threadable tasks,
+            //   and wait until "all Lazy in the current stack are done" to call said callbacks.
             return result;
         });
     }
 
     private File calculateIndex(final MinimalProjectView view, final String buildName, final File rootDir) {
 
-        final String configuredLoc = properties.getIndexLocation(view);
-        final File indexDir;
-        if (configuredLoc == null) {
-            // user hasn't specified, start guessing-and-then-default-to ./build/index
-            final String loc = SchemaIndex.getIndexLocation(view, properties);
-            indexDir = new File(loc);
-        } else {
-            indexDir = new File(configuredLoc);
-        }
+        final String configuredLoc = SchemaProperties.getIndexLocation(view, properties);
+        final File indexDir = new File(configuredLoc);
 
         if (!indexDir.mkdirs()) {
             // hm... should log that we lack permission to r/w the indexDir... we care, but not enough to break...
@@ -193,12 +200,21 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     // This module is live due to having sources!
                     index.markWithSource(project, plat, mod, moduleSrc);
                 } else {
-                    // check if this module should be live b/c of schema properties
                     String mangleProject = QualifiedModule.mangleProjectPath(project.getPathGradle());
-                    String liveKey = "live_" + mangleProject + "_" + modulePrefix;
-                    final String liveValue = properties.getProperty(liveKey, view);
-                    if ("true".equals(liveValue)) {
-                        index.markExplicitInclude(project, plat, mod);
+                    File modDir = index.calcProjectDir(project, plat.getName(), mod.getName());
+                    File force = new File(modDir, "force");
+                    if (force.exists()) {
+                        final String forceContents = GFileUtils.readFile(force);
+                        if (!"false".equals(forceContents)) {
+                            index.markExplicitInclude(project, plat, mod);
+                        }
+                    } else {
+                        // check if this module should be live b/c of schema properties
+                        String liveKey = "live_" + mangleProject + "_" + modulePrefix;
+                        final String liveValue = properties.getProperty(liveKey, view);
+                        if ("true".equals(liveValue)) {
+                            index.markExplicitInclude(project, plat, mod);
+                        }
                     }
                     // TODO (maybe): have a schema.xapi means of marking specific project/platform/module as live.
                 }
@@ -214,14 +230,21 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             // and liveness level 1 for "this module depends on something that is live".
             File projectDir = liveness.getProjectDir();
             File liveFile = new File(projectDir, "live");
-            GFileUtils.writeFile("2", liveFile, "utf-8");
+            GFileUtils.writeFile(liveness.isForce() ? "3" : liveness.isExplicit() ? "4" : "2", liveFile, "utf-8");
             // now, go through all of this project's out/ edges, marking each one as at-least-level-1
             markOutEdges(map, index, liveness.getProjectDir());
+//            markInEdges(map, index, liveness.getProjectDir());
             // now, also write some other useful metadata
             File multiplatformFile = new File(projectDir, "multiplatform");
             File virtualFile = new File(projectDir, "virtual");
+            File forceFile = new File(projectDir, "force");
             GFileUtils.writeFile(Boolean.toString(liveness.isMultiplatform()), multiplatformFile, "utf-8");
             GFileUtils.writeFile(Boolean.toString(liveness.isVirtual()), virtualFile, "utf-8");
+            if (liveness.isForce()) {
+                GFileUtils.writeFile("true", forceFile, "utf-8");
+            } else if (forceFile.exists()) {
+                forceFile.delete();
+            }
         });
 
         // next, inspect all index results with more than one live result, to mark as multiplatform.
@@ -261,19 +284,15 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         if (outDir.isDirectory()) {
             for (File mangledProjects : outDir.listFiles()) {
                 for (File platMods : mangledProjects.listFiles()) {
-                    Path liveLink = Paths.get(new File(platMods, "live").toURI());
-                    final Path readLink;
-                    try {
-                        readLink = Files.readSymbolicLink(liveLink);
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Bad symbolic link " + liveLink, e);
-                    }
-                    Path target = readLink.resolve("live");
-                    String value = GFileUtils.readFile(target.toFile(), "utf-8");
+                    File linkFile = new File(platMods, "link");
+                    String nextPath = GFileUtils.readFile(linkFile, "utf-8");
+                    final File readLink = new File(index.getDirByPpm(), nextPath);
+                    File liveFile = new File(readLink, "live");
+                    String value = GFileUtils.readFile(liveFile, "utf-8");
                     if (Integer.parseInt(value) < 1) {
-                        GFileUtils.writeFile("1", target.toFile(), "utf-8");
-                        // now, chain our out/ edges until there's no more out/
-                        markOutEdges(map, index, readLink.toFile());
+                        // only create a "1" file if a child edge results in a >1 liveness.
+                        GFileUtils.writeFile("1", liveFile, "utf-8");
+                        markOutEdges(map, index, readLink);
                     }
                 }
 
@@ -318,7 +337,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             final Future<?>[] future = new Future[1];
 //            SchemaIndexBuilder localIndex = index.duplicate();
             future[0] = exec.submit(()->{
-                map.getView(); // ensure this lazy is initialized.
+                map.resolve();
                 if (index.getGroupId() == null || QualifiedModule.UNKNOWN_VALUE.equals(index.getGroupId().toString())) {
                     index.setGroupId(map.getGroup());
                 }
@@ -408,7 +427,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                 break;
                             case internal:
                                 File internalDeps = new File(versionDir.out1(), "internal");
-                                if (!internalDeps.isDirectory() && !internalDeps.mkdirs()) {
+                                if (!internalDeps.isDirectory() && !internalDeps.mkdirs() && !internalDeps.isDirectory()) {
                                     // we should throw some generic "can't write files" error here...
                                     throw new IllegalStateException("Unable to create projects directory " + internalDeps + "; check disk usage and filesystem permissions");
                                 }
@@ -449,9 +468,31 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     // SentinelTask, which act as a "smart lifecycle task" for arbitrary user-supplied tasks.
                     // They can hook up index files as task inputs, and serve as cheaply-realizable task graph nodes
                     // which you can pre-create and then call inside a tasks.register() callback (where it's illegal to create new tasks).
+                    File modDir = new File(projectDir, configName);
 
-
-
+                    final File testFile = new File(modDir, "test");
+                    final File publishFile = new File(modDir, "publish");
+                    final File forceFile = new File(modDir, "force");
+                    final File liveFile = new File(modDir, "live");
+                    if (module.isTest()) {
+                        GFileUtils.writeFile("true", testFile);
+                    } else {
+                        GFileUtils.deleteFileQuietly(testFile);
+                    }
+                    if (module.isPublished()) {
+                        GFileUtils.writeFile("true", publishFile);
+                    } else {
+                        GFileUtils.deleteFileQuietly(publishFile);
+                    }
+                    if (module.isForce()) {
+                        GFileUtils.writeFile("true", forceFile);
+                        GFileUtils.writeFile("3", liveFile);
+                    } else {
+                        GFileUtils.deleteFileQuietly(forceFile);
+                    }
+                    if (!liveFile.exists()) {
+                        GFileUtils.writeFile("0", liveFile);
+                    }
                 } // end all modules
             } // end all platforms
         } // end all projects
@@ -500,23 +541,22 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         }
 
         // Now, write links from ppm directories to matching liveness file
-        Path inLink = Paths.get(new File(ppmIn, "live").toURI());
-        Path outLink = Paths.get(new File(ppmOut, "live").toURI());
-        if (!Files.isSymbolicLink(inLink)) {
-            try {
-                Files.createSymbolicLink(inLink, Paths.get(requestedDir.toURI()));
-            } catch (IOException e) {
-                // TODO: actually handle filesystems that can't create links? ......meh.
-                throw new UncheckedIOException("Unable to create link from " + inLink + " to " + requestedDir, e);
-            }
+        File inLink = new File(ppmIn, "link");
+        File outLink = new File(ppmOut, "link");
+        String linkSeg = requestedDir.getAbsolutePath().replace(index.getDirByPpm().getAbsolutePath(), "").substring(1);
+        if (inLink.isFile()) {
+            String bad;
+            assert linkSeg.equals((bad = GFileUtils.readFile(inLink))) : "Error, path disagreement in " + inLink + "; was " + bad + "; is " + linkSeg;
+        } else {
+            GFileUtils.writeFile(linkSeg, inLink, "utf-8");
         }
 
-        if (!Files.isSymbolicLink(outLink)) {
-            try {
-                Files.createSymbolicLink(outLink, Paths.get(requestorDir.toURI()));
-            } catch (IOException e) {
-                throw new UncheckedIOException("Unable to create link from " + outLink + " to " + requestorDir, e);
-            }
+        linkSeg = requestorDir.getAbsolutePath().replace(index.getDirByPpm().getAbsolutePath(), "").substring(1);
+        if (outLink.isFile()) {
+            String bad;
+            assert linkSeg.equals((bad = GFileUtils.readFile(outLink))) : "Error, path disagreement in " + outLink + "; was " + bad + "; is " + linkSeg;
+        } else {
+            GFileUtils.writeFile(linkSeg, outLink, "utf-8");
         }
 
         // hm... submit a task that will check if this dependency is explicit or if the module has sources, and increase liveness count.

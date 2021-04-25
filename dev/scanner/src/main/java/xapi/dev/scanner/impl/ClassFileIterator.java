@@ -1,7 +1,7 @@
 package xapi.dev.scanner.impl;
 
 import xapi.bytecode.ClassFile;
-import xapi.collect.api.HasPrefixed;
+import xapi.collect.prefixed.HasPrefixed;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.itr.MappedIterable;

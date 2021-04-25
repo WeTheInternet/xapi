@@ -1,6 +1,6 @@
 package xapi.time.api;
 
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 public class Clock{
   long startMilli;

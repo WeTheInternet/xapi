@@ -2,7 +2,7 @@ package net.wti.gradle.loader.impl;
 
 import xapi.dev.source.*;
 import xapi.fu.Printable;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * GradleBuffer:

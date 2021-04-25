@@ -1,5 +1,6 @@
 package net.wti.gradle.schema.impl;
 
+import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.schema.api.HasAllProjects;
 import net.wti.gradle.schema.api.HasPath;
 import net.wti.gradle.schema.api.SchemaCallbacks;
@@ -23,7 +24,9 @@ public class SchemaCallbacksDefault implements SchemaCallbacks {
     private final LinkedHashMap<String, In1<SchemaProject>> projectCallbacks = new LinkedHashMap<>();
 
     public SchemaCallbacksDefault() {
+    }
 
+    public SchemaCallbacksDefault(MinimalProjectView view) {
     }
 
     @Override

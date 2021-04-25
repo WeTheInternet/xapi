@@ -18,7 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static xapi.util.X_String.classToSourceFiles;
+import static xapi.string.X_String.classToSourceFiles;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/30/16.

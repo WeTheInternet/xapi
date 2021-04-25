@@ -14,10 +14,8 @@ import xapi.elemental.api.PotentialNode;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.ui.html.X_Html;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.ConvertsValue;
-
-import javax.inject.Provider;
 
 import com.google.gwt.core.client.MagicMethod;
 

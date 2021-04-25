@@ -16,7 +16,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.ui.api.component.HasChildren;
 import xapi.ui.api.component.HasParent;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Represents each assembled element within a component's ui DOM.

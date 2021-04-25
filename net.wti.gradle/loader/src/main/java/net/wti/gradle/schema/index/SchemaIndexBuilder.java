@@ -2,8 +2,8 @@ package net.wti.gradle.schema.index;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.schema.api.*;
-import net.wti.gradle.schema.spi.SchemaIndex;
-import net.wti.gradle.schema.spi.SchemaIndexReader;
+import net.wti.gradle.schema.api.SchemaIndex;
+import net.wti.gradle.schema.api.SchemaIndexReader;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import org.gradle.util.GFileUtils;
 import xapi.fu.In1;
@@ -62,7 +62,7 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
         this.executor = exec;
         this.futures = futures;
         this.indexDir = indexDir;
-        this.reader = new SchemaIndexReader(properties, view, new LazyString(this::getVersion));
+        this.reader = properties.createReader(view, new LazyString(this::getVersion));
     }
 
     @Override
@@ -230,6 +230,10 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
 
         public boolean isVirtual() {
             return project.isVirtual();
+        }
+
+        public boolean isForce() {
+            return project.isForce();
         }
 
     }

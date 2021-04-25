@@ -11,7 +11,7 @@ import xapi.io.X_IO;
 import xapi.javac.dev.api.JavacService;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.api.DebugRethrowable;
+import xapi.util.tools.DebugRethrowable;
 
 import static xapi.fu.Lazy.deferSupplier;
 import static xapi.fu.Pointer.pointerDeferred;

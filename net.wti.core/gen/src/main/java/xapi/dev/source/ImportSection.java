@@ -36,13 +36,12 @@
 package xapi.dev.source;
 
 import xapi.fu.In1;
-import xapi.util.X_String;
 
 import java.util.*;
 
 import static xapi.dev.source.PatternPrinter.NEW_LINE;
 import static xapi.fu.itr.ArrayIterable.iterate;
-import static xapi.util.X_String.isNotEmptyTrimmed;
+import static xapi.string.X_String.isNotEmptyTrimmed;
 
 public class ImportSection implements CanAddImports {
 

@@ -11,7 +11,7 @@ import xapi.annotation.inject.SingletonOverride;
 import xapi.event.api.EventHandler;
 import xapi.event.api.IsEventType;
 import xapi.event.impl.EventTypes;
-import xapi.except.NotImplemented;
+import xapi.error.NotImplemented;
 import xapi.fu.Pointer;
 import xapi.ui.api.ElementBuilder;
 import xapi.ui.impl.UiServiceImpl;

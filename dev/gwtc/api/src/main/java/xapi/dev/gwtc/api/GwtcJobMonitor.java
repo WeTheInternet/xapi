@@ -3,7 +3,7 @@ package xapi.dev.gwtc.api;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.itr.ArrayIterable;
 import xapi.log.X_Log;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/12/17.

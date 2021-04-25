@@ -13,7 +13,7 @@ import java.util.Iterator;
 import org.junit.Before;
 import org.junit.Test;
 
-import xapi.collect.impl.AbstractLinkedList;
+import xapi.collect.simple.AbstractLinkedList;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"

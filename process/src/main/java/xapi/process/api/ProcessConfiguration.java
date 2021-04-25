@@ -1,6 +1,6 @@
 package xapi.process.api;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;
 import xapi.scope.api.Scope;

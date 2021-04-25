@@ -6,7 +6,7 @@ import xapi.fu.Maybe;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Represents a logical entity that might own any given generated file.

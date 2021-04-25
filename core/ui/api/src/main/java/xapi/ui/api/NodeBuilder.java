@@ -5,8 +5,8 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.*;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
-import xapi.util.impl.DeferredCharSequence;
+import xapi.string.X_String;
+import xapi.util.tools.DeferredCharSequence;
 
 import java.io.IOException;
 import java.util.function.BiFunction;

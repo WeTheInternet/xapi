@@ -2,7 +2,7 @@ package xapi.dev.api;
 
 import xapi.fu.Lazy;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.fu.Lazy.deferAll;
 

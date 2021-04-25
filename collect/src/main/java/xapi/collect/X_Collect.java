@@ -8,7 +8,7 @@ import xapi.collect.impl.IntToManyList;
 import xapi.collect.impl.StringToDeepMap;
 import xapi.collect.impl.StringToDeepMultiMap;
 import xapi.collect.impl.StringToManyList;
-import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.api.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
 import xapi.fu.itr.ArrayIterable;

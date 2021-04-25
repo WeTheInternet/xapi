@@ -4,19 +4,29 @@ import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.test.api.TestBuild
 import net.wti.gradle.test.api.TestBuildDir
 import net.wti.gradle.test.api.TestFileTools
+import org.gradle.StartParameter
 import org.gradle.api.Action
+import org.gradle.api.initialization.ProjectDescriptor
+import org.gradle.api.initialization.Settings
 import org.gradle.api.internal.CollectionCallbackActionDecorator
+import org.gradle.api.internal.GradleInternal
+import org.gradle.api.internal.SettingsInternal
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.ExtensionContainer
+import org.gradle.internal.build.BuildState
 import org.gradle.internal.extensibility.DefaultConvention
 import org.gradle.internal.reflect.DirectInstantiator
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.Path
 import spock.lang.Specification
 
 import java.nio.file.Files
+import java.util.function.Function
 
 import static org.gradle.api.logging.LogLevel.*
 
@@ -35,9 +45,12 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
     private String version = "1.0"
     private String group = "test"
     private boolean initializedSettings
+    Settings settings
 
     DefaultConvention convention
-    Gradle gradle = Mock(Gradle)
+    Gradle gradle
+
+    private Logger logger = Logging.getLogger(getClass())
 
     File getRootDir() {
         this.@rootDir ?: (this.@rootDir = newTmpDir())
@@ -49,6 +62,46 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
 
     void setup() {
         convention = new DefaultConvention(DirectInstantiator.INSTANCE)
+        // initialize our mocks with some state...
+        Map<String, ProjectDescriptor> mockProjects = new LinkedHashMap<>();
+        Map<String, String> props = new LinkedHashMap<>()
+        Function<? super String, ? extends ProjectDescriptor> fakeDescriptor
+        fakeDescriptor = { String K ->
+            File projectDir = ':' == K ? rootDir : new File(rootDir, K.substring(1).replace(':' as char, File.separatorChar))
+            mockProjects.computeIfAbsent(K, {
+                Mock(ProjectDescriptor) {
+                    _ * getPath() >> K
+                    _ * getProjectDir() >> projectDir
+                    _ * getRootProject() >> { fakeDescriptor.apply(':') }
+                }
+            })
+        }
+        settings = Mock(Settings) {
+            _ * getExtensions() >> convention
+            _ * getGradle() >> Mock(GradleInternal) {
+                _ * getSettings() >> settings
+                _ * getOwner() >> Mock(BuildState) {
+                    _ * getCurrentPrefixForProjectsInChildBuilds() >> Path.path(rootDir.name)
+                }
+            }
+            _ * getStartParameter() >> Mock(StartParameter) {
+                _ * getProjectProperties() >> props
+            }
+            _ * findProject(_) >> { args ->
+                Object key = args[0]
+                if (key instanceof File) {
+                    throw new UnsupportedOperationException("Only string keys are allowed for settings.findProject during tests.")
+                }
+                final String k = "${ key.startsWith(':') ? '' : ':'}$key"
+                fakeDescriptor.apply(k)
+            }
+            _ * getRootProject() >> fakeDescriptor.apply(':')
+        }
+        gradle = settings.gradle
+    }
+
+    private Gradle privGradle() {
+        return getGradle()
     }
 
     BuildResult runSucceed(
@@ -60,6 +113,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
         flush()
         List<String> args = [toFlag(logLevel), '-Dxapi.home=' + getRootDir(), '--full-stacktrace', *tasksOrFlags]
 
+        logger.quiet("Invoke gradle file://{} args: {}", projectDir, args.join(" "))
         GradleRunner.create()
                 .withProjectDir(projectDir)
                 .withPluginClasspath()
@@ -82,6 +136,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
     ) {
         flush()
         List<String> args = [*task, '-Dxapi.home=' + getRootDir(), '--stacktrace', toFlag(logLevel)]
+        logger.quiet("Invoke gradle (expect failure) file://{} args: {}", projectDir, args.join(" "))
         GradleRunner.create()
                 .withProjectDir(projectDir)
                 .withPluginClasspath()
@@ -231,5 +286,15 @@ allprojects { group = "$group" }
 
     void setVersion(String version) {
         this.@version = version
+    }
+
+    @Override
+    Logger getLogger() {
+        return this.@logger
+    }
+
+    @Override
+    void whenSettingsReady(final Action<Settings> callback) {
+        callback.execute(settings)
     }
 }

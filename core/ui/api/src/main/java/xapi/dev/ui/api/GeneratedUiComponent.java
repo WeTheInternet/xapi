@@ -23,7 +23,7 @@ import xapi.fu.*;
 import xapi.fu.itr.*;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 

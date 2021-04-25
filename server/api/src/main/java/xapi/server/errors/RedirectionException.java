@@ -1,6 +1,6 @@
 package xapi.server.errors;
 
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Used to redirect user to another resource.

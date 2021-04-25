@@ -3,9 +3,9 @@ package xapi.components.impl;
 import elemental.dom.Element;
 import elemental.dom.Node;
 import xapi.components.api.ComponentNamespace;
-import xapi.dev.source.NameGen;
+import xapi.dev.debug.NameGen;
 import xapi.ui.api.component.Slot;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import com.google.gwt.core.client.GWT;
 

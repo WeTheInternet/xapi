@@ -20,7 +20,7 @@ import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.Ui;
 import xapi.ui.api.UiPhase;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;

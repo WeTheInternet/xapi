@@ -5,7 +5,7 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.Resource.ResourceType;
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 import xapi.annotation.ui.UiTemplate;
 
 import java.lang.annotation.Documented;

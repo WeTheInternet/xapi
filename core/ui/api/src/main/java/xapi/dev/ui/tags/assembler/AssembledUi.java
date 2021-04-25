@@ -9,7 +9,7 @@ import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * A container for information about a ui that is being assembled by a given component.

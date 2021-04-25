@@ -119,7 +119,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     private String name;
     private String group;
     private String version;
-    private ListLike<UiContainerExpr> platforms, modules, external, projects;
+    private ListLike<UiContainerExpr> platforms, modules, external, projects, repositories;
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
     private Boolean explicitMultiplatform;
 
@@ -197,6 +197,14 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         return this;
     }
 
+    public ListLike<UiContainerExpr> getRepositories() {
+        return repositories;
+    }
+
+    public void setRepositories(final ListLike<UiContainerExpr> repositories) {
+        this.repositories = repositories;
+    }
+
     public MultiList<PlatformModule, Expression> getDepsProject() {
         return depsProject;
     }
@@ -232,6 +240,13 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
             platforms = X_Jdk.listArrayConcurrent();
         }
         platforms.add(el);
+    }
+
+    public void addRepositories(UiContainerExpr el) {
+        if (repositories == null) {
+            repositories = X_Jdk.listArrayConcurrent();
+        }
+        repositories.add(el);
     }
 
     public void addModule(String moduleName, UiContainerExpr el) {
@@ -312,7 +327,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     }
 
     public void addDependency(DependencyType type, PlatformModule into, JsonPairExpr from) {
-        Log.firstLog(into, this).log(DefaultSchemaMetadata.class,
+        Log.firstLog(into, this).log(Log.LogLevel.TRACE, DefaultSchemaMetadata.class,
             lazyToString(this::getPath), "adding dependency ", type, " into ", into, " : ",
                         lazyToString(from::toSource).map(s->new LazyString(s.toString().replace("\n", " ")))
         );

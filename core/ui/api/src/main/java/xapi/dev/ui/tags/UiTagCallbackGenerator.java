@@ -1,9 +1,7 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.visitor.DumpVisitor;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
@@ -15,7 +13,7 @@ import xapi.dev.ui.api.UiFeatureGenerator;
 import xapi.dev.ui.api.UiVisitScope;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.In2;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/25/17.

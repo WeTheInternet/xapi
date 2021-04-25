@@ -71,7 +71,7 @@ import xapi.source.template.MappedTemplate;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Properties;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
@@ -92,8 +92,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 import static io.vertx.core.Future.succeededFuture;
-import static xapi.util.X_String.ensureEndsWith;
-import static xapi.util.X_String.ensureStartsWith;
+import static xapi.string.X_String.ensureEndsWith;
+import static xapi.string.X_String.ensureStartsWith;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.

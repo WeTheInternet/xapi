@@ -1,8 +1,8 @@
 package xapi.inject.impl;
 
 import xapi.collect.api.InitMap;
-import xapi.collect.impl.AbstractInitMap;
-import xapi.collect.impl.InitMapDefault;
+import xapi.collect.init.AbstractInitMap;
+import xapi.collect.init.InitMapDefault;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.Lazy;
@@ -22,7 +22,7 @@ import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static xapi.util.X_Namespace.*;
+import static xapi.constants.X_Namespace.*;
 
 public class JreInjector implements Injector {
 

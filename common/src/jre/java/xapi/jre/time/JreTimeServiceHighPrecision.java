@@ -5,7 +5,7 @@ import xapi.platform.AndroidPlatform;
 import xapi.platform.JrePlatform;
 import xapi.time.impl.TimeServiceDefault;
 import xapi.time.service.TimeService;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.Calendar;
 import java.util.concurrent.locks.LockSupport;

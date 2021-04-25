@@ -1,7 +1,7 @@
 package xapi.server.api;
 
 import xapi.collect.api.InitMap;
-import xapi.collect.impl.InitMapDefault;
+import xapi.collect.init.InitMapDefault;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;

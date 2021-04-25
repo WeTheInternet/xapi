@@ -1,15 +1,17 @@
 package net.wti.gradle.schema.spi;
 
 import net.wti.gradle.api.MinimalProjectView;
-import net.wti.gradle.schema.api.SchemaMetadata;
+import net.wti.gradle.schema.api.SchemaIndexReader;
+import net.wti.gradle.schema.api.SchemaPatternResolver;
+import net.wti.gradle.system.tools.GradleCoerce;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
-import xapi.util.X_Namespace;
-import xapi.util.X_String;
+import xapi.constants.X_Namespace;
+import xapi.string.X_String;
 
-import static net.wti.gradle.schema.spi.DefaultSchemaProperties.keyMap;
-import static xapi.util.X_String.firstNotEmpty;
-import static xapi.util.X_String.isNotEmpty;
+import java.io.File;
+
+import static xapi.string.X_String.isNotEmpty;
 
 /**
  * SchemaProperties:
@@ -21,16 +23,34 @@ import static xapi.util.X_String.isNotEmpty;
  * <p>
  * Created by James X. Nelson (James@WeTheInter.net) on 16/03/2021 @ 2:07 a.m..
  */
-public interface SchemaProperties {
+public interface SchemaProperties extends SchemaPatternResolver {
 
     static SchemaProperties getInstance() {
         return DefaultSchemaProperties.INSTANCE;
     }
 
+    static String getIndexLocation(MinimalProjectView view, SchemaProperties properties) {
+        Object prop = properties.getIndexLocation(view);
+        if (prop == null && view != null) {
+            prop = view.getRootProject().getProjectDir();
+            if (prop != null) {
+                prop = new File((File)prop, "build/index");
+            }
+        }
+        assert prop != null || view == null: view + " has root project with null projectDir";
+        return prop == null ? new File("./build/index").getAbsolutePath() : String.valueOf(prop);
+    }
+
     String defaultValue(String key);
 
     default String getIndexLocation(MinimalProjectView view) {
-        return getProperty(X_Namespace.PROPERTY_INDEX_PATH, view);
+        final String indexLoc = getProperty(X_Namespace.PROPERTY_INDEX_PATH, view);
+        return indexLoc;
+    }
+
+    default String getIndexIdProp(MinimalProjectView view) {
+        // hm.  we need something a little better than this
+        return getBuildName(view) + ".indexed." + System.identityHashCode(view.getGradle());
     }
 
     default String getPublishGroupPattern(MinimalProjectView view, final String platformName) {
@@ -51,52 +71,14 @@ public interface SchemaProperties {
     }
 
     default String getProperty(String key, MinimalProjectView view) {
-        if (DefaultSchemaProperties.recursion > 0) {
-            throw new IllegalStateException("SchemaProperties " + this + " is recursing into itself for key " + key);
-        }
-        String value = searchProperty(key, view);
+        String value = MinimalProjectView.searchProperty(key, view);
         if (isNotEmpty(value)) {
             return value;
         }
         return defaultValue(value);
     }
 
-    static String searchProperty(String key, MinimalProjectView view) {
-        synchronized (SchemaProperties.class) {
-            try {
-                if (DefaultSchemaProperties.recursion++ > 1) {
-                    throw new IllegalStateException("SchemaProperties.searchProperty()  is recursing into itself");
-                }
-                String maybe = null;
-                if (view != null) {
-                    Object candidate = view.findProperty(key);
-                    if (candidate != null) {
-                        maybe = String.valueOf(candidate);
-                    }
-                }
-                if (isNotEmpty(maybe)) {
-                    return maybe;
-                }
-                maybe = System.getProperty(key);
-                if (isNotEmpty(maybe)) {
-                    return maybe;
-                }
-                String envKey = keyMap.computeIfAbsent(key, ()->
-                        // handle camelCase, snake-case and dot.case.
-                        key.replaceAll("([A-Z])", "_$1").replaceAll("[.-]", "_").toUpperCase()
-                );
-                maybe = System.getenv(envKey);
-                if (isNotEmpty(maybe)) {
-                    return maybe;
-                }
-                return null;
-            } finally {
-                DefaultSchemaProperties.recursion--;
-            }
-        }
-    }
-
-    default String getBuildName(MinimalProjectView root, SchemaMetadata metadata) {
+    default String getBuildName(MinimalProjectView root) {
         String name = root.getBuildName();
         if (X_String.isEmpty(name) || ":".equals(name)) {
             return "_";//metadata.getName();
@@ -104,28 +86,45 @@ public interface SchemaProperties {
         return name;
     }
 
-    default String resolvePattern(String pattern, SchemaIndex index, String projectName, String platform, String module) {
-        return resolvePattern(pattern, index.getBuildName(), projectName, index.getGroupIdNotNull(), index.getVersion().toString(), platform, module);
+    default String getRootSchemaLocation(MinimalProjectView p) {
+        return GradleCoerce.unwrapStringOr(p.findProperty("xapiSchema"), p.getProjectDir() + File.separator + "schema.xapi");
     }
-    default String resolvePattern(String pattern, String buildName, String projectName, String groupId, String version, String platform, String module) {
-        return pattern
-                .replaceAll("[$]build", firstNotEmpty(buildName, ":"))
-                .replaceAll("[$]name", projectName)
-                .replaceAll("[$]group", groupId)
-                .replaceAll("[$]version", version)
-                .replaceAll("[$]platform", platform)
-                .replaceAll("[$]module", module)
-                ;
+
+    default File getRootSchemaFile(MinimalProjectView p) {
+        return new File(getRootSchemaLocation(p));
+    }
+
+    default SchemaIndexReader createReader(MinimalProjectView view, CharSequence version) {
+        String indexDir = getIndexLocation(view, this);
+        return new SchemaIndexReader(indexDir, version, this);
+    }
+
+    default void markDone(String indexProp, MinimalProjectView view, String debugInfo) {
+        if (!"true".equals(System.getProperty(indexProp))) {
+            // if we are running in strict mode, lets fail.
+            if ("true".equals(getProperty("xapi.strict", view))) {
+                throw new IllegalStateException(
+                        "More than one " + debugInfo + "running for " + indexProp + " is illegal; please limit operation to once per gradle build.\n" +
+                                "Set xapi.strict=false to suppress this failure"
+                );
+            } else {
+                view.getLogger().info("More than one " + debugInfo + " running for " + indexProp + "; consider integrating with index from xapi-loader plugin");
+            }
+        }
+        try {
+            System.setProperty(indexProp, "true");
+        } catch (Exception e) {
+            view.getLogger().info("Unable to set indexProp {} to true {}", indexProp, e);
+        }
     }
 }
 final class DefaultSchemaProperties implements SchemaProperties{
-    static volatile int recursion;
     static final DefaultSchemaProperties INSTANCE = new DefaultSchemaProperties();
-    static final MapLike<String, String> keyMap = X_Jdk.mapHashConcurrent();
     private DefaultSchemaProperties(){}
 
     @Override
     public String defaultValue(final String key) {
         return null;
     }
+
 }

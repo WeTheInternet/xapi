@@ -1,8 +1,8 @@
 package xapi.inject.spi;
 
 import java.util.Iterator;
-import xapi.collect.impl.AbstractInitMap;
-import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.init.AbstractInitMap;
+import xapi.collect.init.AbstractMultiInitMap;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Out1;
 

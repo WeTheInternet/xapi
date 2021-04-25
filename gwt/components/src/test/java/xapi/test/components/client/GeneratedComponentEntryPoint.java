@@ -7,7 +7,7 @@ import xapi.annotation.ui.UiTemplate;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.ObfuscationLevel;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.ext.TreeLogger.Type;

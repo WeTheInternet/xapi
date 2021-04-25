@@ -20,7 +20,7 @@ import xapi.fu.itr.SizedIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.Arrays;
 import java.util.List;

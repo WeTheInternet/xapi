@@ -26,7 +26,7 @@ import xapi.mvn.api.MvnDependency;
 import xapi.mvn.service.MvnService;
 import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.net.URL;
 import java.net.URLClassLoader;

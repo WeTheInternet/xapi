@@ -5,7 +5,7 @@ import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.model.X_Model;
 import xapi.mvn.api.MvnDependency;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/17.

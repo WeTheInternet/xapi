@@ -3,7 +3,7 @@ package xapi.io.api;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.log.X_Log;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * An implementation of {@link LineReader} designed to stream lines of text to one or more

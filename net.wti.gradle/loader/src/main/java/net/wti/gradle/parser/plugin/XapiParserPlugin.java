@@ -8,7 +8,8 @@ import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
-import net.wti.gradle.schema.spi.SchemaIndexReader;
+import net.wti.gradle.schema.api.SchemaIndexReader;
+import net.wti.gradle.schema.index.IndexBackedSchemaMap;
 import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.map.*;
@@ -16,15 +17,16 @@ import net.wti.gradle.schema.api.SchemaDependency;
 import net.wti.gradle.schema.api.SchemaModule;
 import net.wti.gradle.schema.api.SchemaProject;
 import net.wti.gradle.schema.spi.SchemaProperties;
+import net.wti.gradle.settings.ProjectDescriptorView;
 import net.wti.gradle.system.plugin.XapiBasePlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.PluginContainer;
-import org.gradle.api.plugins.internal.JavaPluginsHelper;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.compile.JavaCompile;
+import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.itr.MappedIterable;
 import xapi.gradle.fu.LazyString;
@@ -42,14 +44,30 @@ public class XapiParserPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project proj) {
-        if (proj != proj.getRootProject()) {
+        ProjectDescriptorView rootView = ProjectDescriptorView.rootView(proj.getGradle());
+        final Project rootProj = proj.getRootProject();
+        proj.getLogger().info("Setting up xapi parser plugin for {}", proj.getPath());
+        HasAllProjects map = SchemaMap.fromView(rootView);
+        if (proj != rootProj) {
             // we _always_ want to make the very first xapi-parser plugin an invocation on root project.
             // This ensures consistent timing w.r.t. when build graph callbacks are invoked.
             final PluginContainer rootPlugins = proj.getRootProject().getPlugins();
             rootPlugins.apply("base");
             rootPlugins.apply("xapi-parser");
+
+        } else {
+            // This is always the first block of code to get out of this if/else combination.
+            // any non-root project applies to root, and then we get here, to the only safe "run once per build" code block in this class.
+
+            // forcibly finish the parsing of the schema, if it's not already done.
+            // we pay a little latency up front so all the rest of our code can assume the entire schema is parsed.
+            // we _should_ still be able to defer indexing, which costs considerably more as it is many file writes
+            // instead of a few file reads. We resolve() now, to avoid both timing and locking issues:
+            // it's easier to reason about the schema if we don't need to pass 50x callbacks.
+            map.resolve();
+            // For users using xapi-loader in their settings.gradle, the map will already be resolved by now.
         }
-        proj.getLogger().info("Setting up xapi parser plugin for {}", proj.getPath());
+
         // always eagerly initialize build graph
         BuildGraph buildGraph = BuildGraph.findBuildGraph(proj);
         final ProjectGraph projectGraph = buildGraph.getProject(proj.getPath());
@@ -66,10 +84,10 @@ public class XapiParserPlugin implements Plugin<Project> {
         }
         proj.getPlugins().apply(XapiBasePlugin.class);
         final ProjectView view = ProjectView.fromProject(proj.getRootProject());
-        SchemaMap map = SchemaMap.fromView(view);
         boolean madeChanges = false;
 
         String gradleProjectVersion = String.valueOf(proj.getVersion());
+        final File schemaFile = map.getRootSchemaFile();
         if ("unspecified".equals(gradleProjectVersion)) {
             madeChanges = true;
             proj.setVersion(map.getVersion());
@@ -95,7 +113,7 @@ public class XapiParserPlugin implements Plugin<Project> {
              + proj.getPath() + "; gradle:'" + gradleProjectVersion + "', xapi:'" + map.getVersion() + "'\n" +
             "Please make the following files agree about versions:\n" +
             "file://" + settingsFile.getAbsolutePath() + "\n(rootProject.name = \"CorrectValue\")\n" +
-            "file://" + map.getRootSchema().getSchemaFile() + "\n(<xapi-schema version = \"CorrectValue\")"
+            "file://" + schemaFile + "\n(<xapi-schema version = \"CorrectValue\")"
             ); // end new IllegalStateException
         }
 
@@ -117,13 +135,18 @@ public class XapiParserPlugin implements Plugin<Project> {
         }
 
         boolean[] foundMe = {false};
-        map.getCallbacks().forProject(proj.getPath(), schemaProject -> {
-            foundMe[0] = true;
-            proj.getLogger().quiet("Initializing parser plugin for detected project " + proj.getPath());
-            initializeProject(proj, map, schemaProject);
-        });
+
 
         projectGraph.whenReady(ReadyState.BEFORE_CREATED, i->{
+            map.flushWork();
+        });
+
+        projectGraph.whenReady(ReadyState.CREATED - 0x20, i->{
+            map.getCallbacks().forProject(proj.getPath(), schemaProject -> {
+                foundMe[0] = true;
+                proj.getLogger().quiet("Initializing parser plugin for detected project " + proj.getPath());
+                initializeProject(proj, map, schemaProject);
+            });
             map.flushWork();
         });
 
@@ -135,13 +158,13 @@ public class XapiParserPlugin implements Plugin<Project> {
             if (!foundMe[0]) {
                 proj.getLogger().info("No schema project entry found for {} in {}; known projects: {}",
                     proj.getPath(),
-                    map.getRootSchema().isExplicit() ? map.getRootSchema().getSchemaFile() : "virtual schema " + proj.getPath(),
+                    schemaFile.exists() ? "file://" + schemaFile : "<virtual schema>",
                     map.getAllProjects().map(SchemaProject::getPathGradle).join(", ")
                 );
             }
         });
 
-        if (":".equals(view.getPath())) {
+        if (":".equals(proj.getPath())) {
             loadFromIndex(view, map, projectGraph);
         }
     }
@@ -159,9 +182,9 @@ public class XapiParserPlugin implements Plugin<Project> {
      * @param map
      * @param graph The graph of the project to initialize. When it is the root project,
      */
-    private void loadFromIndex(final ProjectView rootView, final SchemaMap map, final ProjectGraph graph) {
-        final SchemaProperties props = SchemaProperties.getInstance();
-        SchemaIndexReader reader = new SchemaIndexReader(props, rootView, new LazyString(map::getVersion));
+    private void loadFromIndex(final ProjectView rootView, final HasAllProjects map, final ProjectGraph graph) {
+        final SchemaIndex index = map.getIndexProvider().out1();
+        SchemaIndexReader reader = index.getReader();
 
         for (SchemaProject proj : map.getAllProjects()) {
             ProjectView view = rootView.findProject(proj.getPathGradle());
@@ -172,8 +195,7 @@ public class XapiParserPlugin implements Plugin<Project> {
             viewPg.whenReady(ReadyState.AFTER_CREATED, r->{
                 for (SchemaPlatform platform : proj.getAllPlatforms()) {
                     for (SchemaModule module : proj.getAllModules()) {
-
-                        if (reader.hasEntries(rootView, proj.getPathIndex(), platform, module)) {
+                        if (reader.hasEntries(view, proj.getPathIndex(), platform, module)) {
                             // create incoming and outgoing configurations.
                             final String configRoot = PlatformModule.unparse(platform.getName(), module.getName());
                             String configTransitive = toConfigName(configRoot, "Transitive");
@@ -211,6 +233,8 @@ public class XapiParserPlugin implements Plugin<Project> {
                             //                    final Provider<? extends AbstractCompile> compile;
                             //                    JavaPluginsHelper.registerClassesDirVariant(compile, view.getObjects(), out);
 
+                        } else {
+                            // hm, now that we know the module is not realized, we should mark it as such... (.prune()?)
                         }
 
                     }
@@ -224,106 +248,76 @@ public class XapiParserPlugin implements Plugin<Project> {
 
     private void initializeProject(
         Project gradleProject,
-        SchemaMap map,
+        HasAllProjects map,
         SchemaProject schemaProject
     ) {
         final ProjectView view = ProjectView.fromProject(gradleProject);
-        final MappedIterable<? extends SchemaPlatform> platforms = schemaProject.getAllPlatforms();
-        final MappedIterable<? extends SchemaModule> modules = schemaProject.getAllModules();
+        final MappedIterable<? extends SchemaPlatform> platforms = schemaProject.getAllPlatforms()
+                .counted();
+        final MappedIterable<? extends SchemaModule> modules = schemaProject.getAllModules()
+                .counted();
+
         final XapiSchema schema = view.getSchema();
 
         for (SchemaPlatform schemaPlatform : platforms) {
             schema.getPlatforms().maybeCreate(schemaPlatform.getName());
         }
         for (SchemaPlatform schemaPlatform : platforms) {
-            final PlatformConfigInternal platform = schema.getPlatforms().maybeCreate(schemaPlatform.getName());
-            if (schemaPlatform.getReplace() != null) {
-                platform.replace(schemaPlatform.getReplace());
-            }
-            platform.setPublished(schemaPlatform.isPublished());
-            platform.setTest(schemaPlatform.isTest());
+            Lazy<PlatformConfigInternal> platProvider = Lazy.deferred1(()->{
+                final PlatformConfigInternal platform = schema.getPlatforms().maybeCreate(schemaPlatform.getName());
+                if (schemaPlatform.getReplace() != null) {
+                    platform.replace(schemaPlatform.getReplace());
+                }
+                platform.setPublished(schemaPlatform.isPublished());
+                platform.setTest(schemaPlatform.isTest());
+                return platform;
+            });
 
             for (SchemaModule schemaModule : modules) {
-                final ArchiveConfigInternal archive = platform.getArchives().maybeCreate(schemaModule.getName());
-                archive.setPublished(schemaPlatform.isPublished() && schemaModule.isPublished());
-                archive.setTest(schemaPlatform.isTest() || schemaModule.isTest());
-                for (String include : schemaModule.getInclude()) {
-//                    archive.require(isMainPlatform ? require : platform.getName() + GUtil.toCamelCase(require));
-                    // we can use above commented line when we remove hideous "fixRequires" hack from xapi production build
-                    archive.require(include);
+                final Lazy<SchemaIndex> indexProvider = map.getIndexProvider();
+                final SchemaIndex index = indexProvider.out1();
+                final SchemaIndexReader reader = index.getReader();
+
+                if (reader.hasEntries(view, schemaProject.getPathIndex(), schemaPlatform, schemaModule)) {
+                    final PlatformConfigInternal platform = platProvider.out1();
+                    final ArchiveConfigInternal archive = platform.getArchives().maybeCreate(schemaModule.getName());
+                    archive.setPublished(schemaPlatform.isPublished() && schemaModule.isPublished());
+                    archive.setTest(schemaPlatform.isTest() || schemaModule.isTest());
+                    for (String include : schemaModule.getInclude()) {
+    //                    archive.require(isMainPlatform ? require : platform.getName() + GUtil.toCamelCase(require));
+                        // we can use above commented line when we remove hideous "fixRequires" hack from xapi production build
+                        archive.require(include);
+                    }
                 }
             }
-
         }
 
         for (PlatformConfig platform : schema.getPlatforms()) {
             for (ArchiveConfig module : platform.getArchives()) {
+
+                final Lazy<SchemaIndex> indexProvider = map.getIndexProvider();
+                final SchemaIndex index = indexProvider.out1();
+                final SchemaIndexReader reader = index.getReader();
                 final SchemaPlatform plat = schemaProject.getPlatform(platform.getName());
                 final SchemaModule mod = schemaProject.getModule(module.getName());
-                final PlatformModule platMod = new PlatformModule(plat.getName(), mod.getName());
-                for (SchemaDependency dep : schemaProject.getDependenciesOf(plat, mod)) {
-                    dep = dep.rebase(platMod);
-                    addDependency(view, module, map, schemaProject, dep);
+
+                if (reader.hasEntries(view, schemaProject.getPathIndex(), plat, mod)) {
+                    final PlatformModule platMod = new PlatformModule(plat.getName(), mod.getName());
+                    for (SchemaDependency dep : schemaProject.getDependenciesOf(plat, mod)) {
+                        dep = dep.rebase(platMod);
+                        addDependency(view, module, map, schemaProject, dep);
+                    }
                 }
 
             }
         }
-
-//        // hm.... this dependency processing needs to happen _inside_ the SchemaProject, or a tool adjacent to it
-//        // in order for us to use it when evaluating settings.gradle (that, or really wholly on index to find edges).
-//        dependencies.forEachPair((modKey, dep)->{
-//            SizedIterable<PlatformConfig> plats;
-//            if (modKey.getPlatform() == null) {
-//                // null means "for all platforms"
-//                plats = SizedIterable.of(
-//                    schema.getPlatforms().size(),
-//                    schema.getPlatforms()
-//                );
-//            } else {
-//                plats = singleItem(schema.findPlatform(modKey.getPlatform()));
-//                if (plats.isEmpty()) {
-//                    throw new IllegalStateException("No such platform " + modKey.getPlatform() + " found in " + schema);
-//                }
-//                if (plats.first() == null) {
-//                    if (strict) {
-//                        throw new IllegalArgumentException("No platform found named " + modKey.getPlatform() + " in " + schema.getPlatforms() + "\n" +
-//                            "to prevent this warning, set gradle property -Pxapi.strict=false");
-//                    }
-//                    plats = singleItem(schema.getMainPlatform());
-//                }
-//            }
-//            for (PlatformConfig plat : plats) {
-//                SizedIterable<ArchiveConfig> mods;
-//                if (modKey.getModule() == null) {
-//                    // null means "for all modules"
-//                    mods = SizedIterable.of(
-//                        plat.getArchives().size(),
-//                        plat.getArchives()
-//                    );
-//                } else {
-//                    mods = singleItem(plat.findArchive(modKey.getModule()));
-//                    if (mods.first() == null) {
-//                        if (strict) {
-//                            throw new IllegalArgumentException("No module found named " + modKey.getPlatform() + ":" + modKey.getModule() + " in " + schema.getPlatforms() + "\n" +
-//                                "to prevent this warning, set gradle property -Pxapi.strict=false");
-//                        }
-//                        mods = mods.map(nul-> plat.getMainModule());
-//                    }
-//                }
-//                for (ArchiveConfig mod : mods) {
-//                    // alright!  Add a Dependency for the given platform:module pair.
-//                    addDependency(view, mod, map, schemaProject, dep);
-//                }
-//
-//            }
-//        });
 
     }
 
     private void addDependency(
         ProjectView view,
         ArchiveConfig consumerConfig,
-        SchemaMap map,
+        HasAllProjects map,
         SchemaProject schemaProject,
         SchemaDependency dep
     ) {

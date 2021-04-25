@@ -1,1 +1,6 @@
-rootProject.name = 'xapi-buildSrc'
+if (gradle.getParent() == null || gradle.getParent().getParent() == null) {
+    rootProject.name = 'xapi-buildSrc'
+} else {
+    String compName = gradle.getParent().getParent().getStartParameter().getCurrentDir().getName()
+    rootProject.name = "$compName-xapi-buildSrc"
+}

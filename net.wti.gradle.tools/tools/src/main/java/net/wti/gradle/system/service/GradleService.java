@@ -1,6 +1,5 @@
 package net.wti.gradle.system.service;
 
-import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
@@ -9,15 +8,11 @@ import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
-import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtensionContainer;
-import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
@@ -29,6 +24,7 @@ import xapi.gradle.fu.LazyString;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -107,7 +103,17 @@ public interface GradleService {
     String GRADLE_VERSION = "5.1-x-24";
 
     static Path buildId(Gradle gradle) {
-        return ((GradleInternal)gradle).findIdentityPath();
+        try {
+            return ((GradleInternal)gradle).findIdentityPath();
+        } catch (NoSuchMethodError e) {
+            try {
+                final Method mthd = GradleInternal.class.getMethod("getIdentityPath");
+                final Object result = mthd.invoke(gradle);
+                return (Path)result;
+            } catch (Exception fatal) {
+                throw new GradleException("Cannot find gradle build identity path; check gradle version w/ xapi support matrix", fatal);
+            }
+        }
     }
 
     Project getProject();
@@ -213,7 +219,13 @@ public interface GradleService {
                 cache = new InternalProjectCache<>(ext);
             }
         }
-        if (cache == null || !cache.isFrom(ext)) {
+        boolean empty = cache == null;
+        boolean incompatible = !empty && !cache.isFrom(ext);
+        if (empty) {
+            cache = new InternalProjectCache<>(ext);
+            extensions.add(key, cache);
+        } else if (incompatible) {
+            // hmmm... try to throw away / cleanup the old cache? yuck...... we don't really have a good line on a logger either
             cache = new InternalProjectCache<>(ext);
             extensions.add(key, cache);
         }

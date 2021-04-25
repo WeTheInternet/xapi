@@ -1,7 +1,7 @@
 package xapi.collect.impl;
 
 import xapi.collect.api.ClassTo;
-import xapi.collect.proxy.MapOf;
+import xapi.collect.proxy.impl.MapOf;
 
 import java.util.Map;
 

@@ -56,7 +56,7 @@ import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.type.WildcardType;
 import xapi.fu.Out1;
 
-import static xapi.util.X_String.join;
+import static xapi.string.X_String.join;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;

@@ -39,7 +39,7 @@ import xapi.collect.api.Fifo;
 import xapi.fu.Debuggable;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.X_Runtime;
 
 import java.io.PrintStream;

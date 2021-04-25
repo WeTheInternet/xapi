@@ -35,7 +35,7 @@
 
 package xapi.source.read;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 import xapi.dev.source.TypeDefinitionException;
 import xapi.source.read.JavaModel.AnnotationMember;
 import xapi.source.read.JavaModel.HasAnnotations;

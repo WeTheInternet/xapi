@@ -3,7 +3,7 @@ package xapi.dev.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.model.api.Model;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Describes a (currently maven) module's sources in terms of:

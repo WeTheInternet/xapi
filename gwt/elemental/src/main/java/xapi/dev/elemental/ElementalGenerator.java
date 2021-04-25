@@ -4,7 +4,7 @@
 package xapi.dev.elemental;
 
 import elemental.dom.Element;
-import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.init.AbstractMultiInitMap;
 import xapi.dev.elemental.ElementalGeneratorContext.ElementalGeneratorResult;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;

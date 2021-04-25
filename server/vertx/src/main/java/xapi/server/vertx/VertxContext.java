@@ -17,7 +17,7 @@ import xapi.server.errors.RouteNotHandledException;
 import xapi.server.vertx.scope.GlobalScopeVertx;
 import xapi.server.vertx.scope.RequestScopeVertx;
 import xapi.server.vertx.scope.SessionScopeVertx;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 8/12/18 @ 3:38 AM.

@@ -1,12 +1,9 @@
 package net.wti.gradle.schema.api;
 
-import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.PlatformModule;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.File;
-
-import static net.wti.gradle.schema.api.QualifiedModule.mangleProjectPath;
 
 /**
  * SchemaDirs:

@@ -3,7 +3,7 @@ package xapi.dev.util;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
-import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.init.AbstractMultiInitMap;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.platform.Platform;
 import xapi.util.X_Util;

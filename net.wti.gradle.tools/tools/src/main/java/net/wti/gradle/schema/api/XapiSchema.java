@@ -13,6 +13,7 @@ import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.internal.*;
 import net.wti.gradle.schema.plugin.XapiSchemaPlugin;
 import net.wti.gradle.schema.tasks.XapiReport;
+import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
@@ -162,6 +163,7 @@ public class XapiSchema {
     private Object mainPlatform;
 
     public XapiSchema(ProjectView self) {
+        this.view = self;
         final Instantiator instantiator = self.getInstantiator();
         // There's a nasty diamond problem around the main platform, and the schema containers
         // for platform and archive types.  We work around it by sending deferred "provide main platform" logic.
@@ -188,7 +190,7 @@ public class XapiSchema {
                             inst.setPublishedProvider(self.lazyProvider(arch::isPublished));
                             inst.setSourceAllowed(arch.isSourceAllowed());
                             inst.setTest(arch.isTest());
-                            self.getLogger().trace("root schema ({}~{}) declared {}", ((GradleInternal) self.getGradle()).findIdentityPath(), self.getPath(), inst);
+                            self.getLogger().trace("root schema ({}~{}) declared {}", new LazyString(()-> GradleService.buildId(self.getGradle()).toString()), self.getPath(), inst);
                             final PlatformConfig rootPlat = plat.getRoot();
                         });
 
@@ -258,6 +260,7 @@ public class XapiSchema {
                         .platform(plat.getName())
                         .archive(arch.getName());
                     if (!archive.srcExists()) {
+                        view.getLogger().info("Skipping module {}; source set? {}", archive.getPath(), self.getSourceSets().findByName(archive.getSrcName()));
                         return;
                     }
 //                            self.getGradle().buildFinished(res->{
@@ -273,7 +276,6 @@ public class XapiSchema {
         self.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
             report.record(self.getSchema())
         );
-        this.view = self;
     }
 
     protected void configureArchive(

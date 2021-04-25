@@ -19,14 +19,14 @@ import xapi.fu.itr.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static com.github.javaparser.ast.expr.AnnotationExpr.NULLABLE;
 import static xapi.dev.ui.api.UiNamespace.*;
 import static xapi.source.X_Modifier.ABSTRACT;
 import static xapi.source.X_Modifier.PROTECTED;
 import static xapi.source.X_Source.raw;
-import static xapi.util.X_String.toTitleCase;
+import static xapi.string.X_String.toTitleCase;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 9/8/18 @ 2:27 AM.

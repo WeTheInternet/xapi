@@ -1,6 +1,6 @@
 package xapi.annotation.compile;
 
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

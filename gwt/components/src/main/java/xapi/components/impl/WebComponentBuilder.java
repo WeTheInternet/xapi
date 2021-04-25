@@ -27,7 +27,7 @@ import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
 import xapi.ui.api.component.Slot;
 import xapi.ui.api.component.SlotController;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;

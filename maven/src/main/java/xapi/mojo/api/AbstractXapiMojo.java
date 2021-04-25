@@ -29,8 +29,8 @@ import xapi.mvn.X_Maven;
 import xapi.time.X_Time;
 import xapi.util.X_Debug;
 import xapi.util.X_GC;
-import xapi.util.X_Namespace;
-import xapi.util.X_String;
+import xapi.constants.X_Namespace;
+import xapi.string.X_String;
 import xapi.util.X_Util;
 
 import javax.annotation.Generated;

@@ -1,14 +1,14 @@
 package xapi.collect.impl;
 
+import xapi.collect.init.AbstractInitMap;
 import xapi.fu.In1Out1;
 import xapi.gwt.collect.JsDictionary;
-import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 
 import java.util.Map.Entry;
 import java.util.Iterator;
 
-public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
+public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value> {
 
   protected final In1Out1<Key,Value> valueProvider;
 
@@ -21,9 +21,9 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
     this.valueProvider = valueProvider;
   }
 
-  public static <Key, Value> InitMapDefault<Key,Value> createInitMap(
+  public static <Key, Value> xapi.collect.init.InitMapDefault<Key,Value> createInitMap(
     In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider) {
-    return new InitMapDefault<Key,Value>(keyProvider, valueProvider);
+    return new xapi.collect.init.InitMapDefault<Key,Value>(keyProvider, valueProvider);
   }
 
   @Override

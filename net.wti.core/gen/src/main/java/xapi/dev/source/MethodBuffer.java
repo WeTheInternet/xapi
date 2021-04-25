@@ -35,9 +35,8 @@
 
 package xapi.dev.source;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 import xapi.fu.Printable;
-import xapi.fu.java.X_Jdk;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaModel.IsParameter;
 import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;

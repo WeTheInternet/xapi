@@ -58,9 +58,9 @@ import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.test.components.client.GeneratedComponentEntryPoint;
 import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.X_Properties;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -79,7 +79,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static xapi.collect.X_Collect.toArray;
 import static xapi.fu.X_Fu.notEmpty;
-import static xapi.util.X_String.join;
+import static xapi.string.X_String.join;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.TreeLogger.Type;

@@ -3,7 +3,7 @@ package xapi.dev.api;
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.EnumMap;
 import java.util.Objects;

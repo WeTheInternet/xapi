@@ -39,9 +39,5 @@ gradlePlugin {
             id = 'xapi-require'
             implementationClass = 'net.wti.gradle.require.plugin.XapiRequirePlugin'
         }
-        xapiPublish {
-            id = 'xapi-publish'
-            implementationClass = 'net.wti.gradle.publish.plugin.XapiPublishPlugin'
-        }
     }
 }

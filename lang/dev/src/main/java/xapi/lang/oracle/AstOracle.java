@@ -8,7 +8,7 @@ import xapi.fu.X_Fu;
 import xapi.fu.itr.SizedIterable;
 import xapi.lang.api.AstLayerType;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.Serializable;
 

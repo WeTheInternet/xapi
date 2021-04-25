@@ -1,6 +1,6 @@
 package xapi.util;
 
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import com.google.gwt.core.client.GWT;
 

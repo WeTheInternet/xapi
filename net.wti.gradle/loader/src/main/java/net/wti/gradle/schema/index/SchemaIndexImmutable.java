@@ -1,8 +1,8 @@
 package net.wti.gradle.schema.index;
 
 import net.wti.gradle.schema.api.QualifiedModule;
-import net.wti.gradle.schema.spi.SchemaIndex;
-import net.wti.gradle.schema.spi.SchemaIndexReader;
+import net.wti.gradle.schema.api.SchemaIndex;
+import net.wti.gradle.schema.api.SchemaIndexReader;
 
 import java.util.Objects;
 

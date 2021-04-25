@@ -22,6 +22,8 @@
   <source path="platform"/> <!-- Platform annotations -->
   <source path="collect"/> <!-- Basic collections abstractions -->
   <source path="except"/> <!-- Runtime exceptions -->
+  <source path="error"/> <!-- Errors -->
+  <source path="constants"/> <!-- Constants -->
   <source path="log"/> <!-- Our logger -->
   <source path="enviro"/> <!-- Our logger -->
   <source path="util"/> <!-- Basic utility layer -->
@@ -30,7 +32,10 @@
   <source path="scope"/> <!-- Scoping -->
   <source path="stream"/> <!-- Streaming -->
   <source path="validate"/> <!-- Validation -->
-  <source path="prop"/> <!-- Properties-->
+  <source path="prop"/> <!-- Properties -->
+  <source path="string"/> <!-- X_String -->
+  <source path="args"/> <!-- args -->
+  <source path="dev/debug"/> <!-- NameGen -->
   <source path="gwt/annotation"/>
   <source path="gwt/api"/> <!-- Basic js interop -->
   <source path="gwt/log"/>

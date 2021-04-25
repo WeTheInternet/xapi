@@ -6,12 +6,11 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.ResolvedDependency;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
-import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.*;
 

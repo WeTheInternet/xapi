@@ -1,7 +1,8 @@
 <xapi-schema
 
-    name = "net.wetheinter"
+    name = "xapi"
     group = "net.wetheinter"
+    version = "0.5.1"
 
     defaultRepoUrl = jcenter()
 
@@ -12,7 +13,7 @@
         // purposely using two different forms of references to main,
         // so that we can detect and fix any wierdness as we go:
         <jre replace = "main" published = true/>,
-        <gwt replace = "main" published = true/>,
+        <gwt replace = main published = true/>,
         // TODO: move gwt into client/schema.xapi; add javafx, android, j2cl, j2objc, etc.
 
         // put these in server/schema.xapi:
@@ -45,7 +46,7 @@
 //            "scope",
         ],
 
-        // the projects below all have a single "main" platform (potentially w/ multiple modules like api and testTools though!)
+        // the projects below are single-module projects.
         standalone: [
 //            "lang",
 //            "util"

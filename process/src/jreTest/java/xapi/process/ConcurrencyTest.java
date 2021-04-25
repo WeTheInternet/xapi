@@ -5,7 +5,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import xapi.fu.Do;
 import xapi.fu.Mutable;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.api.Pointer;
 
 import java.util.concurrent.CountDownLatch;

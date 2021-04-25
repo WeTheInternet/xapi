@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 
-import static xapi.util.X_String.*;
+import static xapi.string.X_String.*;
 
 public class StringServiceTest {
 

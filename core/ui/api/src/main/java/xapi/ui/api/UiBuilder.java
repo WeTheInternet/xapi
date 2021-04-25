@@ -7,8 +7,8 @@ import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.ui.service.UiService;
-import xapi.util.X_String;
-import xapi.util.api.DebugRethrowable;
+import xapi.string.X_String;
+import xapi.util.tools.DebugRethrowable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

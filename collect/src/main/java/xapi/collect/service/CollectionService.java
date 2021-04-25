@@ -7,7 +7,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
-import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.api.CollectionProxy;
 
 public interface CollectionService {
 

@@ -3,7 +3,7 @@ package xapi.collect.impl;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.proxy.MapOf;
+import xapi.collect.proxy.impl.MapOf;
 
 public class ObjectToManyList<K, V> extends MapOf<K, IntTo<V>> implements ObjectTo.Many<K, V>{
 

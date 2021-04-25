@@ -8,7 +8,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.Maybe;
 import xapi.ui.api.component.SlotController;
 
-import static xapi.util.X_String.dequote;
+import static xapi.string.X_String.dequote;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/15/17.

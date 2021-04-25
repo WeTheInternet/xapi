@@ -12,7 +12,7 @@ import xapi.model.api.*;
 import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 

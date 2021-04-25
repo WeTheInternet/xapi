@@ -13,8 +13,8 @@ import xapi.fu.X_Fu;
 import xapi.fu.itr.ArrayIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.X_Namespace;
-import xapi.util.X_String;
+import xapi.constants.X_Namespace;
+import xapi.string.X_String;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;

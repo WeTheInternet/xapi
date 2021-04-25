@@ -1,7 +1,7 @@
 package xapi.dev.scanner.impl;
 
 import xapi.bytecode.ClassFile;
-import xapi.collect.api.PrefixedMap;
+import xapi.collect.prefixed.PrefixedMap;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.fu.Filter.Filter1;
 import xapi.log.X_Log;

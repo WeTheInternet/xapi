@@ -20,7 +20,7 @@ import xapi.fu.Printable;
 import xapi.io.X_IO;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.JavaDocument;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import javax.lang.model.element.TypeElement;
 import java.util.List;
@@ -31,7 +31,7 @@ import static org.hamcrest.text.IsEqualIgnoringWhiteSpace.equalToIgnoringWhiteSp
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static xapi.fu.X_Fu.notEmpty;
-import static xapi.util.X_String.join;
+import static xapi.string.X_String.join;
 
 //import static org.assertj.core.api.Assertions.assertThat;
 

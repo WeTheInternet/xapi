@@ -11,18 +11,25 @@ plugins {
     id 'idea'
 }
 apply plugin: 'xapi-require'
-group = "xapi-buildSrc"
+if (gradle.getParent() == null || gradle.getParent().getParent() == null) {
+    group = 'xapi-buildSrc'
+} else {
+    String compName = gradle.getParent().getParent().getStartParameter().getCurrentDir().getName()
+    group = "$compName-xapi-buildSrc"
+}
 xapiSchema {
     platforms { main }
     archives { main }
 }
 
 String v = version
+
 xapiRequire.main().configure {
     external "net.wti.gradle:xapi-gradle-loader:$v", 'main'
     external "net.wti.gradle:xapi-gradle-plugin:$v", 'main'
     external "net.wti.gradle:xapi-gradle-api:$v", 'main'
     external "net.wti.gradle.tools:xapi-gradle-tools:$v"
+    external "net.wti.gradle.tools:xapi-gradle-deprecated:$v"
     external "net.wti.core:xapi-lang-core:$v", 'main'
     external "net.wti.core:xapi-fu:$v", 'main'
 }

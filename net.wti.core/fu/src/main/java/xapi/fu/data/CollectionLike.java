@@ -5,6 +5,7 @@ import xapi.fu.Out2;
 import xapi.fu.api.Clearable;
 import xapi.fu.api.Ignore;
 import xapi.fu.has.HasItems;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
 
@@ -18,7 +19,7 @@ import java.util.Iterator;
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 4:44 AM.
  */
 @Ignore("model")
-public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItems<V> {
+public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItems<V>, MappedIterable<V> {
 
     @Override
     default SizedIterable<V> forEachItem() {
@@ -53,6 +54,12 @@ public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItem
     default CollectionLike<V> addNow(Iterable<? extends V> items) {
         items.forEach(this::add);
         return this;
+    }
+
+    default SizedIterable<V> clearItems() {
+        final SizedIterable<V> all = cached();
+        clear();
+        return all;
     }
 
     default boolean removeIf(Filter1<V> filter) {

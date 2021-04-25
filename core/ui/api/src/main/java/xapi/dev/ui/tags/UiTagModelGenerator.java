@@ -20,7 +20,7 @@ import xapi.model.X_Model;
 import xapi.model.api.KeyBuilder;
 import xapi.model.api.ModelBuilder;
 import xapi.model.api.ModelKey;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.lang.reflect.Modifier;
 

@@ -15,7 +15,7 @@ import xapi.shell.api.ShellSession;
 import xapi.test.Assert;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 public class ShellTesting {
 

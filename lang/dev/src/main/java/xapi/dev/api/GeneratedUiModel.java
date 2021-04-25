@@ -6,7 +6,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.source.read.JavaModel.IsTypeDefinition;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.

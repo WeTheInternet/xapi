@@ -32,7 +32,7 @@ import xapi.ui.api.UiPhase;
 import xapi.ui.api.UiPhase.*;
 import xapi.util.X_Debug;
 import xapi.util.X_Properties;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.X_Util;
 
 import javax.tools.FileObject;

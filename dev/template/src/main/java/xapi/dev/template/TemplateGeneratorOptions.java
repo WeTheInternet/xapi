@@ -42,10 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import xapi.args.ArgHandlerLogLevel;
+import xapi.log.api.ArgHandlerLogLevel;
 import xapi.args.ArgHandlerString;
 import xapi.args.ArgProcessorBase;
-import xapi.args.OptionLogLevel;
+import xapi.log.api.OptionLogLevel;
 import xapi.dev.source.SourceBuilder;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;

@@ -18,11 +18,12 @@ import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.attributes.ImmutableAttributesFactory;
-import org.gradle.api.internal.component.MultiCapabilitySoftwareComponent;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.project.ProjectStateInternal;
 import org.gradle.api.invocation.Gradle;
@@ -62,7 +63,7 @@ public class DefaultProjectView implements ProjectView {
 
     private static final LazyString WTI_GRADLE = new LazyString(()-> {
         try {
-            MultiCapabilitySoftwareComponent.class.getName();
+            org.gradle.api.internal.component.MultiCapabilitySoftwareComponent.class.getName();
             return "true";
         } catch (NoClassDefFoundError e) {
             return "false";
@@ -472,6 +473,11 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public GradleService getService() {
         return service.get();
+    }
+
+    @Override
+    public Settings getSettings() {
+        return ((GradleInternal)getGradle()).getSettings();
     }
 
     @Override

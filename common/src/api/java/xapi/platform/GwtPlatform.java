@@ -1,6 +1,6 @@
 package xapi.platform;
 
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 import xapi.platform.PlatformSelector.AlwaysTrue;
 
 import java.lang.annotation.ElementType;

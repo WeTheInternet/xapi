@@ -30,7 +30,7 @@ trait TestFileTools implements HasTestFiles {
 
     Function<String, File> folderFactory(String ... paths) {
         File f = folder(paths)
-        return { rest -> new File(f, rest) }
+        return { String rest -> new File(f, rest) }
     }
 
     File sourceFile(String srcSet = 'main', String pkg, String cls) {

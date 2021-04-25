@@ -1,6 +1,6 @@
 package xapi.dev.api;
 
-import xapi.dev.source.NameGen;
+import xapi.dev.debug.NameGen;
 import xapi.fu.Do;
 
 /**

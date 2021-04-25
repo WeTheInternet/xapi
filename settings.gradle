@@ -1,5 +1,7 @@
 rootProject.name = 'xapi'
 
+//apply plugin: 'xapi-loader'
+
 def prop = {
     String key -> System.getProperty(key) ?:
             System.getenv("ORG_GRADLE_PROJECT_$key") ?:
@@ -266,7 +268,7 @@ System.properties: ${System.properties.toString().split(", ")}
 """
 
 def composite = prop('xapi.composite')
-if (composite != 'false') {
+if (composite == 'true') {
     System.setProperty('xapi.composite', 'false')
     logger.quiet("Including net.wti.core|gradle as included builds because composite={}", composite.toString())
     includeBuild('net.wti.gradle.tools')

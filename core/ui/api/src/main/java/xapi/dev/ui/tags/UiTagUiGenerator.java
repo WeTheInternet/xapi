@@ -21,7 +21,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.itr.ChainBuilder;
 import xapi.log.X_Log;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;

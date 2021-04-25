@@ -1,6 +1,6 @@
 package xapi.source.read;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 
 import java.lang.reflect.Modifier;
 import java.util.Iterator;

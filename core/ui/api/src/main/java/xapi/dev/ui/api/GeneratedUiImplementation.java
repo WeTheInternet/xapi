@@ -31,7 +31,7 @@ import java.util.Map.Entry;
 
 import static xapi.fu.Out2.out2Immutable;
 import static xapi.source.X_Source.javaQuote;
-import static xapi.util.X_String.toTitleCase;
+import static xapi.string.X_String.toTitleCase;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.

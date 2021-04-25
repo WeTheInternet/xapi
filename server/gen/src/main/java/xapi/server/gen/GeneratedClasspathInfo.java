@@ -22,7 +22,7 @@ import xapi.scope.api.Scope;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/8/17.

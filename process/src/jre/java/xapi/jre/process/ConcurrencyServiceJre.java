@@ -14,7 +14,7 @@ import xapi.process.impl.ConcurrencyServiceAbstract;
 import xapi.process.service.ConcurrencyService;
 import xapi.scope.X_Scope;
 import xapi.scope.api.Scope;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;

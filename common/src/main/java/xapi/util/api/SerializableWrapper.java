@@ -1,6 +1,6 @@
 package xapi.util.api;
 
-import xapi.except.NotImplemented;
+import xapi.error.NotImplemented;
 import xapi.fu.In2Out1;
 import xapi.fu.X_Fu;
 

@@ -38,7 +38,7 @@ import xapi.server.api.Route;
 import xapi.server.api.Route.RouteType;
 import xapi.server.gen.WebAppComponentGenerator.WebAppGeneratorScope;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.X_Util;
 
 import java.lang.reflect.Field;

@@ -1,7 +1,7 @@
 package xapi.dev.impl.dynamic;
 
 import xapi.dev.api.DynamicUrl;
-import xapi.dev.source.NameGen;
+import xapi.dev.debug.NameGen;
 import xapi.fu.Do;
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;

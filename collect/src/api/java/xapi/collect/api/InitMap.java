@@ -2,7 +2,7 @@ package xapi.collect.api;
 
 import java.util.Map.Entry;
 
-import xapi.collect.impl.AbstractInitMap;
+import xapi.collect.init.AbstractInitMap;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.Pair;
 import xapi.util.api.Triple;

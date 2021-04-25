@@ -9,7 +9,7 @@ import cucumber.api.java.en.Then;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.server.api.WebApp;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.List;
 

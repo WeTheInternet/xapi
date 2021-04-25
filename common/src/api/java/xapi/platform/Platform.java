@@ -11,7 +11,7 @@ import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.platform.PlatformSelector.AlwaysTrue;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 
 /**

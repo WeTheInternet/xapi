@@ -20,6 +20,7 @@ import org.gradle.api.component.SoftwareComponentContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.DefaultComponentMetadataHandler;
@@ -60,7 +61,6 @@ public interface ProjectView extends MinimalProjectView {
     String getPath();
     ObjectFactory getObjects();
     ProviderFactory getProviders();
-    Logger getLogger();
     TaskContainer getTasks();
     ConfigurationContainer getConfigurations();
     RepositoryHandler getRepositories();
@@ -198,8 +198,8 @@ public interface ProjectView extends MinimalProjectView {
     }
 
     @Override
-    default void whenSettingsReady(Action<? super MinimalProjectView> callback) {
-        callback.execute(this);
+    default void whenSettingsReady(Action<Settings> callback) {
+        callback.execute(((GradleInternal)getGradle()).getSettings());
     }
 
     void ensureEvaluated();

@@ -1,6 +1,6 @@
 package xapi.annotation.inject;
 
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 import xapi.enviro.Enviro;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.filter.AlwaysFalse;

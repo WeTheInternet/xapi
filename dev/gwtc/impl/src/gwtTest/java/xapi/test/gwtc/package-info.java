@@ -38,4 +38,4 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.Resource;
 import xapi.gwtc.api.Gwtc;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;

@@ -5,7 +5,7 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
 import xapi.bytecode.ClassFile;
 import xapi.collect.api.InitMap;
-import xapi.collect.impl.InitMapDefault;
+import xapi.collect.init.InitMapDefault;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;

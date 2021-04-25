@@ -3,6 +3,8 @@ package xapi.fu.log;
 import xapi.fu.Debuggable;
 import xapi.fu.api.Ignore;
 
+import java.io.StringReader;
+
 import static xapi.fu.log.Log.printLevel;
 
 /**
@@ -189,6 +191,20 @@ public interface Log extends Debuggable {
     if (first && obj instanceof Class) {
       // classes get special treatment...
       return Debuggable.classLink((Class<?>) obj) + " ";
+    } else if (obj instanceof Throwable) {
+      final Throwable fail = ((Throwable) obj);
+      StringBuilder b = new StringBuilder();
+      String msg = fail.getMessage();
+      if (msg != null) {
+        b.append(msg);
+      }
+      for (StackTraceElement el : fail.getStackTrace()) {
+        b.append("\n").append(el);
+      }
+      if (fail.getCause() != null) {
+        b.append("caused by:\n").append(coerceNonArray(fail.getCause(), first));
+      }
+      return b.toString();
     }
     return Debuggable.super.coerceNonArray(obj, first);
   }

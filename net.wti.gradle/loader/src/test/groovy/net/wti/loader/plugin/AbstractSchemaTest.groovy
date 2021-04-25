@@ -4,13 +4,18 @@ import net.wti.gradle.api.MinimalProjectView
 import net.wti.gradle.schema.map.SchemaMap
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata
 import net.wti.gradle.schema.parser.SchemaParser
+import net.wti.gradle.schema.spi.SchemaProperties
 import net.wti.gradle.settings.ProjectDescriptorView
 import net.wti.gradle.test.AbstractMultiBuildTest
+import org.gradle.StartParameter
+import org.gradle.api.initialization.ProjectDescriptor
 import org.gradle.api.initialization.Settings
+import org.gradle.api.invocation.Gradle
+import org.gradle.api.plugins.ExtensionContainer
 
 import java.util.concurrent.Callable
 
-import static xapi.util.X_Namespace.XAPI_VERSION
+import static xapi.constants.X_Namespace.XAPI_VERSION
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 30/07/19 @ 4:41 AM.
@@ -26,6 +31,7 @@ abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends Abstrac
     }
 
     Callable initProject
+    Settings settings
     @Override
     void doWork() {
         initProject.call()
@@ -153,33 +159,36 @@ tasks.create 'testSchema', {
         return getClass().simpleName
     }
 
-    Settings settings = Mock(Settings, {
-        // initialize the mock with some state...
-        Map<String, ProjectDescriptorView> mockProjects = new LinkedHashMap<>();
-        settings.findProject(_) >> { args ->
-            Object key = args[0]
-            if (key instanceof File) {
-                throw new UnsupportedOperationException("Only string keys are allowed for settings.findProject during tests.")
-            }
-            if (!key.startsWith(':')) {
-                key = ":$key"
-            }
-            final String k = "${ key.startsWith(':') ? '' : ':'}$key"
-            File projectDir = new File(rootDir, k.substring(1).replace(':' as char, File.separatorChar))
-            mockProjects.computeIfAbsent(k, { K ->
-                     new ProjectDescriptorView(k, settings, mockProjects, {projectDir})
-            })
-        }
-
-    })
-
     SchemaMap parseSchema() {
         // make sure we actually write out any generated project files before we try parsing
         doWork()
         SchemaParser parser = {this} as SchemaParser
         XapiLoaderPlugin plugin = new XapiLoaderPlugin()
         DefaultSchemaMetadata schema = parser.parseSchema(this)
-        return plugin.buildMap(settings, parser, schema)
+        SchemaMap map = plugin.buildMap(settings, parser, schema, SchemaProperties.getInstance())
+        // forcibly realize the schema map
+        map.resolve()
+        return map
+    }
+
+    @Override
+    String getBuildName() {
+        return "testBuild"
+    }
+
+    @Override
+    Settings getSettings() {
+        return super.getSettings()
+    }
+
+    @Override
+    Gradle getGradle() {
+        return super.getGradle()
+    }
+
+    @Override
+    ExtensionContainer getExtensions() {
+        return convention
     }
 
     void generateSubprojects(String module='util', external = '') {

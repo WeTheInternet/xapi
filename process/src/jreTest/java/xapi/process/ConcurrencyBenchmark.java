@@ -8,7 +8,7 @@ import xapi.log.api.LogLevel;
 import xapi.test.Benchmark;
 import xapi.test.Benchmark.Report;
 import xapi.test.Benchmark.Timing;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.api.ReceivesValue;
 
 import static xapi.process.X_Process.*;

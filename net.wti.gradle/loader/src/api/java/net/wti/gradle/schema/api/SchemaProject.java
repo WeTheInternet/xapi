@@ -33,6 +33,7 @@ public class SchemaProject implements Named, HasPath {
     private final MinimalProjectView view;
     private boolean loaded;
     private String parentGradlePath;
+    private boolean force;
 
     public SchemaProject(
         MinimalProjectView view,
@@ -289,5 +290,13 @@ public class SchemaProject implements Named, HasPath {
 
     public String getParentGradlePath() {
         return parentGradlePath;
+    }
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(final boolean force) {
+        this.force = force;
     }
 }

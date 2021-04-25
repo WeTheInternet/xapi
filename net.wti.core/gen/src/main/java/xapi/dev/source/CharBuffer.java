@@ -3,7 +3,7 @@
  */
 package xapi.dev.source;
 
-import xapi.collect.impl.StringStack;
+import xapi.collect.simple.StringStack;
 import xapi.fu.Coercible;
 import xapi.fu.Out1;
 

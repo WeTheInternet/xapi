@@ -22,6 +22,7 @@ xapiRequire.module('api').configure {
 
 xapiRequire.module('test').configure {
     external "net.wti.gradle.tools:xapi-gradle-test:${->version}", 'main'
+    external "net.bytebuddy:byte-buddy:1.11.0"
 }
 
 xapiRequire.module('spi').configure {
@@ -89,22 +90,5 @@ xapiSchema.whenReady {
     tasks.test.doFirst {
         new File(buildDir, 'testRuntime.classpath').text = (tasks.test as Test).classpath.asPath
     }
-
-//     To actually publish plugin:
-//     plugins {
-//      id "com.gradle.plugin-publish" version "0.10.1"
-//     }
-//     Then uncomment:
-//    pluginBundle {
-//        website = "https://wti.net/xapi"
-//        vcsUrl = "https://github.com/WeTheInternet/xapi"
-//        description = doc
-//        tags = listOf("java", "gradle", "git")
-//        mavenCoordinates {
-//            groupId = project.group.toString()
-//            artifactId = project.name
-//        }
-//    }
-
 } // end xapiSchema.whenReady{}
 

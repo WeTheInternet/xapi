@@ -1,7 +1,7 @@
 package xapi.dev.source;
 
 import xapi.fu.In1Out1;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 public class DomBuffer extends XmlBuffer {
 

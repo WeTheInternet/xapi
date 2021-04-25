@@ -5,14 +5,11 @@ import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
 import org.gradle.api.provider.Provider;
-import xapi.fu.Maybe;
 import xapi.fu.Out1;
-import xapi.fu.X_Fu;
 import xapi.fu.data.SetLike;
-import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.concurrent.Callable;
 

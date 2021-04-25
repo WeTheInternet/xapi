@@ -5,7 +5,7 @@ import com.github.javaparser.SourcesHelper;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.SimpleLinkedList;
+import xapi.collect.simple.SimpleLinkedList;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.except.MultiException;
 import xapi.except.NoSuchItem;
@@ -27,7 +27,7 @@ import xapi.reflect.X_Reflect;
 import xapi.source.api.CharIterator;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.Destroyable;
 import xapi.util.api.RemovalHandler;
 

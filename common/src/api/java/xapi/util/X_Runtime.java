@@ -1,11 +1,13 @@
 package xapi.util;
 
+import xapi.constants.X_Namespace;
 import xapi.platform.JrePlatform;
+import xapi.string.X_String;
 
-import static xapi.util.X_Namespace.PROPERTY_DEBUG;
-import static xapi.util.X_Namespace.PROPERTY_MULTITHREADED;
-import static xapi.util.X_Namespace.PROPERTY_TEST;
-import static xapi.util.X_Namespace.PROPERTY_USE_X_INJECT;
+import static xapi.constants.X_Namespace.PROPERTY_DEBUG;
+import static xapi.constants.X_Namespace.PROPERTY_MULTITHREADED;
+import static xapi.constants.X_Namespace.PROPERTY_TEST;
+import static xapi.constants.X_Namespace.PROPERTY_USE_X_INJECT;
 
 import java.io.File;
 import java.io.IOException;

@@ -14,7 +14,6 @@ import net.wti.gradle.schema.impl.DefaultSchemaPlatform;
 import net.wti.gradle.schema.map.*;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.system.service.GradleService;
-import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -27,7 +26,7 @@ import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 import xapi.gradle.fu.LazyString;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -61,10 +60,9 @@ public interface SchemaParser {
      * @return A parsed {@link DefaultSchemaMetadata} file.
      */
     default DefaultSchemaMetadata parseSchema(MinimalProjectView p) {
-        String schemaFile = GradleCoerce.unwrapStringOr(p.findProperty("xapiSchema"), p.getProjectDir() + File.separator + "schema.xapi");
-        File f = new File(schemaFile);
-        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, f);
-        if (f.exists()) {
+        File schemaFile = getProperties().getRootSchemaFile(p);
+        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, schemaFile);
+        if (schemaFile.exists()) {
             return parseSchemaFile(null, metadata, p.getProjectDir());
         }
         return metadata;
@@ -171,6 +169,19 @@ public interface SchemaParser {
                 case "parentPath":
                 case "virtual":
                     // ignored, only apply to xapi-schema. Should likely be a static set checked in `default:`
+                    break;
+                case "shortenPaths":
+                    // store a boolean which decides whether or not multi-platform projects get a parent gradle project; ie: :extra:project:segment
+                    break;
+                case "applyTemplate":
+                    // TODO: find a template from current/ancestor SchemaMetadata, and copy it into this project.
+                    break;
+                case "templates":
+                    // TODO: store a template object, so root projects can define settings without applying them.
+                    break;
+                case "repos":
+                case "repositories":
+                    addRepositories(meta, attr.getExpression());
                     break;
                 case "platforms":
                     // definition of platforms
@@ -318,6 +329,41 @@ public interface SchemaParser {
         } else {
             throw new GradleException("Invalid platforms expression " + expression.getClass() +" :\n" + expression.toSource());
         }
+    }
+    default void addRepositories(DefaultSchemaMetadata meta, Expression expression) {
+        /*
+    repositories = [
+        jcenter(),
+        { maven: { name: "blah", url: "blah" } },
+    ]
+        */
+        final ComposableXapiVisitor<?> visitor = whenMissingFail(SchemaParser.class)
+            .withUiContainerTerminal((el, val) -> {
+                meta.addRepositories(el);
+            })
+            .withJsonContainerExpr((json, val) -> {
+                if (json.isArray()) {
+                    return true;
+                }
+                throw new IllegalArgumentException("{Json: containers} are not supported, instead use <literal value=`maven { url 'blah' }` /literal> instead. ");
+            })
+            .withMethodCallExprTerminal((call, val) -> {
+                // convert this method call into a special ui-expression: <literal value=mthdCall() /literal>
+                final UiContainerExpr expr = new UiContainerExpr("literal");
+                expr.addAttribute("value", call);
+                meta.addRepositories(expr);
+            })
+            .nameOrString(mvnUrl -> {
+                // convert a plain name into a maven repo
+                final UiContainerExpr expr = new UiContainerExpr("maven");
+                expr.addAttribute("url", StringLiteralExpr.stringLiteral(mvnUrl));
+                expr.addAttribute("name", StringLiteralExpr.stringLiteral(
+                        mvnUrl.replace("http://", "").replace("https://", "")
+                            .split("/")[0]
+                ));
+                meta.addPlatform(new UiContainerExpr(mvnUrl));
+            });
+        expression.accept(visitor, null);
     }
 
     default void addModules(DefaultSchemaMetadata meta, Expression expression) {
@@ -538,9 +584,40 @@ public interface SchemaParser {
         if (projects != null) {
             map.loadProjects(project, this, metadata);
         }
+        loadRepositories(map, project, metadata);
         loadDependencies(map, project, metadata);
     }
 
+    default void loadRepositories(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata) {
+        final Iterable<? extends UiContainerExpr> repos = metadata.getRepositories();
+        if (repos == null) {
+            return;
+        }
+        for (UiContainerExpr repo : repos) {
+            if ("literal".equals(repo.getName())) {
+                final Maybe<UiAttrExpr> value = repo.getAttribute("value").ifAbsentThrow(() ->
+                        new IllegalArgumentException("A <literal/> repository must contain exactly one attribute: value=")
+                );
+                final ComposableXapiVisitor<Object> vis = whenMissingFail(SchemaParser.class)
+                        .nameOrString(val -> {
+                            // alright... add some literal repository support...
+                        });
+                value.get().getExpression().accept(vis, null);
+            } else {
+                // This is a structured repository declaration.
+                String name = repo.getName();
+                final Maybe<UiAttrExpr> url = repo.getAttribute("url");
+                for (UiAttrExpr attr : repo.getAttributes()) {
+                    if (!"url".equals(attr.getNameString())) {
+                        throw new IllegalArgumentException("The only valid structure of a repository element is <name url=\"blah\" />. Use <literal value=\"maven { name 'blah' }\" instead.");
+                    }
+                }
+                // ok, now we have a name and url. Add repository declaration.
+
+            }
+        }
+
+    }
     default void loadDependencies(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata) {
 
         DependencyMap<CharSequence> depMap = new DependencyMap<>();
@@ -583,8 +660,7 @@ public interface SchemaParser {
                     extractDependencies(localCopy, expr, project, mod)
                 ).flatten(In1Out1.identity()).cached();
                 Log.loggerFor(SchemaParser.class, this)
-                        .log(SchemaParser.class, LogLevel.INFO, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
-//                        .log(LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
+                        .log(SchemaParser.class, LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
                 for (SchemaDependency dep : extracted) {
                     insertDependencies(project, metadata, mod, dep);
                 }
@@ -792,6 +868,9 @@ public interface SchemaParser {
             boolean test = module.getAttribute("test")
                 .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                 .ifAbsentReturn(false);
+            boolean force = module.getAttribute("force")
+                .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                .ifAbsentReturn(false);
             final SetLike<String> include = X_Jdk.setLinked();
 
             final String publishNamePattern = parser.getProperties().getPublishNamePattern(project.getView(), name);
@@ -904,7 +983,7 @@ public interface SchemaParser {
             module.getAttribute("requires").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
             module.getAttribute("require").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
 
-            SchemaModule schemaMod = new SchemaModule(name, publishNamePattern, include, published, test);
+            SchemaModule schemaMod = new SchemaModule(name, publishNamePattern, include, published, test, force);
 
             project.forAllPlatforms(plat -> {
                 // an include = [ list, "of", modules ] is an automatic internal dependency on said module.
@@ -990,13 +1069,16 @@ public interface SchemaParser {
             boolean test = platform.getAttribute("test")
                 .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                 .ifAbsentReturn(false);
-            final Maybe<UiAttrExpr> replaceAttr = platform.getAttribute("replace");
             final SetLike<String> replace = X_Jdk.setLinked();
-            if (replaceAttr.isPresent()) {
-                final ComposableXapiVisitor<Object> addRequire = whenMissingFail(SchemaParser.class);
-                addRequire.nameOrString(replace::add);
-                replaceAttr.get().getExpression().accept(addRequire, metadata);
-            }
+            In1<Maybe<UiAttrExpr>> processReplace = replaceAttr -> {
+                if (replaceAttr.isPresent()) {
+                    final ComposableXapiVisitor<Object> addRequire = whenMissingFail(SchemaParser.class);
+                    addRequire.nameOrString(replace::add);
+                    replaceAttr.get().getExpression().accept(addRequire, metadata);
+                }
+            };
+            processReplace.in(platform.getAttribute("replace"));
+            processReplace.in(platform.getAttribute("replaces"));
             final String groupPattern = parser.getProperties().getPublishGroupPattern(project.getView(), name);
 
             assert replace.isEmpty() || replace.size() == 1 : "Cannot replace more than one other platform; " + name + " tries to replace " + replace;

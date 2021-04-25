@@ -7,7 +7,7 @@ import xapi.fu.In2;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

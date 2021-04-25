@@ -7,7 +7,7 @@ import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.fu.itr.MappedIterable;
 import xapi.inject.X_Inject;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.lang.annotation.Annotation;
 import java.net.URL;

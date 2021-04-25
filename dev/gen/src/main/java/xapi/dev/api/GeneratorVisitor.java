@@ -22,7 +22,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Do;
 import xapi.fu.Filter.Filter1;

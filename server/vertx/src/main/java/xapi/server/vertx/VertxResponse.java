@@ -7,7 +7,7 @@ import xapi.fu.data.MapLike;
 import xapi.log.X_Log;
 import xapi.scope.impl.AbstractResponse;
 import xapi.scope.spi.ResponseLike;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.Destroyable;
 
 /**

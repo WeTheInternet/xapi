@@ -14,7 +14,7 @@ import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.fu.*;
 import xapi.fu.itr.MappedIterable;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;

@@ -2,7 +2,7 @@ package xapi.mvn.api;
 
 import xapi.model.X_Model;
 import xapi.model.api.Model;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/4/16.

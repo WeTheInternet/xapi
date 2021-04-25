@@ -11,7 +11,7 @@ import xapi.model.X_Model;
 import xapi.server.gen.VertxWebAppGenerator;
 import xapi.server.api.WebApp;
 import xapi.server.vertx.XapiVertxServer;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static org.junit.Assert.assertEquals;
 

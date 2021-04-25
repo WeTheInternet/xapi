@@ -2,6 +2,7 @@ package net.wti.gradle.schema.spi;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.schema.api.HasAllProjects;
+import net.wti.gradle.schema.api.SchemaIndex;
 import xapi.fu.Out1;
 
 /**

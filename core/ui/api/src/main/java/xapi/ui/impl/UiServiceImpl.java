@@ -6,7 +6,7 @@ import xapi.event.api.EventHandler;
 import xapi.event.api.EventManager;
 import xapi.event.api.IsEventType;
 import xapi.event.impl.EventTypes;
-import xapi.except.NotImplemented;
+import xapi.error.NotImplemented;
 import xapi.except.NotYetImplemented;
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
@@ -15,7 +15,7 @@ import xapi.ui.api.*;
 import xapi.ui.api.event.UiEventManager;
 import xapi.ui.service.UiService;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.util.WeakHashMap;
 

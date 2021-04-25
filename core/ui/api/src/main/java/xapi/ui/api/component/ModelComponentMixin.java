@@ -4,7 +4,7 @@ import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.ui.api.ElementBuilder;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 5/29/17.

@@ -1,17 +1,20 @@
 package net.wti.gradle.api;
 
 import org.gradle.api.Action;
-import org.gradle.api.artifacts.component.BuildIdentifier;
+import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.ExtensionAware;
-import org.gradle.composite.internal.DefaultIncludedBuild;
 import org.gradle.internal.build.BuildState;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.Path;
 
 import java.io.File;
+
+import static net.wti.gradle.system.tools.GradleCoerce.isEmptyString;
+import static net.wti.gradle.system.tools.GradleCoerce.isNotEmptyString;
 
 /**
  * The most basic form of a "universal grab bag of random utilities".
@@ -37,11 +40,11 @@ public interface MinimalProjectView extends ExtensionAware {
 
     Gradle getGradle();
 
-    void whenReady(Action<? super MinimalProjectView> callback);
+    Settings getSettings();
 
-    default void whenSettingsReady(Action<? super MinimalProjectView> callback) {
-        whenReady(callback);
-    }
+    void whenSettingsReady(Action<Settings> callback);
+
+    void whenReady(Action<? super MinimalProjectView> callback);
 
     default MinimalProjectView getRootProject() {
         return findView(":");
@@ -60,4 +63,27 @@ public interface MinimalProjectView extends ExtensionAware {
     String getGroup();
     String getVersion();
 
+    Logger getLogger();
+
+    static String searchProperty(String key, MinimalProjectView view) {
+        String maybe = System.getProperty(key);
+        if (isEmptyString(maybe)) {
+            if (view != null) {
+                Object candidate = view.findProperty(key);
+                if (candidate != null) {
+                    maybe = String.valueOf(candidate);
+                }
+            }
+        }
+        if (isNotEmptyString(maybe)) {
+            return maybe;
+        }
+        // convert to env var; universally forces camelCase, kebob-case and dot.case. to UPPER_SNAKE_CASE
+        String envKey = key.replaceAll("([A-Z][a-z]*)", "_$1").replaceAll("[.-]", "_").toUpperCase();
+        maybe = System.getenv(envKey);
+        if (isNotEmptyString(maybe)) {
+            return maybe;
+        }
+        return null;
+    }
 }

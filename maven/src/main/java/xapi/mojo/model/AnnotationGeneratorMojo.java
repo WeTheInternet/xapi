@@ -6,7 +6,7 @@ import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
@@ -19,7 +19,7 @@ import xapi.mvn.X_Maven;
 import xapi.source.X_Modifier;
 import xapi.source.api.*;
 import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import java.io.File;
 import java.lang.annotation.Annotation;

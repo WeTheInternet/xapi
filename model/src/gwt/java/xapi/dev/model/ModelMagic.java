@@ -6,7 +6,7 @@ import xapi.fu.api.Ignore;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;
 import xapi.model.impl.ModelUtil;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.X_Properties;
 
 import java.util.*;

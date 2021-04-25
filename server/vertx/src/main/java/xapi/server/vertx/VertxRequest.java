@@ -11,7 +11,7 @@ import xapi.fu.data.MapLike;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.lazy.ResettableLazy;
 import xapi.scope.spi.RequestLike;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.Destroyable;
 
 /**

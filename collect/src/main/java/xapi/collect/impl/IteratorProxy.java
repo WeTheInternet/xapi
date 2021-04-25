@@ -4,7 +4,7 @@ import java.util.Map.Entry;
 
 import javax.inject.Provider;
 
-import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.api.CollectionProxy;
 
 public class IteratorProxy <K, V> implements Provider<Iterable<Entry<K,V>>> {
 

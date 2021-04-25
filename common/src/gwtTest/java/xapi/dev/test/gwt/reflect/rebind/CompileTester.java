@@ -6,7 +6,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import xapi.collect.impl.SimpleStack;
+import xapi.collect.simple.SimpleStack;
 
 public class CompileTester {
 

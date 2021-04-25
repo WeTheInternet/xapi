@@ -34,8 +34,8 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.InitMap;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.AbstractMultiInitMap;
-import xapi.collect.impl.InitMapDefault;
+import xapi.collect.init.AbstractMultiInitMap;
+import xapi.collect.init.InitMapDefault;
 import xapi.dev.api.ProjectSources;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
@@ -58,7 +58,7 @@ import xapi.reflect.X_Reflect;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
@@ -68,13 +68,12 @@ import java.util.*;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 
 import static xapi.fu.itr.Chain.startChain;
 import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.util.X_Properties.getProperty;
-import static xapi.util.X_String.isEmpty;
+import static xapi.string.X_String.isEmpty;
 
 @SingletonDefault(implFor = MvnService.class)
 public class MvnServiceDefault implements MvnService {

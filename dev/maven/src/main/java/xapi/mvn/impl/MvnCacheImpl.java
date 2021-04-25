@@ -14,7 +14,7 @@ import xapi.mvn.api.MvnCoords;
 import xapi.mvn.api.MvnModule;
 import xapi.mvn.api.MvnCache;
 import xapi.mvn.service.MvnService;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.File;
 

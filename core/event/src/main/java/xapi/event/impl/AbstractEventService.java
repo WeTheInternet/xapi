@@ -5,7 +5,7 @@ import xapi.event.api.EventHandler;
 import xapi.event.api.EventHandlerWithIdentity;
 import xapi.event.api.EventService;
 import xapi.event.api.IsEvent;
-import xapi.except.NotImplemented;
+import xapi.error.NotImplemented;
 import xapi.fu.X_Fu;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;

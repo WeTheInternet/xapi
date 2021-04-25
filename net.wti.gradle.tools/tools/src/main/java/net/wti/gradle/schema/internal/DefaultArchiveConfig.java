@@ -50,8 +50,11 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
         ));
         requires = view.getObjects().setProperty(LazyString.class);
         requires.convention(view.lazyProvider(()->{
-            // Nothing set?  apply convention.
+            // Nothing set?  apply convention, if we are allowed.
             List<LazyString> result = new ArrayList<>();
+            if ("false".equals(view.findProperty("xapiAutoApi"))) {
+                return result;
+            }
             switch (name) {
                 case "main":
                     result.add(new LazyString("api"));

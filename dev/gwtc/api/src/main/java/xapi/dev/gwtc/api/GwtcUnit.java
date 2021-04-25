@@ -5,7 +5,7 @@ import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.Gwtc.AncestorMode;
 import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.util.X_Runtime;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

@@ -6,7 +6,7 @@ import java.security.PrivilegedAction;
 import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.fu.Out1;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 import xapi.util.service.PropertyService;
 
 @SingletonDefault(implFor=PropertyService.class)

@@ -4,7 +4,7 @@ import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.mvn.api.MvnDependency;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import static org.junit.Assert.assertTrue;
 

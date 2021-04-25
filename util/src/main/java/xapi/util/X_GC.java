@@ -8,7 +8,7 @@ import java.util.HashSet;
 
 import xapi.annotation.gc.Indestructible;
 import xapi.annotation.gc.OnGC;
-import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.init.AbstractMultiInitMap;
 import xapi.log.X_Log;
 import xapi.util.api.Destroyable;
 import xapi.util.api.Destroyer;

@@ -17,7 +17,7 @@ import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 public class X_Gwt3 {
 

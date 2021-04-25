@@ -21,8 +21,8 @@ import xapi.mvn.X_Maven;
 import xapi.mvn.api.MvnDependency;
 import xapi.process.X_Process;
 import xapi.ui.api.Ui;
-import xapi.util.X_Namespace;
-import xapi.util.X_String;
+import xapi.constants.X_Namespace;
+import xapi.string.X_String;
 
 import java.net.URL;
 import java.net.URLClassLoader;

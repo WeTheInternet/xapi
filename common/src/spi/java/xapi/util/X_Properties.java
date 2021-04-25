@@ -36,6 +36,7 @@
 package xapi.util;
 
 import xapi.annotation.compile.MagicMethod;
+import xapi.constants.X_Namespace;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Lazy;

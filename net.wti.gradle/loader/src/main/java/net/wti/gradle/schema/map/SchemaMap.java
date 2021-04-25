@@ -1,7 +1,5 @@
 package net.wti.gradle.schema.map;
 
-import com.github.javaparser.ast.expr.JsonPairExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import net.wti.gradle.api.MinimalProjectView;
@@ -9,9 +7,17 @@ import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.impl.SchemaCallbacksDefault;
+import net.wti.gradle.schema.index.SchemaIndexImmutable;
+import net.wti.gradle.schema.index.SchemaIndexerImpl;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
+import net.wti.gradle.schema.api.SchemaIndex;
+import net.wti.gradle.schema.api.SchemaIndexReader;
+import net.wti.gradle.schema.spi.SchemaProperties;
+import net.wti.gradle.settings.ProjectDescriptorView;
+import net.wti.gradle.settings.RootProjectView;
 import net.wti.gradle.system.service.GradleService;
+import org.gradle.api.initialization.Settings;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
@@ -19,14 +25,15 @@ import xapi.fu.data.SetLike;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.MappedIterable;
-import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.util.X_String;
+import xapi.gradle.fu.LazyString;
+import xapi.string.X_String;
 
 import java.io.File;
 
 import static xapi.fu.java.X_Jdk.mapOrderedInsertion;
 import static xapi.fu.java.X_Jdk.setLinked;
+import static xapi.string.X_String.isNotEmpty;
 
 /**
  * A complete mapping of a fully-parsed project tree.
@@ -39,21 +46,71 @@ import static xapi.fu.java.X_Jdk.setLinked;
 public class SchemaMap implements HasAllProjects {
 
     public static final String KEY_FOR_EXTENSIONS = "xapiSchemaMap";
+    private Lazy<SchemaIndex> indexProvider;
 
-    public static SchemaMap fromView(MinimalProjectView view) {
+    public static HasAllProjects fromView(MinimalProjectView view) {
         return fromView(view, () -> view);
     }
 
-    public static SchemaMap fromView(MinimalProjectView view, SchemaParser parser) {
+    public static HasAllProjects fromView(MinimalProjectView view, SchemaParser parser) {
+        SchemaProperties props = parser.getProperties();
         final DefaultSchemaMetadata rootMeta = parser.getSchema();
-        return fromView(view, parser, rootMeta);
+        SchemaMap map = fromView(view, parser, rootMeta, props);
+        return map;
     }
 
-    public static SchemaMap fromView(MinimalProjectView view, SchemaParser parser, DefaultSchemaMetadata rootMeta) {
-        return GradleService.buildOnce(SchemaMap.class, view.findView(":"), KEY_FOR_EXTENSIONS, v -> {
+    private void setIndexProvider(final Out1<SchemaIndex> deferred) {
+        this.indexProvider = Lazy.deferred1(deferred);
+    }
+
+    @Override
+    public Lazy<SchemaIndex> getIndexProvider() {
+        return indexProvider;
+    }
+
+    public static SchemaMap fromView(MinimalProjectView srcView, SchemaParser parser, DefaultSchemaMetadata rootMeta, SchemaProperties props) {
+        RootProjectView view = ProjectDescriptorView.rootView(srcView);
+        return GradleService.buildOnce(SchemaMap.class, view, KEY_FOR_EXTENSIONS, v -> {
             SchemaCallbacksDefault callbacks = new SchemaCallbacksDefault();
             SchemaMap map = new SchemaMap(view, parser, rootMeta, callbacks);
-            view.whenSettingsReady(map.resolver.ignoreIn1().ignoreOutput()::in);
+
+            String indexProp = props.getIndexIdProp(view);
+            String indexState = System.getProperty(indexProp);
+//            if ("true".equals(indexState)) {
+//                // yay, the index is already run. Return a lightweight HasAllProjects...
+//                final Out1<SchemaIndex> indexProvider = Lazy.deferred1(()->{
+//                    final String buildName = props.getBuildName(view);
+//                    final CharSequence version = new LazyString(map::getVersion);
+//                    final CharSequence group = new LazyString(map::getGroup);
+//                    final SchemaIndexReader reader = props.createReader(view, version);
+//                    return new SchemaIndexImmutable(buildName, group, version, reader);
+//                });
+////            SchemaCallbacksDefault callbacks = new SchemaCallbacksDefault();
+////            IndexBackedSchemaMap map = new IndexBackedSchemaMap(view, callbacks, props, indexProvider);
+////            // TODO: we need to kick off a job to read SchemaProject structure from index.
+////                 we need to recreate / minimize the api surface of SchemaProject, such that it can be wholly read from disk.
+////
+////            return map;
+//                // until above works, we always work with a "do all the work over again" SchemaMap...
+//                map.setIndexProvider(indexProvider);
+//            } else {
+                // yikes! index hasn't run yet. Start it now!
+//                view.whenReady(ready ->{
+                    SchemaIndexerImpl indexer = GradleService.buildOnce(
+                            SchemaIndexerImpl.class,
+                            view,
+                        view.getBuildName() + "_index", ignored-> {
+                                final SchemaIndexerImpl index = new SchemaIndexerImpl(props);
+                                view.getLogger().quiet("Index has not yet run; consider using xapi-loader plugin in settings.gradle");
+                                return index;
+                            }
+                    );
+                    final String bn = props.getBuildName(view);
+                    final Out1<SchemaIndex> deferred = indexer.index(view, bn, map);
+                    map.setIndexProvider(deferred);
+//                });
+
+//            }
             return map;
         });
     }
@@ -68,6 +125,7 @@ public class SchemaMap implements HasAllProjects {
     private final Lazy<MinimalProjectView> resolver;
     private final SchemaCallbacks callbacks;
     private SchemaProject tailProject;
+    private volatile Do onResolve;
 
     public SchemaMap(
         MinimalProjectView view,
@@ -75,6 +133,7 @@ public class SchemaMap implements HasAllProjects {
         DefaultSchemaMetadata root,
         SchemaCallbacks callbacks
     ) {
+        onResolve = Do.NOTHING;
         this.rootSchema = root;
         this.view = view;
         this.callbacks = callbacks;
@@ -83,7 +142,7 @@ public class SchemaMap implements HasAllProjects {
         allMetadata = setLinked();
         String rootName = root.getName();
         // consider changing rootModule published field to either be configurable, or default true (and publish an aggregator / pom-only)
-        rootModule = new SchemaModule(rootName, X_Jdk.setLinked(), false, false);
+        rootModule = new SchemaModule(rootName, X_Jdk.setLinked(), false, false, false);
         tailProject = rootProject = new SchemaProject(
             view,
             rootName,
@@ -94,7 +153,7 @@ public class SchemaMap implements HasAllProjects {
 
         // Create a resolver, so we can forcibly finish our SchemaMap parse on-demand,
         // but still give time for user configuration from settings.gradle to be fully parsed
-        resolver = Lazy.deferred1(()->{
+        resolver = Lazy.withSpy(()->{
 
             System.out.println(view.getClass().getSimpleName() + " is ready, loading children for file://" + view.getProjectDir());
             loadMetadata(getRootProject(), parser, root);
@@ -122,9 +181,28 @@ public class SchemaMap implements HasAllProjects {
 
             fixMetadata();
             callbacks.flushCallbacks(this);
-
             return view;
+        }, doAfter -> {
+            // This "doAfter" spy is invoked _after_ the lazy finishes resolving.
+            // Because user can pass any callbacks they like to whenResolved(),
+            // we need to guard against deadlock; if user callback launches a thread that tries
+            // to also resolve this schema map, the whole thing locks up. Using a spy prevents this,
+            // by returning our lock before processing user-supplied callbacks.
+            drainCallbacks();
         });
+    }
+
+    private void drainCallbacks() {
+        while (onResolve != Do.NOTHING) {
+            final Do myRes;
+            synchronized (allMetadata) {
+                // before we invoke the user-supplied callbacks, lets reset to blank.
+                myRes = onResolve;
+                onResolve = Do.NOTHING;
+            }
+            myRes.done();
+            callbacks.flushCallbacks(this);
+        }
     }
 
     private void fixMetadata() {
@@ -132,7 +210,7 @@ public class SchemaMap implements HasAllProjects {
             project.forAllPlatformsAndModules((plat, mod) -> {
                     PlatformModule myPlatMod = new PlatformModule(plat.getName(), mod.getName());
                     String platReplace = plat.getReplace();
-                    if (X_String.isNotEmpty(platReplace)) {
+                    if (isNotEmpty(platReplace)) {
                         // Need to bind gwt:api to main:api or jre:main to main:main
                         PlatformModule intoPlatMod = myPlatMod.edit(plat.getReplace(), null);
                         final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
@@ -153,8 +231,24 @@ public class SchemaMap implements HasAllProjects {
         return resolver;
     }
 
+    @Override
+    public void resolve() {
+        getResolver().out1();
+        drainCallbacks();
+    }
+
+    public void whenResolved(Do job) {
+        if (resolver.isResolved()) {
+            job.done();
+        } else {
+            synchronized (allMetadata) {
+                onResolve = onResolve.doAfter(job);
+            }
+        }
+    }
+
     public MinimalProjectView getView() {
-        return getResolver().out1();
+        return view;
     }
 
     @Override
@@ -246,17 +340,6 @@ public class SchemaMap implements HasAllProjects {
             }
             return preloads;
         }).flatten(In1Out1.identity());
-    }
-
-    public Maybe<SchemaProject> findProject(String path) {
-        final String gradlePath = path.startsWith(":") ? path : ":" + path;
-        final SizedIterable<SchemaProject> results = getAllProjects().filter(proj -> proj.getPathGradle().equals(
-            gradlePath)).counted();
-        if (results.isEmpty()) {
-            return Maybe.not();
-        }
-        assert results.size() == 1 : "Multiple SchemaProject match " + path;
-        return Maybe.immutable(results.first());
     }
 
     public void loadProjects(SchemaProject sourceProject, SchemaParser parser, DefaultSchemaMetadata metadata) {
@@ -387,10 +470,12 @@ public class SchemaMap implements HasAllProjects {
         return schemaGroup;
     }
 
+    @Override
     public void setGroup(String group) {
         getRootSchema().setGroup(group);
     }
 
+    @Override
     public void setVersion(String version) {
         getRootSchema().setVersion(version);
     }
@@ -407,5 +492,10 @@ public class SchemaMap implements HasAllProjects {
 //            return "current";
 //        }
 //        return schemaVersion;
+    }
+
+    @Override
+    public File getRootSchemaFile() {
+        return rootSchema.getSchemaFile();
     }
 }

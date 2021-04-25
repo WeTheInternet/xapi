@@ -41,7 +41,7 @@ import xapi.fu.In2;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import java.io.IOException;
 import java.io.InputStream;

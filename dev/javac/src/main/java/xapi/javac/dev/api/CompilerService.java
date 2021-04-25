@@ -13,7 +13,7 @@ import xapi.javac.dev.model.CompilerSettings.ProcessorMode;
 import xapi.javac.dev.model.JavaDocument;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import javax.lang.model.element.TypeElement;
 import java.net.URL;

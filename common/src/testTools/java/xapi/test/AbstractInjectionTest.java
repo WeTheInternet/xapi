@@ -4,7 +4,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import xapi.inject.api.PlatformChecker;
 import xapi.time.impl.RunOnce;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import java.net.URL;
 

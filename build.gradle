@@ -137,3 +137,11 @@ idea {
         excludeDirs = [mvnRepo] as Set
     }
 }
+
+tasks.register('projectInfo') {
+    Task t ->
+        t.doLast {
+            t.logger.quiet("Total projects: " + allprojects.size())
+            // perhaps get some xapi schema stats about realized modules to print here?
+        }
+}

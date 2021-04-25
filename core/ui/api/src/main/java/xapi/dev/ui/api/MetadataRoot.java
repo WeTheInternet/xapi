@@ -5,7 +5,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.NameGen;
+import xapi.dev.debug.NameGen;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;

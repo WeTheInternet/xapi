@@ -14,7 +14,7 @@ import xapi.fu.lazy.ResettableLazy;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.process.api.HasThreadGroup;
-import xapi.util.X_Namespace;
+import xapi.constants.X_Namespace;
 
 import java.io.IOException;
 import java.io.InputStream;

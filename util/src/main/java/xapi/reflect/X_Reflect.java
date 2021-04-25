@@ -13,7 +13,7 @@ import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
 import xapi.source.X_Source;
 import xapi.util.X_Runtime;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.X_Util;
 
 import java.io.File;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static xapi.util.X_String.joinClasses;
+import static xapi.string.X_String.joinClasses;
 
 /**
  * A set of static accessor classes to enable reflection in gwt.

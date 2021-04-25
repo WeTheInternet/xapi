@@ -1,7 +1,7 @@
 package xapi.test.util;
 
 import org.junit.Test;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static org.junit.Assert.assertEquals;
 

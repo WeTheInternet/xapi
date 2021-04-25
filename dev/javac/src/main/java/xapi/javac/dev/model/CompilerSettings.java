@@ -6,8 +6,8 @@ import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
-import xapi.util.X_String;
+import xapi.constants.X_Namespace;
+import xapi.string.X_String;
 
 import java.io.File;
 import java.io.IOException;

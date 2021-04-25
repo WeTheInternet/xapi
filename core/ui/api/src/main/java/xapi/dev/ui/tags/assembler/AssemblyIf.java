@@ -15,6 +15,7 @@ import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.dev.api.UserDefinedMethod;
+import xapi.dev.debug.NameGen;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.itr.ArrayIterable;
@@ -31,7 +32,7 @@ import xapi.ui.api.component.ConditionalComponentMixin;
 
 import java.util.List;
 
-import static xapi.util.X_String.toTitleCase;
+import static xapi.string.X_String.toTitleCase;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/26/18.

@@ -2,7 +2,7 @@ package xapi.process.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.init.AbstractMultiInitMap;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;

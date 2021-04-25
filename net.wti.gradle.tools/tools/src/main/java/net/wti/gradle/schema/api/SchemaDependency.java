@@ -173,7 +173,7 @@ public class SchemaDependency {
     }
 
     public Transitivity getTransitivity() {
-        return transitivity == null ? Transitivity.impl : transitivity;
+        return transitivity == null ? Transitivity.api : transitivity;
     }
 
     public void setTransitivity(final Transitivity transitivity) {

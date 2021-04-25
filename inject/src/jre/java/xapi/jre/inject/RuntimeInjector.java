@@ -26,7 +26,7 @@ import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.X_Util;
 
 import java.io.*;

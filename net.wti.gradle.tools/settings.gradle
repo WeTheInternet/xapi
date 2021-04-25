@@ -12,5 +12,6 @@ add('core')
 add('preload')
 add('test')
 add('tools')
+add('deprecated')
 
 enableFeaturePreview('GRADLE_METADATA')

@@ -11,7 +11,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.fu.Printable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.api.DebugRethrowable;
+import xapi.util.tools.DebugRethrowable;
 
 import java.util.List;
 import java.util.Optional;

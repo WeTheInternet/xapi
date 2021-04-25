@@ -24,10 +24,12 @@ import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.cleanup.BuildOutputCleanupRegistry;
 import org.gradle.internal.component.external.model.JavaEcosystemVariantDerivationStrategy;
+import org.gradle.internal.component.external.model.VariantDerivationStrategy;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.lang.reflect.Method;
 
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 import static org.gradle.api.plugins.JavaPlugin.*;
@@ -75,7 +77,19 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
 
         final ProjectView view = ProjectView.fromProject(project);
         // we will probably want to create our own strategy and abandon this one...
-        view.getComponentMetadata().setVariantDerivationStrategy(new JavaEcosystemVariantDerivationStrategy());
+        VariantDerivationStrategy strat;
+        try {
+            strat = new JavaEcosystemVariantDerivationStrategy();
+        } catch (IllegalAccessError ignored) {
+            try {
+                final Method method = JavaEcosystemVariantDerivationStrategy.class.getMethod("getInstance");
+                final Object result = method.invoke(null);
+                strat = (VariantDerivationStrategy) result;
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to get a JavaEcosystemVariantDerivationStrategy", e);
+            }
+        }
+        view.getComponentMetadata().setVariantDerivationStrategy(strat);
     }
 
     private void configureSourceSets(JavaPluginConvention pluginConvention, final BuildOutputCleanupRegistry buildOutputCleanupRegistry) {

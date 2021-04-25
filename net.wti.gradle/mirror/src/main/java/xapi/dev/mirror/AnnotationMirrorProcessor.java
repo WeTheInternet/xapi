@@ -1,6 +1,6 @@
 package xapi.dev.mirror;
 
-import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.reflection.MirroredAnnotation;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -58,7 +58,7 @@ import java.util.Set;
  *
  */
 
-@SupportedAnnotationTypes({ "xapi.annotation.reflect.MirroredAnnotation" })
+@SupportedAnnotationTypes({ "xapi.annotation.reflection.MirroredAnnotation" })
 @SupportedOptions(AnnotationMirrorProcessor.DISABLE_OPTION)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class AnnotationMirrorProcessor extends AbstractProcessor {

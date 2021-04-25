@@ -2,7 +2,7 @@ package xapi.server.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.SimpleLinkedList;
+import xapi.collect.simple.SimpleLinkedList;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Maybe;
 import xapi.fu.Out2;

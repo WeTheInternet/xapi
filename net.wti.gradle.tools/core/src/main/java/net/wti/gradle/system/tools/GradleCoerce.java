@@ -161,6 +161,9 @@ public class GradleCoerce {
     public static boolean isEmptyString(CharSequence value) {
         return value == null || value.length() == 0;
     }
+    public static boolean isNotEmptyString(CharSequence value) {
+        return !isEmptyString(value);
+    }
 
     public static String toTitleCase(String name) {
         return isEmpty(name) ? name : Character.toUpperCase(name.charAt(0))+

@@ -7,7 +7,7 @@ import javax.inject.Provider;
 
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
-import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.api.CollectionProxy;
 
 public abstract class ClassToDelegate <V>
 extends ObjectToAbstract<Class<?>,V>

@@ -10,7 +10,7 @@ import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.SingletonIterator;
 import xapi.ui.api.component.Slot;
 import xapi.ui.api.component.SlotController;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/8/17.

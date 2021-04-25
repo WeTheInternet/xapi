@@ -14,17 +14,19 @@ public class SchemaModule implements Named {
     private String publishPattern;
     private boolean published;
     private boolean test;
+    private boolean force;
 
-    public SchemaModule(String name, SetLike<String> include, boolean published, boolean test) {
-        this(name, "main".equals(name) ? "$name" : "$module-$name", include, published, test);
+    public SchemaModule(String name, SetLike<String> include, boolean published, boolean test, final boolean force) {
+        this(name, "main".equals(name) ? "$name" : "$module-$name", include, published, test, force);
     }
 
-    public SchemaModule(String name, String publishPattern, SetLike<String> include, boolean published, boolean test) {
+    public SchemaModule(String name, String publishPattern, SetLike<String> include, boolean published, boolean test, final boolean force) {
         this.name = name;
         this.publishPattern = publishPattern;
         this.include = include;
         this.published = published;
         this.test = test;
+        this.force = force;
     }
 
     @Override
@@ -42,6 +44,10 @@ public class SchemaModule implements Named {
 
     public boolean isTest() {
         return test;
+    }
+
+    public boolean isForce() {
+        return force;
     }
 
     @Override
@@ -80,8 +86,13 @@ public class SchemaModule implements Named {
         return this;
     }
 
+    public SchemaModule updateForce(boolean force) {
+        this.force = force;
+        return this;
+    }
+
     public SchemaModule update(SchemaModule module) {
-        return new SchemaModule(name, module.publishPattern, include.addNow(module.include), published || module.published, test || module.test);
+        return new SchemaModule(name, module.publishPattern, include.addNow(module.include), published || module.published, test || module.test, force || module.force);
     }
 
     @Override

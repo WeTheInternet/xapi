@@ -6,7 +6,7 @@ import xapi.fu.Lazy;
 import xapi.fu.lazy.ResettableLazy;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.source.X_Modifier.onlyPrivacy;
 import static xapi.source.X_Modifier.validatePrivacy;

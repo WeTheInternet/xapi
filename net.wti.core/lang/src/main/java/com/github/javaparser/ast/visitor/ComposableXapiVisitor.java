@@ -15,7 +15,7 @@ import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.fu.In2Out1.superIn1;
 
@@ -635,6 +635,9 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     public ComposableXapiVisitor<Ctx> withMethodCallExpr(In2Out1<MethodCallExpr, Ctx, Boolean> callback) {
         putCallback(MethodCallExpr.class, callback);
         return this;
+    }
+    public ComposableXapiVisitor<Ctx> withMethodCallExprTerminal(In2<MethodCallExpr, Ctx> callback) {
+        return withMethodCallExpr(callback.supply1(false));
     }
 
     @Override

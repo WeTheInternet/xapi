@@ -11,7 +11,7 @@ import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.html.api.FontFamily.HasGoogleFont;
 import xapi.ui.html.api.Style.*;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.ConvertsValue;
 
 import java.io.IOException;

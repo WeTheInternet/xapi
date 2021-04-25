@@ -21,7 +21,7 @@ import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.source.X_Source;
 import xapi.ui.api.component.*;
-import xapi.util.X_String;
+import xapi.string.X_String;
 import xapi.util.api.RemovalHandler;
 
 import java.util.ArrayList;

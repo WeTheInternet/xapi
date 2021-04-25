@@ -16,7 +16,7 @@ import xapi.fu.In1;
 import xapi.fu.In2.In2Unsafe;
 import xapi.inject.X_Inject;
 import xapi.source.X_Modifier;
-import xapi.util.X_String;
+import xapi.string.X_String;
 
 import static xapi.fu.In2Out1.with2;
 

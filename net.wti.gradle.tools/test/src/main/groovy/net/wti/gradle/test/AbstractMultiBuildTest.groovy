@@ -6,6 +6,8 @@ import net.wti.gradle.test.api.TestBuild
 import net.wti.gradle.test.api.TestBuildDir
 import net.wti.gradle.test.api.TestProject
 import org.gradle.api.Action
+import org.gradle.api.initialization.Settings
+import org.gradle.api.invocation.Gradle
 import org.gradle.util.ConfigureUtil
 
 import static groovy.lang.Closure.OWNER_FIRST
@@ -16,10 +18,8 @@ import static groovy.lang.Closure.OWNER_FIRST
  */
 abstract class AbstractMultiBuildTest<S extends AbstractMultiBuildTest<S>> extends AbstractMultiProjectTest<S> {
 
-
     private final LinkedHashMap<Object, Action<? super IncludedTestBuild>> pendingBuilds = [:]
     private final LinkedHashMap<String, IncludedTestBuild> realizedBuilds = [:]
-
 
     S withComposite(Object name, @DelegatesTo(value = IncludedTestBuild.class, strategy = OWNER_FIRST) Closure<?> a) {
         return withComposite(name, ConfigureUtil.configureUsing(a))
@@ -98,4 +98,15 @@ if (System.getProperty('${SKIP_COMPOSITE_SYS_PROP}') != 'true' && System.getProp
     File getXapiRepo() {
         new File(topDir, 'repo')
     }
+
+    @Override
+    Settings getSettings() {
+        return super.getSettings()
+    }
+
+    @Override
+    Gradle getGradle() {
+        return super.getGradle()
+    }
+
 }

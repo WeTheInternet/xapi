@@ -36,7 +36,9 @@ public class XapiClasspathPlugin implements Plugin<Project> {
         pg.whenReady(ReadyState.AFTER_CREATED - 0x80, ready -> {
             pg.realizedPlatforms(plat -> {
                 plat.realizedArchives(mod -> {
-                    project.getLogger().quiet("WOOF {} @ {}-{}", project, plat.getName(), mod.getName());
+                    project.getLogger().trace("Realized module {} @ {}-{}\n" +
+                            "Incoming: {}\n" +
+                            "Outgoing: {}\n", project, plat.getName(), mod.getName(), mod.getIncoming(), mod.getOutgoing());
                 });
             });
             for (PlatformGraph platform : pg.platforms()) {
