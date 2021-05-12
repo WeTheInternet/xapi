@@ -10,7 +10,7 @@ import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;

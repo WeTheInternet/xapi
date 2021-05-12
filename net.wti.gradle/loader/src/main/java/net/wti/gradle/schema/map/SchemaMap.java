@@ -6,6 +6,7 @@ import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
+import net.wti.gradle.schema.impl.IndexingFailedException;
 import net.wti.gradle.schema.impl.SchemaCallbacksDefault;
 import net.wti.gradle.schema.index.SchemaIndexImmutable;
 import net.wti.gradle.schema.index.SchemaIndexerImpl;
@@ -17,6 +18,8 @@ import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.settings.ProjectDescriptorView;
 import net.wti.gradle.settings.RootProjectView;
 import net.wti.gradle.system.service.GradleService;
+import org.gradle.api.GradleException;
+import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.api.initialization.Settings;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
@@ -30,6 +33,8 @@ import xapi.gradle.fu.LazyString;
 import xapi.string.X_String;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 import static xapi.fu.java.X_Jdk.mapOrderedInsertion;
 import static xapi.fu.java.X_Jdk.setLinked;
@@ -101,7 +106,7 @@ public class SchemaMap implements HasAllProjects {
                             view,
                         view.getBuildName() + "_index", ignored-> {
                                 final SchemaIndexerImpl index = new SchemaIndexerImpl(props);
-                                view.getLogger().quiet("Index has not yet run; consider using xapi-loader plugin in settings.gradle");
+                                view.getLogger().quiet("Index has not yet run; starting one for SchemaMap");
                                 return index;
                             }
                     );
@@ -207,6 +212,7 @@ public class SchemaMap implements HasAllProjects {
 
     private void fixMetadata() {
         for (SchemaProject project : getAllProjects()) {
+            final Set<String> once = new HashSet<>();
             project.forAllPlatformsAndModules((plat, mod) -> {
                     PlatformModule myPlatMod = new PlatformModule(plat.getName(), mod.getName());
                     String platReplace = plat.getReplace();
@@ -222,8 +228,30 @@ public class SchemaMap implements HasAllProjects {
                         PlatformModule intoPlatMod = myPlatMod.edit(null, includes);
                         final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
                         project.getDependencies().get(myPlatMod).add(dep);
+                        if (mod.isPublished()) {
+                            ensureChildrenPublished(project, mod, includes, once);
+                        }
                     }
             });
+        }
+    }
+
+    private void ensureChildrenPublished(final SchemaProject project, final SchemaModule mod, final String includes, final Set<String> once) {
+        if (once.add(includes)) {
+            final SchemaModule included;
+            try {
+                included = project.getModule(includes);
+            } catch (UnknownDomainObjectException missing) {
+                throw new IndexingFailedException("Could not find module " + includes + " in project " + project.getPathGradle() + " " +
+                        "(known modules: " + project.getAllModules().map(SchemaModule::getName).join(", ") + ")");
+            }
+
+            if (!included.isPublished()) {
+                included.updatePublished(true);
+                for (String childInclude : included.getInclude()) {
+                    ensureChildrenPublished(project, included, childInclude, once);
+                }
+            }
         }
     }
 
@@ -372,8 +400,7 @@ public class SchemaMap implements HasAllProjects {
                 }
                 tailProject.setVirtual(virtual);
             } else {
-                final MinimalProjectView targetView = parser.getView().findView(viewPath);
-                tailProject = new SchemaProject(oldTail, targetView, name, multiplatform, virtual);
+                tailProject = new SchemaProject(oldTail, projectView, name, multiplatform, virtual);
                 tailProject.setParentGradlePath(parentPath);
             }
             this.projects.put(tailProject.getPath(), tailProject);

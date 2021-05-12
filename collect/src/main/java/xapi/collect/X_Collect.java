@@ -3,6 +3,7 @@ package xapi.collect;
 import xapi.annotation.gc.NotReusable;
 import xapi.collect.api.*;
 import xapi.collect.api.CollectionOptions;
+import xapi.collect.fifo.Fifo;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.IntToManyList;
 import xapi.collect.impl.StringToDeepMap;

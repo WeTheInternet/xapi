@@ -2,7 +2,7 @@ package xapi.dev.components.graveyard;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;

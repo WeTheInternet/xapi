@@ -21,6 +21,7 @@ import org.gradle.api.publish.PublicationContainer;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.ivy.tasks.PublishToIvyRepository;
 import org.gradle.api.publish.maven.MavenPublication;
+import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven;
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository;
 import org.gradle.api.publish.plugins.PublishingPlugin;
 import org.gradle.api.tasks.TaskContainer;
@@ -31,6 +32,7 @@ import xapi.gradle.fu.LazyString;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Sets up publishing layer,
@@ -145,6 +147,7 @@ public class XapiPublishPlugin implements Plugin<Project> {
                     publish.dependsOn(select.getTasks().getSourceJarTask());
                 }
             });
+
         });
     }
 
@@ -206,9 +209,25 @@ public class XapiPublishPlugin implements Plugin<Project> {
                             spec.from(pomTask);
                             spec.rename("pom-default.xml", "pom.xml");
                         });
+                        // Make our publish tasks only do work if the jar/pom changes...
+                        jar.whenSelected(sel->{
+
+                            final TaskContainer tasks = jar.getProject().getTasks();
+                            for (String taskName : tasks.getNames()) {
+                                if (taskName.contains(pub.getName()) && taskName.contains("PublicationTo")) {
+                                    tasks.named(taskName).configure(task -> {
+                                        task.onlyIf(t-> {
+                                            // hm... we should check the sha file in the task's outputs...
+                                            boolean result = jar.getDidWork() || "true".equals(task.getProject().findProperty("xapiForcePublish"));
+                                            t.getLogger().info("Publishing file://{}? {} {} {}", jar.getArchiveFileName().get(), result, jar.getDidWork(), pomTask.get().getDidWork());
+                                            return result;
+                                            }
+                                        );
+                                    });
+                                }
+                            }
+                        });
                     });
-
-
                 }));
             })
         );

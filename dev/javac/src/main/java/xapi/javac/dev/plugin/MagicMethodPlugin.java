@@ -21,7 +21,7 @@ import xapi.javac.dev.api.SourceTransformationService;
 import xapi.javac.dev.search.MagicMethodFinder;
 import xapi.log.X_Log;
 import xapi.source.read.JavaModel.IsNamedType;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import static xapi.collect.X_Collect.newList;
 import static xapi.collect.X_Collect.newStringMap;

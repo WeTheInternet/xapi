@@ -10,8 +10,9 @@ import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.*;
 import xapi.model.service.ModelService;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
+import xapi.model.tools.ModelSerializerDefault;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
 import xapi.string.X_String;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
@@ -23,12 +24,12 @@ import static xapi.time.X_Time.print;
 
 /**
  * An interface with useful default methods for request-processing APIs to reuse.
- *
+ * <p><p>
  * Used as a shared space for moving from ModelPersistServlet to ModelEndpoint.
- *
+ * <p><p>
  * This is a functional interface, because the only thing you need to supply
  * is a factory from gwt module name to an input stream of ModelModule source
- *
+ * <p><p>
  * Created by James X. Nelson (James@WeTheInter.net) on 9/28/18 @ 1:02 AM.
  */
 @FunctionalInterface
@@ -155,7 +156,7 @@ public interface ModelCrudMixin {
             } catch (final Throwable e) {
                 String moduleText, manifestText;
                 try {
-                    moduleText = ModelModule.serialize(module);
+                    moduleText = ModelSerializerDefault.serialize(module);
                 } catch (final Throwable e1) {
                     moduleText = String.valueOf(module);
                 }

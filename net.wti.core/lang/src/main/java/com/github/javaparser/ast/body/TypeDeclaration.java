@@ -28,7 +28,7 @@ import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import xapi.dev.source.SourceBuilder.JavaType;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 
 import static com.github.javaparser.ast.internal.Utils.ensureNotNull;

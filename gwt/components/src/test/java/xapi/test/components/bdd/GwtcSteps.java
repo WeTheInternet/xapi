@@ -57,9 +57,9 @@ import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.test.components.client.GeneratedComponentEntryPoint;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.constants.X_Namespace;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.string.X_String;
 
 import java.io.File;

@@ -8,7 +8,7 @@ import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelQuery;
 import xapi.model.api.ModelQueryResult;
 import xapi.model.api.PrimitiveSerializer;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 import xapi.util.api.SuccessHandler;
 
 import java.lang.reflect.Method;

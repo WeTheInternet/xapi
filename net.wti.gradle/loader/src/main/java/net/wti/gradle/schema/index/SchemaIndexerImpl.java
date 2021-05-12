@@ -4,15 +4,18 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
+import net.wti.gradle.schema.impl.IndexingFailedException;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.schema.api.SchemaIndex;
 import net.wti.gradle.schema.spi.SchemaIndexer;
 import net.wti.gradle.schema.spi.SchemaProperties;
+import net.wti.gradle.system.tools.GradleCoerce;
+import org.gradle.api.GradleException;
+import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
 import org.gradle.util.GFileUtils;
-import xapi.fu.Lazy;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 
@@ -87,7 +90,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         List<Future<?>> futures = new CopyOnWriteArrayList<>();
         final File rootDir = view.getProjectDir();
 
-        File indexDir = calculateIndex(view, buildName, rootDir);
+        File indexDir = calculateIndexDir(view, buildName, rootDir);
         final SchemaIndexBuilder index = new SchemaIndexBuilder(view, rootDir, properties, exec, futures, indexDir);
 
         if ("true".equals(System.getProperty(indexProp))) {
@@ -100,11 +103,29 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         }
         populateIndex(view, map, index, buildName);
 
+        final List<Throwable> failures = new ArrayList<>();
+        final String errMsg = "Indexing failures encountered for " + buildName + " @ file://" + rootDir;
+        final Out1<RuntimeException> throwFailures = ()->{
+            if (!failures.isEmpty()) {
+                properties.markFailed(indexProp, view, "index job");
+                if (failures.size() == 1) {
+                    Throwable only = failures.get(0);
+                    if (only instanceof ExecutionException && only.getCause() != null) {
+                        only = only.getCause();
+                    }
+                    if (only instanceof IndexingFailedException) {
+                        throw new IndexingFailedException(errMsg + " : " + only.getMessage());
+                    }
+                    throw new IndexingFailedException(errMsg, only instanceof IndexingFailedException ? null : only);
+                }
+                throw new DefaultMultiCauseException(errMsg, failures);
+            }
+            return null;
+        };
         final Future<SchemaIndex> waiter = exec.submit(Out1.out1Unsafe(()->{
             // block until index is fully loaded.
             long ttl = getMaxWaitMillis();
             long tooLong = System.currentTimeMillis() + ttl;
-            final List<Throwable> failures = new ArrayList<>();
             SchemaIndex result = null;
             for (;!futures.isEmpty();) {
                 // clean out stale / complete futures
@@ -117,7 +138,10 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                             // capture any failures
                             Thread.currentThread().interrupt();
                             failures.add(e);
-                        } catch (ExecutionException | TimeoutException e) {
+                        } catch (ExecutionException e) {
+                            final Throwable cause = e.getCause() == null ? e : e.getCause();
+                            failures.add(cause);
+                        } catch (TimeoutException e) {
                             // really shouldn't timeout if future.isDone() is true, above
                             failures.add(e);
                         }
@@ -125,9 +149,9 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     return false;
                 });
                 // rethrow any failures
-                if (!failures.isEmpty()) {
-                    throw new DefaultMultiCauseException("Indexing failures encountered for " + buildName + " @ file://" + rootDir, failures);
-                }
+
+                throwFailures.out1();
+
                 // check if we're done
                 synchronized (futures) {
                     // if no futures were added, we never block, below.
@@ -150,9 +174,27 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
         })::out1);
         // transform future into our Lazy wrapper type.
+        // This object exists as the "place to go to wait until all schema files are read"... we should not analyze it right away though.
+        // We need to submit an interim object, so we can mess with the post-parse results before we analyze the index.
+        // Dependency-resolution-plans
         return Lazy.deferred1Unsafe(()-> {
             // wait for the main index parse
-            final SchemaIndex result = waiter.get();
+            final SchemaIndex result;
+            try {
+                result = waiter.get();
+            } catch (Exception e) {
+                // add this failure to exceptions; this ensures we don't NPE when we throw the results of calling throwFailures.
+                Throwable f;
+                if (e instanceof ExecutionException && e.getCause() != null) {
+                    f = e.getCause();
+                } else {
+                    f = e;
+                }
+                if (!failures.contains(f)) {
+                    failures.add(0, f);
+                }
+                throw throwFailures.out1();
+            }
             // set a system property to say "this index is done".
             // hmm... Lazy framework can get dirty, if somebody composes our caller in Lazy code, our markDone() might be premature.
             properties.markDone(indexProp, view, "index job");
@@ -163,7 +205,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         });
     }
 
-    private File calculateIndex(final MinimalProjectView view, final String buildName, final File rootDir) {
+    private File calculateIndexDir(final MinimalProjectView view, final String buildName, final File rootDir) {
 
         final String configuredLoc = SchemaProperties.getIndexLocation(view, properties);
         final File indexDir = new File(configuredLoc);
@@ -196,7 +238,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 File projSrc = new File(projDir, "src");
                 String modulePrefix = QualifiedModule.unparse(plat.getName(), mod.getName());
                 File moduleSrc = new File(projSrc, modulePrefix);
-                if (moduleSrc.exists()) {
+                if (hasSources(moduleSrc)) {
                     // This module is live due to having sources!
                     index.markWithSource(project, plat, mod, moduleSrc);
                 } else {
@@ -279,6 +321,19 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         }
     }
 
+    private boolean hasSources(final File moduleSrc) {
+        if (!moduleSrc.isDirectory()) {
+            return false;
+        }
+        for (File file : moduleSrc.listFiles()) {
+            if (file.isDirectory() && ! "build".equals(file.getName())) {
+                System.out.println("Including " + moduleSrc + " b/c " + file);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void markOutEdges(final HasAllProjects map, final SchemaIndexBuilder index, final File projectDir) {
         File outDir = new File(projectDir, "out");
         if (outDir.isDirectory()) {
@@ -289,7 +344,8 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     final File readLink = new File(index.getDirByPpm(), nextPath);
                     File liveFile = new File(readLink, "live");
                     String value = GFileUtils.readFile(liveFile, "utf-8");
-                    if (Integer.parseInt(value) < 1) {
+                    int intVal = Integer.parseInt(value);
+                    if (intVal < 1) {
                         // only create a "1" file if a child edge results in a >1 liveness.
                         GFileUtils.writeFile("1", liveFile, "utf-8");
                         markOutEdges(map, index, readLink);
@@ -401,7 +457,8 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
                     // Check for sources, so we can record that this module is "live"
                     File srcDir = new File(project.getView().getProjectDir(), "src/" + configName);
-                    if (srcDir.isDirectory()) {
+                    boolean hasSrc = hasSources(srcDir);
+                    if (hasSrc) {
                         // yay! record that this module has sources.
                         File moduleDir = new File(projectDir, configName);
                         GFileUtils.writeFile(srcDir.getAbsolutePath(),
@@ -476,19 +533,20 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     final File liveFile = new File(modDir, "live");
                     if (module.isTest()) {
                         GFileUtils.writeFile("true", testFile);
-                    } else {
-                        GFileUtils.deleteFileQuietly(testFile);
+                    } else if (testFile.exists()){
+                        testFile.delete();
                     }
                     if (module.isPublished()) {
                         GFileUtils.writeFile("true", publishFile);
-                    } else {
+                    } else if (publishFile.exists()) {
+                        publishFile.delete();
                         GFileUtils.deleteFileQuietly(publishFile);
                     }
                     if (module.isForce()) {
                         GFileUtils.writeFile("true", forceFile);
                         GFileUtils.writeFile("3", liveFile);
-                    } else {
-                        GFileUtils.deleteFileQuietly(forceFile);
+                    } else if (forceFile.exists()) {
+                        forceFile.delete();
                     }
                     if (!liveFile.exists()) {
                         GFileUtils.writeFile("0", liveFile);

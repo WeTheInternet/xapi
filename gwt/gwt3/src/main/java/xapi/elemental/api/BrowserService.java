@@ -5,7 +5,7 @@ package xapi.elemental.api;
 
 import elemental2.dom.HTMLElement;
 import xapi.fu.In1;
-import xapi.source.api.Lexer;
+import xapi.source.lex.Lexer;
 import xapi.ui.api.ElementBuilder;
 import xapi.ui.service.ElementService;
 

@@ -13,7 +13,7 @@ plugins {
 
 xapiRequire.module('api').configure {
     Requirable req ->
-        req.project 'xapi-common', 'main'
+        req.project 'xapi-collect', 'main:api'
         req.project 'xapi-core-parent:xapi-core-args', 'main'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
         req.external Transitivity.compile_only, 'javax.inject:javax.inject:1'

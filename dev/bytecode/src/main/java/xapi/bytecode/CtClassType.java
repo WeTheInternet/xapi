@@ -19,10 +19,10 @@
  */
 package xapi.bytecode;
 
-import static xapi.source.X_Modifier.ABSTRACT;
-import static xapi.source.X_Modifier.INTERFACE;
-import static xapi.source.X_Modifier.PUBLIC;
-import static xapi.source.X_Modifier.isPrivate;
+import static xapi.source.util.X_Modifier.ABSTRACT;
+import static xapi.source.util.X_Modifier.INTERFACE;
+import static xapi.source.util.X_Modifier.PUBLIC;
+import static xapi.source.util.X_Modifier.isPrivate;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -45,7 +45,7 @@ import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.InnerClassesAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class CtClassType extends CtClass {

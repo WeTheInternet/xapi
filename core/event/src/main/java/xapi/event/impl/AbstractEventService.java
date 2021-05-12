@@ -8,7 +8,7 @@ import xapi.event.api.IsEvent;
 import xapi.error.NotImplemented;
 import xapi.fu.X_Fu;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.X_Util;
 
 import java.io.IOException;

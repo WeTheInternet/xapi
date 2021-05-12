@@ -4,7 +4,7 @@ import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Import;
 import xapi.annotation.compile.SourceRewrite;
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.PACKAGE;

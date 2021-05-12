@@ -20,7 +20,7 @@
 package xapi.bytecode;
 
 import xapi.bytecode.attributes.InnerClassesAttribute;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 class CtNewNestedClass extends CtNewClass {
     CtNewNestedClass(String realName, ClassPool cp, boolean isInterface,

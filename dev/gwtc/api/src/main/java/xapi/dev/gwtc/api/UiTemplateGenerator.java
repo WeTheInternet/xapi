@@ -3,7 +3,7 @@ package xapi.dev.gwtc.api;
 import xapi.annotation.ui.UiTemplate;
 import xapi.annotation.ui.UiTemplate.EmbedStrategy;
 import xapi.annotation.ui.UiTemplate.Location;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.collect.impl.LazyList;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.source.XmlBuffer;

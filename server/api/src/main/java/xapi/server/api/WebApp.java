@@ -18,12 +18,14 @@ import xapi.model.api.PrimitiveSerializer;
 import xapi.scope.request.RequestScope;
 import xapi.scope.spi.RequestLike;
 import xapi.server.api.Route.RouteType;
+import xapi.string.X_String;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
 import static java.io.File.separator;
+import static xapi.string.X_String.isEmptyTrimmed;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
@@ -89,6 +91,15 @@ public interface WebApp extends Model {
 
     WebApp setPort(int port);
 
+    String getProtocol();
+
+    WebApp setProtocol(String protocol);
+
+    default String getProtocolOrDefault(String defaultValue) {
+        String current = getProtocol();
+        return isEmptyTrimmed(current) ? defaultValue : current;
+    }
+
     String getBaseSource();
 
     WebApp setBaseSource(String source);
@@ -117,7 +128,7 @@ public interface WebApp extends Model {
     }
 
     /**
-     * @param newId A factory for a new Id only used if getInstanceId() returns null
+     * @param newId A factory for a new Id only used if {@link #getInstanceId()} returns null
      * @return The current or a new instanceId for this WebApp.
      *
      * Note that serializing WebApp w/out an instanceId would force rehydrated instances to initialize new ids

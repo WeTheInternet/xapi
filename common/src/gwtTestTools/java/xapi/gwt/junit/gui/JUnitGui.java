@@ -6,14 +6,13 @@ import xapi.elemental.X_Elemental;
 import xapi.elemental.api.PotentialNode;
 import xapi.fu.Out1;
 import xapi.gwt.junit.impl.JUnit4Executor;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.reflect.shared.ReflectUtil;
 
-import javax.inject.Provider;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;

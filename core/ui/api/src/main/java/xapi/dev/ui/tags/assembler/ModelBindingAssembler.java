@@ -17,14 +17,14 @@ import xapi.fu.Maybe;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.log.X_Log;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.string.X_String;
 
 import static com.github.javaparser.ast.expr.AnnotationExpr.NULLABLE;
 import static xapi.dev.ui.api.UiNamespace.*;
-import static xapi.source.X_Modifier.ABSTRACT;
-import static xapi.source.X_Modifier.PROTECTED;
+import static xapi.source.util.X_Modifier.ABSTRACT;
+import static xapi.source.util.X_Modifier.PROTECTED;
 import static xapi.source.X_Source.raw;
 import static xapi.string.X_String.toTitleCase;
 

@@ -13,9 +13,9 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.read.SourceUtil;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.util.Arrays;
 import java.util.List;

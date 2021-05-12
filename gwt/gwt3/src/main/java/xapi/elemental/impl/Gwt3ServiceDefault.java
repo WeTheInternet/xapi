@@ -18,7 +18,7 @@ import xapi.elemental.api.BrowserService;
 import xapi.elemental.api.ElementalBuilder;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
-import xapi.source.api.Lexer;
+import xapi.source.lex.Lexer;
 import xapi.ui.style.StyleServiceAbstract;
 
 /**

@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutorService;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.MethodInfo;
 import xapi.bytecode.annotation.Annotation;
-import xapi.dev.resource.impl.ByteCodeResource;
 
 
 /**

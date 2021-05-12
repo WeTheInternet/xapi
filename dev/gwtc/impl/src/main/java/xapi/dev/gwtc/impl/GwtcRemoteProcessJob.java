@@ -15,7 +15,7 @@ import xapi.log.api.LogLevel;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.shell.X_Shell;
 import xapi.shell.api.ShellSession;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.net.URL;
 import java.net.URLClassLoader;

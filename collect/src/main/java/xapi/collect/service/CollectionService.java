@@ -2,7 +2,7 @@ package xapi.collect.service;
 
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringDictionary;

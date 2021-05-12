@@ -24,7 +24,7 @@ import xapi.ui.html.api.HtmlSnippet;
 import xapi.ui.html.api.HtmlTemplate;
 import xapi.ui.html.api.NoUi;
 import xapi.ui.html.api.Style;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 

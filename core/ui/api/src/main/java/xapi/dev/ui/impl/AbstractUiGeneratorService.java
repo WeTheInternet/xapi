@@ -30,8 +30,8 @@ import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.UiPhase;
 import xapi.ui.api.UiPhase.*;
-import xapi.util.X_Debug;
-import xapi.util.X_Properties;
+import xapi.debug.X_Debug;
+import xapi.prop.X_Properties;
 import xapi.string.X_String;
 import xapi.util.X_Util;
 

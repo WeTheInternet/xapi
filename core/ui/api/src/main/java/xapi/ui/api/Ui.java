@@ -1,6 +1,6 @@
 package xapi.ui.api;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

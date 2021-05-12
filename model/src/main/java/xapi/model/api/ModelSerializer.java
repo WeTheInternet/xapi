@@ -4,7 +4,7 @@
 package xapi.model.api;
 
 import xapi.dev.source.CharBuffer;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)

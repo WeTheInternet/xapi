@@ -25,7 +25,7 @@ import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.MultiIterable;
 import xapi.log.X_Log;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.write.Template;
 import xapi.ui.api.component.ConditionalComponentMixin;

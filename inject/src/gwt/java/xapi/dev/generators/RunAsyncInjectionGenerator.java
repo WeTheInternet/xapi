@@ -36,7 +36,7 @@ package xapi.dev.generators;
 
 import java.io.PrintWriter;
 
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.dev.util.DefermentWriter;
 import xapi.dev.util.InjectionCallbackArtifact;
 import xapi.fu.In1;

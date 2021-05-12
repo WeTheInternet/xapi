@@ -4,19 +4,26 @@ buildscript({
         classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
 })
+
+
 import net.wti.gradle.schema.api.Transitivity
 
 plugins {
     id 'xapi-require'
 }
+xapiRequire.module('api').configure {
+    req ->
+        req.project('xapi-collect')
+        req.project 'xapi-inject'
+}
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-inject'
-        req.project 'xapi-collect'
+        req.internal 'api'
         req.external Transitivity.compile_only, 'net.wetheinter:jsinterop-annotations:2.8.0'
         req.project 'xapi-dev-parent:xapi-dev-source'
         req.project 'xapi-dev-parent:xapi-dev-bytecode'
+        return
 }
 
 
@@ -48,7 +55,7 @@ xapiRequire.module('gwt', 'test').configure {
 
 }
 xapiSchema.whenReady {
-
+    def schema ->
     dependencies {
         gwtTestCompile("net.wti.core:xapi-gen:$version") {
             capabilities {

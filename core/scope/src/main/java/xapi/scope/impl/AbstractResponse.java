@@ -9,7 +9,7 @@ import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
 import xapi.log.X_Log;
 import xapi.scope.spi.ResponseLike;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/30/17.

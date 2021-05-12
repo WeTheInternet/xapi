@@ -1,6 +1,6 @@
 package xapi.annotation.ui;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 
 @MirroredAnnotation
 public @interface UiTemplate {

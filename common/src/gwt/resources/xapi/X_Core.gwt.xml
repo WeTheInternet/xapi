@@ -27,6 +27,7 @@
   <source path="log"/> <!-- Our logger -->
   <source path="enviro"/> <!-- Our logger -->
   <source path="util"/> <!-- Basic utility layer -->
+  <source path="debug"/> <!-- Debugging tools -->
   <source path="time"/> <!-- Time provider -->
   <source path="api"/> <!-- Shared api code -->
   <source path="scope"/> <!-- Scoping -->

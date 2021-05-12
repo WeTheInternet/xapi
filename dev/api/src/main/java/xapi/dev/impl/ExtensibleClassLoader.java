@@ -158,7 +158,11 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
                 // only consult the map if we're supposed to check ourselves first
                 result = loadedClasses.getOrCreate(name, classFinder);
                 if (result == null) {
-                    if (!name.startsWith("java.")) {
+                    if (name.startsWith("java.")) {
+                        if (name.startsWith("java.sql.")) {
+                            result = findClass(name);
+                        }
+                    } else {
                         result = findClass(name);
                     }
                     if (result == null) {

@@ -12,7 +12,7 @@ import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.time.X_Time;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

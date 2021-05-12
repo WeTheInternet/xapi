@@ -21,7 +21,7 @@ package xapi.bytecode;
 
 import java.lang.reflect.Modifier;
 
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 public abstract class CtMember {
     CtMember next;          // for internal use

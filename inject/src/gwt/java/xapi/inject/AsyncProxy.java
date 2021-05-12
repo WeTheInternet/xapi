@@ -34,7 +34,7 @@
  */
 package xapi.inject;
 
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.except.NotYetImplemented;
 import xapi.util.api.ReceivesValue;
 

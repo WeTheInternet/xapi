@@ -1,6 +1,6 @@
 package xapi.source.impl;
 
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.api.IsAnnotationValue;
 import xapi.util.api.ConvertsValue;
 import xapi.util.converters.ConvertsStringValue;

@@ -119,7 +119,7 @@ public interface Requirable {
 
     NamedDomainObjectList<XapiRegistration> getRegistrations();
 
-    default void configure(Action<? super Requirable> conf) {
+    default void configure(Action<Requirable> conf) {
         conf.execute(this);
     }
 }

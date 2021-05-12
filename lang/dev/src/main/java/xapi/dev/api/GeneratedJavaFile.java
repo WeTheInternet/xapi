@@ -11,7 +11,7 @@ import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
 import xapi.fu.itr.EmptyIterator;
 import xapi.fu.itr.SizedIterable;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.api.HasSourceBuilder;
 import xapi.source.read.JavaModel.IsTypeDefinition;

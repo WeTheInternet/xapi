@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static xapi.util.X_Debug.debug;
+import static xapi.debug.X_Debug.debug;
 
 public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 

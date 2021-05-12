@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 
 /**
  * This annotation is used to describe a dependency in a compile.
@@ -19,7 +19,7 @@ import xapi.annotation.reflection.MirroredAnnotation;
  * while {@link #groupId()} and {@link #version()} are exactly what you expect.
  * <p>
  * Any property ${keys} found in any of the annotation values will be replaced
- * with whatever {@link xapi.util.X_Properties#getProperty(String, String)} returns
+ * with whatever {@link xapi.prop.X_Properties#getProperty(String, String)} returns
  * (if there is no property set, you will get "keys" as the value for ${keys}).
  * The PropertiesService defaults to using System.properties, though you are free
  * to inject your own property provider.

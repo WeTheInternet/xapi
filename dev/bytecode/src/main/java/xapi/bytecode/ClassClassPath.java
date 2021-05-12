@@ -46,14 +46,25 @@ public class ClassClassPath implements ClassPath {
          */
         this(java.lang.Object.class);
     }
+//    private static final boolean OLD = System.getProperty("java.version").startsWith("1.");
+    private static final boolean OLD = true;//System.getProperty("java.version").startsWith("1.");
+    private static final String RESOURCE_PREFIX = OLD ? "/" : "";
 
     /**
      * Obtains a class file by <code>getResourceAsStream()</code>.
      */
     @Override
     public InputStream openClassfile(String classname) {
-        String jarname = "/" + classname.replace('.', '/') + ".class";
-        return thisClass.getResourceAsStream(jarname);
+        String jarname = RESOURCE_PREFIX + classname.replace('.', '/') + ".class";
+        InputStream result = thisClass.getResourceAsStream(jarname);
+        if (result == null) {
+            // for java9+
+            try {
+                result = Class.forName(classname).getResourceAsStream(jarname);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return result;
     }
 
     /**
@@ -64,7 +75,15 @@ public class ClassClassPath implements ClassPath {
     @Override
     public URL find(String classname) {
         String jarname = "/" + classname.replace('.', '/') + ".class";
-        return thisClass.getResource(jarname);
+        URL result = thisClass.getResource(jarname);
+        if (result == null) {
+            // for java9+
+            try {
+                result = Class.forName(classname).getResource(jarname);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return result;
     }
 
     /**

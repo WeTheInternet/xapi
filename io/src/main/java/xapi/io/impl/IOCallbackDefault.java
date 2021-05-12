@@ -1,7 +1,7 @@
 package xapi.io.impl;
 
 import xapi.io.api.IOCallback;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 public class IOCallbackDefault <V> implements IOCallback<V>{
 

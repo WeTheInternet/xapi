@@ -20,15 +20,15 @@ import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SingletonIterator;
 import xapi.inject.X_Inject;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 
 import java.util.List;
 
 import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 import static xapi.fu.X_Fu.weakener;
-import static xapi.source.X_Modifier.PUBLIC;
-import static xapi.source.X_Modifier.STATIC;
+import static xapi.source.util.X_Modifier.PUBLIC;
+import static xapi.source.util.X_Modifier.STATIC;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/8/17.

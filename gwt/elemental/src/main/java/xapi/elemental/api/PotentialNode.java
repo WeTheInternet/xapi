@@ -11,7 +11,7 @@ import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.ui.api.*;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.string.X_String;
 
 import java.util.function.BiFunction;

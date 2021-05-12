@@ -7,7 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import xapi.annotation.inject.InstanceDefault;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.Digester;
 
 /**

@@ -3,7 +3,7 @@ package xapi.dev.scanner.test;
 import org.junit.Before;
 import org.junit.Test;
 import xapi.bytecode.ClassFile;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.dev.scanner.X_Scanner;
 import xapi.log.X_Log;
 import xapi.time.X_Time;

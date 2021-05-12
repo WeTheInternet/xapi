@@ -14,7 +14,7 @@ import elemental2.dom.MutationObserverInit;
 import elemental2.dom.MutationRecord;
 import jsinterop.base.Js;
 import xapi.collect.X_Collect;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.components.api.*;
 import xapi.fu.*;
 import xapi.fu.In1Out1.In1Out1Unsafe;

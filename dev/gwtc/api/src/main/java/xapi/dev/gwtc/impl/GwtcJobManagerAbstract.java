@@ -13,9 +13,9 @@ import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.log.X_Log;
 import xapi.model.api.PrimitiveSerializer;
-import xapi.model.impl.PrimitiveSerializerDefault;
+import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.process.X_Process;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 

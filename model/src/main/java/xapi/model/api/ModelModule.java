@@ -7,18 +7,11 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
-import xapi.inject.X_Inject;
-import xapi.log.X_Log;
-import xapi.model.X_Model;
-import xapi.model.impl.ClusteringPrimitiveDeserializer;
-import xapi.model.impl.ClusteringPrimitiveSerializer;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
-import xapi.util.X_Debug;
-import xapi.util.api.Digester;
+import xapi.fu.In1Out1;
+import xapi.fu.itr.SizedIterable;
+import xapi.model.tools.ClusteringPrimitiveSerializer;
 
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.util.Map.Entry;
 import java.util.Objects;
 
@@ -88,29 +81,13 @@ public class ModelModule implements Serializable {
   public String[] getStrongNames() {
     return strongNames.toArray();
   }
-  /**
-   * @return -> uuid
-   */
-  public String getUuid() {
-    if (uuid == null) {
-      uuid = computeUuid(X_Inject.instance(PrimitiveSerializer.class));
-    }
-    return uuid;
+
+  public SizedIterable<ModelManifest> getManifests() {
+    return manifests.forEachValue();
   }
 
-  protected String computeUuid(final PrimitiveSerializer primitives) {
-    // Compute the checksum of the policy itself.  That checksum will become our UUID,
-    // which will then be appended before the policy itself.
-    final String result = calculateSerialization(primitives);
-    final Digester digest = X_Inject.instance(Digester.class);
-    byte[] asBytes;
-    try {
-      asBytes = result.getBytes("UTF-8");
-    } catch (final UnsupportedEncodingException e) {
-      throw X_Debug.rethrow(e);
-    }
-    final byte[] uuid = digest.digest(asBytes);
-    return digest.toString(uuid);
+  public String getUuid() {
+    return uuid;
   }
 
   /**
@@ -120,95 +97,17 @@ public class ModelModule implements Serializable {
     this.uuid = uuid;
   }
 
-  public static String serialize(final ModelModule module) {
-    final CharBuffer buffer = new CharBuffer();
-    serialize(buffer, module, X_Inject.instance(PrimitiveSerializer.class));
-    return buffer.toSource();
-  }
-
-  public static CharBuffer serialize(final CharBuffer into, final ModelModule module, final PrimitiveSerializer primitives) {
-    // Append the uuid, as a string (using a leading size for deserialization purposes)
-    into.append(primitives.serializeString(module.getUuid()));
-    into.append(primitives.serializeInt(module.strongNames.size()));
-    for (final String strongName : module.strongNames.forEach()) {
-      into.append(primitives.serializeString(strongName));
-    }
-    into.append(module.calculateSerialization(primitives));
-
-    return into;
-  }
-
-  protected String calculateSerialization(PrimitiveSerializer primitives) {
-    if (serialized != null) {
-      return serialized;
-    }
-    // We will build our policy in our own buffer, so we can safely use it to calculate our strong hash later
-    final CharBuffer policy = new CharBuffer();
-
-    policy.append(primitives.serializeString(getModuleName()));
-
-    primitives = new ClusteringPrimitiveSerializer(primitives, policy);
-    // Directly append the policy to the result (the string is not wrapped),
-    // however, we do append the size of the manifests so we know when to stop deserializing
-    policy.append(primitives.serializeInt(manifests.size()));
-    for (final ModelManifest manifest : manifests.values()) {
-      // TODO: collect up reused strings like classnames, and append them into a "classpool",
-      // to reduce the total size of the policy
-      ModelManifest.serialize(policy, manifest, primitives);
-    }
-
-    serialized = policy.toSource();
-    return serialized;
-  }
-
-  public static ModelModule deserialize(final String chars) {
-    final StringCharIterator iter = new StringCharIterator(chars);
-    return deserialize(iter, X_Inject.instance(PrimitiveSerializer.class));
-  }
-
-  public static ModelModule deserialize(final CharIterator chars, PrimitiveSerializer primitives) {
-    final ModelModule module = new ModelModule();
-    module.setUuid(primitives.deserializeString(chars));
-    int numStrongNames = primitives.deserializeInt(chars);
-    while (numStrongNames --> 0) {
-      module.strongNames.add(primitives.deserializeString(chars));
-    }
-    module.setModuleName(primitives.deserializeString(chars));
-    primitives = new ClusteringPrimitiveDeserializer(primitives, chars) {
-      @Override
-      @SuppressWarnings("unchecked")
-      public <C> Class<C> deserializeClass(final CharIterator c) {
-        // might be able to avoid this eager register() call...
-        final Class<C> cls = super.deserializeClass(c);
-        if (Model.class.isAssignableFrom(cls)) {
-          X_Model.getService().register(Class.class.cast(cls));
-        } else if (cls.isArray()) {
-          Class<?> component = cls.getComponentType();
-          while (component.isArray()) {
-            component = cls.getComponentType();
-          }
-          if (Model.class.isAssignableFrom(component)) {
-            X_Model.getService().register(Class.class.cast(component));
-          }
-        }
-        return cls;
+  public String calculateSerial(PrimitiveSerializer primitives, In1Out1<ModelModule, String> computeIfAbsent) {
+      if (serialized != null) {
+        return serialized;
       }
-    };
-    if (!chars.hasNext()) {
-        X_Log.warn(ModelModule.class, "Encountered module with no model manifests", module);
-        return module;
-    }
-    int manifests = primitives.deserializeInt(chars);
-    while (manifests --> 0) {
-      final ModelManifest manifest = ModelManifest.deserialize(chars, primitives);
-      module.manifests.put(manifest.getType(), manifest);
-    }
-    return module;
+      serialized = computeIfAbsent.io(this);
+      return serialized;
   }
 
   @Override
   public int hashCode() {
-    return getUuid().hashCode();
+    return Objects.hash(moduleName, strongNames, manifests.keyArray());
   }
 
   /**
@@ -224,9 +123,6 @@ public class ModelModule implements Serializable {
         return false;
       }
       if (!Objects.equals(moduleName, other.moduleName)) {
-        return false;
-      }
-      if (!Objects.equals(getUuid(), other.getUuid())) {
         return false;
       }
       for (final Entry<String, ModelManifest> entry : manifests.entries()) {

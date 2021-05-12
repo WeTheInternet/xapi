@@ -43,3 +43,13 @@ gradle.projectsEvaluated {
         forkEvery = 1
     }
 }
+
+
+import net.wti.gradle.test.task.TestIsolator
+def isolator = tasks.create("testIsolator", TestIsolator)
+tasks.withType(Test).configureEach { test ->
+    if ("testJreTest" == test.name) {
+        isolator.addTest(test)
+    }
+    return
+}

@@ -32,7 +32,7 @@ import javax.inject.Provider;
 import xapi.annotation.compile.Resource;
 import xapi.gwtc.api.Gwtc;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 @Gwtc(
     includeGwtXml={

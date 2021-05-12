@@ -3,7 +3,7 @@ package xapi.gwtc.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.fu.Filter;
 import xapi.fu.Immutable;
 import xapi.fu.In2;

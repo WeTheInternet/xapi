@@ -34,7 +34,7 @@
  */
 package xapi.dev.generators;
 
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.dev.util.DefermentWriter;
 import xapi.dev.util.DefermentWriter.DefermentStrategy;
 import xapi.dev.util.GwtInjectionMap;

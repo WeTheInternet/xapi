@@ -19,8 +19,8 @@ import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.impl.ModelNameUtil;
 import xapi.model.impl.ModelUtil;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
 import xapi.validate.ValidatesValue;
 
 import java.lang.annotation.Annotation;

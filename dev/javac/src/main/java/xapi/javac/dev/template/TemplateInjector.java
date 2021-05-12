@@ -15,7 +15,7 @@ import xapi.javac.dev.api.InjectionResolver;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.api.MagicMethodInjector;
 import xapi.source.read.JavaModel.IsType;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

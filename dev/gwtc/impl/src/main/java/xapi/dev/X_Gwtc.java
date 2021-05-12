@@ -6,7 +6,7 @@ import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.Gwtc;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;

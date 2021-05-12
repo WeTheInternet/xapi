@@ -5,7 +5,7 @@ import org.junit.Test;
 import xapi.annotation.gc.OnGC;
 import xapi.test.AbstractInjectionTest;
 import xapi.time.X_Time;
-import xapi.util.X_GC;
+import xapi.debug.X_GC;
 
 @OnGC(
     chainDeleteFields = true

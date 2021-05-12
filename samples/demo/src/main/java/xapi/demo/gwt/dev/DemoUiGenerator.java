@@ -1,14 +1,10 @@
 package xapi.demo.gwt.dev;
 
 import xapi.dev.components.GenerateWebComponents;
-import xapi.dev.components.XapiWebComponentGenerator;
 import xapi.dev.ui.UiGeneratorServiceDefault;
 import xapi.dev.ui.api.UiGeneratorPlatform;
 import xapi.dev.ui.api.UiGeneratorService;
-import xapi.util.X_Properties;
-
-import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
-import static xapi.dev.ui.impl.ClasspathComponentGenerator.genDir;
+import xapi.prop.X_Properties;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/23/17.

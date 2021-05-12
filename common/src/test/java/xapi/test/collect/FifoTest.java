@@ -8,8 +8,8 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 
 public class FifoTest {
 

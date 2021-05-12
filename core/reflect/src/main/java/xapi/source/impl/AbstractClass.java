@@ -1,13 +1,13 @@
 package xapi.source.impl;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.data.MapLike;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.api.*;
 import xapi.source.service.SourceService;
 

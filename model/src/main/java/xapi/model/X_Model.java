@@ -10,7 +10,7 @@ import xapi.inject.X_Inject;
 import xapi.model.api.*;
 import xapi.model.service.ModelCache;
 import xapi.model.service.ModelService;
-import xapi.source.impl.StringCharIterator;
+import xapi.source.lex.StringCharIterator;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 

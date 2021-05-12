@@ -22,7 +22,7 @@ import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.read.JavaModel.IsQualified;
 
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 package xapi.source.api;
 
 import xapi.fu.itr.SizedIterable;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 import static xapi.fu.itr.EmptyIterator.none;
 

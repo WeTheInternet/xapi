@@ -8,7 +8,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.fu.itr.SizedIterable;
 import xapi.model.service.ModelService;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;

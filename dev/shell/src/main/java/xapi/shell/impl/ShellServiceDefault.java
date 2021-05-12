@@ -17,7 +17,7 @@ import xapi.shell.api.ShellSession;
 import xapi.shell.service.ShellService;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_GC;
+import xapi.debug.X_GC;
 import xapi.util.api.SuccessHandler;
 
 @InstanceDefault(implFor = ShellService.class)

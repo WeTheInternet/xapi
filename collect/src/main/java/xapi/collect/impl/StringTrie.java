@@ -1,7 +1,7 @@
 package xapi.collect.impl;
 
 
-import xapi.source.api.Chars;
+import xapi.source.lex.Chars;
 
 import static xapi.collect.api.CharPool.EMPTY_STRING;
 

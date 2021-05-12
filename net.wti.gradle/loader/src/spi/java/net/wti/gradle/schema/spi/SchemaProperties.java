@@ -100,6 +100,12 @@ public interface SchemaProperties extends SchemaPatternResolver {
     }
 
     default void markDone(String indexProp, MinimalProjectView view, String debugInfo) {
+        markStatus("true", indexProp, view, debugInfo);
+    }
+    default void markFailed(String indexProp, MinimalProjectView view, String debugInfo) {
+        markStatus("false", indexProp, view, debugInfo);
+    }
+    default void markStatus(String value, String indexProp, MinimalProjectView view, String debugInfo) {
         if (!"true".equals(System.getProperty(indexProp))) {
             // if we are running in strict mode, lets fail.
             if ("true".equals(getProperty("xapi.strict", view))) {
@@ -112,9 +118,9 @@ public interface SchemaProperties extends SchemaPatternResolver {
             }
         }
         try {
-            System.setProperty(indexProp, "true");
+            System.setProperty(indexProp, value);
         } catch (Exception e) {
-            view.getLogger().info("Unable to set indexProp {} to true {}", indexProp, e);
+            view.getLogger().info("Unable to set indexProp {} to {}:\n{}", indexProp, value,e);
         }
     }
 }

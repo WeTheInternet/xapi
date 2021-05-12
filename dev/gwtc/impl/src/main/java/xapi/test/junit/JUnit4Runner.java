@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import xapi.annotation.compile.Resource;
 import xapi.gwtc.api.Gwtc;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import com.google.gwt.core.shared.GWT;
 

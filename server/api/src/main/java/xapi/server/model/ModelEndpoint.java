@@ -18,9 +18,9 @@ import xapi.server.api.CrudEndpoint;
 import xapi.server.api.ModelGwtc;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
-import xapi.util.X_Properties;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
+import xapi.prop.X_Properties;
 
 import java.io.InputStream;
 import java.nio.file.Files;

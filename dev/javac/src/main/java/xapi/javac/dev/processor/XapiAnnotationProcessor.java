@@ -24,7 +24,7 @@ import xapi.javac.dev.search.InjectionTargetSearchVisitor;
 import xapi.javac.dev.template.TemplateTransformer;
 import xapi.javac.dev.util.ElementUtil;
 import xapi.source.X_Source;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -222,9 +222,12 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
               path.forEach(tree->{
                 final Tree.Kind k = tree.getKind();
             });
-            t.members().getElements().forEach(sym->{
-              log.printMessage(Kind.NOTE, "Symbol " + sym.getClass()+" : " + sym);
-            });
+              // code below breaks on java 11, and wasn't really providing much value...
+//              try {
+//                t.members().getElements().forEach(sym->{
+//                  log.printMessage(Kind.NOTE, "Symbol " + sym.getClass()+" : " + sym);
+//                });
+//              } catch (Throwable ignored){}
 
             type.accept(new ElementKindVisitor8<Void, Void>(){
               @Override

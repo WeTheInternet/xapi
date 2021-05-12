@@ -5,7 +5,7 @@ import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.annotation.ui.UiTemplate;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.gwt.log.JsLog;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;

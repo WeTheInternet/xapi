@@ -28,7 +28,7 @@ import xapi.bytecode.attributes.LocalVariableAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
 import xapi.bytecode.attributes.StackMap;
 import xapi.bytecode.attributes.StackMapTable;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 public abstract class CtBehavior extends CtMember {
     protected MethodInfo methodInfo;

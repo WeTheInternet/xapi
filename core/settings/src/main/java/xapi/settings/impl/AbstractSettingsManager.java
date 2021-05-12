@@ -12,7 +12,7 @@ import xapi.fu.Out1;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.settings.api.SettingsManager;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -3,7 +3,7 @@
  */
 package xapi.util.tools;
 
-import static xapi.util.X_Debug.rethrow;
+import static xapi.debug.X_Debug.rethrow;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)

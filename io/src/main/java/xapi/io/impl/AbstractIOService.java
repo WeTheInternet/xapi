@@ -13,7 +13,7 @@ import xapi.io.api.IORequestBuilder;
 import xapi.io.service.IOService;
 import xapi.log.api.LogLevel;
 import xapi.constants.X_Namespace;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 import xapi.util.api.RemovalHandler;

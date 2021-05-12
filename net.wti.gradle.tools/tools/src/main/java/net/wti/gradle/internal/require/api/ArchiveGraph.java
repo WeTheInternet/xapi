@@ -572,6 +572,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         final DependencyHandler deps = getView().getDependencies();
         final XapiSchema schema = getView().getSchema();
         final String coords = GradleCoerce.unwrapString(reg.getFrom());
+        final PlatformModule platMod = coords == null ? null : PlatformModule.parse(coords);
         final AttributeContainer attrs = schema.getAttributes(coords, newGroup, newName);
 
         // create variant-aware, on-demand inputs to the lenient config.
@@ -579,7 +580,13 @@ public interface ArchiveGraph extends Named, GraphNode {
 
         boolean hasXapiCoord = coords != null;// && "true".equals(System.getProperty("no.composite"));
 
-        final String ident = dep.getGroup() + ":" + dep.getName();
+        final String ident =
+                isCompositeAvailable() || platMod == null ? dep.getGroup() + ":" + dep.getName() : (
+                        // no composites? transform names
+                        dep.getGroup() + ":" + dep.getName()
+                                + ("main".equals(platMod.getPlatform()) ? "" : "-" + platMod.getPlatform())
+                                + ("main".equals(platMod.getModule()) ? "" : "-" + platMod.getModule())
+                );
         final String path = ident + ":" + dep.getVersion() +
             (classifier == null ? "" : ":" + classifier);
         String base;
@@ -631,7 +638,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             if (!require.isEmpty()
                 && !(require + ":").startsWith(ident + ":")
             ) {
-                if (getView().isWtiGradle()) {
+                if (getView().isWtiGradle() && isCompositeAvailable()) {
                     // This relies on WTI's fork of gradle.
                     final String derived = type.deriveConfiguration(base, dep, hasXapiCoord, trans, lenient);
                     if (derived == null) {
@@ -675,6 +682,11 @@ public interface ArchiveGraph extends Named, GraphNode {
 
 
         target.getDependencies().add(mod);
+    }
+
+    default boolean isCompositeAvailable() {
+        // TODO: check w/ root project view's index of all projects to see if this dependency has a groupId we should know about...
+        return !getView().getGradle().getIncludedBuilds().isEmpty();
     }
 
     default String getDefaultPlatform() {

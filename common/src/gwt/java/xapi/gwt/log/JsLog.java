@@ -34,16 +34,15 @@
  */
 package xapi.gwt.log;
 
+import com.google.gwt.core.client.JavaScriptObject;
 import xapi.annotation.inject.SingletonOverride;
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.gwt.collect.JsFifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.AbstractLog;
 import xapi.platform.GwtPlatform;
-
-import com.google.gwt.core.client.JavaScriptObject;
 
 /**
  * Our javascript-enabled console, which will log complete javascript objects, rather than a .toString() ->

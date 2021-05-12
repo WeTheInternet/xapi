@@ -8,7 +8,7 @@ import elemental2.core.Function;
 import elemental2.core.ObjectPropertyDescriptor;
 import elemental2.core.Reflect;
 import jsinterop.base.Js;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.JsObject;
 import xapi.gwt.api.JsLazyExpando;

@@ -7,14 +7,16 @@ import xapi.collect.api.Dictionary;
 import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
+import xapi.fu.data.MapLike;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.java.X_Jdk;
 import xapi.model.api.*;
 import xapi.model.api.ModelManifest.MethodData;
 import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelUtil;
 import xapi.reflect.X_Reflect;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.RemovalHandler;
 
 import javax.inject.Provider;
@@ -82,6 +84,8 @@ public abstract class AbstractJreModelService extends AbstractModelService {
 
     final ModelManifest manifest;
     final Dictionary<String, Object> values;
+    final MapLike<String, In3<String, Object, Object>> callbacks;
+    In3<String, Object, Object> globalChange;
     ModelKey key;
 
     public ModelInvocationHandler(final Class<? extends Model> modelClass) {
@@ -95,6 +99,8 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     public ModelInvocationHandler(final ModelManifest manifest, final Dictionary<String, Object> values) {
       this.manifest = manifest;
       this.values = values;
+      this.callbacks = X_Jdk.mapHash();
+      globalChange = In3.ignored();
     }
 
     @Override
@@ -102,7 +108,11 @@ public abstract class AbstractJreModelService extends AbstractModelService {
       switch (method.getName()) {
         case "setProperty":
           if (method.getParameterTypes().length == 2) {
-            values.setValue((String)args[0], args[1]);
+            String key = (String)args[0];
+            Object oldVal = values.setValue(key, args[1]);
+            if (!Objects.equals(oldVal, args[1])) {
+              invokeCallbacks(key, oldVal, args[1]);
+            }
             return proxy;
           }
         case "setKey":
@@ -115,6 +125,14 @@ public abstract class AbstractJreModelService extends AbstractModelService {
           }
         case "getType":
           return manifest.getType();
+        case "onChange":
+          callbacks.computeValue((String)args[0], was-> {
+              return was == null ? (In3)args[1] : was.useAfterMe((In3)args[1]);
+          });
+          return proxy;
+        case "onGlobalChange":
+          this.globalChange = this.globalChange.useAfterMe((In3)args[0]);
+          return proxy;
         case "getPropertyType":
           final String name = (String) args[0];
           return manifest.getMethodData(name).getType();
@@ -195,6 +213,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
             final boolean returnsBoolean = method.getReturnType() == boolean.class;
             if (Objects.equals(previous, args[0])) {
               result = values.setValue(property.getName(), args[1]);
+              invokeCallbacks(property.getName(), result, args[1]);
               if (returnsBoolean) {
                 return true;
               }
@@ -204,6 +223,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
             }
           } else {
             result = values.setValue(property.getName(), args[0]);
+            invokeCallbacks(property.getName(), result, args[0]);
           }
           if (isFluent) {
             return proxy;
@@ -245,6 +265,14 @@ public abstract class AbstractJreModelService extends AbstractModelService {
           return result;
       }
       return null;
+    }
+
+    private void invokeCallbacks(final String key, final Object was, final Object is) {
+      assert was == null ? is != null : !was.equals(is) : "Should not call invokeCallbacks for key " + key + " with equal values: " + was + " == " + is;
+      callbacks.getMaybe(key).readIfPresent(cb->{
+        cb.in(key, was, is);
+      });
+      globalChange.in(key, was, is);
     }
 
 

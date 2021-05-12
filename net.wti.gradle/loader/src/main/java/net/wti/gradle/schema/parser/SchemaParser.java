@@ -15,6 +15,7 @@ import net.wti.gradle.schema.map.*;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.system.service.GradleService;
 import org.gradle.api.GradleException;
+import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import xapi.fu.*;
@@ -1028,27 +1029,34 @@ public interface SchemaParser {
 
             added.add(result);
         }
-        // make all required-by-published modules also published.
-        final Set<String> once = new HashSet<>();
-        for (SchemaModule module : added) {
-            if (module.isPublished()) {
-                publishChildren(project, module, once);
-            }
-        }
+//        // make all required-by-published modules also published.
+//        final Set<String> once = new HashSet<>();
+//        for (SchemaModule module : added) {
+//
+//            if (module.isPublished()) {
+//                publishChildren(project, module, once);
+//            }
+//        }
 
     }
-
-    default void publishChildren(SchemaProject project, SchemaModule module, Set<String> once) {
-        for (String include : module.getInclude()) {
-            if (once.add(include)) {
-                final SchemaModule toInclude = project.getModule(include);
-                if (!toInclude.isPublished()) {
-                    toInclude.updatePublished(true);
-                    publishChildren(project, toInclude, once);
-                }
-            }
-        }
-    }
+//
+//    default void publishChildren(SchemaProject project, SchemaModule module, Set<String> once) {
+//        for (String include : module.getInclude()) {
+//            if (once.add(include)) {
+//
+//                final SchemaModule toInclude;
+//                try {
+//                    toInclude = project.getModule(include);
+//                } catch (UnknownDomainObjectException e) {
+//                    throw new GradleException("Could not find module " + include + " in project " + project.getPathGradle() +" yet.", e);
+//                }
+//                if (!toInclude.isPublished()) {
+//                    toInclude.updatePublished(true);
+//                    publishChildren(project, toInclude, once);
+//                }
+//            }
+//        }
+//    }
 
     default SchemaModule insertModule(SchemaProject project, DefaultSchemaMetadata metadata, SchemaModule module, UiContainerExpr source) {
         return project.addModule(module);

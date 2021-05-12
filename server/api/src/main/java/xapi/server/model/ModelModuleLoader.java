@@ -12,10 +12,11 @@ import xapi.io.X_IO;
 import xapi.model.X_Model;
 import xapi.model.api.ModelModule;
 import xapi.model.service.ModelService;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
+import xapi.model.tools.ModelSerializerDefault;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
 import xapi.time.X_Time;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.io.InputStream;
 
@@ -34,7 +35,7 @@ public class ModelModuleLoader {
           ){
             final CharIterator policy = new StringCharIterator(X_IO.toStringUtf8(512, stream));
             final ModelService modelService = X_Model.getService();
-            return  ModelModule.deserialize(policy, modelService.primitiveSerializer());
+            return  ModelSerializerDefault.deserialize(policy, modelService.primitiveSerializer());
           } catch (final Throwable e) {
             throw X_Debug.rethrow(e);
           }

@@ -11,7 +11,7 @@ import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelManifest.MethodData;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -188,10 +188,15 @@ public class ModelUtil {
   }
 
   private static void collectAllTypes(final Collection<Class<?>> into, final Class<?> cls) {
-    into.add(cls);
-    final Class<?> superCls = cls.getSuperclass();
-    if (superCls != null && superCls != Object.class) {
-      collectAllTypes(into, cls);
+    if (into.add(cls)) {
+        final Class<?> superCls = cls.getSuperclass();
+        if (superCls != null && superCls != Object.class) {
+          collectAllTypes(into, cls);
+        }
+        if (cls.isInterface()) {
+          // collectInterfaces will use if (into.add()) as well, so we'll remove ourselves
+          into.remove(cls);
+        }
     }
     collectInterfaces(into, cls);
   }

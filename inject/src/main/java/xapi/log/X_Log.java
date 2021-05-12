@@ -34,8 +34,8 @@
  */
 package xapi.log;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
 import xapi.log.api.LogLevel;

@@ -86,6 +86,12 @@ public class X_Namespace {
    * In gwt, defaults to xapi.gwt.model.ModelGwt.
    */
   public static final String PROPERTY_MODEL_ROOT = "xapi.model.root";
+
+  /**
+   * "xapiModelDir" The location where we should persist models on the filesystem;
+   * defaults to /tmp/models
+   */
+  public static final String PROPERTY_MODEL_DIR = "xapiModelDir";
   /**
    * "xapi.model.strategy" The strategy to use for model generation;
    * passed to whatever xapi.dev.model.ModelGenerator is injected.

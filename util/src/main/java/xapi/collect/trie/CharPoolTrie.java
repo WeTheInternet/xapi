@@ -3,7 +3,7 @@ package xapi.collect.trie;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.CharPool;
 import xapi.except.NotYetImplemented;
-import xapi.source.api.Chars;
+import xapi.source.lex.Chars;
 
 @SingletonDefault(implFor=CharPool.class)
 public class CharPoolTrie extends MultithreadedStringTrie<char[]> implements CharPool{

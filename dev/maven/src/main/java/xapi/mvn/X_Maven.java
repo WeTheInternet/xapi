@@ -24,7 +24,7 @@ import xapi.log.X_Log;
 import xapi.mvn.impl.ProjectIterable;
 import xapi.mvn.api.MvnDependency;
 import xapi.mvn.service.MvnService;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.X_Runtime;
 import xapi.string.X_String;
 

@@ -10,7 +10,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Maybe;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.

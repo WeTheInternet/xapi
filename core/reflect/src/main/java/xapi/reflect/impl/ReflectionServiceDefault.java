@@ -4,8 +4,11 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.reflect.service.ReflectionService;
 import xapi.util.X_Util;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.URL;
 
@@ -69,21 +72,7 @@ public class ReflectionServiceDefault implements ReflectionService{
 
   @Override
   public Object invokeDefaultMethod(Object instance, final Method method, final Object ... params) {
-    try {
-      // Use reflection on some reflection classes to get access to a Lookup object we aren't supposed to touch :-)
-      // TODO: add proper security wrapper code
-      final Field field = java.lang.invoke.MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-      field.setAccessible(true);
-      final java.lang.invoke.MethodHandles.Lookup lookup = (java.lang.invoke.MethodHandles.Lookup) field.get(null);
-      final Object value = lookup
-          .unreflectSpecial(method, method.getDeclaringClass())
-          .bindTo(instance)
-          .invokeWithArguments(params);
-      return value;
-    } catch (Throwable e) {
-      e.printStackTrace();
-      throw X_Util.rethrow(e);
-    }
+    return new DefaultMethodInvoker().invokeDefaultMethod(instance, method, params);
   }
 
   protected ClassLoader getClassLoader() {

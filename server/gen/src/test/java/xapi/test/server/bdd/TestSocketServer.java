@@ -19,8 +19,8 @@ import xapi.scope.request.SessionScope;
 import xapi.scope.spi.RequestContext;
 import xapi.server.X_Server;
 import xapi.server.api.*;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.InputStreamCharIterator;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.InputStreamCharIterator;
 import xapi.test.server.bdd.TestSocketServer.SocketScope;
 
 import java.io.IOException;
@@ -60,6 +60,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     private String source;
     private boolean devMode;
     private String contentRoot;
+    private String protocol;
     private String instanceId = "test";
 
     public TestSocketServer(WebApp classpath) {
@@ -385,6 +386,17 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     @Override
     public WebApp setDestroyed(boolean destroyed) {
         return null;
+    }
+
+    @Override
+    public String getProtocol() {
+        return protocol;
+    }
+
+    @Override
+    public TestSocketServer setProtocol(final String protocol) {
+        this.protocol = protocol;
+        return this;
     }
 
     @Override

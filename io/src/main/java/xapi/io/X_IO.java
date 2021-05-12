@@ -1,6 +1,6 @@
 package xapi.io;
 
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.fu.Out1;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.Chain;
@@ -19,7 +19,7 @@ import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 

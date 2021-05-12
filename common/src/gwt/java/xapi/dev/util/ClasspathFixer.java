@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import xapi.log.X_Log;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.util.X_Runtime;
 
 public class ClasspathFixer extends ThreadLocal<ClassLoader>{

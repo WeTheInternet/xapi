@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.*;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.string.X_String;
 import xapi.util.tools.DeferredCharSequence;
 

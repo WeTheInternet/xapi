@@ -100,10 +100,6 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
         gradle = settings.gradle
     }
 
-    private Gradle privGradle() {
-        return getGradle()
-    }
-
     BuildResult runSucceed(
             LogLevel logLevel = LOG_LEVEL,
             File projectDir = getRootDir(),

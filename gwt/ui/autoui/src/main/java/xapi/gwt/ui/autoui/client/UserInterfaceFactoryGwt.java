@@ -16,7 +16,7 @@ import xapi.ui.autoui.api.UiRendererOptions;
 import xapi.ui.autoui.api.UiRenderingContext;
 import xapi.ui.autoui.api.UserInterfaceFactory;
 import xapi.ui.autoui.impl.AbstractUserInterfaceFactory;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ConvertsValue;
 
 @GwtPlatform

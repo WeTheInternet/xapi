@@ -21,7 +21,7 @@ package xapi.bytecode;
 
 import xapi.bytecode.api.Opcode;
 import xapi.bytecode.attributes.CodeAttribute;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 public final class CtConstructor extends CtBehavior {
     protected CtConstructor(MethodInfo minfo, CtClass declaring) {

@@ -4,10 +4,13 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.dev.Compiler;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.constants.X_Namespace;
+import xapi.debug.X_Debug;
 import xapi.dev.gwtc.api.AnnotatedDependency;
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
@@ -31,13 +34,14 @@ import xapi.jre.inject.RuntimeInjector;
 import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
+import xapi.prop.X_Properties;
 import xapi.reflect.X_Reflect;
 import xapi.string.X_String;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.*;
+import xapi.util.X_Util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,9 +69,6 @@ import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.source.X_Source.removeClassDirs;
 import static xapi.time.X_Time.diff;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.dev.Compiler;
 
 /**
  * This class is the ball of brains behind hosting multiple gwt compiles, concurrently,
@@ -362,7 +363,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     if (manifest.isUseCurrentJvm()) {
       if (manifest.isIsolateClassLoader()) {
           // TODO perhaps instead create a minimal super-loader that contains gwt-dev, gwt-user, (xapi-gwt || xapi-gwtc-api & xapi-gwtc-impl)
-          return null;
+          return ClassLoader.getSystemClassLoader();
       } else {
           X_Log.trace(GwtcServiceImpl.class, "Using context classloader for gwt compile", manifest);
           return Thread.currentThread().getContextClassLoader();

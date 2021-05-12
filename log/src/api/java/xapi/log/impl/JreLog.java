@@ -35,11 +35,11 @@
 package xapi.log.impl;
 
 import xapi.annotation.inject.SingletonDefault;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
+import xapi.constants.X_Namespace;
 import xapi.fu.Debuggable;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
-import xapi.constants.X_Namespace;
 import xapi.util.X_Runtime;
 
 import java.io.PrintStream;

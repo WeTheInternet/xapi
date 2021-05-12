@@ -4,6 +4,7 @@ import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.ServerToClient;
 import xapi.collect.X_Collect;
 import xapi.collect.api.*;
+import xapi.collect.fifo.Fifo;
 import xapi.dev.model.ModelField.GetterMethod;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;

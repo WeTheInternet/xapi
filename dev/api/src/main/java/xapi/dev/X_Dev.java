@@ -4,9 +4,9 @@ import xapi.dev.resource.impl.FileBackedResource;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.fu.X_Fu;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.constants.X_Namespace;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.util.X_Util;
 
 import java.io.File;

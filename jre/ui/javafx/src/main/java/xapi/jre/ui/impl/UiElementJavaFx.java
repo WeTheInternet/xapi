@@ -7,7 +7,7 @@ import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.impl.AbstractUiElement;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 /**
  * Created by james on 6/7/16.

@@ -1,7 +1,7 @@
 package xapi.shell.impl;
 
 import xapi.collect.X_Collect;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.io.X_IO;
@@ -17,7 +17,7 @@ import xapi.shell.api.ShellSession;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.time.impl.RunOnce;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.Pointer;
 import xapi.util.api.RemovalHandler;

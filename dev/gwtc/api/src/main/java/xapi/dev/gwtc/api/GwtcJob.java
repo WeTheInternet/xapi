@@ -24,7 +24,7 @@ import xapi.log.X_Log;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.string.X_String;

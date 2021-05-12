@@ -23,7 +23,7 @@ import xapi.source.api.HasQualifiedName;
 import xapi.source.api.IsAnnotation;
 import xapi.source.api.IsClass;
 import xapi.source.api.IsMethod;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ConvertsValue;
 
 import java.lang.annotation.Annotation;

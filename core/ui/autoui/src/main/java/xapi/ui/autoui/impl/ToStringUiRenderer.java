@@ -5,7 +5,7 @@ import java.io.IOException;
 import xapi.ui.autoui.api.UiRenderer;
 import xapi.ui.autoui.api.UiRenderingContext;
 import xapi.ui.autoui.api.UserInterface;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 @SuppressWarnings("rawtypes")
 public class ToStringUiRenderer implements UiRenderer{

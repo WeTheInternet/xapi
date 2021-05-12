@@ -11,8 +11,10 @@ import xapi.dev.source.CharBuffer;
 import xapi.inject.X_Inject;
 import xapi.model.api.*;
 import xapi.model.service.ModelService;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
+import xapi.model.tools.ModelSerializerDefault;
+import xapi.model.tools.PrimitiveSerializerDefault;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
 import xapi.string.X_String;
 import xapi.util.api.SuccessHandler;
 

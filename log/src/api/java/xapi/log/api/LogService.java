@@ -34,7 +34,7 @@
  */
 package xapi.log.api;
 
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 
 public interface LogService {
 

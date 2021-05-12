@@ -8,7 +8,7 @@ import xapi.dev.ui.api.UiNamespace;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssemblyIf;
 import xapi.fu.Lazy;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 import static xapi.dev.ui.api.ReservedUiMethods.ROOT_INJECTOR_VAR;
 import static xapi.dev.ui.api.UiNamespace.VAR_ELEMENT;

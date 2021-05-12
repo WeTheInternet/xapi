@@ -37,7 +37,7 @@ import xapi.javac.dev.model.JavaDocument;
 import xapi.javac.dev.search.InjectionTargetSearchVisitor;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import javax.lang.model.element.TypeElement;
 import javax.tools.*;

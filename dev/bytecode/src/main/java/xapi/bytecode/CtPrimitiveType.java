@@ -19,7 +19,7 @@
  */
 package xapi.bytecode;
 
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 public final class CtPrimitiveType extends CtClass {
   private char descriptor;

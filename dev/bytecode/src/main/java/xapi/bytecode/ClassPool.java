@@ -35,7 +35,7 @@ public class ClassPool {
     /**
      * Determines the search order.
      *
-     * <p>If this field is true, <code>get()</code> first searches the
+     * <p>If this field is true, ${@link #get(String)} first searches the
      * class path associated to this <code>ClassPool</code> and then
      * the class path associated with the parent <code>ClassPool</code>.
      * Otherwise, the class path associated with the parent is searched

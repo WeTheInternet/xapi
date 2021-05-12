@@ -6,7 +6,7 @@ import xapi.elemental.X_Gwt3;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.ui.api.*;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.util.function.BiFunction;
 

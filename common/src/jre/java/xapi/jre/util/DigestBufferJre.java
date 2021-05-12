@@ -6,7 +6,6 @@ package xapi.jre.util;
 import java.nio.ByteBuffer;
 
 import xapi.annotation.inject.InstanceDefault;
-import xapi.util.DigestBuffer;
 
 /**
  * The default {@link DigestBuffer} implementation; uses java core MD5 hashing.
@@ -14,8 +13,8 @@ import xapi.util.DigestBuffer;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-@InstanceDefault(implFor = xapi.util.DigestBuffer.class)
-public class DigestBufferJre extends DigesterJre implements xapi.util.DigestBuffer {
+@InstanceDefault(implFor = DigestBuffer.class)
+public class DigestBufferJre extends DigesterJre implements DigestBuffer {
 
   /**
    * @see DigestBuffer#update(java.nio.ByteBuffer)

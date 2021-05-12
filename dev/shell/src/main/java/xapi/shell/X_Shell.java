@@ -8,7 +8,7 @@ import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.shell.api.ShellSession;
 import xapi.shell.service.ShellService;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.string.X_String;
 
 import java.io.File;

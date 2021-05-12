@@ -7,7 +7,7 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.net.URLClassLoader;
 import java.util.concurrent.LinkedBlockingDeque;

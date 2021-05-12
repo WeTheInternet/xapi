@@ -1,6 +1,6 @@
 package xapi.shell.api;
 
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.io.api.LineReader;
 import xapi.log.api.LogLevel;
 import xapi.shell.impl.ShellCommandDefault;

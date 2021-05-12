@@ -25,8 +25,8 @@ import xapi.string.X_String;
 import java.lang.reflect.Modifier;
 
 import static xapi.dev.ui.api.UiNamespace.*;
-import static xapi.source.X_Modifier.DEFAULT;
-import static xapi.source.X_Modifier.STATIC;
+import static xapi.source.util.X_Modifier.DEFAULT;
+import static xapi.source.util.X_Modifier.STATIC;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.

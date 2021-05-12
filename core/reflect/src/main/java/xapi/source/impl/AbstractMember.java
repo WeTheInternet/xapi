@@ -1,8 +1,8 @@
 package xapi.source.impl;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
-import xapi.source.X_Modifier;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
+import xapi.source.util.X_Modifier;
 import xapi.source.api.HasModifier;
 import xapi.source.api.IsAnnotation;
 import xapi.source.api.IsMember;

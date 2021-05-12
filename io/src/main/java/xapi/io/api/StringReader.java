@@ -1,7 +1,7 @@
 package xapi.io.api;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.log.X_Log;
 import xapi.string.X_String;
 

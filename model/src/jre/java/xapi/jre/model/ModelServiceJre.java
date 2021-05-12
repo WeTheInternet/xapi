@@ -4,6 +4,7 @@
 package xapi.jre.model;
 
 import xapi.annotation.inject.SingletonDefault;
+import xapi.constants.X_Namespace;
 import xapi.dev.source.CharBuffer;
 import xapi.fu.Out1;
 import xapi.io.X_IO;
@@ -12,8 +13,9 @@ import xapi.model.api.*;
 import xapi.model.api.ModelQuery.QueryParameter;
 import xapi.model.service.ModelService;
 import xapi.platform.JrePlatform;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
+import xapi.prop.X_Properties;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.RemovalHandler;
@@ -353,11 +355,18 @@ public class ModelServiceJre extends AbstractJreModelService {
    */
   private File getFilesystemRoot() throws IOException {
     if (root == null) {
-      File temp;
-      temp = File.createTempFile("ephemeral", "models");
-      root = new File(temp.getParentFile(), "models");
-      temp.delete();
-      root.mkdirs();
+      String modelDir = X_Properties.getProperty(X_Namespace.PROPERTY_MODEL_DIR);
+      if (modelDir == null) {
+        File temp;
+        temp = File.createTempFile("ephemeral", "models");
+        root = new File(temp.getParentFile(), "models");
+        temp.delete();
+        root.mkdirs();
+      } else {
+        root = new File(modelDir.replace("$USER_HOME", System.getProperty("user.home"))).getCanonicalFile();
+        root.mkdirs();
+      }
+      X_Log.info(ModelServiceJre.class, "Initialized model service to ", "file://" + root);
     }
     return root;
   }

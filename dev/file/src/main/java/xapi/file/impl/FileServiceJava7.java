@@ -12,7 +12,7 @@ import xapi.annotation.inject.SingletonOverride;
 import xapi.file.api.FileService;
 import xapi.log.X_Log;
 import xapi.platform.JrePlatform;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 @JrePlatform(version=7)
 @SingletonOverride(implFor=FileService.class)

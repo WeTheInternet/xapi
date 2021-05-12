@@ -1,6 +1,6 @@
 package xapi.dev.mirror;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -58,7 +59,7 @@ import java.util.Set;
  *
  */
 
-@SupportedAnnotationTypes({ "xapi.annotation.reflection.MirroredAnnotation" })
+@SupportedAnnotationTypes({ "xapi.annotation.mirror.MirroredAnnotation" })
 @SupportedOptions(AnnotationMirrorProcessor.DISABLE_OPTION)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class AnnotationMirrorProcessor extends AbstractProcessor {
@@ -81,6 +82,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     @Override
     public final synchronized void init(final ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
+        generatedMirrors.clear();
         filer = processingEnv.getFiler();
         final Elements elements = processingEnv.getElementUtils();
         final Types types = processingEnv.getTypeUtils();
@@ -99,10 +101,19 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
         if (disabled) {
             return roundEnv.processingOver();
         }
+        String filtered = System.getProperty("xapiPackages", "");
         for (final TypeElement anno : annotations) {
             for (final Element el : roundEnv.getElementsAnnotatedWith(anno)) {
+                if (el instanceof TypeElement) {
+                    if (!((TypeElement)el).getQualifiedName().toString().startsWith(filtered)) {
+                        continue;
+                    }
+                }
                 final MirroredAnnotation mirrorSettings = el.getAnnotation(MirroredAnnotation.class);
                 final AnnotationManifest manifest = addAnnotation((TypeElement) el);
+                if (manifest == null) {
+                    continue;
+                }
                 if (mirrorSettings.generateJavaxLangModelFactory()) {
                     generateJavaxFactory((TypeElement)el, manifest);
                 }
@@ -135,7 +146,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
                     } else {
                         file.delete();
                     }
-                } catch (final FileNotFoundException ignored) {
+                } catch (final FileNotFoundException | NoSuchFileException ignored) {
                 } catch (final Exception e) {
                     e.printStackTrace();
                 }
@@ -167,16 +178,32 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
 
     }
 
+    private AnnotationManifest maybeAddAnnotation(final TypeElement element) {
+        return doAddAnnotation(element, true);
+    }
+
     private AnnotationManifest addAnnotation(final TypeElement element) {
+        return doAddAnnotation(element, false);
+    }
+    private AnnotationManifest doAddAnnotation(final TypeElement element, boolean maybe) {
         final String annoName = element.getQualifiedName().toString();
         if (generatedMirrors.containsKey(annoName)) {
             return generatedMirrors.get(annoName);
         }
-        final AnnotationManifest manifest = new AnnotationManifest(annoName);
-        generatedMirrors.put(annoName, manifest);
         final PackageElement pkg = processingEnv.getElementUtils().getPackageOf(element);
         final String simpleName = element.getSimpleName().toString();
         final String builderName = builderName(simpleName);
+        if (maybe) {
+            String pkgName = pkg.getQualifiedName().toString();
+            // check if the type already exists on classpath; if it does, do not regenerate!
+            if (null != processingEnv.getElementUtils().
+                    getTypeElement( (pkgName.isEmpty() ? "" : pkgName + "." ) + builderName)) {
+                // builder already exists... do not regenerate
+                return null;
+            };
+        }
+        final AnnotationManifest manifest = new AnnotationManifest(annoName);
+        generatedMirrors.put(annoName, manifest);
 
         final SourceBuilder<Object> sb = new SourceBuilder<Object>(
             "public class " + builderName);
@@ -274,7 +301,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
             switch (returnMirror.getKind()) {
                 case DECLARED:
                     if (types.isAssignable(returnMirror, annoType)) {
-                        addAnnotation((TypeElement) ((DeclaredType) returnMirror).asElement());
+                        maybeAddAnnotation((TypeElement) ((DeclaredType) returnMirror).asElement());
 
                         if (dflt != null) {
                             final AnnotationMirror value = (AnnotationMirror) dflt.getValue();
@@ -295,7 +322,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
                     // System.out.println(classType);
                     if (types.isAssignable(component, annoType)) {
                         // gross.
-                        addAnnotation((TypeElement) ((DeclaredType) component).asElement());
+                        maybeAddAnnotation((TypeElement) ((DeclaredType) component).asElement());
                         //          manifest.setArrayOfAnnos(name)
                     } else if (types.isAssignable(component, classType)) {
 

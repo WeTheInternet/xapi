@@ -17,14 +17,14 @@ import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.api.*;
 import xapi.source.impl.DeclaredMemberFilter;
 import xapi.source.impl.ImmutableType;
 import xapi.source.impl.IsClassDelegate;
 import xapi.source.service.SourceAdapterService;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.string.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ConvertsValue;
@@ -816,7 +816,11 @@ public class BytecodeAdapterService implements
     @Override
     public String toString() {
       try {
-        return method.getReturnType().getName() + " " + method.getLongName();
+        final CtClass retType = method.getReturnType();
+        if (retType == null) {
+          throw new AssertionError("Illegal no-return-type method " + method.getLongName());
+        }
+        return retType.getName() + " " + method.getLongName();
       } catch (NotFoundException e) {
         throw new AssertionError(e);
       }
@@ -919,7 +923,7 @@ public class BytecodeAdapterService implements
             }
           }
           if (m.getEnclosingType().getQualifiedName().equals(type.getCanonicalName())) {
-            throw new RuntimeException("Class does not match bytecode for " + m);
+            throw new RuntimeException("Class " + type.getCanonicalName() +" does not match bytecode for " + m +" : " + m.getEnclosingType().getQualifiedName());
           }
           return null;
         })

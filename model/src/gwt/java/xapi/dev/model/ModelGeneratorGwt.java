@@ -9,9 +9,9 @@ import xapi.dev.source.SourceBuilder;
 import xapi.model.api.ModelDeserializationContext;
 import xapi.model.api.ModelSerializationContext;
 import xapi.model.api.ModelSerializer;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 import xapi.source.api.IsType;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
@@ -19,7 +19,7 @@ import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map.Entry;
 
-import static xapi.source.X_Modifier.PUBLIC;
+import static xapi.source.util.X_Modifier.PUBLIC;
 
 import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;

@@ -35,28 +35,20 @@
 
 package xapi.dev.template;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import xapi.collect.fifo.SimpleFifo;
+import xapi.dev.source.ImportSection;
+import xapi.dev.source.SourceBuilder;
+import xapi.log.api.LogLevel;
+import xapi.log.api.LogService;
+import xapi.log.impl.JreLog;
+
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import xapi.collect.impl.SimpleFifo;
-import xapi.dev.source.ImportSection;
-import xapi.dev.source.SourceBuilder;
-import xapi.log.api.LogLevel;
-import xapi.log.api.LogService;
-import xapi.log.impl.JreLog;
 
 public class TemplateToJava {
 
@@ -162,7 +154,7 @@ public class TemplateToJava {
       }
       
     } catch (IOException e) {
-      logger.doLog(LogLevel.ERROR, new SimpleFifo<Object>()
+      logger.doLog(LogLevel.ERROR, new SimpleFifo<>()
           .give("Error streaming generated output to file")
           .give(outputFile.getAbsolutePath())
           .give(e));

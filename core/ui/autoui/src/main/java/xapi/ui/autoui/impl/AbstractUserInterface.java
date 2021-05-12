@@ -4,7 +4,7 @@ import xapi.ui.autoui.api.UiRenderer;
 import xapi.ui.autoui.api.UiRendererSelector;
 import xapi.ui.autoui.api.UiRenderingContext;
 import xapi.ui.autoui.api.UserInterface;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 public abstract class AbstractUserInterface <T> implements UserInterface <T>{
 

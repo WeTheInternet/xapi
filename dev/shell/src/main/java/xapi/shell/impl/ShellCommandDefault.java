@@ -5,7 +5,7 @@ import java.io.IOException;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.file.X_File;
 import xapi.io.api.LineReader;
 import xapi.log.X_Log;
@@ -14,7 +14,7 @@ import xapi.process.X_Process;
 import xapi.shell.api.ArgumentProcessor;
 import xapi.shell.api.ShellCommand;
 import xapi.shell.api.ShellSession;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 

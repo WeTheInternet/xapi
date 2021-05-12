@@ -5,7 +5,7 @@ import xapi.fu.Rethrowable;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.constants.X_Namespace;
 import xapi.string.X_String;
 

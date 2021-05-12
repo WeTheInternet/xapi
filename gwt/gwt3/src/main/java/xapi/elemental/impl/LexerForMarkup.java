@@ -2,11 +2,11 @@ package xapi.elemental.impl;
 
 import static xapi.util.X_Util.firstNotNull;
 
-import xapi.source.api.CharIterator;
-import xapi.source.api.Lexer;
-import xapi.source.impl.LexerDefault;
-import xapi.source.impl.LexerStack;
-import xapi.source.impl.StringCharIterator;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.Lexer;
+import xapi.source.lex.LexerDefault;
+import xapi.source.lex.LexerStack;
+import xapi.source.lex.StringCharIterator;
 
 public class LexerForMarkup extends LexerStack {
 

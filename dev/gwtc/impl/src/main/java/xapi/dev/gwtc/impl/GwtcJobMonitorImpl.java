@@ -9,7 +9,7 @@ import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.io.InputStream;
 import java.io.PrintStream;

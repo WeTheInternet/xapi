@@ -2,7 +2,7 @@ package xapi.gwt.collect;
 
 import java.util.Iterator;
 
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 
 import com.google.gwt.core.client.JavaScriptObject;
 

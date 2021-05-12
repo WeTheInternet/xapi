@@ -1,7 +1,7 @@
 package xapi.util.tools;
 
 import xapi.fu.Rethrowable;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

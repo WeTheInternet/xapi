@@ -45,7 +45,8 @@ dependencies {
             testCompile files(tools)
         }
     } else {
-        _xapi.projectGraph.platforms().configureEach({ plat ->
+        def view = xapiSchema.view
+        view.projectGraph.platforms().configureEach({ plat ->
             plat.archives().configureEach({ arch ->
                 if (arch.srcExists()) {
                     arch.tasks.javacTask.configure { javac->

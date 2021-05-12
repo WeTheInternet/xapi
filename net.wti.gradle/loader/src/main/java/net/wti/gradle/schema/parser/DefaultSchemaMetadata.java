@@ -151,7 +151,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
                 throw new IllegalStateException("Must set either schemaFile or schemaLocation to non-null in " + this);
             }
             final File parent = schemaFile.isFile() ? schemaFile.getParentFile() : schemaFile;
-            return parent.getPath() + "/schema.gradle";
+            return parent.getPath() + "/schema.xapi";
         }
         return schemaLocation;
     }

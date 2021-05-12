@@ -16,6 +16,7 @@ import net.wti.gradle.settings.ProjectDescriptorView;
 import net.wti.gradle.settings.RootProjectView;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.initialization.ProjectDescriptor;
@@ -34,6 +35,7 @@ import xapi.string.X_String;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.util.stream.Collectors;
 
 import static net.wti.gradle.settings.ProjectDescriptorView.rootView;
 
@@ -91,14 +93,17 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
             // Transverse the full */*/schema.xapi hierarchy
             final SchemaMap map = buildMap(settings, parser, metadata, properties);
 
-            root.whenReady(view -> {
+            final Action<? super MinimalProjectView> callback = ready -> {
                 // resolve the block-until-index-done task
                 root.settingsReady();
                 final SchemaIndex result = map.getIndexProvider().out1();
                 // Setup callback for each project to add buildable / publishable component with multiple modules / platforms.
-                prepareProjects(view, result, properties, settings, map);
+                prepareProjects(root, result, properties, settings, map);
                 // Flush out callbacks in the priorities they were declared
                 map.getCallbacks().flushCallbacks(map);
+            };
+            settings.getGradle().settingsEvaluated(ready -> {
+                callback.execute(root);
             });
 
         } else {
@@ -119,7 +124,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
         return map;
     }
 
-    private void prepareProjects(final MinimalProjectView view, final SchemaIndex fullIndex, final SchemaProperties properties, Settings settings, SchemaMap map) {
+    private void prepareProjects(final RootProjectView view, final SchemaIndex fullIndex, final SchemaProperties properties, Settings settings, SchemaMap map) {
         SchemaIndexReader index = fullIndex.getReader();
 
         // In order to access Project objects from within code running while settings.gradle is being processed,
@@ -147,10 +152,11 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
         });
 
         map.getCallbacks().perProject(project -> {
-            logger.info("Processing xapi schema for project {}", project);
+            logger.trace("Processing xapi schema for project {}", project);
             String gradlePath = ":" + project.getSubPath().replace('/', ':');
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
+                logger.info("Including {} for project {}", gradlePath, project);
                 settings.include(gradlePath);
                 if (dir.isDirectory()) {
                     final ProjectDescriptor p = settings.project(gradlePath);
@@ -172,7 +178,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                 String modKey = project.getName() + "-" + key;
                 String projectName = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + key;
                 String projectSrcPath = "src/gradle/" + key;
-                String projectOutputPath = "mods/" + key;
+                String projectOutputPath = "src/" + key;
                 map.whenResolved(() -> {
                     boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
                     if (isLive) {
@@ -193,7 +199,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                         }
                         final File buildFile = new File(projDir, buildFileName);
                         if (project.isMultiplatform()) {
-                            view.getLogger().info("Multiplatform {} : {} file://{} @ {}", project.getPathGradle(), modKey, buildFile, key);
+                            view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, buildFile, key);
                             settings.include(projectName);
                             final ProjectDescriptor proj = settings.findProject(projectName);
                             proj.setProjectDir(projDir);
@@ -201,7 +207,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                             proj.setName(modKey);
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
-                            view.getLogger().info("Singleplatform {} : {} file://{} @ {}", project.getPathGradle(), modKey, buildFile, key);
+                            view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, buildFile, key);
                         }
 
                         File projectSource = new File(projectRoot, projectSrcPath);
@@ -267,7 +273,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                                     case "groovy":
                                     case "kotlin":
                                         main.access("java.srcDir(\"$2/$3\")",
-                                                moduleSource.getAbsolutePath().replace(projectRoot.getAbsolutePath(), "$projectDir/../.."),
+                                                "$projectDir",
                                                 sourceDir);
                                         break;
                                     case "resources":
@@ -449,7 +455,8 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                     // if this gets too yucky, we can just replace it w/ direct (but hidden) "act on Project" object code
                     String key = QualifiedModule.unparse(plat.getName(), mod.getName());
                     String path = view.getProjectDir().getAbsolutePath() +
-                            File.separator + "mods" + File.separator + key + File.separator +
+//                            File.separator + "mods" + File.separator + key + File.separator +
+                            File.separator + "src" + File.separator + key + File.separator +
                             project.getName() + X_String.toTitleCase(key) + ".gradle";
                     if (new File(path + ".kts").exists()) {
                         path = path + ".kts";

@@ -26,6 +26,8 @@ tasks.create 'publishRequired', { req ->
 }
 
 File mvnRepo = new File(rootDir, 'repo')
+File indexRoot = new File(rootDir, 'build/index')
+
 
 gradle.beforeProject {
     Project p ->
@@ -68,6 +70,19 @@ gradle.beforeProject {
             sourceCompatibility = '1.8'
             targetCompatibility = '1.8'
 
+            p.repositories {
+                maven {
+                    name = 'xapiExternal'
+                    File repo = new File("$project.rootDir/repoMvn".toString())
+                    if (!repo.exists()) {
+                        repo = new File("$project.rootDir.parent/xapi/repoMvn".toString())
+                    }
+                    url = repo.toURI()
+                    metadataSources { sources ->
+                        sources.mavenPom()
+                    }
+                }
+            }
 
             tasks.withType(JavaCompile) {
                 options.encoding = 'UTF-8'
@@ -134,7 +149,7 @@ GradleServiceFinder.getService(project).configureWrapper(project)
 
 idea {
     module {
-        excludeDirs = [mvnRepo] as Set
+        excludeDirs = [mvnRepo, indexRoot] as Set
     }
 }
 

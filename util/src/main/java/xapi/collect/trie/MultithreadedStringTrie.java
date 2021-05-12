@@ -9,7 +9,7 @@ import static xapi.collect.api.CharPool.EMPTY_STRING;
 import xapi.collect.api.CharPool;
 import xapi.collect.prefixed.PrefixedMap;
 import xapi.fu.itr.MappedIterable;
-import xapi.source.api.Chars;
+import xapi.source.lex.Chars;
 
 /**
  * NSFW

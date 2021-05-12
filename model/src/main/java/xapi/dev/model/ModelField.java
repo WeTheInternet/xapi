@@ -8,7 +8,7 @@ import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.SerializationStrategy;
 import xapi.annotation.model.ServerToClient;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.fu.Maybe;
 import xapi.fu.X_Fu;
 import xapi.log.X_Log;

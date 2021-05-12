@@ -1,6 +1,6 @@
 package xapi.bytecode.impl;
 
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 
 public class ToStringFifo <E> extends SimpleFifo<E> {
 

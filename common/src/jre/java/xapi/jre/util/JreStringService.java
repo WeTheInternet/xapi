@@ -3,7 +3,7 @@ package xapi.jre.util;
 import java.nio.charset.Charset;
 
 import xapi.annotation.inject.SingletonDefault;
-import xapi.util.service.StringService;
+import xapi.string.StringService;
 
 @SingletonDefault(implFor=StringService.class)
 public class JreStringService implements StringService {

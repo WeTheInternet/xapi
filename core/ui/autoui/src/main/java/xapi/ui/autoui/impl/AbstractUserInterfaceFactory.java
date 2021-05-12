@@ -18,7 +18,7 @@ import xapi.ui.autoui.api.UiRenderingContext;
 import xapi.ui.autoui.api.UserInterface;
 import xapi.ui.autoui.api.UserInterfaceFactory;
 import xapi.ui.autoui.api.Validator;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.string.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ConvertsValue;

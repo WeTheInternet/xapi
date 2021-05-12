@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 
 /**
  * The annotation used to trigger the model generator.
@@ -22,7 +22,8 @@ import xapi.annotation.reflection.MirroredAnnotation;
  */
 @Documented
 @Target({TYPE, PACKAGE})
-@Retention(RetentionPolicy.CLASS)
+//@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 @MirroredAnnotation // We want to generate accessor classes for this annotation.
 public @interface IsModel {
 

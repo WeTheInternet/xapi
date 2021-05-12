@@ -10,6 +10,48 @@ xapiRequire {
     main.main.project ':xapi-common'
 }
 
+SourceSet java = sourceSets.getByName("main")
+SourceSet java9 = sourceSets.maybeCreate("java9")
+
+if (JavaVersion.current().isJava9Compatible()) {
+    java9.java.srcDir("src/main/java9")
+    dependencies.add(java9.compileOnlyConfigurationName, java.runtimeClasspath)
+    dependencies.add(java9.compileOnlyConfigurationName, java.compileClasspath)
+    gradle.projectsEvaluated {
+        tasks.named('jar', Jar).configure({ jar ->
+            jar.manifest.attributes['Multi-Release'] = 'true'
+            jar.into("META-INF/versions/9") {
+                CopySpec c ->
+                    c.from(java9.output)
+            }
+            jar.into("META-INF/versions/11") {
+                CopySpec c ->
+                    c.from(java9.output)
+            }
+        })
+    }
+} else {
+    tasks.named(java9.compileJavaTaskName).configure({Task javac ->
+        javac.enabled(false)
+    })
+//    logger.info "Java9 classes directories: {}", java9.output.classesDirs.asPath
+    if (java9.output.classesDirs.any { File d -> d.directory }) {
+        gradle.projectsEvaluated {
+            tasks.named('jar', Jar).configure({ jar ->
+                jar.manifest.attributes['Multi-Release'] = 'true'
+                jar.into("META-INF/versions/9") {
+                    CopySpec c ->
+                        c.from(java9.output.classesDirs)
+                }
+                jar.into("META-INF/versions/11") {
+                    CopySpec c ->
+                        c.from(java9.output.classesDirs)
+                }
+            })
+        }
+    }
+}
+
 dependencies {
     compile project(':xapi-dev-parent:xapi-dev-source')
     testCompile 'junit:junit:4.12'

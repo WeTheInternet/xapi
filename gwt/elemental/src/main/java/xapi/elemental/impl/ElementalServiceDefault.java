@@ -11,7 +11,7 @@ import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
-import xapi.source.api.Lexer;
+import xapi.source.lex.Lexer;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.impl.StyleServiceDefault;
 import xapi.util.api.ConvertsValue;

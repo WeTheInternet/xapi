@@ -13,6 +13,7 @@ import xapi.model.content.ModelContent;
 import xapi.model.content.ModelRating;
 import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
+import xapi.model.tools.ModelSerializerDefault;
 import xapi.time.X_Time;
 import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
@@ -142,9 +143,9 @@ public class ModelServiceTestJre {
     module.addManifest(ModelUtil.createManifest(ModelContent.class));
     module.addManifest(ModelUtil.createManifest(ModelText.class));
     module.addManifest(ModelUtil.createManifest(ModelRating.class));
-    final String serialized = ModelModule.serialize(module);
+    final String serialized = ModelSerializerDefault.serialize(module);
     System.out.println(serialized);
-    final ModelModule deserialized = ModelModule.deserialize(serialized);
+    final ModelModule deserialized = ModelSerializerDefault.deserialize(serialized);
     Assert.assertEquals(module, deserialized);
   }
 

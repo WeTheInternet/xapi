@@ -1,11 +1,10 @@
 package xapi.dev.scanner.impl;
 
 import xapi.bytecode.*;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.collect.trie.MultithreadedStringTrie;
-import xapi.collect.impl.SimpleFifo;
 import xapi.dev.resource.api.ClasspathResource;
-import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.fu.Filter.Filter1;
@@ -14,7 +13,7 @@ import xapi.fu.Out1;
 import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ProvidesValue;
 
 import java.io.File;

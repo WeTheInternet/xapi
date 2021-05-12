@@ -19,7 +19,7 @@ import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.MappedIterable;
 import xapi.lang.api.AstConstants;
 import xapi.log.X_Log;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.util.X_Util;
 

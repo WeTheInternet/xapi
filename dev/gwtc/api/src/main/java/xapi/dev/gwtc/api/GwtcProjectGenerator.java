@@ -9,7 +9,7 @@ import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 
 import java.io.File;
 import java.io.IOException;

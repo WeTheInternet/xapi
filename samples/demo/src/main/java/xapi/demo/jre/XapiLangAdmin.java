@@ -1,15 +1,12 @@
 package xapi.demo.jre;
 
 import javafx.application.Application;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 import xapi.dev.impl.DevApp;
 import xapi.dev.ui.api.UiGeneratorPlatform;
 import xapi.log.api.LogLevel;
 import xapi.server.vertx.XapiVertxServer;
 import xapi.ui.api.Ui;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 
 /**
  * An all-in-one(der) demo application of xapi features.

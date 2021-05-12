@@ -21,7 +21,7 @@ import xapi.fu.*;
 import xapi.fu.itr.*;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 
 import java.lang.reflect.Modifier;

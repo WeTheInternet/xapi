@@ -1,6 +1,6 @@
 package xapi.annotation.model;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 
 @MirroredAnnotation
 public @interface AdderFor {

@@ -34,8 +34,8 @@
  */
 package xapi.log.impl;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.fu.Out1;
 import xapi.fu.itr.ArrayIterable;
 import xapi.log.api.LogLevel;
@@ -72,7 +72,7 @@ public abstract class AbstractLog implements LogService {
 
     @Override
     public Fifo<Object> newFifo() {
-        return new SimpleFifo<Object>();
+        return new SimpleFifo<>();
     }
 
     @Override

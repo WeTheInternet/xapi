@@ -23,14 +23,14 @@ import xapi.bytecode.annotation.StringMemberValue;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.api.IsAnnotationValue;
 import xapi.source.api.IsClass;
 import xapi.source.api.IsType;
 import xapi.source.impl.ImmutableAnnotationValue;
 import xapi.source.service.SourceService;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.string.X_String;
 import xapi.util.api.ConvertsValue;
 

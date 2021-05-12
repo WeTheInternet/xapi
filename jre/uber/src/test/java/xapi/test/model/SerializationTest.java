@@ -9,8 +9,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import xapi.model.impl.PrimitiveSerializerDefault;
-import xapi.source.impl.StringCharIterator;
+import xapi.model.tools.PrimitiveSerializerDefault;
+import xapi.source.lex.StringCharIterator;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)

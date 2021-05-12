@@ -1124,8 +1124,8 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         "SetLike", "xapi.fu.data.SetLike",
         "xapi.fu.data.SetLike", "xapi.fu.data.SetLike",
 
-        "Fifo", "xapi.collect.api.Fifo",
-        "xapi.collect.api.Fifo", "xapi.collect.api.Fifo",
+        "Fifo", "xapi.collect.fifo.Fifo",
+        "xapi.collect.fifo.Fifo", "xapi.collect.fifo.Fifo",
 
         "IntTo", "xapi.collect.api.IntTo",
         "xapi.collect.api.IntTo", "xapi.collect.api.IntTo",
@@ -1134,8 +1134,8 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         "IntTo$Many", "xapi.collect.api.IntTo.Many",
         "xapi.collect.api.IntTo$Many", "xapi.collect.api.IntTo.Many",
 
-        "SimpleFifo", "xapi.collect.impl.SimpleFifo",
-        "xapi.collect.impl.SimpleFifo", "xapi.collect.impl.SimpleFifo",
+        "SimpleFifo", "xapi.collect.fifo.SimpleFifo",
+        "xapi.collect.fifo.SimpleFifo", "xapi.collect.fifo.SimpleFifo",
         "SimpleLinkedList", "xapi.collect.simple.SimpleLinkedList",
         "xapi.collect.simple.SimpleLinkedList", "xapi.collect.simple.SimpleLinkedList"
     );//TODO: .immutable()

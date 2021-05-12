@@ -36,8 +36,10 @@ public class RequirePlatformContainer extends AbstractNamedDomainObjectContainer
                     + " -> platform " + name + " not found in schema: " + schema);
             }
         });
-        // Create a platform-scoped XapiRequire
         assert GradleMessages.noOpForAssertion(()->new RequirePlatform(view, require, name));
+        // ^ This noOp method doesn't invoke new RequirePlatform, the newInstance(), below, does;
+        // this allows IDE tracing of constructor to lead you here, to the place we construct this object.
+        // Create a platform-scoped XapiRequire:
         return view.getInstantiator().newInstance(RequirePlatform.class, view, require, name);
     }
 

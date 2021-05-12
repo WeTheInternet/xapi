@@ -12,7 +12,7 @@ import xapi.platform.GwtPlatform;
 import xapi.platform.JavaFxPlatform;
 import xapi.platform.JrePlatform;
 import xapi.platform.Platform;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.util.X_Util;
 
 import java.lang.annotation.Annotation;

@@ -14,7 +14,7 @@ import xapi.inject.X_Inject;
 import xapi.ui.api.*;
 import xapi.ui.api.event.UiEventManager;
 import xapi.ui.service.UiService;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.string.X_String;
 
 import java.util.WeakHashMap;

@@ -11,7 +11,14 @@ public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
 
   void in(I1 in1, I2 in2, I3 in3);
 
-  In3 NULL = (ig,no,re)->{};
+  In3 NULL = new In3() {
+    @Override
+    public void in(final Object in1, final Object in2, final Object in3) { }
+    @Override
+    public In3 useAfterMe(final In3 other) {
+      return other;
+    }
+  };
 
   In3<In2, ?, ?> INVOKE_IN2 = In2::in;
 
@@ -25,6 +32,13 @@ public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
   default int accept(int position, Object... values) {
     in((I1)values[position++], (I2)values[position++], (I3)values[position++]);
     return position;
+  }
+
+  default In3<I1, I2, I3> useAfterMe(In3<I1, I2, I3> other) {
+    return (i1, i2, i3) -> {
+      in(i1, i2, i3);
+      other.in(i1, i2, i3);
+    };
   }
 
   static <I1, I2, I3> In3<I1, I2, I3> in3(In3<I1, I2, I3> of) {

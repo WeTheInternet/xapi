@@ -2,7 +2,7 @@ package xapi.annotation.model;
 
 import java.lang.annotation.Target;
 
-import xapi.annotation.reflection.MirroredAnnotation;
+import xapi.annotation.mirror.MirroredAnnotation;
 import xapi.fu.Filter.Filter1;
 
 import static java.lang.annotation.ElementType.FIELD;

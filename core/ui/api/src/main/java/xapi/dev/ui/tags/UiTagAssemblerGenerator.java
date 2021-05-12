@@ -16,7 +16,7 @@ import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.dev.ui.tags.assembler.ModelBindingAssembler;
 import xapi.dev.ui.tags.assembler.TagAssembler;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 
 import static xapi.source.X_Source.javaQuote;

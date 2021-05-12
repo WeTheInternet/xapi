@@ -10,7 +10,7 @@ import xapi.test.Assert;
 import xapi.test.gwtc.cases.CaseEntryPoint;
 import xapi.test.gwtc.cases.GwtcCaseJunit4;
 import xapi.constants.X_Namespace;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
 

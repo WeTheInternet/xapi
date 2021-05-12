@@ -1,7 +1,6 @@
 package xapi.adapter.log.gwt;
 
-import xapi.collect.api.Fifo;
-import xapi.except.NotYetImplemented;
+import xapi.collect.fifo.Fifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.JreLog;

@@ -8,10 +8,10 @@ import xapi.fu.Do;
 import xapi.fu.In1.In1Unsafe;
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
-import xapi.model.impl.PrimitiveSerializerDefault;
+import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.reflect.X_Reflect;
 import xapi.server.model.ModelSession;
-import xapi.source.api.CharIterator;
+import xapi.source.lex.CharIterator;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.URL;

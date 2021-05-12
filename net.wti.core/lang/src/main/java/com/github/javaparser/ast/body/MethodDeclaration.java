@@ -30,7 +30,7 @@ import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 import java.util.List;
 

@@ -17,9 +17,9 @@ import xapi.model.service.ModelService;
 import xapi.model.user.ModelUser;
 import xapi.process.X_Process;
 import xapi.server.X_Server;
-import xapi.source.api.CharIterator;
-import xapi.source.impl.StringCharIterator;
-import xapi.util.X_Debug;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.StringCharIterator;
+import xapi.debug.X_Debug;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

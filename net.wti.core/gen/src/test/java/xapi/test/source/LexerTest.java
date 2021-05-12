@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import org.junit.Assert;
 import org.junit.Test;
 
-import xapi.source.api.CharIterator;
-import xapi.source.api.Lexer;
-import xapi.source.impl.LexerForWords;
-import xapi.source.impl.LexerStack;
-import xapi.source.impl.StringCharIterator;
+import xapi.source.lex.CharIterator;
+import xapi.source.lex.Lexer;
+import xapi.source.lex.LexerForWords;
+import xapi.source.lex.LexerStack;
+import xapi.source.lex.StringCharIterator;
 
 public class LexerTest {
 

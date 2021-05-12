@@ -1,13 +1,9 @@
 package xapi.dev.model;
 
-import xapi.annotation.model.ClientToServer;
-import xapi.annotation.model.Key;
-import xapi.annotation.model.Persistent;
-import xapi.annotation.model.Serializable;
-import xapi.annotation.model.ServerToClient;
+import xapi.annotation.model.*;
 import xapi.collect.X_Collect;
-import xapi.collect.api.Fifo;
 import xapi.collect.api.StringTo;
+import xapi.collect.fifo.Fifo;
 import xapi.collect.impl.StringToAbstract;
 import xapi.model.api.Model;
 import xapi.model.api.NestedModel;

@@ -12,11 +12,11 @@ apply from: "$xapiHome/gradle/int-test.gradle"
 
 xapiRequire.main().configure {
     external "net.wti.core:xapi-gen:${->version}", 'main'
-    external "net.wti.core:xapi-lang-core:${->version}", 'main'
 }
 
 xapiRequire.module('api').configure {
     external "net.wti.gradle.tools:xapi-gradle-tools:${->version}", 'main'
+    external "net.wti.core:xapi-lang-core:${->version}", 'main'
     external "net.wti.core:xapi-fu:${->version}", 'main'
 }
 

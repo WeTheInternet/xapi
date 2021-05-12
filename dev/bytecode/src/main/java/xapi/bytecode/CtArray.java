@@ -19,7 +19,7 @@
  */
 package xapi.bytecode;
 
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 
 final class CtArray extends CtClass {

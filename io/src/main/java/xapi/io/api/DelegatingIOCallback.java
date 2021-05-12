@@ -1,6 +1,6 @@
 package xapi.io.api;
 
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 

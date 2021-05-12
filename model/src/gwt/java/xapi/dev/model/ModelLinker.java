@@ -11,7 +11,7 @@ import xapi.dev.source.CharBuffer;
 import xapi.inject.X_Inject;
 import xapi.model.api.ModelMethodType;
 import xapi.model.api.PrimitiveSerializer;
-import xapi.model.impl.ClusteringPrimitiveSerializer;
+import xapi.model.tools.ClusteringPrimitiveSerializer;
 import xapi.util.api.Digester;
 import xapi.validate.ValidatesValue;
 

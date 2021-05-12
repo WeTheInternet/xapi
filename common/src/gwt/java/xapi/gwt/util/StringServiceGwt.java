@@ -1,6 +1,6 @@
 package xapi.gwt.util;
 
-import xapi.util.service.StringService;
+import xapi.string.StringService;
 
 public class StringServiceGwt implements StringService{
 

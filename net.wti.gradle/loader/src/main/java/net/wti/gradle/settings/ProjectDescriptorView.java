@@ -114,6 +114,7 @@ public class ProjectDescriptorView implements MinimalProjectView {
         extensions = ext;
         this.allProjects.put(projectPath, this);
         evaluated = false;
+
         whenReady(ready->evaluated=true);
         this.props = Lazy.deferred1Unsafe(()->{
             Properties result = new Properties();
@@ -227,7 +228,9 @@ public class ProjectDescriptorView implements MinimalProjectView {
         if (evaluated) {
             action.execute(this);
         } else {
-            getGradle().settingsEvaluated(ready->action.execute(this));
+            RootProjectView.rootView(this).whenAfterSettings(ready-> {
+                action.execute(this);
+            });
         }
     }
 
@@ -273,8 +276,8 @@ public class ProjectDescriptorView implements MinimalProjectView {
     }
 
     @Override
-    public ProjectDescriptorView getRootProject() {
-        return findView(":");
+    public RootProjectView getRootProject() {
+        return (RootProjectView) findView(":");
     }
 
     @Override

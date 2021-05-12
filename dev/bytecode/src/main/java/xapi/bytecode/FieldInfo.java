@@ -31,7 +31,7 @@ import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.ConstantAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
 import xapi.bytecode.impl.BytecodeUtil;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 public final class FieldInfo extends MemberInfo {
     ConstPool constPool;

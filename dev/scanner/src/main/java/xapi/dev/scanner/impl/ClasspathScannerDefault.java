@@ -1,9 +1,8 @@
 package xapi.dev.scanner.impl;
 
 import xapi.annotation.inject.InstanceDefault;
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
-import xapi.dev.resource.impl.ByteCodeResource;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.dev.resource.impl.FileBackedResource;
 import xapi.dev.resource.impl.JarBackedResource;
 import xapi.dev.resource.impl.SourceCodeResource;
@@ -11,9 +10,9 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.util.tools.ThreadsafeUncaughtExceptionHandler;
 import xapi.fu.Do;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.constants.X_Namespace;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.util.X_Util;
 import xapi.util.api.ProvidesValue;
 

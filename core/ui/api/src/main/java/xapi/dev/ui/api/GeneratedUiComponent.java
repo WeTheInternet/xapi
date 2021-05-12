@@ -22,7 +22,7 @@ import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.fu.*;
 import xapi.fu.itr.*;
 import xapi.log.X_Log;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.string.X_String;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;

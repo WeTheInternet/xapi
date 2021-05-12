@@ -19,7 +19,7 @@
  */
 package xapi.bytecode;
 
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 
 class CtNewClass extends CtClassType {
     /* true if the class is an interface.

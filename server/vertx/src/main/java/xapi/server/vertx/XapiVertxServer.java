@@ -70,7 +70,7 @@ import xapi.server.vertx.scope.SessionScopeVertx;
 import xapi.source.template.MappedTemplate;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.string.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;

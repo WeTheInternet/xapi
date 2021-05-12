@@ -8,16 +8,6 @@ plugins {
 apply from: "$rootDir/gradle/xapi-env.gradle"
 apply from: "$rootDir/gradle/int-test.gradle"
 
-repositories {
-    maven {
-        name = 'xapiExternal'
-        url = new URI("file://$project.rootDir/repo")
-        metadataSources { sources ->
-            sources.mavenPom()
-        }
-    }
-}
-
 xapiRequire.main().configure {
     req ->
         req.external 'org.slf4j:slf4j-api:1.7.25'

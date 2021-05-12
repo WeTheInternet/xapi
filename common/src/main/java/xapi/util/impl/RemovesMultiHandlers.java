@@ -1,7 +1,7 @@
 package xapi.util.impl;
 
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.Fifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.util.api.RemovalHandler;
 
 /**

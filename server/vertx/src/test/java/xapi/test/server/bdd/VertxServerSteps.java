@@ -53,11 +53,13 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
 
     @Then("^Expect url (\\S+) to return:$")
     public void expectUrlToReturn(String url, List<String> lines) throws Throwable {
+        final WebApp app = newestServer.getWebApp();
+        String protocol = app.getProtocolOrDefault("http");
         if (url.startsWith("/")) {
-            url = "http://127.0.0.1:" + newestServer.getWebApp().getPort() + url;
+            url = protocol + "://127.0.0.1:" + newestServer.getWebApp().getPort() + url;
         }
         else if (url.indexOf(':') == -1) {
-            url = "http://127.0.0.1:" + newestServer.getWebApp().getPort() + "/" + url;
+            url = protocol + "://127.0.0.1:" + newestServer.getWebApp().getPort() + "/" + url;
         }
 
         Thread me = Thread.currentThread();

@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.util.Iterator;
 
 import xapi.dev.resource.api.ClasspathResource;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.util.X_Util;
 
 public class StringDataResource extends DelegateClasspathResource{

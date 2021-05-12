@@ -1,7 +1,7 @@
 package xapi.gwt.process;
 
 import xapi.annotation.inject.SingletonOverride;
-import xapi.collect.api.Fifo;
+import xapi.collect.fifo.Fifo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
 import xapi.gwt.collect.JsFifo;

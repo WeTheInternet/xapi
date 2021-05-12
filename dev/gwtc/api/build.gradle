@@ -7,7 +7,11 @@ buildscript{
 plugins { id 'xapi-require' }
 
 apply from: "$rootDir/gradle/processor.gradle"
-
+tasks.withType(JavaCompile).configureEach {
+    JavaCompile javac ->
+        javac.options.fork = true
+        javac.options.forkOptions.jvmArgs.add("-DxapiPackages=xapi.gwtc.api")
+}
 xapiRequire.main().configure {
     req ->
         req.external Transitivity.compile_only, "net.wti.gradle:xapi-gradle-api:$version", 'main'

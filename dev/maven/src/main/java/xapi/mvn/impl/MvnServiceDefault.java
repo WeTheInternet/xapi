@@ -50,16 +50,16 @@ import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.model.X_Model;
-import xapi.model.impl.ModelSerializerDefault;
+import xapi.model.tools.ModelSerializerDefault;
 import xapi.mvn.X_Maven;
 import xapi.mvn.api.MvnDependency;
 import xapi.mvn.service.MvnService;
 import xapi.reflect.X_Reflect;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Debug;
+import xapi.debug.X_Debug;
 import xapi.constants.X_Namespace;
-import xapi.util.X_Properties;
+import xapi.prop.X_Properties;
 import xapi.util.X_Util;
 
 import java.io.*;
@@ -72,7 +72,7 @@ import java.util.zip.ZipEntry;
 
 import static xapi.fu.itr.Chain.startChain;
 import static xapi.fu.itr.SingletonIterator.singleItem;
-import static xapi.util.X_Properties.getProperty;
+import static xapi.prop.X_Properties.getProperty;
 import static xapi.string.X_String.isEmpty;
 
 @SingletonDefault(implFor = MvnService.class)

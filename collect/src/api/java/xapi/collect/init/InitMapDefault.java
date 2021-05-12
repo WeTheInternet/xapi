@@ -3,18 +3,25 @@ package xapi.collect.init;
 import xapi.fu.In1Out1;
 import xapi.util.api.ReceivesValue;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
   protected final In1Out1<Key,Value> valueProvider;
 
-  private final ConcurrentHashMap<String,Value> map = new ConcurrentHashMap<String,Value>();
+  private final Map<String,Value> map;
 
   public InitMapDefault(In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider) {
+    this(keyProvider, valueProvider, new ConcurrentHashMap<>());
+  }
+  public InitMapDefault(In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider, Map<String, Value> backingMap) {
     super(keyProvider);
+    this.map = backingMap instanceof ConcurrentMap ? backingMap : Collections.synchronizedMap(backingMap);
     assert valueProvider != null : "Cannot use null value provider for init map.";
     this.valueProvider = valueProvider;
   }

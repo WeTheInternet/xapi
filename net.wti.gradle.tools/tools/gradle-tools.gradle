@@ -7,20 +7,18 @@ plugins {
 description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
 This handles the basics of publishing and path manifest production.'''
 
-repositories.jcenter()
+repositories.mavenCentral()
 
 sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
 
 dependencies {
     compileOnly gradleApi()
-    testCompile project(':xapi-gradle-test')
-
-    // uncomment / copy+paste dependencies below to unlock class mocking in spock.
-    // you might only need one of them...
-    // (update above comment when used next)
-//    testRuntime 'net.bytebuddy:byte-buddy:1.9.9',
-//                'org.objenesis:objenesis:3.0.1'
     compile project(':xapi-gradle-core')
+
+    testCompile project(':xapi-gradle-test')
+    // we mock classes, so we need spock-compatible bytecode lib at runtime
+    testRuntime 'net.bytebuddy:byte-buddy:1.11.0'
 }
 
 sourceSets.main.groovy.srcDirs = []

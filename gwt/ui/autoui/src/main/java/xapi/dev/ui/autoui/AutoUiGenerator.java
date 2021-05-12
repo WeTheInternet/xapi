@@ -33,7 +33,7 @@ import java.util.TimeZone;
 import javax.annotation.Generated;
 import javax.inject.Named;
 
-import xapi.collect.impl.SimpleFifo;
+import xapi.collect.fifo.SimpleFifo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;

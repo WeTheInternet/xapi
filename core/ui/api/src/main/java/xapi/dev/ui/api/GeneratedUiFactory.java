@@ -15,7 +15,7 @@ import xapi.fu.*;
 import xapi.log.X_Log;
 import xapi.scope.X_Scope;
 import xapi.scope.api.Scope;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;

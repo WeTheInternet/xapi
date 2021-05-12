@@ -4,12 +4,12 @@ import xapi.dev.source.*;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.fu.Lazy;
 import xapi.fu.lazy.ResettableLazy;
-import xapi.source.X_Modifier;
+import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.string.X_String;
 
-import static xapi.source.X_Modifier.onlyPrivacy;
-import static xapi.source.X_Modifier.validatePrivacy;
+import static xapi.source.util.X_Modifier.onlyPrivacy;
+import static xapi.source.util.X_Modifier.validatePrivacy;
 
 /**
  * A class dedicated to generating a {@code Lazy<ElBuilder> } with an init method.

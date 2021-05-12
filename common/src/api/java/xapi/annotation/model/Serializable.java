@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  * This is useful to prevent leaking sensitive data to clients, or to prevent sending useless data to server.
  *
  * By default, all non-android JRE environments are considered servers.
- * See {@link xapi.util.X_Properties#isServer} for details on determining if a runtime is a server or not.
+ * See {@link xapi.prop.X_Properties#isServer} for details on determining if a runtime is a server or not.
  *
  * If you wish to make a non-serializable field;
  * set both {@link #clientToServer()} and {@link #serverToClient()} to false;
