@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import java.util.Map;
+
 import static xapi.fu.Immutable.immutable1;
 
 /**
@@ -99,8 +101,75 @@ public interface Out3<O1, O2, O3> extends OutMany {
   }
 
   static <O1, O2, O3> Out3<O1, O2, O3> out3(O1 o1, O2 o2, O3 o3) {
-    final Out1[] out = new Out1[]{immutable1(o1), immutable1(o2), immutable1(o3)};
-    return ()->out;
+    return new Out3Immutable<>(o1, o2, o3);
+  }
+
+  static <O1, O2, O3> Out3Immutable<O1, O2, O3> out3Immutable(O1 o1, O2 o2, O3 o3) {
+    return new Out3Immutable<>(o1, o2, o3);
+  }
+
+  class Out3Immutable <O1, O2, O3> implements Out3<O1, O2, O3>, IsImmutable {
+
+    private final O1 one;
+    private final O2 two;
+    private final O3 three;
+
+    public Out3Immutable(O1 one, O2 two, O3 three) {
+      this.one = one;
+      this.two = two;
+      this.three = three;
+    }
+
+    @Override
+    public Out1[] out0() {
+      // arrays are mutable, so we give everyone that asks a new one
+      // while this object remains immutable, you _could_ do terrible things to this array
+      return new Out1[]{
+              immutable1(one),
+              immutable1(two),
+              immutable1(three)
+      };
+    }
+
+    @Override
+    public O1 out1() {
+      return one;
+    }
+
+    @Override
+    public O2 out2() {
+      return two;
+    }
+
+    @Override
+    public O3 out3() {
+      return three;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof Out3Immutable))
+        return false;
+
+      final Out3Immutable<?, ?, ?> that = (Out3Immutable<?, ?, ?>) o;
+
+      if (one != null ? !one.equals(that.one) : that.one != null)
+        return false;
+      if (two != null ? !two.equals(that.two) : that.two != null)
+        return false;
+      return three != null ? three.equals(that.three) : that.three == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = one != null ? one.hashCode() : 0;
+      result = 31 * result + (two != null ? two.hashCode() : 0);
+      result = 31 * result + (three != null ? three.hashCode() : 0);
+      return result;
+    }
   }
 
 }

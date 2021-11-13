@@ -1,6 +1,6 @@
 package xapi.server.gen;
 
-import xapi.dev.api.GeneratedTypeOwner;
+import xapi.dev.lang.gen.GeneratedTypeOwner;
 import xapi.dev.ui.api.GeneratedUiImplementation;
 
 /**

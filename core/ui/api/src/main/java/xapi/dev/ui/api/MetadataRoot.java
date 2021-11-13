@@ -4,7 +4,7 @@ import com.github.javaparser.ast.plugin.NodeTransformer;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.debug.NameGen;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;

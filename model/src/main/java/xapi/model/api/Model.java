@@ -27,6 +27,8 @@ public interface Model {
 
     default <T> T getOrSaveProperty(String key, Out1<T> dflt) {
         return HasLock.alwaysLock(this, ()->{
+            // only set a property if this key is not already defined;
+            // this prevents us from recording the output of dflt.out1(), so you can detect "value not set"
             boolean save = !hasProperty(key);
             T val = getProperty(key, dflt);
             if (save) {
@@ -81,6 +83,19 @@ public interface Model {
         return getOrCreate(getter, () -> X_Collect.newList(type), setter);
     }
 
+    default <T extends Model, G extends T> ModelList<T> getOrCreateModelList(Class<G> type, Out1<ModelList<T>> getter, In1<ModelList<T>> setter) {
+        return getOrCreate(getter, ()->{
+            final ModelList list = X_Model.create(ModelList.class);
+            list.setModelType(type);
+            final String name = type.getSimpleName();
+            final ModelKey myKey = getKey();
+            if (myKey != null) {
+                list.setKey(myKey.getChild(ModelList.MODEL_LIST, name));
+            }
+            return list;
+        }, setter);
+    }
+
     default <T> T compute(Out1<T> getter, In1Out1<T, T> mapper, In1<T> setter) {
         return HasLock.alwaysLock(this, ()->{
             T was = getter.out1();
@@ -107,8 +122,15 @@ public interface Model {
 
     Model setProperty(String key, Object value);
 
+    /**
+     * @param key - The property name to register the callback for.
+     * @param callback - A function which receives oldValue,newValue as arguments.
+     */
     void onChange(String key, In2<Object, Object> callback);
 
+    /**
+     * @param callback - A function which receives propKey,oldValue,newValue as arguments.
+     */
     void onGlobalChange(In3<String, Object, Object> callback);
 
     default void globalChange(In3<String, Object, Object> callback) {

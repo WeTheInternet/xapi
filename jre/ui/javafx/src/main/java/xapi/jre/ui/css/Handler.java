@@ -46,6 +46,9 @@ public class Handler extends URLStreamHandler {
     protected URLConnection openConnection(URL u) throws IOException {
         final String path = u.getPath();
         final Out1<String> file = dynamicFiles.get(path);
+        if (file == null) {
+            throw new IllegalArgumentException("No css: urls registered for '" + path +"'; valid options: '" + dynamicFiles.keys().join("', '") + "'");
+        }
         String query = u.getQuery();
         if (query != null) {
             // parse the query params, and send them to the css builder (use something other than Out1)

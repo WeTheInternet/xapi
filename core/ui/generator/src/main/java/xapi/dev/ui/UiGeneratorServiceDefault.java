@@ -3,7 +3,7 @@ package xapi.dev.ui;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.InstanceDefault;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.api.UiComponentGenerator;

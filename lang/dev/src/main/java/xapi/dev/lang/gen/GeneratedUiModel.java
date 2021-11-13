@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.lang.gen;
 
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;

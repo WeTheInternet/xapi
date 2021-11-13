@@ -49,7 +49,7 @@ public class BuildScriptBuffer extends GradleBuffer {
         return plugins.isFull1() && plugins.out1().buffer.isNotEmpty();
     }
 
-    public BuildScriptBuffer addPlugin(String pluginId) {
+    public boolean addPlugin(String pluginId) {
         String key = pluginId.trim();
 
         boolean hasId = false, hasQuote = false;
@@ -75,7 +75,8 @@ public class BuildScriptBuffer extends GradleBuffer {
                 out.append("\"");
             }
             out.outdent();
+            return true;
         }
-        return this;
+        return false;
     }
 }

@@ -1,7 +1,7 @@
 package xapi.dev.model;
 
 import xapi.annotation.model.IsModel;
-import xapi.dev.api.ApiGeneratorTools;
+import xapi.dev.lang.gen.ApiGeneratorTools;
 import xapi.fu.api.Ignore;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;

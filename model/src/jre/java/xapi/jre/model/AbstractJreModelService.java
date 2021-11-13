@@ -127,7 +127,18 @@ public abstract class AbstractJreModelService extends AbstractModelService {
           return manifest.getType();
         case "onChange":
           callbacks.computeValue((String)args[0], was-> {
-              return was == null ? (In3)args[1] : was.useAfterMe((In3)args[1]);
+              In3 asIn3 = args[1] instanceof In2 ? ((In2)args[1]).ignore1() :
+                      args[1] instanceof In3 ? (In3)args[1] : null;
+              if (asIn3 != null) {
+                  return was == null ? asIn3 : was.useAfterMe(asIn3);
+              }
+//              if (args[1] instanceof In2) {
+//                  return was == null ? asIn3 : was.useAfterMe(asIn3);
+//              }
+//              if (args[1] instanceof In3) {
+//                return was == null ? (In3)args[1] : was.useAfterMe((In3)args[1]);
+//              }
+              throw new IllegalArgumentException("Illegal onChange method argument " + args[1] + " not castable to In2; use In2.ignoreAll() instead of null");
           });
           return proxy;
         case "onGlobalChange":
@@ -198,7 +209,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
                 if (args[1] instanceof Supplier && !Supplier.class.isAssignableFrom(property.getType())) {
                   return ((Provider) args[1]).get();
                 }
-              } catch (Throwable ignored){}
+              } catch (ClassCastException ignored){}
               return args[1];
             }
             return getDefaultValueProvider(manifest, values::setValue).io(property.getName());

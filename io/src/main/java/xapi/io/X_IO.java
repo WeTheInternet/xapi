@@ -1,6 +1,7 @@
 package xapi.io;
 
 import xapi.collect.fifo.SimpleFifo;
+import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.Chain;
@@ -248,6 +249,21 @@ public class X_IO {
       drain(bufSize, b, in);
       return b.toString();
     }
+  }
+
+  public static Lazy<String> toStringUtf8Deferred(final InputStream in) {
+    return toStringUtf8Deferred(2048, in);
+  }
+  public static Lazy<String> toStringUtf8Deferred(int bufSize, final InputStream in) {
+    Lazy<String> result = Lazy.deferred1Unsafe(()->{
+        try (
+            final StringBufferOutputStream b = new StringBufferOutputStream()
+        ) {
+          drain(bufSize, b, in);
+          return b.toString();
+        }
+    });
+    return result;
   }
   public static String toStringEncoded(final InputStream in, String charset) throws IOException {
     try (

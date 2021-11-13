@@ -6,7 +6,7 @@ import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.*;
+import xapi.dev.lang.gen.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;

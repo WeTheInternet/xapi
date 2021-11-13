@@ -3,7 +3,7 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.body.Parameter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.GeneratedTypeParameter;
+import xapi.dev.lang.gen.GeneratedTypeParameter;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.source.util.X_Modifier;

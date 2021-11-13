@@ -12,7 +12,7 @@ import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;

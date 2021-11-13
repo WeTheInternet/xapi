@@ -7,8 +7,8 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.api.ApiGeneratorTools;
+import xapi.dev.lang.gen.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorTools;
 import xapi.fu.Printable;
 
 /**

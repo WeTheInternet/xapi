@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.lang.gen;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
@@ -13,7 +13,7 @@ import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.AstMethodInvoker.AstMethodResult;
+import xapi.dev.lang.gen.AstMethodInvoker.AstMethodResult;
 import xapi.fu.*;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.ChainBuilder;

@@ -59,6 +59,10 @@ public interface SuccessHandler <Type> {
           onSuccess.onSuccess(t);
         } catch (Throwable e) {
           onFailure.onError((Err) e);
+        } finally {
+          synchronized (onSuccess) {
+            onSuccess.notifyAll();
+          }
         }
       }
 

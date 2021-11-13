@@ -6,6 +6,7 @@ import xapi.annotation.model.IsModel;
 import xapi.annotation.model.SetterFor;
 import xapi.annotation.reflect.Fluent;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.api.Ignore;
 import xapi.fu.itr.MappedIterable;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -36,12 +37,24 @@ public class ModelUtil {
       }
       final IsModel isModel = cls.getAnnotation(IsModel.class);
       String idField = isModel == null ? "id" : isModel.key().value();
+      Set<String> ignoreMethods = new HashSet<>();
+      methods:
       for (final Method method : getMethodsInOrder(type)) {
-        if (method.getDeclaringClass() != Model.class) {
+        if (method.getDeclaringClass() != Model.class && !method.getDeclaringClass().getName().startsWith("xapi.fu")) {
           if (method.isDefault() || X_Modifier.isStatic(method.getModifiers())) {
             continue; // no need to override default / static methods!
           }
-          if (!manifest.hasSeenMethod(method.getName())) {
+          final Ignore ignore = method.getAnnotation(Ignore.class);
+          if (ignore != null) {
+            for (String ignoreType : ignore.value()) {
+              if ("model".equals(ignoreType)) {
+                ignoreMethods.add(method.getName());
+                continue methods;
+              }
+            }
+
+          }
+          if (!manifest.hasSeenMethod(method.getName()) && !ignoreMethods.contains(method.getName())) {
             try {
               final MethodData property = manifest.addProperty(method.getName(),
                   idField,

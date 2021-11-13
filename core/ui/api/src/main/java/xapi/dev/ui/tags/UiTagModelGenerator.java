@@ -9,7 +9,7 @@ import com.github.javaparser.ast.type.Type;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 import xapi.collect.api.IntTo;
-import xapi.dev.api.*;
+import xapi.dev.lang.gen.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;

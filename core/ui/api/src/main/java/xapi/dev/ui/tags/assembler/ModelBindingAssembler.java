@@ -3,7 +3,7 @@ package xapi.dev.ui.tags.assembler;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
-import xapi.dev.api.GeneratedUiMember;
+import xapi.dev.lang.gen.GeneratedUiMember;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
@@ -351,6 +351,7 @@ public abstract class ModelBindingAssembler implements TagAssembler {
         }
         switch (type) {
             case "java.lang.String":
+            case "java.lang.CharSequence":
             case "String":
 
                 return X_Source.javaQuote(asString);

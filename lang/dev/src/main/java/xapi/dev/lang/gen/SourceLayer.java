@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.lang.gen;
 
 /**
  * The generalized type of a given {@link GeneratedJavaFile}

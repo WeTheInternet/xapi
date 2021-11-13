@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.lang.gen;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;

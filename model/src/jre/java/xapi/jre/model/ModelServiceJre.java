@@ -12,6 +12,7 @@ import xapi.log.X_Log;
 import xapi.model.api.*;
 import xapi.model.api.ModelQuery.QueryParameter;
 import xapi.model.service.ModelService;
+import xapi.model.service.ModelServiceWithRootDir;
 import xapi.platform.JrePlatform;
 import xapi.prop.X_Properties;
 import xapi.source.lex.CharIterator;
@@ -30,7 +31,7 @@ import java.util.ArrayList;
  */
 @JrePlatform
 @SingletonDefault(implFor=ModelService.class)
-public class ModelServiceJre extends AbstractJreModelService {
+public class ModelServiceJre extends AbstractJreModelService implements ModelServiceWithRootDir {
 
   private File root;
 
@@ -371,4 +372,9 @@ public class ModelServiceJre extends AbstractJreModelService {
     return root;
   }
 
+  @Override
+  public void setRootDir(final File rootDir) {
+    // TODO: validate that we're not leaveing any state behind? ....kinda don't care, tbh.
+    this.root = rootDir;
+  }
 }

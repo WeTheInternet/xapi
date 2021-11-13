@@ -3,7 +3,7 @@ package xapi.dev.ui.tags.assembler;
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;

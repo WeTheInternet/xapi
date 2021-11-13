@@ -272,5 +272,7 @@ public class X_Namespace {
 
   public static String PROPERTY_VERSION = "xapiVersion";
 
+  public static String PROPERTY_DEFAULT_URI_PATH = "xapiUriPath";
+
 
 }

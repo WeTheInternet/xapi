@@ -7,9 +7,10 @@ import com.github.javaparser.ast.type.ReferenceType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.*;
+import xapi.dev.lang.gen.*;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.impl.ImplementationLayer;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.*;
 import xapi.fu.itr.EmptyIterator;
@@ -26,7 +27,7 @@ import java.util.List;
  * Created by James X. Nelson (James@WeTheInter.net) on 10/2/18 @ 1:55 AM.
  */
 public abstract class GeneratedTypeOwnerBase <Api extends GeneratedUiLayer, Base extends GeneratedUiLayer, Impl extends ImplementationLayer> implements
-    GeneratedTypeOwner {
+        GeneratedTypeOwner {
 
     private final Lazy<UiContainerExpr> ast;
     private final GeneratedUiGenericInfo info;

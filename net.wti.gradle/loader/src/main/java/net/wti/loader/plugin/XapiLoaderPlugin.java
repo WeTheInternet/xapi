@@ -6,15 +6,11 @@ import net.wti.gradle.loader.impl.BuildScriptBuffer;
 import net.wti.gradle.loader.impl.ClosureBuffer;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
-import net.wti.gradle.schema.index.SchemaIndexerImpl;
 import net.wti.gradle.schema.map.SchemaMap;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
-import net.wti.gradle.schema.spi.SchemaIndexer;
 import net.wti.gradle.schema.spi.SchemaProperties;
-import net.wti.gradle.settings.ProjectDescriptorView;
 import net.wti.gradle.settings.RootProjectView;
-import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -30,12 +26,13 @@ import xapi.constants.X_Namespace;
 import xapi.dev.source.LocalVariable;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
+import xapi.fu.data.MultiSet;
 import xapi.fu.java.X_Jdk;
 import xapi.string.X_String;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.util.stream.Collectors;
 
 import static net.wti.gradle.settings.ProjectDescriptorView.rootView;
 
@@ -80,7 +77,8 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                 try {
                     cls = Thread.currentThread().getContextClassLoader().loadClass(propertiesClass);
                     if (!SchemaProperties.class.isAssignableFrom(cls)) {
-                        throw new IllegalArgumentException("Class " + cls + " is not a (recognizable) instance of " + SchemaProperties.class);
+                        throw new IllegalArgumentException("Class " + cls + " is not a (recognizable) instance of " + SchemaProperties.class
+                         + ". You may need to run ./gradlew --stop");
                     }
                     properties = (SchemaProperties) cls.newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
@@ -102,9 +100,17 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                 // Flush out callbacks in the priorities they were declared
                 map.getCallbacks().flushCallbacks(map);
             };
-            settings.getGradle().settingsEvaluated(ready -> {
-                callback.execute(root);
-            });
+
+//            if (null == System.getProperty("idea.version")) {
+                // normal gradle build, wait until later to resolve
+                settings.getGradle().settingsEvaluated(ready -> {
+                    callback.execute(root);
+                });
+//            } else {
+//                // running in intellij, we need to resolve callbacks sooner, so IJ notices
+//                root.getLogger().quiet("Detected intellij; executing indexer callback early.");
+//                callback.execute(root);
+//            }
 
         } else {
             // no root schema.xapi... consider instead a reverse-lookup for schema.xapi in any include()d projects?
@@ -215,14 +221,14 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                         // TODO: add a README.md into projectSource, describing how to contribute code to src/gradle/platMod/<magic filenames>
 
                         BuildScriptBuffer out = new BuildScriptBuffer();
-                        final In2<String, Out1<Printable<?>>> maybeAdd =
+                        final In2Out1<String, Out1<Printable<?>>, Boolean> maybeAdd =
                                 (name, buffer) -> {
-                                    In2<String, File> cb = (imports, file) ->
+                                    In2<String, File> cb = (script, file) ->
                                             buffer.out1()
-                                                    .print("// GenStart ").print(name).print(" from file://").println(file.getAbsolutePath())
-                                                    .println(imports)
-                                                    .print("// GenEnd ").print(name).print(" from file://").println(file.getAbsolutePath());
-                                    maybeRead(projectSource, name, cb);
+                                                    .print("// GenInclude ").print(name).print(" from file://").println(file.getAbsolutePath())
+                                                    .println(script)
+                                    ;
+                                    return maybeRead(projectSource, name, cb);
                                 };
                         final Out1<Printable<?>> getBody = Immutable.immutable1(out);
                         if (projectSource.exists()) {
@@ -235,25 +241,28 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                                 }
                             });
                             final Out1<Printable<?>> getBuildscript = out::getBuildscript;
-                            maybeAdd.in("buildscript.start", getBuildscript);
-                            maybeAdd.in("buildscript", getBuildscript);
-                            maybeAdd.in("buildscript.end", getBuildscript);
+                            maybeAdd.io("buildscript.start", getBuildscript);
+                            maybeAdd.io("buildscript", getBuildscript);
+                            maybeAdd.io("buildscript.end", getBuildscript);
 
-                            final In2<String, File> addPlugin = (imports, file) -> {
-                                for (String s : imports.split("[\\n\\r]+")) {
+                            final In2<String, File> addPlugin = (plugins, file) -> {
+                                out.getPlugins().printBefore("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                for (String s : plugins.split("[\\n\\r]+")) {
                                     if (!s.startsWith("//")) {
                                         out.addPlugin(s);
                                     }
                                 }
+                                out.getPlugins().println();
                             };
                             maybeRead(projectSource, "plugins.start", addPlugin);
                             maybeRead(projectSource, "plugins", addPlugin);
                             maybeRead(projectSource, "plugins.end", addPlugin);
 
-                            maybeAdd.in("body.start", getBody);
-                            maybeAdd.in("body", getBody);
+                            maybeAdd.io("body.start", getBody);
+                            maybeAdd.io("body", getBody);
                         }
 
+                        out.println("// GenStart " + getClass().getSimpleName());
 
                         out.println("String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'");
                         out.println("apply plugin: javaPlugin");
@@ -304,7 +313,11 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                             final ClosureBuffer depOut = dependencies.out1();
                             switch (dependency.getTransitivity()) {
                                 case api:
-                                    out.addPlugin("java-library");
+                                    if (out.addPlugin("java-library")) {
+                                        out.getPlugins().printBefore("// GenInclude ")
+                                                .print(getClass().getSimpleName())
+                                                .println(" adding java-library b/c api dependencies used");
+                                    }
                                     depOut.append(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "api" : key + "Api"
@@ -392,11 +405,13 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                                     .println(key + "Out");
                             // TODO: actually hook this up in the generated code
                         }
+                        out.println("// GenEnd " + getClass().getSimpleName());
 
-                        if (projectSource.exists()) {
-                            maybeAdd.in("body.end", getBody);
-                        }
-
+                        maybeAdd.io("body.end", getBody);
+                        out.print("// Done generating buildfile for ")
+                                .print(project.getPathGradle())
+                                .print(" at file://")
+                                .println(buildFile);
                         // all done writing generated project
                         GFileUtils.writeFile(out.toSource(), buildFile, "UTF-8");
                     }
@@ -471,12 +486,14 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
         }
     }
 
-    private void maybeRead(final File dir, final String file, final In2<String, File> callback) {
+    private boolean maybeRead(final File dir, final String file, final In2<String, File> callback) {
         File target = new File(dir, file);
         if (target.isFile()) {
             final String contents = GFileUtils.readFile(target);
             callback.in(contents, target);
+            return true;
         }
+        return false;
     }
 
     private static String getPlatform(Settings settings) {

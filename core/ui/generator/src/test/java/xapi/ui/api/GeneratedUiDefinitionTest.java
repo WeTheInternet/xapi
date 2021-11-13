@@ -4,7 +4,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import org.junit.Test;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.UiGeneratorServiceDefault;
 import xapi.dev.ui.api.GeneratedUiDefinition;
 import xapi.dev.ui.api.GeneratedUiField;

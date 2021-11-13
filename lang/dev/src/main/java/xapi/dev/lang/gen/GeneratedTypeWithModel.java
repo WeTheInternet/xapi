@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.lang.gen;
 
 import xapi.fu.Lazy;
 import xapi.source.X_Source;

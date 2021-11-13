@@ -1,6 +1,6 @@
 package xapi.server.gen;
 
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Rethrowable;
 import xapi.io.X_IO;

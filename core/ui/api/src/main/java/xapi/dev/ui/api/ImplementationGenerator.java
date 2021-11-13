@@ -1,7 +1,7 @@
 package xapi.dev.ui.api;
 
-import xapi.dev.api.GeneratedTypeOwner;
-import xapi.dev.api.ImplementationLayer;
+import xapi.dev.lang.gen.GeneratedTypeOwner;
+import xapi.dev.ui.impl.ImplementationLayer;
 import xapi.dev.ui.impl.UiGeneratorTools;
 
 /**

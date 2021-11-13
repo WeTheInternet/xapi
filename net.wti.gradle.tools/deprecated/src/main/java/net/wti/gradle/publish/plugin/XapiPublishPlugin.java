@@ -246,6 +246,16 @@ public class XapiPublishPlugin implements Plugin<Project> {
                     PublishedModule mod = (PublishedModule) module;
                     final ArchiveGraph graph = mod.getModule();
                     task.whenSelected(selected->{
+
+                        if (graph.config().isPublished()) {
+                            graph.getTasks().getJarTask().configure(jar -> {
+                                jar.manifest(manifest -> {
+                                            manifest.getAttributes().put("Automatic-Module-Name", graph.getModuleName().replace('-', '.'));
+                                        }
+                                );
+                            });
+
+                        }
                         task.dependsOn(graph.getJarTask());
                         if (graph.config().isSourceAllowed()) {
                             task.dependsOn(graph.getSourceJarTask());

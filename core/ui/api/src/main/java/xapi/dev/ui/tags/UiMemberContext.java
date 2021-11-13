@@ -1,6 +1,6 @@
 package xapi.dev.ui.tags;
 
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.impl.UiGeneratorTools;
 
 /**

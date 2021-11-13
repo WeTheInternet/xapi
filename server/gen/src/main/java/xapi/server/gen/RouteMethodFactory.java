@@ -2,7 +2,7 @@ package xapi.server.gen;
 
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.HtmlBuffer;

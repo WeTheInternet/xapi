@@ -1,9 +1,9 @@
 package xapi.dev.ui.api;
 
-import xapi.dev.api.GeneratedJavaFile;
-import xapi.dev.api.GeneratedTypeOwner;
-import xapi.dev.api.GeneratedTypeParameter;
-import xapi.dev.api.SourceLayer;
+import xapi.dev.lang.gen.GeneratedJavaFile;
+import xapi.dev.lang.gen.GeneratedTypeOwner;
+import xapi.dev.lang.gen.GeneratedTypeParameter;
+import xapi.dev.lang.gen.SourceLayer;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.SourceBuilder;
 import xapi.source.read.JavaModel.IsTypeDefinition;

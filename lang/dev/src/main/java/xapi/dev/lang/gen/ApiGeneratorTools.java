@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.lang.gen;
 
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.CompilationUnit;
@@ -21,7 +21,7 @@ import com.github.javaparser.ast.visitor.TransformVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.AstMethodInvoker.AstMethodResult;
+import xapi.dev.lang.gen.AstMethodInvoker.AstMethodResult;
 import xapi.dev.source.ImportSection;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
@@ -982,6 +982,9 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         }
         if (result instanceof String) {
             return StringLiteralExpr.stringLiteral((String) result);
+        }
+        if (result instanceof CharSequence) {
+            return StringLiteralExpr.stringLiteral(result.toString());
         }
         if (result instanceof Boolean) {
             return BooleanLiteralExpr.boolLiteral((Boolean)result);

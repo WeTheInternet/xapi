@@ -1,7 +1,7 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.type.Type;
-import xapi.dev.api.GeneratedUiMember;
+import xapi.dev.lang.gen.GeneratedUiMember;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.

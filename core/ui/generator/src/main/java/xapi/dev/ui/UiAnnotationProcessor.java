@@ -3,7 +3,7 @@ package xapi.dev.ui;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.api.GeneratedJavaFile;
+import xapi.dev.lang.gen.GeneratedJavaFile;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;

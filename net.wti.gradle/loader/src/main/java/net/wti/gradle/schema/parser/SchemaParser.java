@@ -3,6 +3,7 @@ package net.wti.gradle.schema.parser;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.visitor.CloneVisitor;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.DependencyKey;
@@ -872,7 +873,7 @@ public interface SchemaParser {
             boolean force = module.getAttribute("force")
                 .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                 .ifAbsentReturn(false);
-            final SetLike<String> include = X_Jdk.setLinked();
+//            final SetLike<String> include = X_Jdk.setLinked();
 
             final String publishNamePattern = parser.getProperties().getPublishNamePattern(project.getView(), name);
 
@@ -984,28 +985,41 @@ public interface SchemaParser {
             module.getAttribute("requires").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
             module.getAttribute("require").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
 
-            SchemaModule schemaMod = new SchemaModule(name, publishNamePattern, include, published, test, force);
+            final SchemaModule localMod = new SchemaModule(name, publishNamePattern, X_Jdk.setLinked(), published, test, force);
+            final SchemaModule result = insertModule(project, metadata, localMod, module);
+
 
             project.forAllPlatforms(plat -> {
                 // an include = [ list, "of", modules ] is an automatic internal dependency on said module.
                 // we also put these into the SchemaModule.includes list, which is a "very transitive" part of the model.
                 // an internal dependency can be scoped down to compile_only, but an includes is the "official" transitive view of model.
-                final In1<UiAttrExpr> insertInclude = In4.in4(this::insertModuleIncludes)
-                        .provide1(schemaMod)
-                        .provide1(plat.getName())
-                        .provide1(metadata)
-                        .useAfterMe(attr-> {
-                            attr.getExpression().accept(
-                                whenMissingFail(SchemaParser.class).extractNames(include::add)
-                                , metadata);
-
-                        });
+                final In1<UiAttrExpr> insertInclude =
+                        includeAttr -> {
+                            includeAttr.getExpression().accept(
+                                    whenMissingFail(SchemaParser.class).extractNames(includeName -> {
+                                        if (result.getInclude().addIfMissing(includeName)) {
+                                            final UiAttrExpr attrCopy = (UiAttrExpr) includeAttr.clone();
+                                            attrCopy.setExpression(StringLiteralExpr.stringLiteral(includeName));
+                                            insertModuleIncludes(result, plat.getName(), metadata, attrCopy);
+                                        }
+                                    })
+                                    , metadata
+                            );
+                        };
+//                        In4.in4(this::insertModuleIncludes)
+//                        .provide1(schemaMod)
+//                        .provide1(plat.getName())
+//                        .provide1(metadata)
+//                        .useAfterMe(attr-> {
+//                            attr.getExpression().accept(
+//                                whenMissingFail(SchemaParser.class).extractNames(include::add)
+//                                , metadata);
+//
+//                        });
                 module.getAttribute("include").readIfPresent(insertInclude);
                 module.getAttribute("includes").readIfPresent(insertInclude);
 
             });
-
-            final SchemaModule result = insertModule(project, metadata, schemaMod, module);
 //
 //            project.forAllPlatforms(plat -> {
 //                PlatformModule myPlatMod = new PlatformModule(plat.getName(), result.getName());

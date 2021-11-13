@@ -2,10 +2,10 @@ package xapi.dev.ui.tags;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.*;
-import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.api.GeneratedJavaFile;
-import xapi.dev.api.GeneratedTypeOwner;
-import xapi.dev.api.GeneratedTypeWithModel;
+import xapi.dev.lang.gen.ApiGeneratorContext;
+import xapi.dev.lang.gen.GeneratedJavaFile;
+import xapi.dev.lang.gen.GeneratedTypeOwner;
+import xapi.dev.lang.gen.GeneratedTypeWithModel;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;

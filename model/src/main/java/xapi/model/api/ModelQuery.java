@@ -362,6 +362,8 @@ public class ModelQuery <M extends Model> {
     b.append(primitives.serializeInt(typeOf(value.getClass())));
     if (value instanceof String) {
       b.append(primitives.serializeString((String)value));
+    } else if (value instanceof CharSequence) {
+      b.append(primitives.serializeString(value.toString()));
     } else if (value instanceof Long) {
       b.append(primitives.serializeLong((Long)value));
     } else if (value instanceof Integer) {

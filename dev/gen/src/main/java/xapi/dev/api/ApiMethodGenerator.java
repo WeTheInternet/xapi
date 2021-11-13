@@ -4,6 +4,8 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.collect.api.IntTo;
 import xapi.collect.simple.SimpleStack;
+import xapi.dev.lang.gen.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorTools;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Do;

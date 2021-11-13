@@ -6,7 +6,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.*;
+import xapi.dev.lang.gen.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;

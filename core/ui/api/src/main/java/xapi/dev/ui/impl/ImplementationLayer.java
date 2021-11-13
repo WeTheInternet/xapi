@@ -1,5 +1,8 @@
-package xapi.dev.api;
+package xapi.dev.ui.impl;
 
+import xapi.dev.lang.gen.GeneratedJavaFile;
+import xapi.dev.lang.gen.GeneratedTypeOwner;
+import xapi.dev.lang.gen.SourceLayer;
 import xapi.dev.ui.api.GeneratedUiDefinition;
 import xapi.dev.ui.api.GeneratedUiLayer;
 import xapi.dev.ui.api.ImplementationGenerator;

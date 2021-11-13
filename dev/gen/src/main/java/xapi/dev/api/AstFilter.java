@@ -2,6 +2,7 @@ package xapi.dev.api;
 
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;

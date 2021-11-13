@@ -165,4 +165,12 @@ public class GradleBuffer implements Printable<GradleBuffer> {
     public LocalVariable addVariable(final String cls, final String name, boolean reuseExisting) {
         return this.buffer.newVariable(cls, name, reuseExisting);
     }
+
+    public PrintBuffer printBefore(String before) {
+        return buffer.printBefore(before);
+    }
+
+    public PrintBuffer printAfter(String before) {
+        return buffer.printAfter(before);
+    }
 }

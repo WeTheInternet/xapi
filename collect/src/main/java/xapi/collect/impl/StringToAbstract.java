@@ -2,8 +2,8 @@ package xapi.collect.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.StringTo;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
 import xapi.platform.GwtDevPlatform;
@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @JrePlatform
 @GwtDevPlatform
@@ -24,6 +25,8 @@ public class StringToAbstract <V> implements StringTo<V>{
   private static final long serialVersionUID = 7743120861632536635L;
   private final java.util.Map<String,V> map;
   private final Class<V> valueType;
+  private final AtomicBoolean recurseProtect = new AtomicBoolean(false);
+
 
   public StringToAbstract(Class<V> valueType) {
     this.valueType = valueType;
@@ -154,7 +157,15 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   @Override
   public String toString() {
-    return forEachItem().join(o->o.join(" = "), "\n");
+    try {
+      if (recurseProtect.get()) {
+        return "<INFINITE RECURSION DETECTED; BAILING...>";
+      }
+      recurseProtect.set(true);
+      return forEachItem().join(o->o.join(" = "), "\n");
+    } finally {
+        recurseProtect.set(false);
+    }
   }
 
   protected Collection<V> valueSet() {

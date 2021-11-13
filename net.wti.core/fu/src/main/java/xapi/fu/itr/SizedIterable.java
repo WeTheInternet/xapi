@@ -21,6 +21,13 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
     @Override
     SizedIterator<T> iterator();
 
+    static <T> SizedIterable<T> of(Iterable<T> itr) {
+        if (itr instanceof SizedIterable) {
+            return (SizedIterable<T>) itr;
+        }
+        MappedIterable<T> mapped = MappedIterable.mapped(itr);
+        return mapped.counted();
+    }
     static <T> SizedIterable<T> of(int size, Iterable<T> itr) {
         return of(Immutable.immutable1(size), itr);
     }

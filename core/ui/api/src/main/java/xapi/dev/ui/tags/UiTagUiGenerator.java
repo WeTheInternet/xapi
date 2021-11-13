@@ -5,9 +5,9 @@ import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.api.GeneratedUiMember;
-import xapi.dev.api.GeneratedUiModel;
+import xapi.dev.lang.gen.ApiGeneratorContext;
+import xapi.dev.lang.gen.GeneratedUiMember;
+import xapi.dev.lang.gen.GeneratedUiModel;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -320,6 +320,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                             switch (field.getMemberType().toSource()) {
                                                 case "String":
                                                 case "java.lang.String":
+                                                case "java.lang.CharSequence":
                                                     // TODO bind the model's string property to the contents of this node
                                                     toDom.println(refFieldName + ".append(getModel().get" + field.getCapitalized()+"());");
                                                     break;

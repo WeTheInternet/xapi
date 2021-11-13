@@ -22,7 +22,7 @@ import xapi.collect.api.StringTo;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.dev.X_Gwtc;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.components.XapiWebComponentGenerator;
 import xapi.dev.gen.FileBasedSourceHelper;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;

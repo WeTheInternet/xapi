@@ -5,7 +5,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.AbstractClasspathProvider;
 import xapi.dev.api.Classpath;
-import xapi.dev.api.GeneratedJavaFile;
+import xapi.dev.lang.gen.GeneratedJavaFile;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;

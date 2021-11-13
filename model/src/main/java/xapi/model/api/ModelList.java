@@ -1,6 +1,6 @@
 package xapi.model.api;
 
-import xapi.annotation.model.ComponentType;
+import xapi.annotation.model.*;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.fu.In2;
@@ -26,6 +26,15 @@ import xapi.util.api.SuccessHandler;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 10/4/18 @ 1:58 AM.
  */
+
+@IsModel(
+        modelType = "list"
+        ,persistence = @Persistent(strategy= PersistenceStrategy.Inherit)
+        ,serializable = @Serializable(
+        clientToServer=@ClientToServer(encrypted=true)
+        ,serverToClient = @ServerToClient(encrypted=true)
+)
+)
 public interface ModelList<T extends Model> extends Model, SetLike<T> {
 
     String MODEL_LIST = "n";
@@ -40,9 +49,6 @@ public interface ModelList<T extends Model> extends Model, SetLike<T> {
      */
     Class<? extends T> getModelType();
     void setModelType(Class<? extends T> modelType);
-
-    IntTo<ModelKey> getKeys();
-    void setKeys(IntTo<ModelKey> keys);
 
     @ComponentType("getModelType()")
     ObjectTo<ModelKey, T> getModels();

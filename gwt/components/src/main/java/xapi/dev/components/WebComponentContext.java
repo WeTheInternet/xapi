@@ -1,6 +1,6 @@
 package xapi.dev.components;
 
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/8/17.

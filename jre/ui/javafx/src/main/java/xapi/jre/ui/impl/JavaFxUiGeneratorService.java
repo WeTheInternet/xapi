@@ -1,6 +1,6 @@
 package xapi.jre.ui.impl;
 
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.api.UiGeneratorPlatform;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;

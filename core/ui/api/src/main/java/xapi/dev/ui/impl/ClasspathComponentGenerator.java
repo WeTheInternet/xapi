@@ -9,7 +9,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.collect.simple.SimpleStack;
 import xapi.dev.X_Dev;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.gen.FileBasedSourceHelper;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
