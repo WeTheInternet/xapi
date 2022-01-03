@@ -26,6 +26,10 @@ import static xapi.fu.itr.ArrayIterable.iterate;
 @Ignore("model")
 public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
+    static <K> MappedIterable<K> fromAsync(In1<In1<K>> asyncMethodReceivingIn1) {
+        return CachingIterator.cachingIterableFromAsync(asyncMethodReceivingIn1);
+    }
+
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
         return adaptIterable(this, mapper);
     }
@@ -471,16 +475,25 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return join(Object::toString, joiner);
     }
 
+    default String join(In1Out1<T, String> toString) {
+        return join(toString, "");
+    }
     default String join(In1Out1<T, String> toString, String joiner) {
         final Iterator<T> itr = iterator();
         if (!itr.hasNext()) {
             return "";
         }
         StringBuilder b = new StringBuilder();
-        String next = toString.io(itr.next());
+        T nextVal = itr.next();
+        String next = toString.io(nextVal);
         b.append(next);
         while (itr.hasNext()) {
-            b.append(joiner).append(itr.next());
+            final T nextItem = itr.next();
+            next = toString.io(nextItem);
+            if (!joiner.isEmpty()) {
+                b.append(joiner);
+            }
+            b.append(next);
         }
         return b.toString();
     }

@@ -50,7 +50,7 @@ public interface Log extends Debuggable {
 
   default Log log(Class forClass, LogLevel level, Object ... values) {
     if (isLoggable(level)) {
-      log(forClass, debug(values));
+      print(level, maybePrefix(forClass) + debug(values));
     }
     return this;
   }

@@ -14,6 +14,7 @@ import xapi.debug.X_Debug;
 import xapi.util.X_Runtime;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.Arrays;
 
 /**
@@ -721,6 +722,8 @@ function DoubleToIEEE(f)
           return ClassTo.Many.class;
         case "xapi.collect.api.ObjectTo.Many":
           return ObjectTo.Many.class;
+        case "java.time.Duration":
+          return Duration.class;
         // Cannot support standard collections due to inability to determine properly erased component types
 //        case "java.util.List":
 //          return List.class;

@@ -4,10 +4,14 @@
 package xapi.model.impl;
 
 import xapi.annotation.compile.MagicMethod;
+import xapi.annotation.model.ClientToServer;
+import xapi.annotation.model.KeyOnly;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
+import xapi.fu.In1;
+import xapi.fu.In2;
 import xapi.inject.X_Inject;
 import xapi.model.api.*;
 import xapi.model.service.ModelService;
@@ -16,6 +20,7 @@ import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.source.lex.CharIterator;
 import xapi.source.lex.StringCharIterator;
 import xapi.string.X_String;
+import xapi.time.X_Time;
 import xapi.util.api.SuccessHandler;
 
 import java.util.Objects;
@@ -33,6 +38,8 @@ public abstract class AbstractModelService implements ModelService
   public final <T extends Model> T create(final Class<T> key) {
     return doCreate(key);
   }
+
+  protected abstract boolean isAsync();
 
   @MagicMethod(doNotVisit=true, documentation="This magic method re-routes to the same provider as X_Inject.instance()")
   protected <T extends Model> T doCreate(final Class<T> key) {
@@ -66,8 +73,12 @@ public abstract class AbstractModelService implements ModelService
     }
     final ModelDeserializationContext context = new ModelDeserializationContext(doCreate(cls), this, null);
     context.setClientToServer(isClientToServer());
+    boolean isKeyOnly = cls.getAnnotation(KeyOnly.class) != null || context.isKeyOnly();
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
-    return serializer.modelFromString(model, context);
+    if (isKeyOnly) {
+      context.setKeyOnly(isKeyOnly);
+    }
+    return serializer.modelFromString(cls, model, context, isKeyOnly);
   }
 
   /**
@@ -86,8 +97,9 @@ public abstract class AbstractModelService implements ModelService
     final Class<M> cls = (Class<M>) typeNameToClass.get(manifest.getType());
     final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), this, manifest);
     context.setClientToServer(isClientToServer());
+    context.setKeyOnly(manifest.isKeyOnly());
     final ModelSerializer<M> serializer = getSerializer(manifest.getType());
-    return serializer.modelFromString(model, context);
+    return serializer.modelFromString(cls, model, context, manifest.isKeyOnly());
   }
 
   @Override
@@ -142,6 +154,27 @@ public abstract class AbstractModelService implements ModelService
     return serialize(getTypeName(cls), model);
   }
 
+  protected <M extends Model> void serialize(final String type, final M model, In2<CharBuffer, Throwable> callback) {
+      if (isAsync()) {
+          X_Time.runLater(()->{
+            doSerialize(type, model, callback);
+          });
+      } else {
+        doSerialize(type, model, callback);
+      }
+  }
+
+    private <M extends Model> void doSerialize(final String type, final M model, final In2<CharBuffer, Throwable> callback) {
+        final CharBuffer buffer;
+        try {
+            buffer = serialize(type, model);
+        } catch (Throwable t) {
+            callback.in(null, t);
+            return;
+        }
+        callback.in(buffer, null);
+    }
+
   protected <M extends Model> CharBuffer serialize(final String type, final M model) {
     if (model == null) {
       return null;
@@ -150,7 +183,19 @@ public abstract class AbstractModelService implements ModelService
     final CharBuffer buffer = new CharBuffer();
     final ModelSerializationContext context = new ModelSerializationContext(buffer, this, null);
     context.setClientToServer(isClientToServer());
-    return getSerializer(type).modelToString(model, context);
+    return getSerializer(type).modelToString(getModelType(model), model, context, false);
+  }
+
+  protected <M extends Model> Class<? extends Model> getModelType(final M model) {
+    final Class<?>[] ifaces = model.getClass().getInterfaces();
+    if (ifaces != null) {
+      for (Class iface : ifaces) {
+        if (Model.class.isAssignableFrom(iface) && iface != Model.class) {
+          return iface;
+        }
+      }
+    }
+    return model.getClass();
   }
 
   @Override
@@ -163,7 +208,7 @@ public abstract class AbstractModelService implements ModelService
     final ModelSerializationContext context = new ModelSerializationContext(buffer, this, manifest);
     context.setClientToServer(isClientToServer());
     final ModelSerializer<Model> serializer = getSerializer(manifest.getType());
-    return serializer.modelToString(model, context);
+    return serializer.modelToString(manifest.getModelType(), model, context, false);
   }
 
   @Override

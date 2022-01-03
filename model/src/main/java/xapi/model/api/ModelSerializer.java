@@ -15,22 +15,27 @@ public interface ModelSerializer <M extends Model> {
   @SuppressWarnings("rawtypes")
   ModelSerializer DO_NOTHING = new DoNothing();
 
-  CharBuffer modelToString(M model, ModelSerializationContext ctx);
+  CharBuffer modelToString(Class<? extends Model> modelType, M model, ModelSerializationContext ctx, boolean keyOnly);
 
-  M modelFromString(CharIterator model, ModelDeserializationContext ctx);
+  void writeKey(M model, CharBuffer out, ModelSerializationContext ctx);
+
+  M modelFromString(Class<? extends Model> modelType, CharIterator model, ModelDeserializationContext ctx, boolean keyOnly);
 }
 
 @SuppressWarnings("rawtypes")
 final class DoNothing implements ModelSerializer {
 
   @Override
-  public CharBuffer modelToString(final Model model, final ModelSerializationContext ctx) {
+  public CharBuffer modelToString(Class modelType, final Model model, final ModelSerializationContext ctx, boolean keyOnly) {
     return new CharBuffer();
   }
 
   @Override
-  public Model modelFromString(final CharIterator model, final ModelDeserializationContext ctx) {
+  public Model modelFromString(Class modelType, final CharIterator model, final ModelDeserializationContext ctx, boolean keyOnly) {
     return null;
   }
 
+  @Override
+  public void writeKey(final Model model, final CharBuffer out, final ModelSerializationContext ctx) {
+  }
 }

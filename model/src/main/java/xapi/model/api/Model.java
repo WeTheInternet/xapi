@@ -185,17 +185,21 @@ public interface Model {
     }
 
     default void absorb(Model model, boolean append) {
-        HasLock.alwaysLock(this, ()->{
+        final Model me = this;
+        // these lambdas (or something else about this method) causes a class cast exception when
+        // sent a proxy instance in a jvm enviro (can't cast a proxy to Model to call me.* methods)
+        // we should see if just moving to a static method will help this to function correctly.
+        HasLock.alwaysLock(me, ()->{
             model.getProperties().forAll(e -> {
                 final Object yourVal = e.getValue();
                 if (yourVal == null) {
                     if (!append) {
-                        removeProperty(e.getKey());
+                        me.removeProperty(e.getKey());
                     }
                     return;
                 }
-                final Object myVal = getProperty(e.getKey());
-                final Class<?> propType = getPropertyType(e.getKey());
+                final Object myVal = me.getProperty(e.getKey());
+                final Class<?> propType = me.getPropertyType(e.getKey());
                 if (Model.class.isAssignableFrom(propType)) {
                     Model myModel = (Model) myVal;
                     assert propType == myModel.getPropertyType(e.getKey());
@@ -213,7 +217,7 @@ public interface Model {
                     return;
                 }
                 // TODO handle more collection types...
-                setProperty(e.getKey(), e.getValue());
+                me.setProperty(e.getKey(), e.getValue());
             });
             return null;
         });

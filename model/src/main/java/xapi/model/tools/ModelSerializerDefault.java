@@ -3,6 +3,7 @@
  */
 package xapi.model.tools;
 
+import xapi.annotation.model.KeyOnly;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
@@ -13,18 +14,22 @@ import xapi.collect.proxy.impl.MapOf;
 import xapi.dev.source.CharBuffer;
 import xapi.fu.In2Out1;
 import xapi.fu.itr.SizedIterable;
+import xapi.fu.log.Log;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.*;
+import xapi.prop.X_Properties;
 import xapi.source.lex.CharIterator;
 import xapi.debug.X_Debug;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.Digester;
+import xapi.util.api.SuccessHandler;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -156,17 +161,35 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   }
 
   @Override
-  public CharBuffer modelToString(final M model, final ModelSerializationContext ctx) {
+  public CharBuffer modelToString(final Class<? extends Model> modelType, final M model, final ModelSerializationContext ctx, boolean keyOnly) {
     final CharBuffer out = new CharBuffer();
     ctx.getBuffer().addToEnd(out);
     write(model, out, ctx);
-    assert model == null || model.equals(modelFromString(CharIterator.forString(out.toSource()),
-        new ModelDeserializationContext(model, ctx.getService(), ctx.getManifest()))) :
+    assert model == null || model.equals(modelFromString(modelType, CharIterator.forString(out.toSource()),
+        new ModelDeserializationContext(model, ctx.getService(), ctx.getManifest()), keyOnly)) :
         "Model serialization failure; Bad serialization:\n" + out.toSource()+"\n!=" + model;
     return out;
   }
 
   protected void write(final M model, final CharBuffer out, final ModelSerializationContext ctx) {
+    final PrimitiveSerializer primitives = ctx.getPrimitives();
+    writeKey(model, out, ctx);
+    if (model == null) {
+      System.out.println("hm... null model written... ctx: " + ctx.getBuffer());
+    } else {
+      for (final String key : model.getPropertyNames()) {
+        if (preventSerialization(model, key, ctx)) {
+          continue;
+        }
+        final Object value = model.getProperty(key);
+        final Class<?> propertyType = model.getPropertyType(key);
+        writeObject(out, key, propertyType, value, primitives, ctx);
+      }
+    }
+  }
+
+  @Override
+  public void writeKey(final M model, final CharBuffer out, final ModelSerializationContext ctx) {
     final PrimitiveSerializer primitives = ctx.getPrimitives();
     if (model == null) {
       out.append(primitives.serializeInt(-2));
@@ -177,15 +200,8 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       out.append(primitives.serializeInt(-1));
     } else {
       final String keyString = ctx.getService().keyToString(modelKey);
+      out.append(primitives.serializeInt(0));
       out.append(primitives.serializeString(keyString));
-    }
-    for (final String key : model.getPropertyNames()) {
-      if (preventSerialization(model, key, ctx)) {
-        continue;
-      }
-      final Object value = model.getProperty(key);
-      final Class<?> propertyType = model.getPropertyType(key);
-      writeObject(out, propertyType, value, primitives, ctx);
     }
   }
 
@@ -236,8 +252,11 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   protected boolean isStringMapType(final Class<?> propertyType) {
     return StringTo.class.isAssignableFrom(propertyType);
   }
+  protected boolean isNumberType(final Class<?> propertyType) {
+    return Number.class.isAssignableFrom(propertyType);
+  }
 
-  protected void writeArray(final CharBuffer out, final Class<?> propertyType, final Object array, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+  protected void writeArray(final CharBuffer out, final String propName, final Class<?> propertyType, final Object array, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (array == null) {
       out.append(primitives.serializeInt(-1));
       return;
@@ -280,7 +299,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     } else if (isModelType(childType)) {
       for (int i = 0; i < len; i++) {
         final Object model = Array.get(array, i);
-        writeModel(out, childType, (Model)model, primitives, ctx);
+        writeModel(out, propName, childType, (Model)model, primitives, ctx);
       }
     } else if (isModelKeyType(childType)) {
       for (int i = 0; i < len; i++) {
@@ -305,27 +324,34 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     } else if (childType.isArray()) {
       // An array of arrays. Oh boy...
       for (int i = 0; i < len; i++) {
-        writeArray(out, propertyType.getComponentType(), Array.get(array, i), primitives, ctx);
+        writeArray(out, propName, propertyType.getComponentType(), Array.get(array, i), primitives, ctx);
+      }
+    } else if (Duration.class.isAssignableFrom(childType)){
+      for (int i = 0; i < len; i++) {
+        Duration item = (Duration) Array.get(array, i);
+        out.append(primitives.serializeLong(item.getSeconds()));
       }
     } else {
       throw new UnsupportedOperationException("Unable to serialize unsupported array type "+childType);
     }
   }
-  protected void writeIterable(final CharBuffer out, final CollectionProxy collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+  protected void writeIterable(final CharBuffer out, final String propName, final CollectionProxy collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (collection == null) {
-      out.append(primitives.serializeClass(String.class));
-      out.append(primitives.serializeClass(String.class));
       out.append(primitives.serializeInt(-1));
       return;
     }
     final Class keyType = collection.keyType();
     final Class valueType = collection.valueType();
 
-    out.append(primitives.serializeClass(keyType));
-    out.append(primitives.serializeClass(valueType));
     int len = collection.size();
+    if (len == 0 && writeNullForEmpty()) {
+      out.append(primitives.serializeInt(-1));
+      return;
+    }
     final String length = primitives.serializeInt(len);
     out.append(length);
+    out.append(primitives.serializeClass(keyType));
+    out.append(primitives.serializeClass(valueType));
     if (len == 0) {
       return;
     }
@@ -345,7 +371,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         // It is a dense array.  We can write out the values
         out.append(primitives.serializeBoolean(true));
         collection.readWhileTrue((key, value)-> {
-             writeObject(out, valueType, value, primitives, ctx);
+             writeObject(out, String.valueOf(key), valueType, value, primitives, ctx);
              return true;
            });
       } else {
@@ -353,7 +379,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         out.append(primitives.serializeBoolean(false));
         collection.readWhileTrue((key, value) -> {
                 out.append(primitives.serializeInt((Integer) key));
-                writeObject(out, valueType, value, primitives, ctx);
+                writeObject(out, propName, valueType, value, primitives, ctx);
                 return true;
             }
         );
@@ -361,24 +387,35 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     } else if (keyType == Class.class) {
         collection.readWhileTrue((key, value) -> {
              out.append(primitives.serializeClass((Class) key));
-             writeObject(out, valueType, value, primitives, ctx);
+             writeObject(out, propName, valueType, value, primitives, ctx);
              return true;
          });
     } else if (keyType == String.class) {
         collection.readWhileTrue((key, value) -> {
              out.append(primitives.serializeString((String) key));
-             writeObject(out, valueType, value, primitives, ctx);
+             writeObject(out, propName, valueType, value, primitives, ctx);
+             return true;
+         });
+    } else if (keyType == Duration.class) {
+        collection.readWhileTrue((key, value) -> {
+             final long time = ((Duration)key).getSeconds();
+             out.append(primitives.serializeLong(time));
+             writeObject(out, propName, valueType, value, primitives, ctx);
              return true;
          });
     } else if (keyType.isEnum()) {
         collection.readWhileTrue((key, value) -> {
              out.append(primitives.serializeString(((Enum) key).name()));
-             writeObject(out, valueType, value, primitives, ctx);
+             writeObject(out, propName, valueType, value, primitives, ctx);
              return true;
          });
     } else {
       assert false : "Unsupported key type "+keyType+" in model serializer: "+getClass();
     }
+  }
+
+  private boolean writeNullForEmpty() {
+    return "true".equals(X_Properties.getProperty("xapiModelNullForEmpty"));
   }
 
   protected void writeStringMap(final CharBuffer out, final StringTo<?> collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
@@ -398,26 +435,30 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
     collection.forBoth((key, value) -> {
          out.append(primitives.serializeString(key));
-         writeObject(out, valueType, value, primitives, ctx);
+         writeObject(out, key, valueType, value, primitives, ctx);
      });
   }
 
 
   protected Object readIterable(
       Class propertyType,
+      String propName,
       CharIterator src,
       PrimitiveSerializer primitives,
       ModelDeserializationContext ctx
   ) {
 
-    final Class keyType = primitives.deserializeClass(src);
-    final Class valueType = primitives.deserializeClass(src);
-
     int length = primitives.deserializeInt(src);
     if (length == -1) {
       // We are null
-      return null; // TODO: consider automatic never-nullness?
+      return null;
     }
+    if (length == 0 && writeNullForEmpty()) {
+      return null;
+    }
+
+    final Class keyType = primitives.deserializeClass(src);
+    final Class valueType = primitives.deserializeClass(src);
     CollectionProxy result = newResult(propertyType, keyType, valueType);
     if (length == 0) {
       return result;
@@ -428,33 +469,33 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       if (dense) {
         // We can just push onto the array
         for (int i = 0; i < length; i++) {
-          Object value = readObject(valueType, src, primitives, ctx);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
           result.setValue(new Integer(i), value);
         }
       } else {
         // we need to actually read the keys and set as appropriate
         for (int i = 0; i < length; i++) {
           int key = primitives.deserializeInt(src);
-          Object value = readObject(valueType, src, primitives, ctx);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
           result.setValue(key, value);
         }
       }
     } else if (keyType == Class.class) {
         for (int i = 0; i < length; i++) {
           Class key = primitives.deserializeClass(src);
-          Object value = readObject(valueType, src, primitives, ctx);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
           result.setValue(key, value);
         }
     } else if (keyType == String.class) {
         for (int i = 0; i < length; i++) {
           String key = primitives.deserializeString(src);
-          Object value = readObject(valueType, src, primitives, ctx);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
           result.setValue(key, value);
         }
     } else if (keyType.isEnum()) {
         for (int i = 0; i < length; i++) {
           String key = primitives.deserializeString(src);
-          Object value = readObject(valueType, src, primitives, ctx);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
           final Enum enumKey = Enum.valueOf(valueType, key);
           result.setValue(enumKey, value);
         }
@@ -466,6 +507,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   }
   protected Object readStringMap(
       Class propertyType,
+      String propName,
       CharIterator src,
       PrimitiveSerializer primitives,
       ModelDeserializationContext ctx
@@ -488,7 +530,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
     for (int i = 0; i < length; i++) {
       String key = readString(src, primitives);
-      Object value = readObject(valueType, src, primitives, ctx);
+      Object value = readObject(valueType, propName, src, primitives, ctx);
       map.put(key, value);
     }
 
@@ -528,6 +570,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   protected void writeObject(
       CharBuffer out,
+      String propName,
       Class valueType,
       Object value,
       PrimitiveSerializer primitives,
@@ -535,7 +578,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   ) {
     if (valueType.isArray()) {
       // write an array
-      writeArray(out, valueType, value, primitives, ctx);
+      writeArray(out, propName, valueType, value, primitives, ctx);
     } else if (valueType == String.class) {
       final String asString = (String) value;
       writeString(out, asString, primitives);
@@ -580,14 +623,22 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         out.append(primitives.serializeInt(asNumber.intValue()));
       }
     } else if (isModelType(valueType)) {
-      writeModel(out, valueType, (Model)value, primitives, ctx);
+      writeModel(out, propName, valueType, (Model)value, primitives, ctx);
     } else if (isModelKeyType(valueType)) {
       writeString(out, X_Model.keyToString((ModelKey)value), primitives);
     } else if (isIterableType(valueType)) {
-      writeIterable(out, (CollectionProxy)value, primitives, ctx);
+      writeIterable(out, propName, (CollectionProxy)value, primitives, ctx);
       // Figure out how to support either ComponentList, Allable, or some other not-CollectionProxy collection.
     } else if (isStringMapType(valueType)) {
       writeStringMap(out, (StringTo)value, primitives, ctx);
+    } else if (valueType == Class.class) {
+      out.append(primitives.serializeClass((Class) value));
+    } else if (valueType == Duration.class) {
+      Long asLong  = ((Duration) value).getSeconds();
+      if (asLong == null) {
+        asLong = 0L;
+      }
+      out.append(primitives.serializeLong(asLong.longValue()));
     } else if (isSupportedEnumType(valueType)) {
       if (value == null) {
         out.append(primitives.serializeInt(-1));
@@ -597,6 +648,8 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       }
     } else {
       assert false : "Unserializable field type: "+valueType;
+      Log.tryLog(ModelSerializerDefault.class, this, Log.LogLevel.ERROR,
+              "Unable to serialize field type ", valueType, " ");
     }
   }
 
@@ -612,12 +665,36 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   @SuppressWarnings({
       "rawtypes", "unchecked"
   })
-  protected void writeModel(final CharBuffer out, final Class<?> propertyType, final Model childModel, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+  protected void writeModel(final CharBuffer out, final String propName, final Class<?> propertyType, final Model childModel, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+    final KeyOnly keyOnlyAnno = propertyType.getAnnotation(KeyOnly.class);
+    boolean keyOnly = keyOnlyAnno != null;
+    boolean autoSave = keyOnly ? keyOnlyAnno.autoSave() : false;
+    if (!keyOnly && ctx.getManifest() != null) {
+      final ModelManifest manifest = ctx.getManifest();
+      keyOnly = manifest.isKeyOnly() || manifest.isKeyOnly(propName);
+    }
     final ModelSerializer serializer = newSerializer(Class.class.cast(propertyType), ctx);
     final CharBuffer was = ctx.getBuffer();
     ctx.setBuffer(out);
     try {
-      serializer.modelToString(childModel, ctx);
+      if (keyOnly) {
+          if (autoSave) {
+            // also independently save this child model
+            ctx.getService().persist(childModel, SuccessHandler.handler(
+                    succeed -> {
+                      // nothing to do here... yikes. Need to route asynchronicity in better
+                      X_Log.info(ModelSerializerDefault.class, "Auto-saved child model " + succeed.getKey() + " in parent field " + propName);
+                    },
+                    fail -> {
+                        X_Log.error(ModelSerializerDefault.class, "UNABLE TO AUTOSAVE CHILD MODEL.\n",
+                                "parent field name: " + propName + " ; model: " + childModel);
+                    }
+            ));
+          }
+          serializer.writeKey(childModel, out, ctx);
+      } else {
+          serializer.modelToString(propertyType, childModel, ctx, false);
+      }
     } finally {
       ctx.setBuffer(was);
     }
@@ -629,7 +706,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   @Override
   @SuppressWarnings("unchecked")
-  public M modelFromString(final CharIterator src, final ModelDeserializationContext ctx) {
+  public M modelFromString(final Class<? extends Model> modelType, final CharIterator src, final ModelDeserializationContext ctx, boolean keyOnly) {
     final PrimitiveSerializer primitives = ctx.getPrimitives();
     final int modelState = primitives.deserializeInt(src);
     if (modelState == -2) {
@@ -638,7 +715,8 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     ModelKey key;
     if (modelState != -1) {
       // There is a key for this model
-      final String keyString = src.consume(modelState).toString();
+//      final String keyString = src.consume(modelState).toString();
+      final String keyString = primitives.deserializeString(src);
       key = ctx.getService().keyFromString(keyString);
     } else {
       key = null;
@@ -646,11 +724,40 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     final M model = (M) ctx.getModel();
     assert model != null : "Null model found "+src;
     model.setKey(key);
-    for (final String propertyName : model.getPropertyNames()) {
+    if (ctx.isSubModel() && keyOnly) {
+      // a keyOnly type that's a sub-model won't have any field info in our model source, load that in bg.
+      final Class<Model> actualType = ctx.getService().typeToClass(key.getKind());
+      if (actualType != modelType) {
+        X_Log.debug(ModelSerializerDefault.class, "Field model requested type ", modelType, " but actual model was of type ", actualType);
+      }
+      ctx.getService().load(actualType, key, SuccessHandler.handler(
+              win -> {
+                // can't use model.absorb, it barfs when we send a proxy through lambdas (can't cast proxy to Model anymore...)
+                for (Map.Entry<String, Object> property : win.getProperties()) {
+                  model.setProperty(property.getKey(), property.getValue());
+                }
+                // TODO: we need to contribute these to a promise-like object...
+                // or at least a Model.getBlockers() method of some kind, to allow threaded enviros to block.
+                X_Log.info(ModelSerializerDefault.class, "Finished loading sub-model ", win.getKey());
+              }, lose -> {
+                X_Log.error(ModelSerializerDefault.class, "Error loading sub-model ", key, lose);
+              }
+      ));
+      return model;
+    }
+    final String[] propNames = model.getPropertyNames();
+    for (final String propertyName : propNames) {
       if (preventDeserialization(model, propertyName, ctx)) {
         continue;
       }
-      readProperty(model, propertyName, src, ctx);
+      try {
+          readProperty(model, propertyName, src, ctx);
+      } catch (Throwable t) {
+        Log.loggerFor(ModelSerializerDefault.class, this)
+                .log(ModelSerializerDefault.class, Log.LogLevel.ERROR, "Unable to read property ",
+                        propertyName, " into model " + model + "\n\nFull key list:", propNames, "\nRemaining source:\n", src.consumeAll());
+          throw t;
+      }
     }
     return model;
   }
@@ -659,24 +766,25 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     final Class<?> propertyType = model.getPropertyType(propertyName);
     final PrimitiveSerializer primitives = ctx.getPrimitives();
     if (propertyType.isArray()) {
-      model.setProperty(propertyName, readArray(propertyType.getComponentType(), src, primitives, ctx));
+      model.setProperty(propertyName, readArray(propertyType.getComponentType(), propertyName, src, primitives, ctx));
     } else if (propertyType.isPrimitive()) {
       final Object value = readPrimitive(propertyType, src, primitives);
       model.setProperty(propertyName, value);
     } else {
-      final Object value = readObject(propertyType, src, primitives, ctx);
+      Object value = readObject(propertyType, propertyName, src, primitives, ctx);
       model.setProperty(propertyName, value);
     }
   }
 
   /**
    * @param componentType
+   * @param propName
    * @param src
    * @param primitives
    * @param ctx
    * @return
    */
-  protected Object readArray(final Class<?> componentType, final CharIterator src, final PrimitiveSerializer primitives,
+  protected Object readArray(final Class<?> componentType, final String propName, final CharIterator src, final PrimitiveSerializer primitives,
       final ModelDeserializationContext ctx) {
     final int len = primitives.deserializeInt(src);
     if (len == -1) {
@@ -709,7 +817,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     } else {
       final Object array = Array.newInstance(componentType, len);
       for (int i = 0;i < len;i++) {
-        final Object value = readObject(componentType, src, primitives, ctx);
+        final Object value = readObject(componentType, propName, src, primitives, ctx);
         Array.set(array, i, value);
       }
       return array;
@@ -733,6 +841,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       return null;
     }
     return String.valueOf(src.consume(len));
+  }
+
+  protected long readLong(final CharIterator src, final PrimitiveSerializer primitives) {
+    return primitives.deserializeLong(src);
   }
 
   protected PrimitiveReader getPrimitiveReader(final Class<?> componentType, final ClassTo<PrimitiveReader> primitiveReaders) {
@@ -764,6 +876,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   /**
    * @param propertyType
+   * @param propName
    * @param src
    * @param ctx
    * @param primitives
@@ -772,26 +885,41 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   @SuppressWarnings({
       "unchecked", "rawtypes"
   })
-  protected Object readObject(final Class propertyType, final CharIterator src, final PrimitiveSerializer primitives, final ModelDeserializationContext ctx) {
+  protected Object readObject(final Class propertyType, final String propName, final CharIterator src, final PrimitiveSerializer primitives, final ModelDeserializationContext ctx) {
     if (propertyType == String.class) {
       return readString(src, primitives);
     } else if (isModelType(propertyType)) {
       // We have an inner model to read!
       final ModelDeserializationContext context = ctx.createChildContext(propertyType);
-      return modelFromString(src, context);
+      boolean keyOnly = ctx.isKeyOnly();
+      if (!keyOnly) {
+        final ModelManifest manifest = ctx.getManifest();
+        if (manifest != null) {
+          keyOnly = manifest.isKeyOnly() || manifest.isKeyOnly(propName);
+        }
+        if (propertyType.getAnnotation(KeyOnly.class) != null) {
+          keyOnly = true;
+        }
+      }
+      return modelFromString(propertyType, src, context, keyOnly);
     } else if (isModelKeyType(propertyType)) {
       String key = readString(src, primitives);
       return X_Model.keyFromString(key);
     } else if (propertyType.isArray()) {
-      return readArray(propertyType.getComponentType(), src, primitives, ctx);
+      return readArray(propertyType.getComponentType(), propName, src, primitives, ctx);
     } else if (isIterableType(propertyType)) {
-      return readIterable(propertyType, src, primitives, ctx);
+      return readIterable(propertyType, propName, src, primitives, ctx);
     } else if (isStringMapType(propertyType)) {
-      return readStringMap(propertyType, src, primitives, ctx);
+      return readStringMap(propertyType, propName, src, primitives, ctx);
     } else if (propertyType.isEnum()) {
       // No great way to deserialize enums without reflection, so lets leave a hook for environments
       // where reflection is not possible or preferable can implement a mapping of enum class to enum values[]...
       return readEnum(propertyType, src, primitives, ctx);
+    } else if (propertyType == Class.class) {
+      return primitives.deserializeClass(src);
+    } else if (propertyType == Duration.class) {
+      final long seconds = readLong(src, primitives);
+      return Duration.ofSeconds(seconds);
     }
     throw new UnsupportedOperationException("Unable to deserialize object of type "+propertyType);
   }

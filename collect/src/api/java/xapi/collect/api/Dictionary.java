@@ -4,6 +4,9 @@ import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.In3;
+import xapi.fu.itr.CachingIterator;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.util.api.ReceivesValue;
 
 /**
@@ -33,6 +36,12 @@ public interface Dictionary <K, V> {
   void clearValues();
 
   void forKeys(ReceivesValue<K> receiver);
+  default void keys(In1<K> in) {
+    forKeys(in::in);
+  }
+  default MappedIterable<K> getKeys() {
+    return MappedIterable.fromAsync(In1.in1(this::keys));
+  }
 
   default void forEach(In2<K, V> in) {
     forKeys(in.adapt2(this::getValue)::in);

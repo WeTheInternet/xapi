@@ -32,6 +32,7 @@ xapiRequire.module('gwt', 'main').configure {
         req.project 'xapi-common', 'jre:main'
         req.project 'xapi-collect', 'gwt:main'
         req.project 'xapi-io', 'gwt:main'
+        req.project 'xapi-io', 'main:main' // shouldn't need to do this! :'(
         req.project 'xapi-model', 'main'
         req.external "net.wti.core:xapi-gen:$version", 'main'
         req.project 'xapi-lang-dev', 'main'

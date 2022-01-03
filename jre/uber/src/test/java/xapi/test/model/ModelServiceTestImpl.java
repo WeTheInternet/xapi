@@ -205,6 +205,11 @@ public class ModelServiceTestImpl extends AbstractModelService {
   }
 
   @Override
+  protected boolean isAsync() {
+    return false;
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public <T extends Model> T doCreate(final Class<T> key) {
     if (key == ModelText.class) {

@@ -61,6 +61,10 @@ public class ModelServiceGwt extends AbstractModelService
     return modelService.register(cls);
   }
 
+  @Override
+  protected boolean isAsync() {
+    return false;
+  }
 
   protected <T extends Model> T doCreate(final Class<T> key) {
     final ProvidesValue<? extends Model> provider = PROVIDERS.get(key);
@@ -116,7 +120,7 @@ public class ModelServiceGwt extends AbstractModelService
     final StringDictionary<String> headers = X_Collect.newDictionary();
     headers.setValue("X-Model-Type", model.getType());
     X_Log.warn(ModelServiceGwt.class, this, model);
-    final CharBuffer serialized =  serialize(type, model);
+    final CharBuffer serialized = serialize(type, model);
     X_IO.getIOService().post(url, serialized.toString(), headers, new DelegatingIOCallback<>(
             resp -> {
       final M deserialized = deserialize(type, new StringCharIterator(resp.body()));

@@ -247,6 +247,10 @@ public class ModelGenerator {
         return "0f";
       case "double":
         return "0.";
+      case "Duration":
+        return "0";
+      case "java.time.Duration":
+        return "0";
     }
     return "null";
   }

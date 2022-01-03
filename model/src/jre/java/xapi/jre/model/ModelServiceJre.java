@@ -7,6 +7,7 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.constants.X_Namespace;
 import xapi.dev.source.CharBuffer;
 import xapi.fu.Out1;
+import xapi.fu.has.HasName;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.model.api.*;
@@ -41,62 +42,29 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   })
   protected <M extends Model> void doPersist(final String type, final M model, final SuccessHandler<M> callback) {
     // For simplicity sake, lets use the file system to save our models.
-    ModelKey key = model.getKey();
-    if (key == null) {
-      key = newKey(null, type);
-      model.setKey(key);
-    }
-    File f = getRoot(callback);
-    if (f == null) {
-      return;
-    }
-    if (key.getNamespace().length() > 0) {
-      f = new File(f, key.getNamespace());
-    }
-    f = new File(f, key.getKind());
-    // nest hierarchical keys in a directory structure
-    f = resolveParents(f, key.getParent());
-    f.mkdirs();
-    if (key.getId() == null) {
-      // No id; generate one
-      try {
-        f = generateFile(f);
-      } catch (final IOException e) {
-        X_Log.error(getClass(), "Unable to save model "+model, e);
-        if (callback instanceof ErrorHandler) {
-          ((ErrorHandler) callback).onError(e);
-        } else {
-          rethrow(e);
-        }
+    ModelKey key = getKey(model, type);
+
+    serialize(type, model, (serialized, error)-> {
+      if (error != null) {
+        fail(callback, error);
         return;
       }
-      key.setId(f.getName());
-    } else {
-      f = new File(f, key.getId());
-    }
-    final CharBuffer serialized = serialize(type, model);
-    final File file = f;
-    final Runnable finish = new Runnable() {
-
-      @Override
-      public void run() {
+      // no errors serializing, write our file.
+      File f = getRoot(callback);
+      if (f == null) {
+        return;
+      }
+      if (key.getNamespace().length() > 0) {
+        f = new File(f, key.getNamespace());
+      }
+      f = new File(f, key.getKind());
+      // nest hierarchical keys in a directory structure
+      f = resolveParents(f, key.getParent());
+      f.mkdirs();
+      if (key.getId() == null) {
+        // No id; generate one
         try {
-          if (file.exists()) {
-            file.delete();
-          }
-          if (!file.getParentFile().isDirectory()) {
-            final boolean created = file.getParentFile().mkdirs();
-            if (!created) {
-              X_Log.warn(ModelServiceJre.class, "Unable to create directory", file.getParentFile());
-            }
-          }
-          final FileOutputStream result = new FileOutputStream(file);
-          final String source = serialized.toSource();
-          X_IO.drain(result, X_IO.toStreamUtf8(source));
-          callback.onSuccess(model);
-          X_Log.trace(ModelServiceJre.class, "Saved model to ", file);
-          X_Log.trace(ModelServiceJre.class, "Saved model source", source);
-          assert deserialize(type, CharIterator.forString(source)).equals(model);
+          f = generateFile(f, model);
         } catch (final IOException e) {
           X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
           if (callback instanceof ErrorHandler) {
@@ -104,16 +72,68 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
           } else {
             rethrow(e);
           }
+          return;
         }
+        key.setId(f.getName());
+      } else {
+        f = new File(f, key.getId());
       }
-    };
-    if (isAsync()) {
-      X_Time.runLater(finish);
+
+      final File file = f;
+      final Runnable finish = new Runnable() {
+
+        @Override
+        public void run() {
+          try {
+            if (file.exists()) {
+              file.delete();
+            }
+            if (!file.getParentFile().isDirectory()) {
+              final boolean created = file.getParentFile().mkdirs();
+              if (!created) {
+                X_Log.warn(ModelServiceJre.class, "Unable to create directory", file.getParentFile());
+              }
+            }
+            final FileOutputStream result = new FileOutputStream(file);
+            final String source = serialized.toSource();
+            X_IO.drain(result, X_IO.toStreamUtf8(source));
+            callback.onSuccess(model);
+            X_Log.trace(ModelServiceJre.class, "Saved model to ", file);
+            X_Log.trace(ModelServiceJre.class, "Saved model source", source);
+            assert deserialize(type, CharIterator.forString(source)).equals(model);
+          } catch (final IOException e) {
+            X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
+            fail(callback, e);
+          }
+        }
+      };
+      if (isAsync()) {
+        X_Time.runLater(finish);
+      } else {
+        finish.run();
+      }
+
+    }); // end serialize(...)
+  } // end doPersist()
+
+  private <M extends Model> ModelKey getKey(final M model, final String type) {
+    ModelKey key = model.getKey();
+    if (key == null) {
+      key = newKey(null, type);
+      model.setKey(key);
+    }
+    return key;
+  }
+
+  private void fail(final SuccessHandler<?> callback, final Throwable e) {
+    if (callback instanceof ErrorHandler) {
+      ((ErrorHandler) callback).onError(e);
     } else {
-      finish.run();
+      rethrow(e);
     }
   }
 
+  @Override
   protected boolean isAsync() {
     return false;
   }
@@ -189,6 +209,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     if (query.getParameters().isNotEmpty()) {
       ErrorHandler.delegateTo(callback)
           .onError(new UnsupportedOperationException("The basic, file-backed "+getClass().getName()+" does not support any complex queries"));
+      return;
     }
 
     final ArrayList<File> files;
@@ -235,16 +256,21 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     final Out1<RemovalHandler> scope = captureScope();
     X_Time.runLater(() -> {
       final RemovalHandler handler = scope.out1();
-      String fileResult;
+      File lastKnown = null;
+      String fileResult = null;
       try {
         for (final File file : files) {
+          lastKnown = file;
           fileResult = X_IO.toStringUtf8(new FileInputStream(file));
           final M model = deserialize(modelClass, new StringCharIterator(fileResult));
+          fileResult = null;
           result.addModel(model);
         }
         callback.onSuccess(result);
       } catch (final Throwable t) {
-        X_Log.error(ModelServiceJre.class, "Unable to load files for query "+query);
+        X_Log.error(ModelServiceJre.class, "Unable to load files for query ", query);
+        X_Log.error(ModelServiceJre.class, "Last viewed file:", lastKnown);
+        X_Log.error(ModelServiceJre.class, "Last viewed file contents:", fileResult);
         ErrorHandler.delegateTo(callback)
             .onError(t);
       } finally {
@@ -343,10 +369,17 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
    * @return
    * @throws IOException
    */
-  private synchronized File generateFile(File f) throws IOException {
-    final int size = f.listFiles().length;
-    f = new File(f, Integer.toString(size));
-    f.createNewFile();
+  private synchronized File generateFile(File f, Model m) throws IOException {
+    final String prefix = m instanceof HasName ? ((HasName) m).getName() : "";
+    int loopBreak = 20;
+    do {
+      int size = f.listFiles().length;
+      f = new File(f, (prefix == null ? "" : prefix) + "-" + size);
+      if (loopBreak --<= 0) {
+        throw new IllegalStateException("Cannot save file to " + f.getAbsolutePath() + "; check parent directory exists, is readable and executable and the disk is not out of space");
+      }
+    } while (!f.createNewFile());
+    m.getKey().setId(f.getName());
     return f;
   }
 

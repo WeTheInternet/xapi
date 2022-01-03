@@ -10,6 +10,17 @@ import java.util.Iterator;
  */
 public class CachingIterator <T> implements Iterator<T>, Rethrowable {
 
+    public static <K> MappedIterable<K> cachingIterableFromAsync(final In1<In1<K>> methodReceivingIn1) {
+        ChainBuilder<K> cache = new ChainBuilder<>();
+        // if the receiver of our cache::add is synchronous, the cache will be immediately filled
+        methodReceivingIn1.in(cache::add);
+        // every time you request an iterator, you will get the full view of all results we've seen so far.
+        // we cannot nor do we want to try to wait until your async operation is done / block in any way.
+        // If your method IS async and you want to block on your own async code, you can figure that out on your own,
+        // and just call this method to get a general purpose "transform my doStuff(In1<X> callback) into an interable".
+        return ()->cache.build().iterator();
+    }
+
     public interface ReplayableIterable<T> extends MappedIterable<T> {
         default SizedReplayableIterable<T> sized() {
             int[] cnt = {0};

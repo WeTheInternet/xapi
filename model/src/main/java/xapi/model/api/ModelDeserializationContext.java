@@ -16,6 +16,8 @@ public class ModelDeserializationContext {
   private final Model model;
   private final ModelManifest manifest;
   private boolean clientToServer;
+  private boolean keyOnly;
+  private boolean subModel;
 
   public ModelDeserializationContext(final Model model, final ModelService service, final ModelManifest manifest) {
     this.model = model;
@@ -70,6 +72,10 @@ public class ModelDeserializationContext {
     return clientToServer;
   }
 
+  public boolean isKeyOnly() {
+    return keyOnly;
+  }
+
   /**
    * @param clientToServer -> set clientToServer
    */
@@ -77,8 +83,18 @@ public class ModelDeserializationContext {
     this.clientToServer = clientToServer;
   }
 
-  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType) {
-    return new ModelDeserializationContext(getService().create(propertyType), getService(), getManifest());
+  public void setKeyOnly(final boolean keyOnly) {
+    this.keyOnly = keyOnly;
   }
 
+  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType) {
+    final ModelService svc = getService();
+    final ModelDeserializationContext ctx = new ModelDeserializationContext(svc.create(propertyType), svc, getManifest());
+    ctx.subModel = true;
+    return ctx;
+  }
+
+  public boolean isSubModel() {
+    return subModel;
+  }
 }

@@ -3,17 +3,7 @@
  */
 package xapi.model.api;
 
-import xapi.annotation.model.ClientToServer;
-import xapi.annotation.model.DeleterFor;
-import xapi.annotation.model.FieldValidator;
-import xapi.annotation.model.GetterFor;
-import xapi.annotation.model.IsModel;
-import xapi.annotation.model.PersistenceStrategy;
-import xapi.annotation.model.Persistent;
-import xapi.annotation.model.Serializable;
-import xapi.annotation.model.SerializationStrategy;
-import xapi.annotation.model.ServerToClient;
-import xapi.annotation.model.SetterFor;
+import xapi.annotation.model.*;
 import xapi.dev.source.CharBuffer;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
@@ -53,6 +43,7 @@ public class ModelManifest {
     private boolean s2cEnabled = true;
     private boolean c2sEncrypted = false;
     private boolean s2cEncrypted = false;
+    private boolean keyOnly = false;
     private boolean obfuscated;
     private PersistenceStrategy persistenceStrategy;
     private final ArrayList<Class<? extends ValidatesValue<?>>> validators;
@@ -101,6 +92,8 @@ public class ModelManifest {
         } else if (anno instanceof Persistent) {
           final Persistent persistent = (Persistent) anno;
           persistenceStrategy = persistent.strategy();
+        } else if (anno instanceof KeyOnly) {
+          keyOnly = true;
         } else if (anno instanceof FieldValidator) {
           final FieldValidator validator = (FieldValidator) anno;
           for (final Class<? extends ValidatesValue<?>> validatesValue : validator.validators()) {
@@ -318,6 +311,8 @@ public class ModelManifest {
   private final Map<String, MethodData> methodsByMethodNames;
   private final Annotation[] defaultAnnotations;
   private final String type;
+  private final boolean keyOnly;
+
   private String[] properties;
   private final Class<? extends Model> modelType;
 
@@ -386,6 +381,7 @@ public class ModelManifest {
     methodsByMethodNames = new HashMap<>();
     type = typeName;
     this.modelType = cls;
+    keyOnly = cls.getAnnotation(KeyOnly.class) != null;
     // Unused for this constructor
     defaultAnnotations = new Annotation[0];
   }
@@ -393,6 +389,7 @@ public class ModelManifest {
   public ModelManifest(final Class<? extends Model> cls) {
     methodsByPropertyNames = new LinkedHashMap<>();
     methodsByMethodNames = new HashMap<>();
+    keyOnly = cls.getAnnotation(KeyOnly.class) != null;
     this.modelType = cls;
     final IsModel isModel = cls.getAnnotation(IsModel.class);
     if (isModel == null) {
@@ -445,6 +442,10 @@ public class ModelManifest {
   }
 
   public boolean isClientToServerEnabled(final String name) {
+    return getMethodData(name).c2sEnabled;
+  }
+
+  public boolean isKeyOnly(final String name) {
     return getMethodData(name).c2sEnabled;
   }
 
@@ -506,6 +507,10 @@ public class ModelManifest {
       properties = methodsByPropertyNames.keySet().toArray(new String[methodsByPropertyNames.size()]);
     }
     return properties;
+  }
+
+  public boolean isKeyOnly() {
+    return keyOnly;
   }
 
   @Override
