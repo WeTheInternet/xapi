@@ -6,9 +6,10 @@ import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.itr.EmptyIterator;
 import xapi.fu.itr.LinkedIterable;
+import xapi.ui.point.Point;
 
 /**
- * The RangePool class is used to store a set of {@link Coord}s,
+ * The RangePool class is used to store a set of {@link Point}s,
  * used as ranges, where X and Y are used to denote
  * a pair of start/end points along the same dimension
  * (X and Y are named points, not the names of intersecting dimensions).
@@ -80,11 +81,11 @@ public class RangePool <T> {
 
     public static class RangeNode<T> {
 
-        protected Coord range;
+        protected Point range;
         protected ReservedNode<T> lowerReserved, higherReserved;
         protected Out1<UnreservedNode<T>> lowerUnreserved, higherUnreserved;
 
-        public RangeNode(Coord range) {
+        public RangeNode(Point range) {
             this.range = range;
         }
 
@@ -104,26 +105,26 @@ public class RangePool <T> {
             return higherUnreserved.out1();
         }
 
-        public Coord getRange() {
+        public Point getRange() {
             return range;
         }
 
-        public Maybe<UnreservedNode<T>> findUnreserved(Coord coord) {
+        public Maybe<UnreservedNode<T>> findUnreserved(Point point) {
             final UnreservedNode<T> lower = getLowerUnreserved();
             if (lower != this &&
                 (
-                    lower.getRange().getY() >= coord.getY()
+                    lower.getRange().getY() >= point.getY()
                 )
             ){
-                return lower.findUnreserved(coord);
+                return lower.findUnreserved(point);
             }
             final UnreservedNode<T> higher = getHigherUnreserved();
             if (higher != this &&
                 (
-                    higher.getRange().getX() <= coord.getX()
+                    higher.getRange().getX() <= point.getX()
                 )
             ) {
-                return higher.findUnreserved(coord);
+                return higher.findUnreserved(point);
             }
             return Maybe.not();
         }
@@ -135,7 +136,7 @@ public class RangePool <T> {
 
         protected Mutable<UnreservedNode<T>> fromAbove, fromBelow;
 
-        public UnreservedNode(Coord range, UnreservedNode<T> from, RangeDirection dir) {
+        public UnreservedNode(Point range, UnreservedNode<T> from, RangeDirection dir) {
             this(range);
             // First, make ourselves look just like the source node, except for our shared pointers
             lowerUnreserved = from.lowerUnreserved;
@@ -165,7 +166,7 @@ public class RangePool <T> {
                 from.higherUnreserved = fromBelow;
             }
         }
-        public UnreservedNode(Coord range) {
+        public UnreservedNode(Point range) {
             super(range);
             assert range.getX() <= range.getY();
             lowerUnreserved = fromBelow = new Mutable<>(this);
@@ -173,14 +174,14 @@ public class RangePool <T> {
         }
 
         public UnreservedNode<T> split(ReservedNode<T> node, RangeDirection dir) {
-            final Coord me = getRange();
-            final Coord you = node.getRange();
+            final Point me = getRange();
+            final Point you = node.getRange();
 
             assert me.contains(you) : "Attempting to split an unreserved node using space not owned by us;" +
                 " Me: " + me + "; requested: " + you ;
 
-            final Coord newBottom = Coord.coord(me.getX(), you.getX());
-            final Coord newTop = Coord.coord(you.getY(), me.getY());
+            final Point newBottom = Point.coord(me.getX(), you.getX());
+            final Point newTop = Point.coord(you.getY(), me.getY());
 
             assert newBottom.size() > 0 : "Do not use split when inserting on the bottom edge of an UnreservedNode";
             assert newTop.size() > 0 : "Do not use split when inserting on the top edge of an UnreservedNode";
@@ -230,11 +231,11 @@ public class RangePool <T> {
         }
 
         public void attachAbove(ReservedNode<T> node) {
-            final Coord me = getRange();
-            final Coord you = node.getRange();
+            final Point me = getRange();
+            final Point you = node.getRange();
             assert you.getY() == me.getY() : "Cannot attach above if upper values are not equal";
             // slide this node down to end at the beginning of the newly attached node
-            range = Coord.coord(me.getX(), you.getX());
+            range = Point.coord(me.getX(), you.getX());
             if (range.isZero()) {
                 // remove this unreserved node entirely.
                 replaceWith(node);
@@ -253,11 +254,11 @@ public class RangePool <T> {
             }
         }
         public void attachBelow(ReservedNode<T> node) {
-            final Coord me = getRange();
-            final Coord you = node.getRange();
+            final Point me = getRange();
+            final Point you = node.getRange();
             assert you.getX() == me.getX() : "Cannot attach below if lower values are not equal";
             // slide this node up to begin at the end of the newly attached node
-            range = Coord.coord(you.getY(), me.getY());
+            range = Point.coord(you.getY(), me.getY());
             if (range.isZero()) {
                 // remove this unreserved node entirely.
                 replaceWith(node);
@@ -276,16 +277,16 @@ public class RangePool <T> {
             }
         }
 
-        public Maybe<UnreservedNode<T>> findUnreserved(Coord coord) {
-            if (getRange().intersects(coord)) {
+        public Maybe<UnreservedNode<T>> findUnreserved(Point point) {
+            if (getRange().intersects(point)) {
                 return Maybe.immutable(this);
             }
-            return super.findUnreserved(coord);
+            return super.findUnreserved(point);
         }
 
         public void replaceWith(ReservedNode<T> node) {
-            final Coord coord = node.getRange();
-            assert getRange().equals(coord) : "Do not replace an unreseved node with a node of different size";
+            final Point point = node.getRange();
+            assert getRange().equals(point) : "Do not replace an unreseved node with a node of different size";
 
             // Update unreserved nodes
             final UnreservedNode<T> lower = getLowerUnreserved();
@@ -312,7 +313,7 @@ public class RangePool <T> {
     public static class ReservedNode<T> extends RangeNode {
         private final T value;
 
-        public ReservedNode(Coord range, T value) {
+        public ReservedNode(Point range, T value) {
             super(range);
             this.value = value;
         }
@@ -348,15 +349,15 @@ public class RangePool <T> {
     private UnreservedNode<T> highest, lowest;
 
     public RangePool() {
-        highest = lowest = new UnreservedNode<>(Coord.INFINITY);
+        highest = lowest = new UnreservedNode<>(Point.INFINITY);
     }
 
-    public boolean insert(Coord coord, T value) {
+    public boolean insert(Point point, T value) {
 
-        ReservedNode<T> newNode = new ReservedNode<>(coord, value);
-        if (highest.getRange().contains(coord)) {
+        ReservedNode<T> newNode = new ReservedNode<>(point, value);
+        if (highest.getRange().contains(point)) {
             // we can insert the coordinate into to top range.
-            if (highest.getRange().getX() == coord.getX()) {
+            if (highest.getRange().getX() == point.getX()) {
                 // the new node will slide the unreserved node up
                 highest.attachBelow(newNode);
             } else {
@@ -368,9 +369,9 @@ public class RangePool <T> {
                 }
             }
             return true;
-        } else if (lowest.getRange().contains(coord)) {
+        } else if (lowest.getRange().contains(point)) {
             // we can insert the coordinate into to bottom range.
-            if (lowest.getRange().getY() == coord.getY()) {
+            if (lowest.getRange().getY() == point.getY()) {
                 lowest.attachAbove(newNode);
             } else {
                 final UnreservedNode<T> newSpace = lowest.split(newNode, RangeDirection.Lower);
@@ -384,26 +385,26 @@ public class RangePool <T> {
         } else {
             // we have to try to insert the node somewhere in the middle.
             // for now, we'll just use highest/lowest and pay to iterate unreserved nodes
-            double toHighest = highest.getRange().getX() - coord.getY();
-            double toLowest = coord.getX() - lowest.getRange().getY();
+            double toHighest = highest.getRange().getX() - point.getY();
+            double toLowest = point.getX() - lowest.getRange().getY();
             final UnreservedNode<T> searchFrom;
             if (toHighest > toLowest) {
                 searchFrom = lowest;
             } else {
                 searchFrom = highest;
             }
-            Maybe<UnreservedNode<T>> into = searchFrom.findUnreserved(coord);
+            Maybe<UnreservedNode<T>> into = searchFrom.findUnreserved(point);
             if (into.isPresent()) {
                 final UnreservedNode<T> space = into.get();
-                final Coord unreserved = space.getRange();
-                if (unreserved.contains(coord)) {
+                final Point unreserved = space.getRange();
+                if (unreserved.contains(point)) {
                     // This unreserved space can wholly contain the new coord
-                    if (unreserved.equals(coord)) {
+                    if (unreserved.equals(point)) {
                         // The entire unreserved space was taken.  Remove this node entirely
                         space.replaceWith(newNode);
-                    } else if (unreserved.getY() == coord.getY()) {
+                    } else if (unreserved.getY() == point.getY()) {
                         space.attachAbove(newNode);
-                    } else if (unreserved.getX() == coord.getX()) {
+                    } else if (unreserved.getX() == point.getX()) {
                         space.attachBelow(newNode);
                     } else {
                         space.split(newNode, RangeDirection.Higher);
@@ -419,7 +420,7 @@ public class RangePool <T> {
         return false;
     }
 
-    public Maybe<Coord> reserveSpace(Coord point, T value) {
+    public Maybe<Point> reserveSpace(Point point, T value) {
 
         return Maybe.not();
     }

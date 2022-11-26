@@ -67,4 +67,8 @@ public interface ListLike <V> extends CollectionLike<V> {
         return SizedIterable.of(this, v->Out2.out2Immutable(pos[0]++, v) );
     }
 
+    default ListLike<V> addNow(Iterable<? extends V> items) {
+        CollectionLike.super.addNow(items);
+        return this;
+    }
 }

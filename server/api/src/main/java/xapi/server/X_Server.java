@@ -21,6 +21,17 @@ public final class X_Server {
   private static final Out1<AuthService<HttpServletRequest>> authProvider
     = X_Inject.singletonLazy(AuthService.class);
 
+  // We want to lock on something that is jvm-wide, not just classloader-wide.
+  // So, we'll grab a class loaded by the system classloader, and pull in an object that we can be pretty sure nobody else is locking on
+  private static final Object portLock;
+  static {
+    // make sure to take turns getting the protection domain. It uses null-check-or-create semantics.
+    // locking on System.class here is fine, b/c we know it's already loaded, and we'll be in-and-out quickly.
+    synchronized (System.class) {
+      portLock = System.class.getProtectionDomain();
+    }
+  }
+
   public static AuthService<HttpServletRequest> getAuthService() {
     return authProvider.out1();
   }
@@ -35,14 +46,16 @@ public final class X_Server {
    */
   public static int usePort(In1Unsafe<Integer> onlyAvailableSafelyInCallback) {
     int port;
-    synchronized (authProvider) {
+    // lock on our portLock object, which is an unlikely-to-be-synchorized-upon object from the system classloader.
+    // This ensures that even if OSGI-style classloader-hell apps which use this code can still ensure atomic access to new port numbers.
+    synchronized (portLock) {
       port = getUnusedPort();
       onlyAvailableSafelyInCallback.in(port);
     }
     return port;
   }
 
-  public static int getUnusedPort() {
+  private static int getUnusedPort() {
     try (
       final ServerSocket socket = new ServerSocket(0)
     ) {

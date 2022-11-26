@@ -1,9 +1,9 @@
-package xapi.ui.api;
+package xapi.ui.point;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.IntSupplier;
 
-import static xapi.ui.api.Coord.coord;
+import static xapi.ui.point.Point.coord;
 
 /**
  * A class meant to contain an x,y position, and a w,h size.
@@ -17,11 +17,11 @@ import static xapi.ui.api.Coord.coord;
  */
 public final class Rect {
 
-    private final Coord pos;
-    private final Coord size;
+    private final Point pos;
+    private final Point size;
     private IntSupplier hash;
 
-    public Rect(@NotNull Coord position, @NotNull Coord size) {
+    public Rect(@NotNull Point position, @NotNull Point size) {
         assert position != null;
         assert size != null;
         if (size.bothPositive()) {
@@ -56,7 +56,7 @@ public final class Rect {
         };
     }
 
-    public Rect(Coord position, double width, double height) {
+    public Rect(Point position, double width, double height) {
         this(position, coord(width, height));
     }
 
@@ -64,11 +64,11 @@ public final class Rect {
         this(coord(x, y), coord(width, height));
     }
 
-    public Rect(double x, double y, Coord size) {
+    public Rect(double x, double y, Point size) {
         this(coord(x, y), size);
     }
 
-    public static Rect normalized(Coord point1, Coord point2){
+    public static Rect normalized(Point point1, Point point2){
         final double x, y, w, h;
         if (point1.getX() > point2.getX()) {
             x = point2.getX();
@@ -150,7 +150,7 @@ public final class Rect {
         return true;
     }
 
-    public boolean contains(Coord pos) {
+    public boolean contains(Point pos) {
         return contains(pos.getX(), pos.getY());
     }
 
@@ -215,11 +215,11 @@ public final class Rect {
         return "{ x: " + getLeft() + ", y: " + getTop() + ", w: " + getWidth() + ", h: " + getHeight() + "}";
     }
 
-    public Coord getYAxis() {
-        return Coord.coord(getTop(), getBottom());
+    public Point getYAxis() {
+        return Point.coord(getTop(), getBottom());
     }
 
-    public Coord getXAxis() {
-        return Coord.coord(getLeft(), getRight());
+    public Point getXAxis() {
+        return Point.coord(getLeft(), getRight());
     }
 }

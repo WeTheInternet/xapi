@@ -172,6 +172,11 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
             X_Log.error(ModelServiceJre.class, "Bad model string:\n" + result);
             throw t;
           }
+          final ModelKey newKey = model.getKey();
+          assert newKey.equals(modelKey) : "ModelKey changed during deserialization;" +
+                  "\nwas: " + modelKey + "\nis: " + newKey;
+          // use the key object user passed to us
+          model.setKey(modelKey);
           callback.onSuccess(model);
         } catch (final Throwable e) {
           if (callback instanceof ErrorHandler) {

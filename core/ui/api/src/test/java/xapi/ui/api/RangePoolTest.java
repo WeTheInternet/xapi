@@ -5,10 +5,11 @@ import xapi.fu.itr.ArrayIterable;
 import xapi.ui.api.RangePool.ReservedNode;
 import xapi.ui.api.RangePool.UnreservedNode;
 import xapi.fu.itr.ReverseIterable;
+import xapi.ui.point.Point;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
-import static xapi.ui.api.Coord.coord;
+import static xapi.ui.point.Point.coord;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 3/19/17.
@@ -20,20 +21,20 @@ public class RangePoolTest {
         int cnt = 0;
         RangePool<Integer> pool = new RangePool<>();
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
+            new Point[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
         );
 
         pool.insert(coord(-2, 2), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, -2), coord(2, Double.POSITIVE_INFINITY)},
+            new Point[]{coord(Double.NEGATIVE_INFINITY, -2), coord(2, Double.POSITIVE_INFINITY)},
             coord(-2, 2)
         );
 
         // Now, insert a node directly above
         pool.insert(coord(2, 4), cnt++);
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -2),
                 coord(4, Double.POSITIVE_INFINITY)
             },
@@ -44,7 +45,7 @@ public class RangePoolTest {
         // Now, insert a node directly below
         pool.insert(coord(-4, -2), cnt++);
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, -4), coord(4, Double.POSITIVE_INFINITY)},
+            new Point[]{coord(Double.NEGATIVE_INFINITY, -4), coord(4, Double.POSITIVE_INFINITY)},
             coord(-4, -2),
             coord(-2, 2),
             coord(2, 4)
@@ -53,20 +54,20 @@ public class RangePoolTest {
         // Do the same thing, but invert the order of higher/lower
         pool = new RangePool<>();
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
+            new Point[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
         );
 
         pool.insert(coord(-2, 2), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, -2), coord(2, Double.POSITIVE_INFINITY)},
+            new Point[]{coord(Double.NEGATIVE_INFINITY, -2), coord(2, Double.POSITIVE_INFINITY)},
             coord(-2, 2)
         );
 
         // Now, insert a node directly below
         pool.insert(coord(-4, -2), cnt++);
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -4),
                 coord(2, Double.POSITIVE_INFINITY)
             },
@@ -77,7 +78,7 @@ public class RangePoolTest {
         // Now, insert a node directly above
         pool.insert(coord(2, 4), cnt++);
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -4),
                 coord(4, Double.POSITIVE_INFINITY)
             },
@@ -92,7 +93,7 @@ public class RangePoolTest {
         int cnt = 0;
         RangePool<Integer> pool = new RangePool<>();
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
+            new Point[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
         );
 
         // First, lets create some outer boundaries for us to work within.
@@ -100,7 +101,7 @@ public class RangePoolTest {
         pool.insert(coord(8, 16), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, 8),
                 coord(16, Double.POSITIVE_INFINITY)
             },
@@ -110,7 +111,7 @@ public class RangePoolTest {
         pool.insert(coord(-16, -8), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, 8),
                 coord(16, Double.POSITIVE_INFINITY)
@@ -123,7 +124,7 @@ public class RangePoolTest {
         pool.insert(coord(-1, 1), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, -1),
                 coord(1, 8),
@@ -138,7 +139,7 @@ public class RangePoolTest {
         pool.insert(coord(-2, -1), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, -2),
                 coord(1, 8),
@@ -152,7 +153,7 @@ public class RangePoolTest {
         pool.insert(coord(1, 2), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, -2),
                 coord(2, 8),
@@ -169,7 +170,7 @@ public class RangePoolTest {
         pool.insert(coord(-8, -2), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(2, 8),
                 coord(16, Double.POSITIVE_INFINITY)
@@ -184,7 +185,7 @@ public class RangePoolTest {
         pool.insert(coord(2, 8), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(16, Double.POSITIVE_INFINITY)
             },
@@ -204,13 +205,13 @@ public class RangePoolTest {
         int cnt = 0;
         RangePool<Integer> pool = new RangePool<>();
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
+            new Point[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
         );
 
         pool.insert(coord(8, 16), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, 8), coord(16, Double.POSITIVE_INFINITY)},
+            new Point[]{coord(Double.NEGATIVE_INFINITY, 8), coord(16, Double.POSITIVE_INFINITY)},
             coord(8, 16)
         );
 
@@ -218,7 +219,7 @@ public class RangePoolTest {
         pool.insert(coord(-16, -8), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, 8),
                 coord(16, Double.POSITIVE_INFINITY)
@@ -230,7 +231,7 @@ public class RangePoolTest {
         pool.insert(coord(-2, 2), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, -2),
                 coord(2, 8),
@@ -244,13 +245,13 @@ public class RangePoolTest {
         // do it again, but this time reverse the side we do the second split upon
         pool = new RangePool<>();
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
+            new Point[]{coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)}
         );
 
         pool.insert(coord(-16, -8), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{coord(Double.NEGATIVE_INFINITY, -16), coord(-8, Double.POSITIVE_INFINITY)},
+            new Point[]{coord(Double.NEGATIVE_INFINITY, -16), coord(-8, Double.POSITIVE_INFINITY)},
             coord(-16, -8)
         );
 
@@ -258,7 +259,7 @@ public class RangePoolTest {
         pool.insert(coord(8, 16), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, 8),
                 coord(16, Double.POSITIVE_INFINITY)
@@ -270,7 +271,7 @@ public class RangePoolTest {
         pool.insert(coord(-2, 2), cnt++);
         // run asserts on pool contents
         assertPoolStructure(pool,
-            new Coord[]{
+            new Point[]{
                 coord(Double.NEGATIVE_INFINITY, -16),
                 coord(-8, -2),
                 coord(2, 8),
@@ -283,24 +284,24 @@ public class RangePoolTest {
 
     }
 
-    private void assertPoolStructure(RangePool<Integer> pool, Coord[] unreserved, Coord ... reserved) {
+    private void assertPoolStructure(RangePool<Integer> pool, Point[] unreserved, Point... reserved) {
         assertTrue("", pool.isValid());
-        Coord[] actualUnreserved = pool.forUnreservedAsc().map(UnreservedNode::getRange)
-            .toArray(Coord[]::new);
+        Point[] actualUnreserved = pool.forUnreservedAsc().map(UnreservedNode::getRange)
+            .toArray(Point[]::new);
         assertArrayEquals(unreserved, actualUnreserved);
         actualUnreserved = pool.forUnreservedDesc().map(UnreservedNode::getRange)
-            .toArray(Coord[]::new);
+            .toArray(Point[]::new);
         unreserved = ReverseIterable.reverse(ArrayIterable.iterate(unreserved))
-                    .toArray(Coord[]::new);
+                    .toArray(Point[]::new);
         assertArrayEquals(unreserved, actualUnreserved);
 
-        Coord[] actualReserved = pool.forReservedAsc().map(ReservedNode::getRange)
-            .toArray(Coord[]::new);
+        Point[] actualReserved = pool.forReservedAsc().map(ReservedNode::getRange)
+            .toArray(Point[]::new);
         assertArrayEquals(reserved, actualReserved);
         actualReserved = pool.forReservedDesc().map(ReservedNode::getRange)
-            .toArray(Coord[]::new);
+            .toArray(Point[]::new);
         reserved = ReverseIterable.reverse(ArrayIterable.iterate(reserved))
-                    .toArray(Coord[]::new);
+                    .toArray(Point[]::new);
         assertArrayEquals(reserved, actualReserved);
     }
 

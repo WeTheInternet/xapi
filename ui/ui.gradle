@@ -1,0 +1,17 @@
+buildscript{
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+}
+
+plugins {
+    id 'xapi-require'
+}
+
+String v = version
+
+xapiRequire.module('api').configure {
+    req ->
+        req.external "net.wti.core:xapi-fu:$v", "main"
+        req.external "javax.validation:validation-api:1.0.0.GA"
+}

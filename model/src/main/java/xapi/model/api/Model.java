@@ -129,6 +129,14 @@ public interface Model {
     void onChange(String key, In2<Object, Object> callback);
 
     /**
+     * Triggers a change event. Only invoke this when was != value
+     * @param key - The model key for which the change applies
+     * @param was - The previous value for this key
+     * @param value - The current value for this key
+     */
+    void fireChangeEvent(String key, Object was, Object value);
+
+    /**
      * @param callback - A function which receives propKey,oldValue,newValue as arguments.
      */
     void onGlobalChange(In3<String, Object, Object> callback);

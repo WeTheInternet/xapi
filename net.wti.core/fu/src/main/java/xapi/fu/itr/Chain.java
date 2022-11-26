@@ -152,6 +152,10 @@ public class Chain<T> implements GrowableIterable<T>, MappedIterable<T> {
     return new GrowableIterator<>(Out1.newOut1(()->new ChainIterator<>(Chain.this)));
   }
 
+  public static <T> Iterator<T> iteratorStatic(Iterable<T> itr) {
+    return itr instanceof Chain ? new ChainIterator<>((Chain<T>)itr) : itr.iterator();
+  }
+
   public <R> Chain<R> mapImmediate(In1Out1<T, R> mapper) {
     Chain<R> tail, head = tail = new Chain<>();
     for (T t : this) {
@@ -249,7 +253,15 @@ class ChainIterator <T> implements Iterator<T> {
       final Chain<T> mine = here;
       final Chain<T> removable = mine.next;
       remove = () -> {
-        mine.setNext(removable.getNext());
+        if (this.here != removable) {
+          throw new IllegalStateException("called remove() when " + here + " != " + mine);
+        }
+        // move the value from the next node to this node, then point to the node afterward.
+        // since we can't really update the head pointer in calling chain, we just grab the value and erase the next node instead
+        mine.value = removable.value;
+        here = mine;
+        here.next = removable.next;
+        removable.value = null;
         remove = Do.NOTHING;
       };
       return here.value.out1();

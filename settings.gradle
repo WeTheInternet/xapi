@@ -28,6 +28,7 @@ def singleProject = [
         'log': ['gwt', 'jre'],
         'util': ['gwt', 'jre'],
         'io': ['gwt', 'jre'],
+        'ui': ['gwt', 'jre'],
         'process': ['gwt', 'jre'],
         // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc
         // Specific projects can be realized via -Pxapi.${projName}.${platform}=true

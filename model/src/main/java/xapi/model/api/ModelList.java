@@ -1,6 +1,7 @@
 package xapi.model.api;
 
 import xapi.annotation.model.*;
+import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.fu.In2;
@@ -10,6 +11,8 @@ import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
 import xapi.model.X_Model;
 import xapi.util.api.SuccessHandler;
+
+import static xapi.collect.X_Collect.copyMap;
 
 /**
  * A model which represents a list of models; stored as a set-like array of keys.
@@ -78,17 +81,36 @@ public interface ModelList<T extends Model> extends Model, SetLike<T> {
     }
 
     @Override
+    @Ignore("model")
+    default SetLike<T> add(T value) {
+        addAndReturn(value);
+        return this;
+    }
+
+    @Override
     @Ignore("model") // this method name matches regex used by model generator; forcibly exclude it
     default T addAndReturn(T value) {
         if (value == null) {
             return null;
         }
         ensureKey(value);
-        return models().put(value.getKey(), value);
+        final ObjectTo<ModelKey, T> mods = models();
+        final ObjectTo<ModelKey, T> copy = copyMap(mods);
+        final T was = models().put(value.getKey(), value);
+        if (was != value) {
+            fireChangeEvent("models", copy, mods);
+        }
+        return was;
     }
 
     default void ensureKey(T value) {
         X_Model.ensureKey(value.getType(), value);
+    }
+
+    @Override
+    @Ignore("model") // this method name matches regex used by model generator; forcibly exclude it
+    default boolean remove(T value) {
+        return removeAndReturn(value) != null;
     }
 
     @Override
@@ -98,7 +120,13 @@ public interface ModelList<T extends Model> extends Model, SetLike<T> {
             return null;
         }
         ensureKey(value);
-        return models().remove(value.getKey());
+        final ObjectTo<ModelKey, T> mods = models();
+        final ObjectTo<ModelKey, T> copy = copyMap(mods);
+        final T was = mods.remove(value.getKey());
+        if (was != null) {
+            fireChangeEvent("models", copy, mods);
+        }
+        return was;
     }
 
     @Override
@@ -112,7 +140,10 @@ public interface ModelList<T extends Model> extends Model, SetLike<T> {
     @Override
     @Ignore("model")
     default void clear() {
-        models().clear();
+        final ObjectTo<ModelKey, T> mods = models();
+        final ObjectTo<ModelKey, T> copy = copyMap(mods);
+        mods.clear();
+        fireChangeEvent("models", copy, mods);
     }
 
     @Override

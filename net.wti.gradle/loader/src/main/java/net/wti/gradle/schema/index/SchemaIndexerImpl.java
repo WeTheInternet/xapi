@@ -327,7 +327,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         }
         for (File file : moduleSrc.listFiles()) {
             if (file.isDirectory() && ! "build".equals(file.getName())) {
-                System.out.println("Including " + moduleSrc + " b/c " + file);
                 return true;
             }
         }

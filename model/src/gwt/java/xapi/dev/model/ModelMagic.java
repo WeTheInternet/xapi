@@ -237,6 +237,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
       return true;
     }
     switch (method.getName()) {
+      case "fireChangeEvent":
       case "onChange":
       case "onGlobalChange":
         return true;

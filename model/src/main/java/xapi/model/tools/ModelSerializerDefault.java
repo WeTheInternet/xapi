@@ -738,7 +738,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                 }
                 // TODO: we need to contribute these to a promise-like object...
                 // or at least a Model.getBlockers() method of some kind, to allow threaded enviros to block.
-                X_Log.info(ModelSerializerDefault.class, "Finished loading sub-model ", win.getKey());
+                X_Log.trace(ModelSerializerDefault.class, "Finished loading sub-model ", win.getKey());
               }, lose -> {
                 X_Log.error(ModelSerializerDefault.class, "Error loading sub-model ", key, lose);
               }

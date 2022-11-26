@@ -381,4 +381,9 @@ public class X_Collect {
     return In2Out1.computeKeyValueTransform(map, Map::get, Map::put);
   }
 
+    public static <K, V> ObjectTo<K, V> copyMap(final ObjectTo<K, V> mods) {
+      final ObjectTo<K, V> copy = X_Collect.collections().newMap(mods.keyType(), mods.valueType(), X_Collect.MUTABLE_INSERTION_ORDERED);
+      copy.copyFrom(mods);
+      return copy;
+    }
 }

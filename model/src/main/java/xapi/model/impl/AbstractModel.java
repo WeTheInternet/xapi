@@ -158,7 +158,8 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
     return this;
   }
 
-  private void fireChangeEvent(String key, Object was, Object value) {
+  @Override
+  public void fireChangeEvent(String key, Object was, Object value) {
     changeListeners.getMaybe(key).readIfPresent(In1.in2Adapter(was, value));
     for (In3<String, Object, Object> callback : globalChangeListeners.forEach()) {
       callback.in(key, was, value);

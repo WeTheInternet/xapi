@@ -150,6 +150,13 @@ public abstract class AbstractJreModelService extends AbstractModelService {
               throw new IllegalArgumentException("Illegal onChange method argument " + args[1] + " not castable to In2; use In2.ignoreAll() instead of null");
           });
           return proxy;
+        case "fireChangeEvent":
+          final String keyName = (String) args[0];
+          final Object was = args[1], is = args[2];
+          if (was != is) {
+            invokeCallbacks(keyName, was, is);
+          }
+          return null;
         case "onGlobalChange":
           this.globalChange = this.globalChange.useAfterMe((In3)args[0]);
           return proxy;

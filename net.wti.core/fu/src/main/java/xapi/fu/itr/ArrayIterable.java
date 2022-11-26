@@ -3,6 +3,8 @@ package xapi.fu.itr;
 import xapi.fu.In1Out1;
 import xapi.fu.X_Fu;
 
+import java.util.Iterator;
+
 public class ArrayIterable <E> implements SizedIterable <E> {
 
   // Hm. In Java 8 at least, this ARRAY constant _won't_ work if we use a raw In1Out1.
@@ -26,6 +28,11 @@ public class ArrayIterable <E> implements SizedIterable <E> {
 
   public static <E> ArrayIterable<E> iterateBetween(int start, int end, E ... es) {
     return new ArrayIterable<>(es, start, end);
+  }
+
+  public static <E> ArrayIterable<E> iterate(Iterable<E> source, In1Out1<Integer, E[]> array) {
+    final E[] arr = MappedIterable.mapped(source).toArray(array);
+    return iterate(arr);
   }
 
   public static <E> In1Out1<E[], MappedIterable<E>> arrayItr() {
