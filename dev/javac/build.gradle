@@ -42,7 +42,7 @@ dependencies {
         File tools = jvm.toolsJar
         if (tools) {
             compileOnly files(tools)
-            testCompile files(tools)
+            testImplementation files(tools)
         }
     } else {
         def view = xapiSchema.view

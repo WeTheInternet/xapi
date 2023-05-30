@@ -14,11 +14,11 @@ targetCompatibility = '1.8'
 
 dependencies {
     compileOnly gradleApi()
-    compile project(':xapi-gradle-core')
+    api project(':xapi-gradle-core')
 
-    testCompile project(':xapi-gradle-test')
+    testImplementation project(':xapi-gradle-test')
     // we mock classes, so we need spock-compatible bytecode lib at runtime
-    testRuntime 'net.bytebuddy:byte-buddy:1.11.0'
+    testImplementation 'net.bytebuddy:byte-buddy:1.11.0'
 }
 
 sourceSets.main.groovy.srcDirs = []

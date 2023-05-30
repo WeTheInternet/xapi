@@ -1,6 +1,7 @@
 package net.wti.gradle.system.service;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.impl.DefaultProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
 import net.wti.gradle.internal.system.InternalProjectCache;
@@ -8,6 +9,7 @@ import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
@@ -100,7 +102,7 @@ public interface GradleService {
      */
     String CUSTOM_GRADLE_ZIP_TASK = "gradleZip";
 
-    String GRADLE_VERSION = "5.1-x-24";
+    String GRADLE_VERSION = "8.0-x-3";
 
     static Path buildId(Gradle gradle) {
         try {
@@ -293,7 +295,7 @@ public interface GradleService {
             );
             root.getPluginManager().withPlugin("wrapper", plugin -> {
                 rootTasks.named("wrapper", Wrapper.class, wrapper -> {
-                    wrapper.whenSelected(selected->{
+                    final Action<? super Task> cb = selected->{
                         final File loc = zipDir.get().getAsFile();
                         if (loc.isDirectory()) {
                             final File zipLoc = zipFile.get().getAsFile();
@@ -308,7 +310,14 @@ public interface GradleService {
                             }
 
                         }
-                    });
+                    };
+                    if (DefaultProjectView.isWtiGradle()) {
+                        wrapper.whenSelected(cb);
+                    } else {
+                        if (project.getGradle().getTaskGraph().hasTask("wrapper")) {
+                            cb.execute(wrapper);
+                        }
+                    }
                 });
             });
             }

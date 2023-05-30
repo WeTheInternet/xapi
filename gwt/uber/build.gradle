@@ -45,6 +45,7 @@ xapiRequire.main().configure {
         req.project 'xapi-process', 'gwt:main'
         req.project 'xapi-io', 'gwt:main'
         req.project 'xapi-dev-gwtc:xapi-gwtc-api', 'main'
+        req.external 'javax.inject:javax.inject:1:sources'
 }
 
 xapiRequire.module('gwt', 'test').configure {
@@ -55,10 +56,6 @@ xapiRequire.module('gwt', 'test').configure {
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
         req.external 'junit:junit:4.12'
         req.external Transitivity.runtime, 'junit:junit:4.12:sources'
-}
-
-dependencies {
-    compile 'javax.inject:javax.inject:1:sources'
 }
 
 description = 'XApi - Gwt uber jar'

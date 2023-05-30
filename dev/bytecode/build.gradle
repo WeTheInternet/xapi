@@ -8,6 +8,9 @@ plugins {
     id 'xapi-require'
 }
 
+// TODO: pull this entire module into its own repository,
+//  so we can publish this bit with a javassist-compatible library
+
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-util', 'main'

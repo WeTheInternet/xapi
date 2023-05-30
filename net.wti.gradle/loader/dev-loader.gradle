@@ -85,10 +85,10 @@ xapiSchema.whenReady {
     })
     tasks.test.dependsOn 'pluginUnderTestMetadata'
     dependencies {
-        testRuntime files(new File(buildDir, 'pluginUnderTestMetadata'))
+        testImplementation files(new File(buildDir, 'pluginUnderTestMetadata'))
     }
     tasks.test.doFirst {
-        new File(buildDir, 'testRuntime.classpath').text = (tasks.test as Test).classpath.asPath
+        new File(buildDir, 'testImplementation.classpath').text = (tasks.test as Test).classpath.asPath
     }
 } // end xapiSchema.whenReady{}
 

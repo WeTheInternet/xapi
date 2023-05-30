@@ -5,7 +5,9 @@ buildscript({
         classpath group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: version, changing: true
     }
 })
-plugins { id 'xapi-require' }
+plugins {
+    id 'xapi-require'
+}
 
 String v = version
 
@@ -27,6 +29,10 @@ xapiRequire {
         req ->
             req.external "net.wti.core:xapi-anno:$v", "main"
             req.external "net.wti.core:xapi-fu:$v", "main"
+            req.external 'javax.inject:javax.inject:1'
+            // alternatively, make it compile-transitive from xapi-inject, so at least it's obvious consumer wants @Inject
+            req.external 'javax.annotation:javax.annotation-api:1.2'
+
     }
     module('testTools').configure {
         req ->
@@ -88,11 +94,6 @@ xapiSchema.whenReady {
 apply from: "$rootDir/gradle/processor.gradle"
 
 dependencies {
-    // TODO: make this implementation and then force alllll downstream users to add this as well.
-    compile 'javax.inject:javax.inject:1'
-    // alternatively, make it compile-transitive from xapi-inject, so at least it's obvious consumer wants @Inject
-
-    compile 'javax.annotation:javax.annotation-api:1.2'
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 description = 'XApi - Core Interfaces and Abstractions'

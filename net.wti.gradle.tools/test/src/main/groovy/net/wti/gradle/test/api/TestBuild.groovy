@@ -30,7 +30,7 @@ trait TestBuild implements Named, Flushable, HasBuildFiles {
         settings.text += """
 // from ${getClass().simpleName} ${name ? "($name)" : ''}
 if (System.getProperty('${HasBuildFiles.SKIP_METADATA_SYS_PROP}') != 'true') {
-    enableFeaturePreview('GRADLE_METADATA')
+    //enableFeaturePreview('GRADLE_METADATA')
 }
 """
     }

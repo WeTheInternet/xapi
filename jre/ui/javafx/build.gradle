@@ -19,7 +19,7 @@ xapiRequire.main().configure {
 }
 
 dependencies {
-    compile files('lib/jfxrt.jar')
+    implementation files('lib/jfxrt.jar')
 }
 
 description = 'XApi - Jre JavaFx UI'

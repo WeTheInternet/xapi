@@ -49,7 +49,7 @@ abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends Abstrac
 buildscript {
     dependencies {
         classpath files(
-            "${new File(".", "build/testRuntime.classpath").text.replaceAll("[:;]", "\", \"")}"
+            "${new File(".", "build/testImplementation.classpath").text.replaceAll("[:;]", "\", \"")}"
         )
     }
 }
@@ -60,7 +60,7 @@ apply plugin: 'xapi-loader'
 buildscript {
     dependencies {
         classpath files(
-            "${new File(".", "build/testRuntime.classpath").text.replaceAll("[:;]", "\", \"")}"
+            "${new File(".", "build/testImplementation.classpath").text.replaceAll("[:;]", "\", \"")}"
         )
     }
 }

@@ -8,6 +8,7 @@ repositories {
 
 xapiRequire {
     main.main.project ':xapi-common'
+    main.main.project ':xapi-dev-parent:xapi-dev-source'
 }
 
 SourceSet java = sourceSets.getByName("main")
@@ -53,8 +54,7 @@ if (JavaVersion.current().isJava9Compatible()) {
 }
 
 dependencies {
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
 description = 'XApi - Core reflection apis and interfaces'
