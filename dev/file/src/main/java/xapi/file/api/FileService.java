@@ -54,4 +54,6 @@ public interface FileService {
   void loadFile(File file, In2<String, Throwable> callback);
 
   boolean exists(String file);
+
+    boolean ln(String linkSource, String ... linkFiles);
 }

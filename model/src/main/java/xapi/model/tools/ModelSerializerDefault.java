@@ -5,21 +5,21 @@ package xapi.model.tools;
 
 import xapi.annotation.model.KeyOnly;
 import xapi.collect.X_Collect;
-import xapi.collect.api.ClassTo;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.collect.api.StringTo;
+import xapi.collect.api.*;
 import xapi.collect.proxy.api.CollectionProxy;
 import xapi.collect.proxy.impl.MapOf;
 import xapi.dev.source.CharBuffer;
 import xapi.fu.In2Out1;
+import xapi.fu.data.*;
 import xapi.fu.itr.SizedIterable;
+import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.*;
 import xapi.prop.X_Properties;
+import xapi.reflect.X_Reflect;
 import xapi.source.lex.CharIterator;
 import xapi.debug.X_Debug;
 import xapi.source.lex.StringCharIterator;
@@ -29,9 +29,10 @@ import xapi.util.api.SuccessHandler;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Duration;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ModelSerializerDefault <M extends Model> implements ModelSerializer<M>{
 
@@ -45,7 +46,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   public ModelSerializerDefault(final ClassTo<PrimitiveReader> primitiveReaders) {
     this.primitiveReaders = primitiveReaders;
-    collectionFactories = X_Collect.newClassMap(In2Out1.class);
+    collectionFactories = X_Collect.newClassMap(In2Out1.class, X_Collect.MUTABLE_INSERTION_ORDERED);
   }
 
   public static ModelModule deserialize(final CharIterator chars, PrimitiveSerializer primitives) {
@@ -326,6 +327,17 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       for (int i = 0; i < len; i++) {
         writeArray(out, propName, propertyType.getComponentType(), Array.get(array, i), primitives, ctx);
       }
+    } else if (IsEnumerable.class.isAssignableFrom(childType)){
+      for (int i = 0; i < len; i++) {
+        IsEnumerable item = (IsEnumerable) Array.get(array, i);
+        if (item == null) {
+          out.append(primitives.serializeClass(childType));
+          out.append(primitives.serializeInt(-1));
+        } else {
+          out.append(primitives.serializeClass(item.getClass()));
+          out.append(primitives.serializeInt(item.ordinal()));
+        }
+      }
     } else if (Duration.class.isAssignableFrom(childType)){
       for (int i = 0; i < len; i++) {
         Duration item = (Duration) Array.get(array, i);
@@ -403,14 +415,29 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
              writeObject(out, propName, valueType, value, primitives, ctx);
              return true;
          });
-    } else if (keyType.isEnum()) {
+    } else if (keyType == ModelKey.class) {
         collection.readWhileTrue((key, value) -> {
-             out.append(primitives.serializeString(((Enum) key).name()));
+             final ModelKey k = (ModelKey) key;
+             writeString(out, X_Model.keyToString(k), primitives);
              writeObject(out, propName, valueType, value, primitives, ctx);
              return true;
          });
+    } else if (IsEnumerable.class.isAssignableFrom(keyType)) {
+        collection.readWhileTrue((key, value) -> {
+            IsEnumerable k = (IsEnumerable) key;
+            out.append(primitives.serializeClass(k.getClass()));
+            out.append(primitives.serializeInt(k.ordinal()));
+            writeObject(out, propName, valueType, value, primitives, ctx);
+            return true;
+         });
+    } else if (keyType.isEnum()) {
+        collection.readWhileTrue((key, value) -> {
+            out.append(primitives.serializeString(((Enum) key).name()));
+            writeObject(out, propName, valueType, value, primitives, ctx);
+            return true;
+         });
     } else {
-      assert false : "Unsupported key type "+keyType+" in model serializer: "+getClass();
+      throw new IllegalStateException("Unsupported key type "+keyType+" in model serializer: "+getClass());
     }
   }
 
@@ -492,15 +519,30 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
           Object value = readObject(valueType, propName, src, primitives, ctx);
           result.setValue(key, value);
         }
+    } else if (keyType == ModelKey.class) {
+        for (int i = 0; i < length; i++) {
+          String key = primitives.deserializeString(src);
+          final ModelKey k = X_Model.keyFromString(key);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
+          result.setValue(k, value);
+        }
+    } else if (IsEnumerable.class.isAssignableFrom(keyType)) {
+        for (int i = 0; i < length; i++) {
+          Class type = primitives.deserializeClass(src);
+          int ordinal = primitives.deserializeInt(src);
+          Object value = readObject(valueType, propName, src, primitives, ctx);
+          final Object enumKey = type.getEnumConstants()[ordinal];
+          result.setValue(enumKey, value);
+        }
     } else if (keyType.isEnum()) {
         for (int i = 0; i < length; i++) {
           String key = primitives.deserializeString(src);
           Object value = readObject(valueType, propName, src, primitives, ctx);
-          final Enum enumKey = Enum.valueOf(valueType, key);
+          final Enum enumKey = Enum.valueOf(keyType, key);
           result.setValue(enumKey, value);
         }
     } else {
-      assert false : "Unsupported key type "+keyType+" in model serializer: "+getClass();
+      throw new IllegalStateException("Unsupported key type "+keyType+" in model serializer: "+getClass());
     }
 
     return result;
@@ -555,9 +597,14 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       }
       return X_Collect.newStringMap(value);
     });
+    factories.put(MapLike.class, (key, value) -> X_Jdk.mapOrderedInsertion());
+    factories.put(ListLike.class, (key, value) -> X_Jdk.list());
+    factories.put(SetLike.class, (key, value) -> X_Jdk.setLinked());
+    factories.put(MultiSet.class, (key, value) -> X_Jdk.multiSet());
+    factories.put(MultiList.class, (key, value) -> X_Jdk.multiListOrderedInsertion());
     factories.put(MapOf.class, (key, value) -> new MapOf(newMap(key, value), key, value));
-    factories.put(ObjectTo.class, (key, value) -> X_Collect.newMap(key, value));
-    factories.put(ClassTo.class, (key, value) -> X_Collect.newClassMap(value));
+    factories.put(ObjectTo.class, (key, value) -> X_Collect.newInsertionOrderedMap(key, value));
+    factories.put(ClassTo.class, (key, value) -> X_Collect.newClassMap(value, X_Collect.MUTABLE_INSERTION_ORDERED));
     factories.put(IntTo.Many.class, (key, value) -> X_Collect.newIntMultiMap(value));
     factories.put(StringTo.Many.class, (key, value) -> X_Collect.newStringMultiMap(value));
     factories.put(ObjectTo.Many.class, (key, value) -> X_Collect.newMultiMap(key, value));
@@ -622,6 +669,12 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         // all int types
         out.append(primitives.serializeInt(asNumber.intValue()));
       }
+    } else if (Number.class.isAssignableFrom(valueType)) {
+      if (valueType == Float.class || valueType == Double.class || valueType == BigDecimal.class) {
+        out.append(primitives.serializeDouble(((Number)value).doubleValue()));
+      } else {
+        out.append(primitives.serializeLong(((Number)value).longValue()));
+      }
     } else if (isModelType(valueType)) {
       writeModel(out, propName, valueType, (Model)value, primitives, ctx);
     } else if (isModelKeyType(valueType)) {
@@ -633,7 +686,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       writeStringMap(out, (StringTo)value, primitives, ctx);
     } else if (valueType == Class.class) {
       out.append(primitives.serializeClass((Class) value));
-    } else if (valueType == Duration.class) {
+    } else if (Duration.class.isAssignableFrom(valueType)) {
       Long asLong  = ((Duration) value).getSeconds();
       if (asLong == null) {
         asLong = 0L;
@@ -646,10 +699,61 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         final Enum asEnum = (Enum) value;
         out.append(primitives.serializeInt(asEnum.ordinal()));
       }
+    } else if (EnumSet.class.isAssignableFrom(valueType)) {
+      if (value == null) {
+        out.append(primitives.serializeInt(-1));
+        return;
+      }
+      EnumSet<? extends Enum<?>> item = (EnumSet<? extends Enum<?>>) value;
+      int size = item.size();
+      int cnt = 0;
+      out.append(primitives.serializeInt(size));
+      for (Enum<? extends Enum<?>> i : item) {
+        if (cnt == 0) {
+          // the "enum type" is the supertype of each instance of the enum type
+          out.append(primitives.serializeClass(i.getDeclaringClass()));
+        }
+        cnt++;
+        serializeEnum(out, primitives, i);
+      }
+    } else if (EnumMap.class.isAssignableFrom(valueType)) {
+      if (value == null) {
+        out.append(primitives.serializeInt(-1));
+        return;
+      }
+      EnumMap<? extends Enum<?>, ?> item = (EnumMap) value;
+      int size = item.size();
+      if (size == 0) {
+          // we can't serialize the enum map's type w/o any items to look at.
+          // convert to null.
+          out.append(primitives.serializeInt(-1));
+          return;
+      }
+      int cnt = 0;
+      out.append(primitives.serializeInt(size));
+      for (Map.Entry<? extends Enum<?>, ?> e : item.entrySet()) {
+        Enum itemType = e.getKey();
+        if (cnt == 0) {
+          // the "enum type" is the declaring class of each instance of the enum type
+          out.append(primitives.serializeClass(itemType.getDeclaringClass()));
+        }
+        Object itemValue = e.getValue();
+        serializeEnum(out, primitives, itemType);
+        out.append(primitives.serializeClass(itemValue.getClass()));
+        String fakeName = propName + "_" + cnt++;
+        writeObject(out, fakeName, itemValue.getClass(), itemValue, primitives, ctx);
+      }
+    } else if (IsEnumerable.class.isAssignableFrom(valueType)) {
+      IsEnumerable item = (IsEnumerable) value;
+      if (item == null) {
+        out.append(primitives.serializeClass(valueType));
+        out.append(primitives.serializeInt(-1));
+      } else {
+        out.append(primitives.serializeClass(item.getClass()));
+        out.append(primitives.serializeInt(item.ordinal()));
+      }
     } else {
-      assert false : "Unserializable field type: "+valueType;
-      Log.tryLog(ModelSerializerDefault.class, this, Log.LogLevel.ERROR,
-              "Unable to serialize field type ", valueType, " ");
+      throw new IllegalStateException("Unserializable field type: " + propName + " (" + valueType + ")");
     }
   }
 
@@ -905,6 +1009,27 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     } else if (isModelKeyType(propertyType)) {
       String key = readString(src, primitives);
       return X_Model.keyFromString(key);
+    } else if (Number.class.isAssignableFrom(propertyType)) {
+      if (propertyType == Integer.class) {
+        return (int) primitives.deserializeLong(src);
+      } else if (propertyType == Long.class) {
+        return (float)primitives.deserializeLong(src);
+      } else if (propertyType == Float.class) {
+        return (float)primitives.deserializeDouble(src);
+      } else if (propertyType == Double.class) {
+        return primitives.deserializeDouble(src);
+      } else if (propertyType == Short.class) {
+        return (short)primitives.deserializeLong(src);
+      } else if (propertyType == Byte.class) {
+        return (byte)primitives.deserializeLong(src);
+      } else if (propertyType == BigInteger.class) {
+        // need to do something... less bad here
+        return BigInteger.valueOf((long)primitives.deserializeLong(src));
+      } else if (propertyType == BigDecimal.class) {
+        // need to do something... less bad here
+        return BigDecimal.valueOf((double)primitives.deserializeDouble(src));
+      }
+
     } else if (propertyType.isArray()) {
       return readArray(propertyType.getComponentType(), propName, src, primitives, ctx);
     } else if (isIterableType(propertyType)) {
@@ -917,11 +1042,60 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       return readEnum(propertyType, src, primitives, ctx);
     } else if (propertyType == Class.class) {
       return primitives.deserializeClass(src);
-    } else if (propertyType == Duration.class) {
+    } else if (EnumSet.class.isAssignableFrom(propertyType)) {
+      int amt = primitives.deserializeInt(src);
+      Class<? extends Enum<?>> enumType = primitives.deserializeClass(src);
+      if (amt == -1) {
+        return null;
+      }
+      if (amt == 0) {
+        return EnumSet.noneOf((Class)enumType);
+      }
+      List<Enum> items = new ArrayList<>(amt);
+      while (amt --> 0) {
+        items.add(deserializeEnum(enumType, primitives, src));
+      }
+      // pull the last item off list. this is cheapest for array list
+      Enum last = items.remove(items.size() - 1);
+      // now, send it all to EnumSet...
+      final Enum[] array = items.toArray(X_Reflect.newArray(enumType, items.size()));
+      return EnumSet.of(last, array);
+    } else if (EnumMap.class.isAssignableFrom(propertyType)) {
+      int amt = primitives.deserializeInt(src);
+      if (amt == -1) {
+        return null;
+      }
+      Class<? extends Enum<?>> enumType = primitives.deserializeClass(src);
+      EnumMap map = new EnumMap(enumType);
+      while (amt --> 0) {
+        final Enum key = deserializeEnum(enumType, primitives, src);
+        final Class valType = primitives.deserializeClass(src);
+        String fakeName = propName + "_" + key.ordinal();
+        final Object value = readObject(valType, fakeName, src, primitives, ctx);
+        map.put(key, value);
+      }
+      return map;
+    } else if (IsEnumerable.class.isAssignableFrom(propertyType)) {
+      final Class cls = primitives.deserializeClass(src);
+      final int ordinal = primitives.deserializeInt(src);
+      if (ordinal == -1) {
+        return null;
+      }
+      return cls.getEnumConstants()[ordinal];
+    } else if (Duration.class.isAssignableFrom(propertyType)) {
       final long seconds = readLong(src, primitives);
       return Duration.ofSeconds(seconds);
     }
     throw new UnsupportedOperationException("Unable to deserialize object of type "+propertyType);
+  }
+
+  protected void serializeEnum(final CharBuffer out, final PrimitiveSerializer primitives, final Enum<? extends Enum<?>> i) {
+    final String serialized = primitives.serializeInt(i.ordinal());
+    out.append(serialized);
+  }
+  protected Enum deserializeEnum(final Class<? extends Enum<?>> enumType, final PrimitiveSerializer primitives, final CharIterator src) {
+      int ordinal = primitives.deserializeInt(src);
+      return enumType.getEnumConstants()[ordinal];
   }
 
   /**

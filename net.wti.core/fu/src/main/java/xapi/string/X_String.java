@@ -173,7 +173,7 @@ public class X_String {
         if (index==6)break;
       }
       suffix = metricSuffix[index];
-      return ((int)(10*val)/10.0)+suffix;
+      return ((int)(100*val)/100.0)+suffix;
     }else {
       //count down
       while(val < 1.0){

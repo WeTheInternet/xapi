@@ -170,7 +170,8 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
             model = deserialize(modelClass, new StringCharIterator(result));
           } catch (Throwable t) {
             X_Log.error(ModelServiceJre.class, "Bad model string:\n" + result);
-            throw t;
+            final String expectedUuid = getModelModule().getUuid();
+            throw new ModelDeserializationException(expectedUuid, result, t);
           }
           final ModelKey newKey = model.getKey();
           assert newKey.equals(modelKey) : "ModelKey changed during deserialization;" +
@@ -180,8 +181,8 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
           callback.onSuccess(model);
         } catch (final Throwable e) {
           if (callback instanceof ErrorHandler) {
-            X_Log.trace(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
-            ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
+            X_Log.info(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
+            ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey, e));
           } else {
             X_Log.error(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
             rethrow(e);

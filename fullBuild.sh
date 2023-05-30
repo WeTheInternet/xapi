@@ -67,7 +67,7 @@ function has_args() {
     if [[ -z "$args" ]]; then
         return 1
     fi
-    for $arg in $args; do
+    for arg in $args; do
         echo "Checking $arg"
         case "$arg" in
             -*)
@@ -87,16 +87,19 @@ function do_it() {
     if [ "$skip_tools" == n ]; then
         pushd net.wti.gradle.tools > /dev/null
         # the tools will install themselves to local repo whenever we build them.
+        echo "invoking ./gradlew $args in $(pwd)"
         ./gradlew $args
         popd > /dev/null
 
 
         pushd net.wti.core > /dev/null
+        echo "invoking ./gradlew $args in $(pwd)"
         ./gradlew $args
         popd > /dev/null
 
 
         pushd net.wti.gradle > /dev/null
+        echo "invoking ./gradlew $args in $(pwd)"
         ./gradlew $args
         popd > /dev/null
     fi

@@ -358,6 +358,9 @@ public class DefaultProjectView implements ProjectView {
         if (named.equals(getPath())) {
             return this;
         }
+        if (!DefaultProjectView.isWtiGradle()) {
+            return ProjectView.fromProject(projectFinder.findProject(named));
+        }
         final ProjectInternal proj = projectFinder.findProject(named);
         if (proj == null) {
             if (":schema".equals(named) || ":xapi-schema".equals(named)) {
@@ -485,8 +488,8 @@ public class DefaultProjectView implements ProjectView {
         return componentMetadata;
     }
 
-    @Override
-    public boolean isWtiGradle() {
+
+    public static boolean isWtiGradle() {
         return GradleCoerce.unwrapBoolean(WTI_GRADLE);
     }
 

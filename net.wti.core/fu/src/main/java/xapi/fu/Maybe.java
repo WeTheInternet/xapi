@@ -113,6 +113,9 @@ public interface Maybe <V> extends Rethrowable {
     }
 
     default <O> Maybe<O> map(In1Out1<V, O> mapper) {
+        if (mapper == null) {
+            throw new NullPointerException("null mapper");
+        }
         return ()-> {
             V out = get();
             return mapper.io(out);
@@ -120,6 +123,9 @@ public interface Maybe <V> extends Rethrowable {
 
     }
     default <O> Maybe<O> mapNullSafe(In1Out1<V, O> mapper) {
+        if (mapper == null) {
+            throw new NullPointerException("null mapper");
+        }
         return ()-> {
             V out = get();
             if (out == null) {
@@ -130,6 +136,9 @@ public interface Maybe <V> extends Rethrowable {
     }
 
     default <A, O> Maybe<O> mapNullSafe(In2Out1<V, A, O> mapper, A also) {
+        if (mapper == null) {
+            throw new NullPointerException("null mapper");
+        }
         return ()-> {
             V out = get();
             if (out == null) {
@@ -140,6 +149,9 @@ public interface Maybe <V> extends Rethrowable {
     }
 
     default <A, B, O> Maybe<O> mapNullSafe(In3Out1<V, A, B, O> mapper, A also, B balso) {
+        if (mapper == null) {
+            throw new NullPointerException("null mapper");
+        }
         return ()-> {
             V out = get();
             if (out == null) {

@@ -2,6 +2,7 @@ package net.wti.gradle.internal.require.api;
 
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
+import net.wti.gradle.internal.impl.DefaultProjectView;
 import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.require.api.DependencyKey;
@@ -638,7 +639,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             if (!require.isEmpty()
                 && !(require + ":").startsWith(ident + ":")
             ) {
-                if (getView().isWtiGradle() && isCompositeAvailable()) {
+                if (DefaultProjectView.isWtiGradle() && isCompositeAvailable()) {
                     // This relies on WTI's fork of gradle.
                     final String derived = type.deriveConfiguration(base, dep, hasXapiCoord, trans, lenient);
                     if (derived == null) {

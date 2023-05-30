@@ -32,6 +32,15 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   static <T> In1<T> ignored() {
     return IGNORED;
   }
+  static <T> In1<T> ignoredRunnable(Runnable r) {
+    class Callback implements In1<T> {
+      @Override
+      public void in(final T ignored) {
+        r.run();
+      }
+    }
+    return new Callback();
+  }
 
   void in(I in);
 

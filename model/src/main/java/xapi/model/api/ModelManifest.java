@@ -549,8 +549,9 @@ public class ModelManifest {
   @Override
   public int hashCode() {
     int hash = type.hashCode();
-    hash ^= properties.length;
-    for (final String property : properties) {
+    final String[] propNames = getPropertyNames();
+    hash ^= propNames.length;
+    for (final String property : propNames) {
       hash ^= property.hashCode();
     }
     // We don't bother hashing any deeper; any object with the same type and properties should ==

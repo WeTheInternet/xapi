@@ -217,6 +217,9 @@ public class ClasspathResourceMap {
   }
 
   public boolean includeBytecode(final String name) {
+    if (name.endsWith("-info.class")) {
+      return false;
+    }
     for (final Pattern p : bytecodeMatchers) {
       if (p.matcher(name).matches()) {
         return true;

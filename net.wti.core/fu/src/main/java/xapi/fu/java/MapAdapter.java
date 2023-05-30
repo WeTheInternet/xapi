@@ -1,5 +1,6 @@
 package xapi.fu.java;
 
+import xapi.fu.Maybe;
 import xapi.fu.Out2;
 import xapi.fu.data.MapLike;
 import xapi.fu.itr.SizedIterable;
@@ -90,5 +91,37 @@ public class MapAdapter <K, V> implements MapLike<K, V>, Serializable {
         return SizedIterable.of(this::size, map.entrySet())
             .map(Out2::fromEntry)
             .iterator();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
+    @Override
+    public boolean isNotEmpty() {
+        return !map.isEmpty();
+    }
+
+    @Override
+    public Out2<K, V> first() {
+        final Map.Entry<K, V> e = map.entrySet().iterator().next();
+        return Out2.out2Immutable(e.getKey(), e.getValue());
+    }
+
+    @Override
+    public Maybe<Out2<K, V>> firstMaybe() {
+        if (isEmpty()) {
+            return Maybe.not();
+        }
+        return Maybe.immutable(first());
+    }
+
+    @Override
+    public Out2<K, V> firstOrNull() {
+        if (isEmpty()) {
+            return null;
+        }
+        return first();
     }
 }

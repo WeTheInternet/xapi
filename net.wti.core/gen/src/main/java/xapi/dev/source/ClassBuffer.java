@@ -483,6 +483,10 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     setNotIndent();
   }
 
+  public void addToTopOfBody(final CharBuffer buffer) {
+    statics.addToEnd(buffer);
+  }
+
   protected String memberIndent() {
     return origIndent + INDENT;
   }

@@ -330,7 +330,7 @@ public class JreInjector implements Injector {
             return (T) instanceProviders.get(cls).out1();
         } catch (final Exception e) {
             if (initOnce) {
-                X_Log.warn("Instance provider failed; attempting runtime injection", e);
+                X_Log.warn("Instance provider failed; attempting runtime injection of", cls, e);
                 initOnce = false;
                 init(cls, instanceProviders);
                 return create(cls);
@@ -349,7 +349,7 @@ public class JreInjector implements Injector {
             return (T) singletonProviders.get(cls).out1();
         } catch (final Exception e) {
             if (initOnce) {
-                X_Log.warn("Singleton provider failed; attempting runtime injection", e);
+                X_Log.warn("Singleton provider failed; attempting runtime injection of ", cls, e);
                 initOnce = false;
                 init(cls, singletonProviders);
                 return provide(cls);

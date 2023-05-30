@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
+import xapi.annotation.model.SerializationStrategy;
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelModule;
@@ -17,6 +18,8 @@ import xapi.model.tools.ModelSerializerDefault;
 import xapi.time.X_Time;
 import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
+
+import java.util.EnumMap;
 
 public class ModelServiceTestJre {
 
@@ -105,6 +108,26 @@ public class ModelServiceTestJre {
     assertEquals(content, asModel);
   }
 
+  @Test
+  public void testModelEnumMap() {
+    final TestModelEnumMap hasMap = X_Model.create(TestModelEnumMap.class);
+    final String nullMap = X_Model.serialize(TestModelEnumMap.class, hasMap);
+    final TestModelEnumMap deserializeNullMap = X_Model.deserialize(TestModelEnumMap.class, nullMap);
+    assertEquals(hasMap, deserializeNullMap);
+
+    final EnumMap<SerializationStrategy, Integer> theMap = new EnumMap<SerializationStrategy, Integer>(SerializationStrategy.class);
+    hasMap.setItems(theMap);
+    final String emptyMap = X_Model.serialize(TestModelEnumMap.class, hasMap);
+    final TestModelEnumMap deserializeEmpty = X_Model.deserialize(TestModelEnumMap.class, emptyMap);
+    assertEquals(hasMap, deserializeEmpty);
+
+    hasMap.setItems(theMap);
+    hasMap.getItems().put(SerializationStrategy.Custom, 123);
+    final String fullMap = X_Model.serialize(TestModelEnumMap.class, hasMap);
+    final TestModelEnumMap deserializeFull = X_Model.deserialize(TestModelEnumMap.class, fullMap);
+    assertEquals(hasMap, deserializeFull);
+
+  }
   @Test
   public void testModelPersistence() {
     final ModelContent content = X_Model.create(ModelContent.class);

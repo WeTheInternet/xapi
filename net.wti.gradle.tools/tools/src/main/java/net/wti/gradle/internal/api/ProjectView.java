@@ -78,7 +78,6 @@ public interface ProjectView extends MinimalProjectView {
     FileTree zipTree(Object from);
     GradleService getService();
     DefaultComponentMetadataHandler getComponentMetadata();
-    boolean isWtiGradle();
     ProjectLayout getLayout();
 
     static ProjectView fromProject(Project project) {

@@ -51,6 +51,11 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
         public SizedIterator<T> iterator() {
             return SizedIterator.of(size, source.iterator());
         }
+
+        @Override
+        public String toString() {
+            return join("[", ",", "]");
+        }
     }
 
     private volatile boolean checking;

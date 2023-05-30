@@ -1,6 +1,10 @@
 package xapi.fu.java;
 
+import xapi.fu.Maybe;
 import xapi.fu.data.ListLike;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.CachingIterator;
+import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
 
 import java.io.Serializable;
@@ -114,5 +118,47 @@ public class ListAdapter<T> implements ListLike<T>, Serializable {
 
     public List<T> getList() {
         return list;
+    }
+
+    @Override
+    public SizedIterable<T> cached() {
+        SizedIterable result = ArrayIterable.iterate(list.stream().toArray());
+        return result;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return list.isEmpty();
+    }
+
+    @Override
+    public boolean isNotEmpty() {
+        return !list.isEmpty();
+    }
+
+    @Override
+    public T first() {
+        return list.get(0);
+    }
+
+    @Override
+    public Maybe<T> firstMaybe() {
+        if (isEmpty()) {
+            return Maybe.not();
+        }
+        return Maybe.immutable(first());
+    }
+
+    @Override
+    public T firstOrNull() {
+        if (isEmpty()) {
+            return null;
+        }
+        return first();
+    }
+
+    @Override
+    public T last() {
+        return list.get(list.size() - 1);
     }
 }

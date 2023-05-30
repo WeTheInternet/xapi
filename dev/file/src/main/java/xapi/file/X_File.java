@@ -37,6 +37,15 @@ public class X_File {
     return SERVICE.out1().chmod(chmod, file);
   }
 
+  /**
+   * just like the sh ln command, the first argument is the "real file" the created link points to.
+   * @param linkSource A single string which defines where the symlink leads to
+   * @param linkFiles One or more symlink files to create, which point to linkSource
+   * @return true if all link files were either created, and exist, pointing to the correct location.
+   */
+  public static boolean ln(String linkSource, String ... linkFiles) {
+    return SERVICE.out1().ln(linkSource, linkFiles);
+  }
   public static String unzip(String resource, JarFile jarFile) {
     return unzip(resource, jarFile, 0x755);
   }

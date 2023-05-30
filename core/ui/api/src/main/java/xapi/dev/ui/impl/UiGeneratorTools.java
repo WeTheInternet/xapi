@@ -214,7 +214,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
 
     private void clearTasks(ChainBuilder<Do> tasks) {
         while (!tasks.isEmpty()) {
-            final ReplayableIterable<Do> jobs;
+            final SizedIterable<Do> jobs;
             // We only use this on final variables,
             // and this synchronized is why this method is private, instead of a utility method
             //noinspection SynchronizationOnLocalVariableOrMethodParameter

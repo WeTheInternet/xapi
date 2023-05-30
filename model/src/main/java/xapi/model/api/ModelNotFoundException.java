@@ -16,6 +16,10 @@ public class ModelNotFoundException extends Exception {
     super("Could not find model " + modelKey);
     this.modelKey = modelKey;
   }
+  public ModelNotFoundException(final ModelKey modelKey, Throwable cause) {
+    super("Could not find model " + modelKey, cause);
+    this.modelKey = modelKey;
+  }
 
   /**
    * @return -> modelKey

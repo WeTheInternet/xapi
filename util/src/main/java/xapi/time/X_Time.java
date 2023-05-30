@@ -22,6 +22,14 @@ public class X_Time {
     return service.now();
   }
 
+  public static double nowMillis() {
+    return now().millis();
+  }
+
+  public static String printTimeSince(double millis) {
+    return print(nowMillis() - millis);
+  }
+
   /**
    * Returns the Moment the current thread began operation,
    * or the last call to {@link #tick()}.
@@ -130,5 +138,9 @@ public class X_Time {
 
   public static String timestamp(double millis) {
     return service.timestamp(millis);
+  }
+
+  public static String printSinceBirth() {
+    return print(now().millis() - birth());
   }
 }

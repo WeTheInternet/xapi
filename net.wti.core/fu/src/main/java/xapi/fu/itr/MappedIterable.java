@@ -709,7 +709,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
      * (you want to read the full payload of a list, so you do not see concurrent mutations).
      *
      */
-    default SizedReplayableIterable<T> cached() {
+    default SizedIterable<T> cached() {
         final ReplayableIterable<T> itr = CachingIterator.cachingIterable(this);
         // Read the backing iterable into our cache.
         return itr.sized();

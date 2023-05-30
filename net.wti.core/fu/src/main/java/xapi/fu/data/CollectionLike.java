@@ -1,6 +1,7 @@
 package xapi.fu.data;
 
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Maybe;
 import xapi.fu.Out2;
 import xapi.fu.api.Clearable;
 import xapi.fu.api.Ignore;
@@ -60,6 +61,25 @@ public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItem
         final SizedIterable<V> all = cached();
         clear();
         return all;
+    }
+
+    default V removeFirst() {
+        final SizedIterator<V> itr = iterator();
+        if (itr.hasNext()) {
+            final V next = itr.next();
+            itr.remove();
+            return next;
+        }
+        throw new IllegalStateException("Called removeFirst on an empty " + getClass() + ". Instead use removeFirstMaybe");
+    }
+    default Maybe<V> removeFirstMaybe() {
+        final SizedIterator<V> itr = iterator();
+        if (itr.hasNext()) {
+            final V next = itr.next();
+            itr.remove();
+            return Maybe.immutable(next);
+        }
+        return Maybe.not();
     }
 
     default boolean removeIf(Filter1<V> filter) {

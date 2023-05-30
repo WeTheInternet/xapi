@@ -22,6 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -106,6 +110,48 @@ public class FileServiceImpl implements FileService {
   @Override
   public boolean exists(String path) {
     return new File(path).exists();
+  }
+
+  @Override
+  public boolean ln(final String linkSource, final String ... linkFiles) {
+    // do not verify source exists. Let user create a missing link
+    Path source = Paths.get(linkSource);
+    boolean success = true;
+    for (String linkFile : linkFiles) {
+      final Path link = Paths.get(linkFile);
+      // check if the link exists, not if that link pointy to a valid file or not
+      if (!Files.exists(link, LinkOption.NOFOLLOW_LINKS)) {
+        try {
+          Files.createSymbolicLink(link, source);
+        } catch (IOException e) {
+          X_Log.error(FileServiceImpl.class, "Not able to create link " + linkFile + " -> " + source, e);
+          success = false;
+        }
+      }
+      try {
+        Path thePath = Files.readSymbolicLink(link);
+        if (!thePath.toAbsolutePath().toString().equals(linkSource)) {
+          X_Log.warn(FileServiceImpl.class, "Resolved link " + thePath + " != desired link " + linkSource + " for file://" + linkFile);
+          if (Files.isSymbolicLink(link)) {
+            Files.delete(link);
+            Files.createSymbolicLink(link, source);
+            thePath = Files.readSymbolicLink(link);
+            if (thePath.toAbsolutePath().toString().equals(linkSource)) {
+                X_Log.warn(FileServiceImpl.class, "Overwrote file://" + linkFile + " -> file://" + linkSource);
+            } else {
+              success = false;
+            }
+          } else {
+            success = false;
+
+          }
+        }
+      } catch (IOException e) {
+        X_Log.error(FileServiceImpl.class, "ln() Not able to resolve link " + linkFile, e);
+        success = false;
+      }
+    }
+    return success;
   }
 
   @Override

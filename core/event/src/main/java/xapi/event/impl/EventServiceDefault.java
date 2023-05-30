@@ -4,6 +4,8 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.event.api.EventHandler;
 import xapi.event.api.EventService;
 import xapi.event.api.IsEvent;
+import xapi.platform.AndroidPlatform;
+import xapi.platform.JrePlatform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,6 +15,8 @@ import java.io.Serializable;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/16/16.
  */
+@JrePlatform
+@AndroidPlatform
 @SingletonDefault(implFor = EventService.class)
 public class EventServiceDefault extends AbstractEventService {
 
