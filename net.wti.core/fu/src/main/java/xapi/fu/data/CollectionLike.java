@@ -3,14 +3,18 @@ package xapi.fu.data;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Maybe;
 import xapi.fu.Out2;
+import xapi.fu.X_Fu;
 import xapi.fu.api.Clearable;
 import xapi.fu.api.Ignore;
 import xapi.fu.has.HasItems;
+import xapi.fu.has.HasLock;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.MappedIterator;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
 
 import java.util.Iterator;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Lists, Sets AND Maps all implement CollectionLike (with maps using Out2 tuples of K:V for standard iteration).
@@ -30,6 +34,7 @@ public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItem
     CollectionLike<V> add(V value);
 
     default <N> SizedIterable<Out2<V, N>> merge(boolean shrink, CollectionLike<N> other) {
+        final Object lock = this;
         return SizedIterable.of(
             ()-> shrink ? Math.min(size(), other.size()) : Math.max(size(), other.size()),
             ()-> {
@@ -53,48 +58,104 @@ public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItem
     }
 
     default CollectionLike<V> addNow(Iterable<? extends V> items) {
-        items.forEach(this::add);
-        return this;
+        return HasLock.maybeLock(this, ()->{
+            items.forEach(this::add);
+            return this;
+        });
     }
 
     default SizedIterable<V> clearItems() {
-        final SizedIterable<V> all = cached();
-        clear();
-        return all;
+        return HasLock.maybeLock(this, ()-> {
+            final SizedIterable<V> all = cached();
+            clear();
+            return all;
+        });
     }
 
     default V removeFirst() {
-        final SizedIterator<V> itr = iterator();
-        if (itr.hasNext()) {
-            final V next = itr.next();
-            itr.remove();
-            return next;
-        }
-        throw new IllegalStateException("Called removeFirst on an empty " + getClass() + ". Instead use removeFirstMaybe");
+        return HasLock.maybeLock(this, ()-> {
+            final SizedIterator<V> itr = iterator();
+            if (itr.hasNext()) {
+                final V next = itr.next();
+                itr.remove();
+                return next;
+            }
+            throw new IllegalStateException("Called removeFirst on an empty " + getClass() + ". Instead use removeFirstMaybe");
+        });
     }
     default Maybe<V> removeFirstMaybe() {
-        final SizedIterator<V> itr = iterator();
-        if (itr.hasNext()) {
-            final V next = itr.next();
-            itr.remove();
-            return Maybe.immutable(next);
-        }
-        return Maybe.not();
+        return HasLock.maybeLock(this, ()-> {
+            final SizedIterator<V> itr = iterator();
+            if (itr.hasNext()) {
+                final V next = itr.next();
+                itr.remove();
+                return Maybe.immutable(next);
+            }
+            return Maybe.not();
+        });
     }
 
+    default SizedIterable<V> removeMatches(Filter1<V> filter) {
+        Object lock = this;
+        MappedIterable<V> i = ()-> {
+            final SizedIterator<V> itr = CollectionLike.this.iterator();
+            return new Iterator<V>() {
+                private V nextVal;
+
+                @Override
+                public boolean hasNext() {
+                    return HasLock.maybeLock(lock, ()-> {
+                        while (nextVal == null) {
+                            if (!itr.hasNext()) {
+                                return false;
+                            }
+                            nextVal = itr.next();
+                            if (filter.io(nextVal)) {
+                                return true;
+                            } else {
+                                nextVal = null;
+                            }
+
+                        }
+                        return false;
+                    });
+                }
+
+                @Override
+                public V next() {
+                    return HasLock.maybeLock(lock, ()->{
+                        try {
+                            return nextVal;
+                        } finally {
+                            itr.remove();
+                            nextVal = null;
+                        }
+                    });
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException("Called by next()");
+                }
+            };
+        };
+        return i.cached();
+    }
     default boolean removeIf(Filter1<V> filter) {
-        boolean removed = false;
-        for (
-            final SizedIterator<V> itr = iterator();
-            itr.hasNext();
-        ) {
-            final V next = itr.next();
-            if (filter.filter1(next)) {
-                removed = true;
-                itr.remove();
+        return HasLock.maybeLock(this, ()->{
+            boolean removed = false;
+            for (
+                final SizedIterator<V> itr = iterator();
+                itr.hasNext();
+            ) {
+                final V next = itr.next();
+                if (filter.filter1(next)) {
+                    removed = true;
+                    itr.remove();
+                }
             }
-        }
-        return removed;
+            return removed;
+        });
     }
 
     default boolean removeAllEquality(CollectionLike<V> others) {

@@ -25,6 +25,9 @@ while (( arg_len > 0 )); do
       all_args="${all_args/$arg}"
       main_args="${main_args/$remove_shadow}"
       ;;
+   --debug|-d)
+      set -o xtrace
+      ;;
    --main|-m)
       if (( arg_ind == $# )); then
           echo "Must provide an argument after --main"

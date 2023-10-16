@@ -241,6 +241,9 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
         // far too naive to be used for a production system. It is primarily a proof-of-concept that can
         // be usable for developing APIs against something that is simple to use and debug
         allFiles = f.listFiles();
+        if (allFiles == null) {
+          allFiles = new File[]{};
+        }
       } else {
         // If there is a cursor, we are continuing a query.
         allFiles = f.listFiles((dir, name) -> name.compareTo(query.getCursor()) > -1);

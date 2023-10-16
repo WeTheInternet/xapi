@@ -51,6 +51,9 @@ public class X_Jdk {
     public static <V> ListLike<V> toList(List<V> list) {
         return new ListAdapter<>(list);
     }
+    private static <V> ListLike<V> toListConcurrent(List<V> list) {
+        return new ListAdapter<>(list);
+    }
 
     public static <V> SetLike<V> toSet(Set<V> list) {
         return new SetAdapter<>(list);
@@ -102,7 +105,7 @@ public class X_Jdk {
 
     @GwtIncompatible
     public static <V> ListLike<V> listArrayConcurrent() {
-        return toList(new CopyOnWriteArrayList<>());
+        return toListConcurrent(new CopyOnWriteArrayList<>());
     }
 
     public static <V> ListLike<V> list() {

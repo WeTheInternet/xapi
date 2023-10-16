@@ -33,9 +33,9 @@ public interface HasLock {
 
     /**
      * If the supplied source object is an instance of* HasLock,
-     * (* beware use of instanceof when cross-classloader reference sharing!)
-     * then the given factory callback will be invoked using said HasLock's #mutex method;
-     * OTHERWISE NO SYNCHRONIZATION WILL OCCUR, NOR WILL CROSS-THREADED UPDATES CROSS MEMORY BARRIER!
+     * <p>(* beware use of instanceof when cross-classloader reference sharing!)
+     * <p>then the given factory callback will be invoked using said HasLock's #mutex method;
+     * <p>OTHERWISE NO SYNCHRONIZATION WILL OCCUR, NOR WILL CROSS-THREADED UPDATES CROSS MEMORY BARRIER!
      *
      * If you don't understand what this means,
      * prefer to use {@link HasLock#alwaysLock(Object, Out1)}

@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class ListAdapter<T> implements ListLike<T>, Serializable {
 
-    private final List<T> list;
+    protected List<T> list;
     private boolean sparse;
 
     public ListAdapter() {
