@@ -8,11 +8,13 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.Ignore;
 import xapi.fu.api.ShouldOverride;
+import xapi.fu.data.MapLike;
 import xapi.fu.data.SetLike;
 import xapi.fu.has.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.CachingIterator.ReplayableIterable;
 import xapi.fu.itr.CachingIterator.SizedReplayableIterable;
+import xapi.fu.java.X_Jdk;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
@@ -864,5 +866,17 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default MappedIterable<T> unique(SetLike<T> unique) {
         return filter(unique::addIfMissing);
+    }
+
+    default <K, V> MapLike<K, V> toMap(In1Out1<T, K> keyMapper, In1Out1<T, V> valueMapper) {
+        return toMap(X_Jdk.mapOrderedInsertion(), keyMapper, valueMapper);
+    }
+    default <K, V> MapLike<K, V> toMap(MapLike<K, V> into, In1Out1<T, K> keyMapper, In1Out1<T, V> valueMapper) {
+        for (T item : this) {
+            final K key = keyMapper.io(item);
+            final V value = valueMapper.io(item);
+            into.put(key, value);
+        }
+        return into;
     }
 }

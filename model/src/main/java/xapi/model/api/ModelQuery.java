@@ -11,10 +11,7 @@ import xapi.model.service.ModelService;
 import xapi.source.lex.CharIterator;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static xapi.collect.X_Collect.newList;
 
@@ -59,6 +56,24 @@ public class ModelQuery <M extends Model> {
     }
     private final String propertyName;
     private final SortOrder order;
+
+    @Override
+    public String toString() {
+      return "{"  + propertyName + "=" + order + "}";
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      final SortOption that = (SortOption) o;
+      return Objects.equals(getPropertyName(), that.getPropertyName()) && getOrder() == that.getOrder();
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(getPropertyName(), getOrder());
+    }
   }
 
   public static final class QueryParameter {
@@ -116,6 +131,24 @@ public class ModelQuery <M extends Model> {
     public QueryParameter setParameterName(final String parameterName) {
       this.parameterName = parameterName;
       return this;
+    }
+
+    @Override
+    public String toString() {
+      return "{" + parameterName + "." + filterType + "=" + filterValue + "}";
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      final QueryParameter that = (QueryParameter) o;
+      return getFilterType() == that.getFilterType() && Objects.equals(getFilterValue(), that.getFilterValue()) && Objects.equals(getParameterName(), that.getParameterName());
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(getFilterType(), getFilterValue(), getParameterName());
     }
   }
 
@@ -204,9 +237,11 @@ public class ModelQuery <M extends Model> {
 
   /**
    * @param cursor -> set cursor
+   * @return
    */
-  public void setCursor(final String cursor) {
+  public ModelQuery<M> setCursor(final String cursor) {
     this.cursor = cursor;
+    return this;
   }
 
   /**
@@ -537,4 +572,33 @@ public class ModelQuery <M extends Model> {
     return null;
   }
 
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ModelQuery<?> that = (ModelQuery<?>) o;
+    return getPageSize() == that.getPageSize() && getLimit() == that.getLimit() &&
+            Objects.equals(getAncestor(), that.getAncestor()) &&
+            Objects.equals(parameters, that.parameters) &&
+            Objects.equals(sortOptions, that.sortOptions) &&
+            Objects.equals(getNamespace(), that.getNamespace());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getAncestor(), getPageSize(), getLimit(), getNamespace());
+  }
+
+  @Override
+  public String toString() {
+    return "ModelQuery{" +
+            "ancestor=" + ancestor +
+            ", namespace='" + namespace + '\'' +
+            ", cursor='" + cursor + '\'' +
+            ", parameters=" + parameters.join(":") +
+            ", sortOptions=" + sortOptions.join(":") +
+            ", pageSize=" + pageSize +
+            ", limit=" + limit +
+            '}';
+  }
 }

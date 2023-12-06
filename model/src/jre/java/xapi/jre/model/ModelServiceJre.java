@@ -43,43 +43,15 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   protected <M extends Model> void doPersist(final String type, final M model, final SuccessHandler<M> callback) {
     // For simplicity sake, lets use the file system to save our models.
     ModelKey key = getKey(model, type);
-
+    // make sure to generate id for keys of long type w/o ids
+    keyToFile(key, model, callback);
     serialize(type, model, (serialized, error)-> {
       if (error != null) {
         fail(callback, error);
         return;
       }
-      // no errors serializing, write our file.
-      File f = getRoot(callback);
-      if (f == null) {
-        return;
-      }
-      if (key.getNamespace().length() > 0) {
-        f = new File(f, key.getNamespace());
-      }
-      f = new File(f, key.getKind());
-      // nest hierarchical keys in a directory structure
-      f = resolveParents(f, key.getParent());
-      f.mkdirs();
-      if (key.getId() == null) {
-        // No id; generate one
-        try {
-          f = generateFile(f, model);
-        } catch (final IOException e) {
-          X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
-          if (callback instanceof ErrorHandler) {
-            ((ErrorHandler) callback).onError(e);
-          } else {
-            rethrow(e);
-          }
-          return;
-        }
-        key.setId(f.getName());
-      } else {
-        f = new File(f, key.getId());
-      }
 
-      final File file = f;
+      final File file = keyToFile(key, model, callback);
       final Runnable finish = new Runnable() {
 
         @Override
@@ -115,6 +87,39 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
 
     }); // end serialize(...)
   } // end doPersist()
+
+  private <M extends Model> File keyToFile(final ModelKey key, M model, final SuccessHandler<M> callback) {
+    // no errors serializing, write our file.
+    File f = getRoot(callback);
+    if (f == null) {
+      return f;
+    }
+    if (key.getNamespace().length() > 0) {
+      f = new File(f, key.getNamespace());
+    }
+    f = new File(f, key.getKind());
+    // nest hierarchical keys in a directory structure
+    f = resolveParents(f, key.getParent());
+    f.mkdirs();
+    if (key.getId() == null) {
+      // No id; generate one
+      try {
+        f = generateFile(f, model);
+      } catch (final IOException e) {
+        X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
+        if (callback instanceof ErrorHandler) {
+          ((ErrorHandler) callback).onError(e);
+        } else {
+          rethrow(e);
+        }
+        return f;
+      }
+      key.setId(f.getName());
+    } else {
+      f = new File(f, key.getId());
+    }
+    return f;
+  }
 
   private <M extends Model> ModelKey getKey(final M model, final String type) {
     ModelKey key = model.getKey();
@@ -247,6 +252,10 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       } else {
         // If there is a cursor, we are continuing a query.
         allFiles = f.listFiles((dir, name) -> name.compareTo(query.getCursor()) > -1);
+        if (allFiles == null) {
+          // not really expected, but we'll tolerate it to avoid null pointers
+          allFiles = new File[]{};
+        }
       }
       final int size = Math.min(query.getPageSize(), allFiles.length);
       files = new ArrayList<File>(size);
@@ -378,16 +387,20 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
    * @return
    * @throws IOException
    */
-  private synchronized File generateFile(File f, Model m) throws IOException {
+  private synchronized File generateFile(File srcDir, Model m) throws IOException {
     final String prefix = m instanceof HasName ? ((HasName) m).getName() : "";
     int loopBreak = 20;
+    File f;
     do {
-      int size = f.listFiles().length;
-      f = new File(f, (prefix == null ? "" : prefix) + "-" + size);
+      int size = srcDir.listFiles().length;
+      f = new File(srcDir, (prefix == null ? "" : prefix) + "-" + size);
       if (loopBreak --<= 0) {
         throw new IllegalStateException("Cannot save file to " + f.getAbsolutePath() + "; check parent directory exists, is readable and executable and the disk is not out of space");
       }
-    } while (!f.createNewFile());
+      if (f.createNewFile()) {
+        break;
+      }
+    } while (srcDir.exists());
     m.getKey().setId(f.getName());
     return f;
   }
