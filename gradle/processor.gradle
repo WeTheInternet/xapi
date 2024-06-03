@@ -6,7 +6,7 @@ import org.gradle.util.GUtil
 // could make this configurable, but this is likely going away soon,
 // since we'll want each custom sourceset to correct its own javac
 
-tasks.withType(JavaCompile).all {
+tasks.withType(JavaCompile).configureEach {
     JavaCompile javac ->
 
         String name = javac.name - 'compile' - 'Java'
@@ -25,12 +25,16 @@ tasks.withType(JavaCompile).all {
 
         javac.options.annotationProcessorGeneratedSourcesDirectory = output
 
-        IdeaModule ideaModule = project.getExtensions().getByType(IdeaModel).module
-        if (name =~ /.*[Tt]est.*/) {
-            ideaModule.testSourceDirs = addSet(ideaModule.testSourceDirs)
-        } else {
-            ideaModule.sourceDirs = addSet(ideaModule.sourceDirs)
-        }
-        ideaModule.generatedSourceDirs = addSet(ideaModule.generatedSourceDirs)
+//        IdeaModel ideaModel = project.getExtensions().getByType(IdeaModel)
+//        IdeaModule ideaModule = ideaModel.module
+//
+//        println "Configuring $ideaModule.name @ ${ideaModule.contentRoot} for $javac ($javac.destinationDir)"
+//
+//        if (name =~ /.*[Tt]est.*/) {
+//            ideaModule.testSourceDirs = addSet(ideaModule.testSourceDirs)
+//        } else {
+//            ideaModule.sourceDirs = addSet(ideaModule.sourceDirs)
+//        }
+//        ideaModule.generatedSourceDirs = addSet(ideaModule.generatedSourceDirs)
 
 }

@@ -38,7 +38,7 @@ import java.util.Objects;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-@SingletonOverride(priority=Integer.MIN_VALUE+2, implFor=ModelService.class)
+//@SingletonOverride(priority=Integer.MIN_VALUE+2, implFor=ModelService.class)
 public class ModelServiceTestImpl extends AbstractModelService {
 
   private final HashMap<ModelKey, Model> ramCache = new HashMap<>();

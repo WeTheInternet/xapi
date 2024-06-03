@@ -144,6 +144,7 @@ public class ModelServiceGwt extends AbstractModelService
     // constructing an invalid uri.
     ns = primitives.serializeString(ns);
     final String kind = modelKey.getKind();
+    // THIS DOESN'T TAKE PARENT KEYS INTO ACCOUNT!
     final String id = primitives.serializeInt(modelKey.getKeyType()) + modelKey.getId();
     final String serialized = "/" + ns + "/"+kind+"/"+id;
     X_IO.getIOService().get(url+serialized, headers, new DelegatingIOCallback<>(resp -> {
