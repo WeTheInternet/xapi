@@ -14,4 +14,6 @@ add('test')
 add('tools')
 add('deprecated')
 
+try {
 enableFeaturePreview('GRADLE_METADATA')
+} catch(ignored) {}

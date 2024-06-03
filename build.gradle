@@ -91,25 +91,24 @@ gradle.beforeProject {
                 options.sourcepath = files()
             }
 
-            tasks.withType(Test).all {
+            tasks.withType(Test).configureEach {
                 Test test ->
                     test.systemProperty('xapi.mvn.repo', mvnRepo.absolutePath)
                     if (!test.maxHeapSize) {
                         test.maxHeapSize = '1G'
                     }
 
-                    String compileForTest = "compile${test.name - "test" - "Main"}Java"
+                    String compileForTest = "compile${test.name - "test" - "Main"}TestJava"
                     JavaCompile javac = project.tasks.findByName(compileForTest)
                     if (javac) {
                         File metaDir = javac.destinationDir
-                        test.systemProperty('xapi.meta', metaDir.absolutePath)
-    //                    test.systemProperty('xapi.injector.cache', metaDir.absolutePath)
+                        test.systemProperty('xapi.injector.cache', metaDir.absolutePath)
                         test.doFirst {
                             new File(metaDir, 'META-INF/singletons').mkdirs()
                             new File(metaDir, 'META-INF/instances').mkdirs()
                         }
                     } else {
-                        test.logger.warn "Could not find $compileForTest in $project.path"
+                        test.logger.info "Could not find $compileForTest in $project.path"
                     }
             }
 

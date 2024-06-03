@@ -78,4 +78,8 @@ public class ModelModuleLoader {
     loaders.put(moduleName, loader);
     return loader;
   }
+
+  public void flushCaches() {
+    loaders.clear();
+  }
 }

@@ -5,6 +5,7 @@ import xapi.except.NoSuchItem;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
+import xapi.fu.Out2;
 import xapi.fu.itr.MappedIterable;
 import xapi.inject.X_Inject;
 import xapi.model.api.*;
@@ -47,6 +48,37 @@ public class X_Model {
   public static <M extends Model> void persist(final M model, final SuccessHandler<M> callback) {
     // TODO: return a Promises-like object
     service.out1().persist(model, callback);
+  }
+
+  public static <M extends Model> Out2<M, Throwable> persistBlocking(final M model, long milliTimeout) {
+    final Object[] result = {null};
+
+    SuccessHandler<M> callback = SuccessHandler.handler(success->{
+      result[0] = success;
+      synchronized (result) {
+        result.notifyAll();
+      }
+    }, failure-> {
+      result[0] = failure;
+      synchronized (result) {
+        result.notifyAll();
+      }
+
+    });
+    service.out1().persist(model, callback);
+    synchronized (result) {
+      try {
+        result.wait(milliTimeout);
+      } catch (InterruptedException e) {
+        // keep the interrupt status on, somebody wants us to die.
+        Thread.currentThread().interrupt();
+        return Out2.out2Immutable(null, e);
+      }
+    }
+    return Out2.out2Immutable(
+            result[0] instanceof Throwable ? null : (M) result[0],
+            result[0] instanceof Throwable ? (Throwable)result[0] : null
+    );
   }
 
   public static <M extends Model> void upsert(final Class<M> type, ModelKey key, In1Out1<M, M> mutator, Out1<M> creator, SuccessHandler<M> callback) {
@@ -134,4 +166,5 @@ public class X_Model {
   public static ModelKey ensureKey(String type, Model mod) {
     return cache().ensureKey(type, mod);
   }
+
 }

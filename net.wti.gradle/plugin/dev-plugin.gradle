@@ -42,6 +42,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
         external "net.wti.gradle.tools:xapi-gradle-test:$version", 'main'
+        external 'junit:junit:4.12'
 }
 
 // we'll leave it up to scripts to decide which plugin/gradle/groovy version they want to use...

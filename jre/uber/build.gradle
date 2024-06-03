@@ -17,7 +17,11 @@ xapiRequire.main().configure {
         req.project 'xapi-dev-parent:xapi-dev-scanner'
         req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
 }
-xapiRequire.module('test').project 'xapi-common', 'testTools'
+xapiRequire.module('test').configure {
+    req ->
+        req.project 'xapi-common', 'testTools'
+        req.project 'xapi-model', 'jre:main'
+}
 
 description = 'XApi - Jre uber jar'
 

@@ -16,6 +16,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('api').configure {
     external "net.wti.gradle.tools:xapi-gradle-tools:${->version}", 'main'
+    external "net.wti.gradle.tools:xapi-gradle-core:${->version}", 'main'
     external "net.wti.core:xapi-lang-core:${->version}", 'main'
     external "net.wti.core:xapi-fu:${->version}", 'main'
 }
@@ -23,6 +24,8 @@ xapiRequire.module('api').configure {
 xapiRequire.module('test').configure {
     external "net.wti.gradle.tools:xapi-gradle-test:${->version}", 'main'
     external "net.bytebuddy:byte-buddy:1.11.0"
+    external 'junit:junit:4.12'
+
 }
 
 xapiRequire.module('spi').configure {

@@ -41,6 +41,7 @@ import java.util.Iterator;
 public class BytecodeAdapterService implements
     SourceAdapterService<String, CtMethod, CtField, Annotation> {
 
+  private static Class<?>[] searchClasses = {};
   private final ClassPool pool;
   // In order to delay calling getScanUrls() until after all constructors are
   // called,
@@ -902,7 +903,11 @@ public class BytecodeAdapterService implements
   }
 
   public static MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
-    BytecodeAdapterService adapter = new BytecodeAdapterService();
+    final ClassPool cp = new ClassPool(true);
+    for (Class<?> searchClass : searchClasses) {
+      cp.appendClassPath(new ClassClassPath(searchClass));
+    }
+    BytecodeAdapterService adapter = new BytecodeAdapterService(cp);
     final IsClass fromByteCode = adapter.toClass(type.getName());
     final Method[] sourceMethods = type.getMethods();
     final MappedIterable<Method> itr = MappedIterable.mapped(fromByteCode.getMethods())
@@ -929,5 +934,8 @@ public class BytecodeAdapterService implements
         })
         .filterNull();
     return itr;
+  }
+  public static void setSearchClasses(Class<?> ... classes) {
+    searchClasses = classes;
   }
 }

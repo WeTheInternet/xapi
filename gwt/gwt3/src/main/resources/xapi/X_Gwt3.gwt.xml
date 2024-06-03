@@ -7,6 +7,8 @@
   <inherits name="xapi.X_Fu" />
   <source path="elemental" />
   <source path="elemental/api" />
+  <source path="elemental/modern/api" />
+  <source path="elemental/modern/history" />
   <source path="elemental/service" />
   <source path="elemental/impl" />
 

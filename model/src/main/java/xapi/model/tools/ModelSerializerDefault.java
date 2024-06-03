@@ -10,6 +10,7 @@ import xapi.collect.proxy.api.CollectionProxy;
 import xapi.collect.proxy.impl.MapOf;
 import xapi.dev.source.CharBuffer;
 import xapi.fu.In2Out1;
+import xapi.fu.X_Fu;
 import xapi.fu.data.*;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
@@ -178,7 +179,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     if (model == null) {
       System.out.println("hm... null model written... ctx: " + ctx.getBuffer());
     } else {
-      for (final String key : model.getPropertyNames()) {
+      for (final String key : ctx.getPropertyNames(model)) {
         if (preventSerialization(model, key, ctx)) {
           continue;
         }
@@ -670,10 +671,11 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         out.append(primitives.serializeInt(asNumber.intValue()));
       }
     } else if (Number.class.isAssignableFrom(valueType)) {
+      Number nonNullNumber = value == null ? 0 : (Number)value;
       if (valueType == Float.class || valueType == Double.class || valueType == BigDecimal.class) {
-        out.append(primitives.serializeDouble(((Number)value).doubleValue()));
+        out.append(primitives.serializeDouble(nonNullNumber.doubleValue()));
       } else {
-        out.append(primitives.serializeLong(((Number)value).longValue()));
+        out.append(primitives.serializeLong(nonNullNumber.longValue()));
       }
     } else if (isModelType(valueType)) {
       writeModel(out, propName, valueType, (Model)value, primitives, ctx);
@@ -842,14 +844,14 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                 }
                 // TODO: we need to contribute these to a promise-like object...
                 // or at least a Model.getBlockers() method of some kind, to allow threaded enviros to block.
-                X_Log.trace(ModelSerializerDefault.class, "Finished loading sub-model ", win.getKey());
+                X_Log.debug(ModelSerializerDefault.class, "Finished loading sub-model ", win.getKey());
               }, lose -> {
                 X_Log.error(ModelSerializerDefault.class, "Error loading sub-model ", key, lose);
               }
       ));
       return model;
     }
-    final String[] propNames = model.getPropertyNames();
+    final String[] propNames = ctx.getPropertyNames(model);
     for (final String propertyName : propNames) {
       if (preventDeserialization(model, propertyName, ctx)) {
         continue;
@@ -1013,7 +1015,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       if (propertyType == Integer.class) {
         return (int) primitives.deserializeLong(src);
       } else if (propertyType == Long.class) {
-        return (float)primitives.deserializeLong(src);
+        return primitives.deserializeLong(src);
       } else if (propertyType == Float.class) {
         return (float)primitives.deserializeDouble(src);
       } else if (propertyType == Double.class) {
@@ -1058,7 +1060,9 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       // pull the last item off list. this is cheapest for array list
       Enum last = items.remove(items.size() - 1);
       // now, send it all to EnumSet...
-      final Enum[] array = items.toArray(X_Reflect.newArray(enumType, items.size()));
+//      final Enum[] array = items.toArray(X_Reflect.newArray(enumType, items.size()));
+      final Enum[] arr = (Enum[]) X_Fu.newArray(enumType, items.size());
+      final Enum[] array = items.toArray(arr);
       return EnumSet.of(last, array);
     } else if (EnumMap.class.isAssignableFrom(propertyType)) {
       int amt = primitives.deserializeInt(src);

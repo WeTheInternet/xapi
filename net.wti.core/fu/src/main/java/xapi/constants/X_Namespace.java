@@ -155,10 +155,10 @@ public class X_Namespace {
   public static final String PROPERTY_TEST = "xapi.test";
 
   /**
-   * "xapi.meta"
+   * "xapi.injector.cache"
    * Location to write injection metadata, if runtime injection is allowed
    */
-  public static final String PROPERTY_RUNTIME_META = "xapi.meta";
+  public static final String PROPERTY_RUNTIME_META = "xapi.injector.cache";
 
   /**
    * "xapi.inject"

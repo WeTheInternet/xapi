@@ -162,6 +162,10 @@ public class ClassPool {
         return defaultPool;
     }
 
+    public static synchronized void clearCaches() {
+        defaultPool = null;
+    }
+
     private static ClassPool defaultPool = null;
 
     /**

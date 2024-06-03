@@ -85,4 +85,10 @@ public class ModelSerializationContext {
     this.clientToServer = clientToServer;
   }
 
+  public String[] getPropertyNames(final Model model) {
+    if (manifest != null && manifest.getModelType().isInstance(model)) {
+      return manifest.getPropertyNames();
+    }
+    return model.getPropertyNames();
+  }
 }

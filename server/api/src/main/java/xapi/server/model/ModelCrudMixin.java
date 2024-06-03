@@ -183,9 +183,12 @@ public interface ModelCrudMixin {
                             wait.setIfNull(Out1.FALSE);
                         }
                     }, fail -> {
-                        X_Log.error(ModelCrudMixin.class, "Error saving model", fail);
-                        failure.in(fail);
-                        wait.setIfNull(Out1.FALSE);
+                        try {
+                            X_Log.error(ModelCrudMixin.class, "Error saving model", fail);
+                            failure.in(fail);
+                        } finally {
+                            wait.setIfNull(Out1.FALSE);
+                        }
                 }));
 
             final Boolean result = wait.block(12_500);

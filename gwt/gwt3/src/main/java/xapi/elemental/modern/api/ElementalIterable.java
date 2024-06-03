@@ -1,4 +1,4 @@
-package xapi.elemental.api;
+package xapi.elemental.modern.api;
 
 import elemental2.dom.Element;
 import elemental2.dom.HTMLCollection;

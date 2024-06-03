@@ -12,7 +12,7 @@ import elemental2.dom.Location;
 import elemental2.dom.Node;
 import jsinterop.base.Js;
 import xapi.elemental.api.BrowserService;
-import xapi.elemental.api.ElementalIterable;
+import xapi.elemental.modern.api.ElementalIterable;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.Out1;

@@ -51,7 +51,7 @@ public class ModelManifest {
     private Class<?>[] typeParams;
     private String idField;
 
-    Map<String, ModelMethodType> methodNames = new HashMap<>();
+    Map<String, ModelMethodType> methodNames = new LinkedHashMap<>();
 
     public MethodData(final String name) {
       this.name = name;
@@ -355,6 +355,7 @@ public class ModelManifest {
     final ModelManifest manifest = new ModelManifest(typeName, modelType);
 
     final int numProps = primitives.deserializeInt(chars);
+    // need to make sure this property list is what fuels the order of properties returned by jre proxies
     manifest.properties = new String[numProps];
 
     for (int i = 0;i < numProps; i++) {

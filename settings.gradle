@@ -287,4 +287,7 @@ if (composite == 'true') {
 //        p.buildFileName = "dist-${s}.gradle"
 //        p.projectDir = file("dist/${s}".toString())
 //}
-enableFeaturePreview('GRADLE_METADATA')
+
+try {
+    enableFeaturePreview('GRADLE_METADATA')
+} catch(ignored) {}

@@ -26,6 +26,8 @@ public class KeyBuilder {
   private String kind = ModelKey.DEFAULT_KIND;
   private String id = "";//ModelKey.DEFAULT_ID;
 
+  private int type = ModelKey.KEY_TYPE_STRING;
+
   private KeyBuilder parent;
 
   public KeyBuilder withNamespace(String namespace) {
@@ -58,12 +60,28 @@ public class KeyBuilder {
     return this;
   }
 
+  public KeyBuilder withType(int type) {
+    this.type = type;
+    return this;
+  }
+
   public ModelKey buildKey() {
-    return X_Model.newKey(namespace, kind, id);
+    final ModelKey key = X_Model.newKey(namespace, kind, id);
+    key.setKeyType(type);
+    return key;
   }
 
   public ModelKey buildKey(String id) {
-    return X_Model.newKey(namespace, kind, id);
+    final ModelKey key = X_Model.newKey(namespace, kind, id);
+    key.setKeyType(type);
+    return key;
+  }
+
+  public ModelKey buildKeyLong(long id) {
+    final ModelKey key = X_Model.newKey(namespace, kind);
+    key.setKeyType(ModelKey.KEY_TYPE_LONG);
+    key.setId(Long.toString(id));
+    return key;
   }
 
   public KeyBuilder fromKey(ModelKey key) {

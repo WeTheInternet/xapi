@@ -130,7 +130,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
         case "removeProperty":
           if (method.getParameterTypes().length == 1) {
             values.removeValue((String)args[0]);
-            return this;
+            return proxy;
           }
         case "getType":
           return manifest.getType();
@@ -250,7 +250,9 @@ public abstract class AbstractJreModelService extends AbstractModelService {
             }
           } else {
             result = values.setValue(property.getName(), args[0]);
-            invokeCallbacks(property.getName(), result, args[0]);
+            if (!Objects.equals(result, args[0])) {
+              invokeCallbacks(property.getName(), result, args[0]);
+            }
           }
           if (isFluent) {
             return proxy;
@@ -456,6 +458,16 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     );
   }
 
+  @Override
+  protected ModelManifest findManifest(final Class<?> type) {
+    return modelManifests.get(type);
+  }
+
+  @Override
+  protected ModelManifest findManifest(final String type) {
+    return modelManifests.get(typeToClass(type));
+  }
+
   protected void rethrow(Throwable e) {
     X_Debug.rethrow(e);
   }
@@ -465,4 +477,16 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     return BytecodeAdapterService.getMethodsInDeclaredOrder(type);
   }
 
+  @Override
+  public void flushCaches() {
+    super.flushCaches();
+    this.modelManifests.clear();
+    this.defaultValueProvider.clear();
+    this.modelFactories.clear();
+  }
+
+  @Override
+  public void registerManifest(final ModelManifest manifest) {
+    modelManifests.put(manifest.getModelType(), manifest);
+  }
 }

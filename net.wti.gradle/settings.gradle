@@ -30,4 +30,6 @@ if (composite == 'true') {
     includeBuild('../net.wti.core')
 }
 
-enableFeaturePreview('GRADLE_METADATA')
+try {
+    enableFeaturePreview('GRADLE_METADATA')
+} catch(ignored) {}

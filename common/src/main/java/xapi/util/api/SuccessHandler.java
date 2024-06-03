@@ -50,6 +50,9 @@ public interface SuccessHandler <Type> {
   @SuppressWarnings("rawtypes")
   final SuccessHandler NO_OP = new DoNothing();
 
+  public static <T> SuccessHandler<T> noop() {
+    return NO_OP;
+  }
   static <Type, Err extends Throwable> SuccessHandler<Type> handler(SuccessHandler<Type> onSuccess, ErrorHandler<Err> onFailure) {
     class WithErrorHandler implements SuccessHandler<Type>, ErrorHandler<Err> {
 

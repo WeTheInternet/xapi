@@ -147,13 +147,16 @@ public class ModuleTasks {
 
                 jar.setGroup(source.getGroup());
                 jar.setDescription("Assemble jar of " + source.getSrcName() + " sources.");
-
+                String prefix = "";
+                if (!"main".equals(source.getSrcName())) {
+                    prefix = source.getSrcName() + "-";
+                }
                 final XapiSchema schema = view().getSchema();
                 if (schema.getArchives().isWithCoordinate()) {
                     assert !schema.getArchives().isWithClassifier() : "Archive container cannot use both coordinate and classifier: " + schema.getArchives();
-                    jar.getArchiveAppendix().set("sources");
+                    jar.getArchiveAppendix().set(prefix + "sources");
                 } else {
-                    jar.getArchiveClassifier().set("sources");
+                    jar.getArchiveClassifier().set(prefix + "sources");
                     view().getLogger().quiet("Using sources classifier for {}", name);
                 }
 

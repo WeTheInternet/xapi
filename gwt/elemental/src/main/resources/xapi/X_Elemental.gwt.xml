@@ -8,6 +8,7 @@
   <inherits name="elemental2.dom.Dom" />
   <source path="elemental" />
   <source path="elemental/api" />
+  <source path="elemental/history" />
   <source path="elemental/service" />
   <source path="elemental/impl" />
 

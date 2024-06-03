@@ -49,7 +49,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   final Map<JMethod,Annotation[]> methods = new LinkedHashMap<>();
   String typeName;
   String typeClass;
-  final Set<String> toGenerate = new HashSet<String>();
+  final Set<String> toGenerate = new LinkedHashSet<String>();
   final HasModelFields fieldMap = new HasModelFields();
 
   private boolean reused;
@@ -306,7 +306,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
     final JClassType modelInterface = ctx.getTypeOracle().findType(Model.class.getPackage().getName(), Model.class.getSimpleName());
     final Set<String> propertyNames = new LinkedHashSet<String>();
-    final Set<JType> interestingTypes = new HashSet<JType>();
+    final Set<JType> interestingTypes = new LinkedHashSet<JType>();
     final IsModel modelAnno = type.getAnnotation(IsModel.class);
     String idField = modelAnno == null ? "id" : modelAnno.key().value();
     Class idClass = modelAnno == null ? String.class : modelAnno.key().keyType();

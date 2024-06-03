@@ -6,6 +6,7 @@ import xapi.fu.itr.ChainBuilder;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static xapi.string.X_String.isEmpty;
@@ -99,11 +100,21 @@ public class X_Source {
       if (classLoader instanceof URLClassLoader) {
         Collections.addAll(urls,
             ((URLClassLoader)classLoader).getURLs());
-        classLoader = classLoader.getParent();
       }
+      classLoader = classLoader.getParent();
+    }
+    if (urls.isEmpty() && defaultUrls != null) {
+      urls.addAll(Arrays.asList(defaultUrls));
     }
     return urls.toArray(new URL[urls.size()]);
   }
+
+  public static void setDefaultUrls(URL[] urls) {
+    defaultUrls = urls;
+  }
+
+  private static URL[] defaultUrls;
+
   public static URL classToUrl(String binaryName, ClassLoader loader) {
     return loader.getResource(binaryName.replace('.', '/')+".class");
   }

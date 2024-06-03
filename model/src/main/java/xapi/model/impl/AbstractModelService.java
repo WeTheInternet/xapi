@@ -71,7 +71,7 @@ public abstract class AbstractModelService implements ModelService
     if (model == null) {
       return null;
     }
-    final ModelDeserializationContext context = new ModelDeserializationContext(doCreate(cls), this, null);
+    final ModelDeserializationContext context = new ModelDeserializationContext(doCreate(cls), this, findManifest(cls));
     context.setClientToServer(isClientToServer());
     boolean isKeyOnly = cls.getAnnotation(KeyOnly.class) != null || context.isKeyOnly();
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
@@ -181,9 +181,19 @@ public abstract class AbstractModelService implements ModelService
     }
 
     final CharBuffer buffer = new CharBuffer();
-    final ModelSerializationContext context = new ModelSerializationContext(buffer, this, null);
+
+    final ModelSerializationContext context = new ModelSerializationContext(buffer, this, findManifest(type));
     context.setClientToServer(isClientToServer());
     return getSerializer(type).modelToString(getModelType(model), model, context, false);
+  }
+
+  protected ModelManifest findManifest(final Class<?> type) {
+    String stringType = classToTypeName.get(type);
+    return stringType == null ? null : findManifest(stringType);
+  }
+  protected ModelManifest findManifest(final String type) {
+
+    return null;
   }
 
   protected <M extends Model> Class<? extends Model> getModelType(final M model) {
@@ -317,4 +327,15 @@ public abstract class AbstractModelService implements ModelService
     return new ModelKeyDefault(namespace, kind, id);
   }
 
+  @Override
+  public void flushCaches() {
+    this.classToTypeName.clear();
+    this.typeNameToClass.clear();
+    this.serializers.clear();
+  }
+
+  @Override
+  public <M extends Model> void query(final ModelManifest manifest, final ModelQuery<M> query, final SuccessHandler<ModelQueryResult<M>> callback) {
+    query((Class)manifest.getModelType(), query, callback);
+  }
 }

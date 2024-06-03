@@ -19,6 +19,7 @@ public interface ModelService {
   <T extends Model> T create(Class<T> key);
   <M extends Model> void persist(M model, SuccessHandler<M> callback);
   <M extends Model> void query(Class<M> modelClass, ModelQuery<M> query, SuccessHandler<ModelQueryResult<M>> callback);
+  <M extends Model> void query(ModelManifest manifest, ModelQuery<M> query, SuccessHandler<ModelQueryResult<M>> callback);
   void query(ModelQuery<Model> query, SuccessHandler<ModelQueryResult<Model>> callback);
   <M extends Model> CharBuffer serialize(final Class<M> cls, final M model);
   <M extends Model> CharBuffer serialize(final ModelManifest manifest, final M model);
@@ -32,4 +33,10 @@ public interface ModelService {
   ModelKey newKey(String namespace, String kind, String id);
   <M extends Model> void load(Class<M> modelClass, ModelKey modelKey, SuccessHandler<M> callback);
   MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type);
+
+  default void flushCaches() {
+  }
+  default void registerManifest(ModelManifest manifest) {
+
+  }
 }

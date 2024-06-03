@@ -38,7 +38,9 @@ public interface ModelKey {
   ModelKey getChild(String kind, String id);
 
   default ModelKey getChild(ModelKey child) {
-    return getChild(child.getKind(), child.getId());
+    final ModelKey newChild = getChild(child.getKind(), child.getId());
+    newChild.setKeyType(child.getKeyType());
+    return newChild;
   }
 
 }

@@ -33,11 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import xapi.bytecode.CtMember.Cache;
 import xapi.bytecode.annotation.Annotation;
@@ -828,12 +824,12 @@ public class CtClassType extends CtClass {
 
   @Override
   public CtMethod[] getMethods() {
-    HashMap<String, CtMember> h = new HashMap<String, CtMember>();
+    LinkedHashMap<String, CtMember> h = new LinkedHashMap<>();
     getMethods0(h, this);
     return (CtMethod[]) h.values().toArray(new CtMethod[h.size()]);
   }
 
-  private static void getMethods0(HashMap<String, CtMember> h, CtClass cc) {
+  private static void getMethods0(Map<String, CtMember> h, CtClass cc) {
     try {
       CtClass[] ifs = cc.getInterfaces();
       int size = ifs.length;
@@ -1461,7 +1457,7 @@ public class CtClassType extends CtClass {
 
   @Override
   public String makeUniqueName(String prefix) {
-    HashMap<String, CtClassType> table = new HashMap<String, CtClassType>();
+    Map<String, CtClassType> table = new LinkedHashMap<String, CtClassType>();
     makeMemberList(table);
     Set<String> keys = table.keySet();
     String[] methods = new String[keys.size()];
@@ -1494,7 +1490,7 @@ public class CtClassType extends CtClass {
     return true;
   }
 
-  private void makeMemberList(HashMap<String, CtClassType> table) {
+  private void makeMemberList(Map<String, CtClassType> table) {
     int mod = getModifiers();
     if (X_Modifier.isAbstract(mod) || X_Modifier.isInterface(mod)) {
       try {

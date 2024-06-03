@@ -5,7 +5,6 @@ package xapi.jre.model;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.constants.X_Namespace;
-import xapi.dev.source.CharBuffer;
 import xapi.fu.Out1;
 import xapi.fu.has.HasName;
 import xapi.io.X_IO;
@@ -18,6 +17,7 @@ import xapi.platform.JrePlatform;
 import xapi.prop.X_Properties;
 import xapi.source.lex.CharIterator;
 import xapi.source.lex.StringCharIterator;
+import xapi.string.X_String;
 import xapi.time.X_Time;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.RemovalHandler;
@@ -25,6 +25,8 @@ import xapi.util.api.SuccessHandler;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 @SingletonDefault(implFor=ModelService.class)
 public class ModelServiceJre extends AbstractJreModelService implements ModelServiceWithRootDir {
 
+  private static final Comparator<? super File> FILE_SORT = (a, b)->a.getName().compareTo(b.getName());
   private File root;
 
   @Override
@@ -44,14 +47,13 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     // For simplicity sake, lets use the file system to save our models.
     ModelKey key = getKey(model, type);
     // make sure to generate id for keys of long type w/o ids
-    keyToFile(key, model, callback);
+    final File file = keyToFile(key, model, callback);
     serialize(type, model, (serialized, error)-> {
       if (error != null) {
         fail(callback, error);
         return;
       }
 
-      final File file = keyToFile(key, model, callback);
       final Runnable finish = new Runnable() {
 
         @Override
@@ -101,7 +103,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     // nest hierarchical keys in a directory structure
     f = resolveParents(f, key.getParent());
     f.mkdirs();
-    if (key.getId() == null) {
+    if (X_String.isEmpty(key.getId())) {
       // No id; generate one
       try {
         f = generateFile(f, model);
@@ -223,17 +225,95 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       return;
     }
 
-    final ArrayList<File> files;
     final ModelQueryResult<M> result = new ModelQueryResult<>(modelClass);
+    final ArrayList<File> files;
     try {
+      files = queryFiles(getTypeName(modelClass), query, result, callback);
+    } catch (Throwable t) {
+      ErrorHandler.delegateTo(callback)
+          .onError(t);
+      return;
+    }
+
+    final Out1<RemovalHandler> scope = captureScope();
+    X_Time.runLater(() -> {
+      final RemovalHandler handler = scope.out1();
+      File lastKnown = null;
+      String fileResult = null;
+      try {
+        for (final File file : files) {
+          lastKnown = file;
+          fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+          final M model = deserialize(modelClass, new StringCharIterator(fileResult));
+          fileResult = null;
+          result.addModel(model);
+        }
+        callback.onSuccess(result);
+      } catch (final Throwable t) {
+        failQuery(t, query, lastKnown, fileResult, callback);
+      } finally {
+        handler.remove();
+      }
+    });
+  }
+
+  private <M extends Model> void failQuery(Throwable t, final ModelQuery<M> query, final File lastKnown, final String fileResult, final SuccessHandler<ModelQueryResult<M>> callback) {
+    X_Log.error(ModelServiceJre.class, "Unable to load files for query ", query);
+    X_Log.error(ModelServiceJre.class, "Last viewed file:", lastKnown);
+    X_Log.error(ModelServiceJre.class, "Last viewed file contents:", fileResult);
+    ErrorHandler.delegateTo(callback)
+            .onError(new ModelQueryFailureException(query, lastKnown.getPath(), t));
+  }
+
+  @Override
+  public <M extends Model> void query(final ModelManifest manifest, final ModelQuery<M> query,
+      final SuccessHandler<ModelQueryResult<M>> callback) {
+    if (query.getParameters().isNotEmpty()) {
+      ErrorHandler.delegateTo(callback)
+          .onError(new UnsupportedOperationException("The basic, file-backed "+getClass().getName()+" does not support any complex queries"));
+      return;
+    }
+
+    final ModelQueryResult<M> result = new ModelQueryResult<>((Class)manifest.getModelType());
+    final ArrayList<File> files;
+    try {
+      files = queryFiles(manifest.getType(), query, result, callback);
+    } catch (Throwable t) {
+      ErrorHandler.delegateTo(callback)
+              .onError(t);
+      return;
+    }
+
+    final Out1<RemovalHandler> scope = captureScope();
+    X_Time.runLater(() -> {
+      final RemovalHandler handler = scope.out1();
+      File lastKnown = null;
+      String fileResult = null;
+      try {
+        for (final File file : files) {
+          lastKnown = file;
+          fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+          final M model = deserialize(manifest, new StringCharIterator(fileResult));
+          fileResult = null;
+          result.addModel(model);
+        }
+        callback.onSuccess(result);
+      } catch (final Throwable t) {
+        failQuery(t, query, lastKnown, fileResult, callback);
+      } finally {
+        handler.remove();
+      }
+    });
+  }
+
+  private <M extends Model> ArrayList<File> queryFiles(final String typeName, final ModelQuery<M> query, final ModelQueryResult<M> result, final SuccessHandler<ModelQueryResult<M>> callback) {
+      ArrayList<File> files;
 
       // The only query we will support is a parameterless "get all" query
       File f = getRoot(callback);
       if (query.getNamespace().length() > 0) {
         f = new File(f, query.getNamespace());
       }
-
-      final String typeName = getTypeName(modelClass);
 
       f = new File(f, typeName);
       // use ancestor to create proper model hierarchy.
@@ -257,6 +337,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
           allFiles = new File[]{};
         }
       }
+      Arrays.sort(allFiles, FILE_SORT);
       final int size = Math.min(query.getPageSize(), allFiles.length);
       files = new ArrayList<File>(size);
       for (int i = 0; i < size; i++) {
@@ -265,36 +346,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       if (size < allFiles.length) {
         result.setCursor(allFiles[size].getName());
       }
-    } catch (Throwable t) {
-      ErrorHandler.delegateTo(callback)
-          .onError(t);
-      return;
-    }
-
-    final Out1<RemovalHandler> scope = captureScope();
-    X_Time.runLater(() -> {
-      final RemovalHandler handler = scope.out1();
-      File lastKnown = null;
-      String fileResult = null;
-      try {
-        for (final File file : files) {
-          lastKnown = file;
-          fileResult = X_IO.toStringUtf8(new FileInputStream(file));
-          final M model = deserialize(modelClass, new StringCharIterator(fileResult));
-          fileResult = null;
-          result.addModel(model);
-        }
-        callback.onSuccess(result);
-      } catch (final Throwable t) {
-        X_Log.error(ModelServiceJre.class, "Unable to load files for query ", query);
-        X_Log.error(ModelServiceJre.class, "Last viewed file:", lastKnown);
-        X_Log.error(ModelServiceJre.class, "Last viewed file contents:", fileResult);
-        ErrorHandler.delegateTo(callback)
-            .onError(t);
-      } finally {
-        handler.remove();
-      }
-    });
+      return files;
   }
 
   private File resolveParents(File f, ModelKey parent) {
@@ -327,30 +379,46 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     final ArrayList<File> files = new ArrayList<File>();
     final ModelQueryResult<Model> result = new ModelQueryResult<>(null);
 
-    for (final File type : f.listFiles()) {
-      File[] allFiles;
-      if (query.getCursor() == null) {
-        // Yes, listing all files is not going to be very performant; however, this implementation is
-        // far too naive to be used for a production system. It is primarily a proof-of-concept that can
-        // be usable for developing APIs against something that is simple to use and debug
-        allFiles = type.listFiles();
-      } else {
-        // If there is a cursor, we are continuing a query.
-        allFiles = type.listFiles(new FilenameFilter() {
+    final File[] typeList = f.listFiles();
+    File[] allFiles = null;
+    if (typeList != null) {
+        for (final File type : typeList) {
+          if (query.getCursor() == null) {
+            // Yes, listing all files is not going to be very performant; however, this implementation is
+            // far too naive to be used for a production system. It is primarily a proof-of-concept that can
+            // be usable for developing APIs against something that is simple to use and debug
+            allFiles = type.listFiles();
+          } else {
+            // If there is a cursor, we are continuing a query.
+            allFiles = type.listFiles(new FilenameFilter() {
 
-          @Override
-          public boolean accept(final File dir, final String name) {
-            return name.compareTo(query.getCursor()) > -1;
+              @Override
+              public boolean accept(final File dir, final String name) {
+                return name.compareTo(query.getCursor()) > -1;
+              }
+            });
           }
-        });
-      }
-      for (int i = 0, m = allFiles.length; i < m; i++) {
-        if (files.size() >= query.getLimit()) {
-          result.setCursor(allFiles[i].getName());
-          break;
+          if (allFiles != null) {
+            Arrays.sort(allFiles, FILE_SORT);
+          }
+          for (int i = 0, m = allFiles == null ? 0 : allFiles.length; i < m; i++) {
+            if (files.size() >= query.getLimit()) {
+              result.setCursor(allFiles[i].getName());
+              break;
+            }
+            if (allFiles[i].isFile()) {
+              files.add(allFiles[i]);
+            } else {
+              // for now, ignoring ancestor keys. it's too ugly
+//              final File[] childFiles = allFiles[i].listFiles();
+//              if (childFiles != null) {
+//                for (File childFile : childFiles) {
+//                  files.add(childFile);
+//                }
+//              }
+            }
+          }
         }
-        files.add(allFiles[i]);
-      }
     }
 
     final Out1<RemovalHandler> scope = captureScope();
@@ -362,10 +430,22 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
         String fileResult;
         try {
           for (final File file : files) {
-            fileResult = X_IO.toStringUtf8(new FileInputStream(file));
-            final Class<? extends Model> type = typeNameToClass.get(file.getParent());
-            final Model model = deserialize(type, new StringCharIterator(fileResult));
-            result.addModel(model);
+            final Class<? extends Model> type = typeNameToClass.get(file.getParentFile().getName());
+            if (file.isFile()) {
+              fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+              final Model model = deserialize(type, new StringCharIterator(fileResult));
+              result.addModel(model);
+            } else {
+              final File[] kids = file.listFiles();
+              if (kids != null) {
+                for (File kid : kids) {
+                  fileResult = X_IO.toStringUtf8(new FileInputStream(kid));
+                  final Model model = deserialize(type, new StringCharIterator(fileResult));
+                  result.addModel(model);
+                }
+
+              }
+            }
           }
           callback.onSuccess(result);
         } catch (final Exception e) {
@@ -391,9 +471,10 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     final String prefix = m instanceof HasName ? ((HasName) m).getName() : "";
     int loopBreak = 20;
     File f;
+    final File[] files = srcDir.listFiles();
     do {
-      int size = srcDir.listFiles().length;
-      f = new File(srcDir, (prefix == null ? "" : prefix) + "-" + size);
+      int size = files == null ? 0 : files.length;
+      f = new File(srcDir, (prefix == null ? "" : prefix + "-") + size);
       if (loopBreak --<= 0) {
         throw new IllegalStateException("Cannot save file to " + f.getAbsolutePath() + "; check parent directory exists, is readable and executable and the disk is not out of space");
       }
@@ -432,4 +513,5 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     // TODO: validate that we're not leaveing any state behind? ....kinda don't care, tbh.
     this.root = rootDir;
   }
+
 }
