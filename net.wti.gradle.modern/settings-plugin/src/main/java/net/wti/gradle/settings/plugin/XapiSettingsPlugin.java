@@ -127,7 +127,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
 
-        view.getLogger().quiet("All projects ({}): {}", map.getAllProjects().size(), map.getAllProjects());
+        view.getLogger().quiet("All projects ({}):\n{}", map.getAllProjects().size(),
+                map.getAllProjects().map(s->s.getPathGradle() + "@" + s.getPublishedName()).join("\n"));
         settings.getGradle().beforeProject(p->{
             final Maybe<SchemaProject> match = map.getAllProjects()
                     .firstMatch(m -> {
@@ -460,18 +461,21 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 //            });
             gradleProject.getLogger().quiet("Found externals {} for project {} with index path {}", externals, project.getPathGradle(), project.getPathIndex());
         }
+        BuildCoordinates coordinates = RootProjectView.rootView(gradleProject.getGradle());
         if (project.isMultiplatform()) {
             // If we are multi-platform, then we have sub-projects for each of our modules.
             // These subprojects will not match the SchemaProject, nor will they need to:
             // these subprojects contain generated dependency / general wiring;
             // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
             project.forAllPlatformsAndModules((plat, mod) -> {
-                gradleProject.getLogger().quiet("Found multiplatform combination {}-{} for {} with gradle path {}",
-                        plat, mod, project.getPathGradle(), gradleProject.getPath());
+                if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
+
+                    gradleProject.getLogger().quiet("Found multiplatform combination {}-{} for {} with gradle path {}",
+                            plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
+                }
             });
 
         } else {
-            BuildCoordinates coordinates = RootProjectView.rootView(gradleProject.getGradle());
             // A non-multi-platform project needs to have a bit more "hidden surgery".
             project.forAllPlatformsAndModules((plat, mod) -> {
 
