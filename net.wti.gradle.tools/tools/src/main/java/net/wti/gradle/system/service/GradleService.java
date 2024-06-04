@@ -13,6 +13,8 @@ import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
@@ -80,6 +82,7 @@ import static java.lang.System.identityHashCode;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/15/18 @ 4:37 AM.
  */
+@SuppressWarnings("UnstableApiUsage")
 public interface GradleService {
 
     String EXT_NAME = "_xapiGradle";
@@ -293,7 +296,9 @@ public interface GradleService {
             );
             root.getPluginManager().withPlugin("wrapper", plugin -> {
                 rootTasks.named("wrapper", Wrapper.class, wrapper -> {
-                    wrapper.whenSelected(selected->{
+
+                    wrapper.dependsOn(distZip);
+                    Runnable setup = ()->{
                         final File loc = zipDir.get().getAsFile();
                         if (loc.isDirectory()) {
                             final File zipLoc = zipFile.get().getAsFile();
@@ -304,11 +309,16 @@ public interface GradleService {
                             wrapper.setDistributionUrl("file://" + zipLoc.getAbsolutePath());
                             if (!zipLoc.exists()) {
                                 project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
-                                wrapper.dependsOn(distZip.get());
                             }
 
                         }
-                    });
+                    };
+                    try {
+                        wrapper.whenSelected(selected->{ setup.run(); });
+                    } catch (NoSuchMethodError e) {
+                        // not using xapi gradle api. Just eagerly resolve the work
+                        setup.run();
+                    }
                 });
             });
             }

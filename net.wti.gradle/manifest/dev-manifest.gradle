@@ -47,7 +47,7 @@ xapiRequire.main().configure {
         req.external "net.wti.core:xapi-gen:$version", 'main'
         req.external "net.wti.core:xapi-fu:$version", 'main'
         req.external "net.wti.gradle.tools:xapi-gradle-tools:$version"//, 'main'
-        req.external "net.wti.gradle.tools:xapi-gradle-core:${->version}", 'main'
+        req.external "net.wti.gradle.modern:xapi-gradle-core:${->version}", 'main'
         req.project 'xapi-gradle-api', 'main'
 }
 

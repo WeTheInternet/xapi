@@ -3,7 +3,7 @@ buildscript.dependencies.add 'classpath', buildscript.dependencies.localGroovy()
 description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
 This handles the basics of publishing and path manifest production.'''
 
-// child-build.gradle applies xapi-env, which sets xapiHome|xapiVersion variables for us.
+// apply xapi-env, which sets xapiHome|xapiVersion variables for us.
 apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
 String xapiHome = extensions.getByName('xapi.home')
 apply from: "$xapiHome/gradle/child-build.gradle"

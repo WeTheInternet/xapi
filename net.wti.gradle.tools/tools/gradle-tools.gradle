@@ -14,7 +14,7 @@ targetCompatibility = '1.8'
 
 dependencies {
     compileOnly gradleApi()
-    implementation project(':xapi-gradle-core')
+    api "net.wti.gradle.modern:xapi-gradle-core:${->version}"
 
     testImplementation project(':xapi-gradle-test')
     // we mock classes, so we need spock-compatible bytecode lib at runtime

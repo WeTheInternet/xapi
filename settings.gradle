@@ -1,6 +1,18 @@
+buildscript {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = new java.net.URI("file://$rootDir/repo")
+        }
+    }
+    dependencies {
+        classpath 'net.wti.gradle.modern:xapi-gradle-settings-plugin:0.5.1'
+    }
+}
+
 rootProject.name = 'xapi'
 
-//apply plugin: 'xapi-loader'
+apply plugin: 'xapi-settings'
 
 def prop = {
     String key -> System.getProperty(key) ?:

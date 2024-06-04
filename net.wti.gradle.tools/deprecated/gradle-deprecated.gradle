@@ -15,7 +15,7 @@ dependencies {
     testImplementation project(':xapi-gradle-test')
     testImplementation 'net.bytebuddy:byte-buddy:1.11.0'
     testImplementation 'junit:junit:4.12'
-    implementation project(':xapi-gradle-core')
+    implementation "net.wti.gradle.modern:xapi-gradle-core:${->version}"
     implementation project(':xapi-gradle-tools')
 }
 

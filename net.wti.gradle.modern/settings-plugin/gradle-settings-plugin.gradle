@@ -1,0 +1,55 @@
+plugins {
+    id 'java-library'
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
+This handles the basics of publishing and path manifest production.'''
+
+repositories.mavenCentral()
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+// we need to force intellij to not be stupid by hiding where we get the shadow jar from.
+def makeShadow = tasks.register('makeShadow', Sync)
+makeShadow.configure {
+    Sync t ->
+        t.dependsOn(':xapi-gradle-schema-parser:shadowJar')
+        t.destinationDir = file("build/ijHack")
+        t.from(providers.provider {project(':xapi-gradle-schema-parser').tasks.getByName('shadowJar').outputs.files})
+        t.inputs.property('version', version)
+}
+tasks.named('compileJava').configure {
+    Task t ->
+        t.dependsOn makeShadow
+}
+dependencies {
+    api project(':xapi-gradle-core')
+    if (System.getProperty("idea.version")) {
+        api files(provider {makeShadow.get().outputs.files.singleFile.listFiles()[0]})
+    } else {
+        api project(path: ':xapi-gradle-schema-parser', configuration: 'shadow')
+    }
+    compileOnly gradleApi()
+
+    testImplementation project(':xapi-gradle-test')
+    // we mock classes, so we need spock-compatible bytecode lib at runtime
+    testImplementation 'net.bytebuddy:byte-buddy:1.11.0'
+    testImplementation 'junit:junit:4.13.1'
+}
+
+gradlePlugin {
+    plugins {
+        xapiSettings {
+            id = 'xapi-settings'
+            implementationClass = 'net.wti.gradle.settings.plugin.XapiSettingsPlugin'
+        }
+    }
+}
+
+
+test {
+    useJUnitPlatform()
+}

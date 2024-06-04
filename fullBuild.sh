@@ -101,6 +101,12 @@ function do_it() {
         popd > /dev/null
 
 
+        pushd net.wti.gradle.modern > /dev/null
+        echo "invoking ./gradlew $args in $(pwd)"
+        ./gradlew $args
+        popd > /dev/null
+
+
         pushd net.wti.gradle > /dev/null
         echo "invoking ./gradlew $args in $(pwd)"
         ./gradlew $args

@@ -1,0 +1,26 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+    id 'java-library'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+description = '''This module exists solely to use shadow jar repackaging for the xapi lang codebase.
+Newer gradle depends on JavaParser, and we never did change the package.
+Rather than rebuild the whole world using it, we'll just repackage it for this slim/modern gradle plugin'''
+
+repositories.mavenCentral()
+
+dependencies {
+    api "net.wti.core:xapi-lang-core:${->version}"
+}
+tasks.named('shadowJar', ShadowJar).configure {
+    ShadowJar sj ->
+        sj.relocate 'com.github', 'net.wti'
+        sj.archiveClassifier.set('')
+}
+tasks.named('jar', Jar).configure {
+    Jar j ->
+        j.enabled = false
+        j.archiveClassifier.set('empty')
+}

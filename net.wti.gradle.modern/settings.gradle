@@ -1,0 +1,14 @@
+rootProject.name = 'net.wti.gradle.modern'
+rootProject.buildFileName = 'root-modern.gradle'
+
+def add = {
+    String name ->
+    include("$name")
+    project(":$name").buildFileName = "gradle-${name}.gradle"
+    project(":$name").name = "xapi-gradle-$name"
+}
+
+add('core')
+add('test')
+add('schema-parser')
+add('settings-plugin')

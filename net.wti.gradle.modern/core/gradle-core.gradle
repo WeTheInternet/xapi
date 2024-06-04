@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+}
+
+description = '''Core gradle utilities / interfaces / static helpers'''
+
+String xapiHome = rootDir.parent
+apply from: "$xapiHome/gradle/xapi-env.gradle"
+apply from: "$xapiHome/gradle/int-test.gradle"
+
+dependencies {
+    compileOnly gradleApi()
+    testImplementation 'org.spockframework:spock-core:1.0-groovy-2.4', {
+        exclude module: 'groovy-all'
+    }
+}

@@ -2,8 +2,8 @@ package net.wti.loader.plugin;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.loader.impl.BuildScriptBuffer;
-import net.wti.gradle.loader.impl.ClosureBuffer;
+import xapi.dev.source.BuildScriptBuffer;
+import xapi.dev.source.ClosureBuffer;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.map.SchemaMap;

@@ -1,0 +1,103 @@
+buildscript.dependencies.add 'classpath', buildscript.dependencies.localGroovy()
+
+description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
+This handles the basics of publishing and path manifest production.'''
+
+// xapi-env sets xapiHome|xapiVersion variables for us.
+apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
+String xapiHome = extensions.getByName('xapi.home')
+
+TaskProvider required = tasks.register('publishRequired')
+
+final Attribute<String> ATTR_ARTIFACT_TYPE = Attribute.of("moduleType", String.class);
+final Attribute<String> ATTR_PLATFORM_TYPE = Attribute.of("platformType", String.class);
+
+gradle.beforeProject {
+    Project p ->
+    p.apply from: "$p.rootDir.parentFile/gradle/xapi-env.gradle"
+    p.plugins.apply('java-library')
+    p.plugins.apply('maven-publish')
+
+    p.sourceCompatibility = '1.8'
+
+
+    // for this ultra-core, zero-dependency buildSrc project, we want to always install
+    // our jars to xapiLocal repo, so other projects can reference us.
+    p.tasks.findByName(BasePlugin.ASSEMBLE_TASK_NAME).finalizedBy(
+            PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME
+    )
+    // We're creating this here, manually, so we can get picked up when someone runs
+    // ./gradlew xapiPublish or `gw pX` if you have gw alias for ./gradlew-finder (google "gradle gw gist")
+    // Note that this behavior is similar to xapi-publish plugin, which we cannot (easily) use as we are defining it here.
+    // We _could_ do some trickier to build in buildSrc and publish in main gradle scripts, but this is only ~50 lines of reimplementation,
+    // versus weird build-setup-hackery.
+    Task xapiPublish = p.tasks.create('xapiPublish')
+    required.configure { it.dependsOn xapiPublish }
+    xapiPublish.group = 'Publishing'
+    xapiPublish.description = 'Publish jars to xapiLocal repository'
+    p.tasks.withType(PublishToMavenRepository).all {
+        PublishToMavenRepository pub ->
+            p.afterEvaluate {
+                if (pub.repository.name == 'xapiLocal') {
+                    p.tasks.assemble.finalizedBy pub
+                    xapiPublish.dependsOn pub
+                }
+            }
+    }
+
+    PublishingExtension ext = p.extensions.findByName(PublishingExtension.NAME) as PublishingExtension
+    ext.repositories.maven {
+        MavenArtifactRepository repo ->
+            repo.name = 'xapiLocal'
+            repo.url = "file://$xapiHome/repo"
+    }
+    SourceSet main = p.sourceSets.main
+    SourceSet test = p.sourceSets.test
+    Jar sourceJar = p.tasks.create 'sourceJar', Jar, {
+        Jar jar ->
+            jar.archiveClassifier.set('sources')
+            jar.from main.allSource
+            return
+    }
+
+    TaskProvider<Jar> testJar = p.tasks.register('testJar', Jar, {
+        Jar jar ->
+            jar.archiveClassifier.set('tests')
+            jar.from test.output
+            return
+    })
+
+    PublishArtifact art = p.project.artifacts.add('archives', sourceJar)
+    boolean publishTests = p.findProperty('publishTests') == 'true'
+    PublishArtifact testArt = !publishTests ? null : p.artifacts.add('archives', testJar.get())
+    ext.publications.create("main", MavenPublication, {
+        pub ->
+            if (p.tasks.findByName('shadowJar')) {
+                p.shadow.component(pub)
+            } else {
+                pub.from(p.components.getByName('java'))
+            }
+            pub.groupId = 'net.wti.gradle.modern'
+            pub.artifact(art)
+            if (testArt != null) {
+                pub.artifact(testArt)
+            }
+    })
+
+    p.configurations.apiElements.attributes {
+        AttributeContainer attrs ->
+            attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
+            attrs.attribute(ATTR_PLATFORM_TYPE, "main")
+    }
+    p.configurations.runtimeElements.attributes {
+        AttributeContainer attrs ->
+            attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
+            attrs.attribute(ATTR_PLATFORM_TYPE, "main")
+    }
+}
+
+
+wrapper {
+    gradleVersion = "8.8"
+    distributionType = "ALL"
+}

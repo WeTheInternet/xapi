@@ -1,6 +1,5 @@
-package net.wti.gradle.loader.impl;
+package xapi.dev.source;
 
-import xapi.dev.source.*;
 import xapi.fu.Printable;
 import xapi.string.X_String;
 
@@ -36,7 +35,7 @@ public class GradleBuffer implements Printable<GradleBuffer> {
         // share our import space, but not our body-write-space
         this.buffer = new MethodBuffer(owner == null ? new SourceBuilder<>("class ignored{}") : owner.buffer.getContext());
         if (owner != null) {
-            this.buffer.setIndent(owner.buffer.getIndent() + INDENT);
+            this.buffer.setIndent(owner.buffer.getIndent() + Printable.INDENT);
         }
         this.buffer.getImports().setSkipImportRegex("org.gradle.api.*");
     }

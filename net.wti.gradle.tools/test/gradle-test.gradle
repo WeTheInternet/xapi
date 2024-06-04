@@ -10,7 +10,7 @@ apply from: "$xapiHome/gradle/xapi-env.gradle"
 apply from: "$xapiHome/gradle/int-test.gradle"
 
 dependencies {
-    api project(':xapi-gradle-core')
+    api "net.wti.gradle.modern:xapi-gradle-core:${->version}"
     api gradleApi()
     api gradleTestKit()
     api 'org.junit.jupiter:junit-jupiter-api:5.3.2'

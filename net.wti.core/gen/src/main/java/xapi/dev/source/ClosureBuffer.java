@@ -1,4 +1,4 @@
-package net.wti.gradle.loader.impl;
+package xapi.dev.source;
 
 import xapi.dev.source.LocalVariable;
 import xapi.fu.data.MapLike;
