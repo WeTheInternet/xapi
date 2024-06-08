@@ -3,10 +3,6 @@ buildscript {
     System.setProperty('xapiIntoBuildscript', 'true')
     project.extensions.add('myBuildscript', it)
     apply from: "$xapiHome/gradle/xapi-env.gradle"
-    dependencies {
-        classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
-        classpath "net.wti.gradle.tools:xapi-gradle-deprecated:${->version}"
-    }
 }
 
 plugins {

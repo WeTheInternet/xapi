@@ -70,7 +70,7 @@ ext.publications.create("main", MavenPublication, {
                 pub.from(components.getByName('java'))
             }
         }
-        pub.groupId = 'net.wti.gradle.modern'
+        pub.groupId = rootProject.group
         pub.artifact(art)
         if (testArt != null) {
             pub.artifact(testArt)

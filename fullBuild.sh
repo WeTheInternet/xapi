@@ -88,12 +88,6 @@ echo "Running main build w/ arguments: $main_args $args"
 
 function do_it() {
     if [ "$skip_tools" == n ]; then
-        pushd net.wti.gradle.tools > /dev/null
-        # the tools will install themselves to local repo whenever we build them.
-        echo "invoking ./gradlew $args in $(pwd)"
-        ./gradlew $args
-        popd > /dev/null
-
 
         pushd net.wti.core > /dev/null
         echo "invoking ./gradlew $args in $(pwd)"
@@ -102,6 +96,12 @@ function do_it() {
 
 
         pushd net.wti.gradle.modern > /dev/null
+        echo "invoking ./gradlew $args in $(pwd)"
+        ./gradlew $args
+        popd > /dev/null
+
+        pushd net.wti.gradle.tools > /dev/null
+        # the tools will install themselves to local repo whenever we build them.
         echo "invoking ./gradlew $args in $(pwd)"
         ./gradlew $args
         popd > /dev/null

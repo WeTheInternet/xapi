@@ -1,5 +1,6 @@
 buildscript.dependencies.add 'classpath', buildscript.dependencies.localGroovy()
 
+group = "net.wti.gradle.modern"
 description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
 This handles the basics of publishing and path manifest production.'''
 
