@@ -8,7 +8,11 @@ import static xapi.fu.log.Log.allLogs;
  */
 public interface Debuggable extends Coercible {
 
-    default boolean debugEnabled() {
+    default boolean isDebugEnabled() {
+        return debugEnabled();
+    }
+
+    static boolean debugEnabled() {
         return Boolean.valueOf("xapi.debug");
     }
 

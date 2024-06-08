@@ -6,9 +6,11 @@ import org.gradle.util.GFileUtils;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.*;
 
+import static java.util.Collections.unmodifiableList;
 import static net.wti.gradle.settings.api.QualifiedModule.mangleProjectPath;
 
 /**
@@ -59,26 +61,36 @@ public class SchemaIndexReader implements SchemaDirs {
         return new File(indexDir);
     }
 
-    public static class IndexResult implements Iterable<File> {
-        private final List<File> discoveredFiles;
-        private final boolean found;
+    public static class IndexResult {
+        private final List<File> internal, external, project, unknown;
+        private final boolean explicitDependencies;
+        private final int liveness;
 
-        public IndexResult(final List<File> discoveredFiles) {
-            this.found = discoveredFiles != null && !discoveredFiles.isEmpty();
-            this.discoveredFiles = found ? discoveredFiles : Collections.emptyList();
+        public IndexResult(
+                @Nonnull final List<File> internal,
+                @Nonnull final List<File> external,
+                @Nonnull final List<File> project,
+                @Nonnull final List<File> unknown,
+                final int liveness) {
+            this.internal = internal;
+            this.external = external;
+            this.project = project;
+            this.unknown = unknown;
+            this.liveness = liveness;
+            explicitDependencies = !external.isEmpty() && !project.isEmpty();
         }
 
-        public boolean isNotEmpty() {
-            return found;
+        public int getLiveness() {
+            return liveness;
         }
 
-        public boolean isEmpty() {
-            return !found;
+        public boolean hasExplicitDependencies() {
+            return explicitDependencies;
         }
 
-        @Override
-        public ListIterator<File> iterator() {
-            return discoveredFiles.listIterator();
+        public boolean isStillValid() {
+            // TODO: have a mark-sweep file we read in that we can compare to
+            return true;
         }
     }
 
@@ -93,9 +105,13 @@ public class SchemaIndexReader implements SchemaDirs {
     }
 
     public boolean hasEntries(final BuildCoordinates coords, String projectName, SchemaPlatform platform, SchemaModule module) {
-        if (getEntries(coords, projectName, platform, module).isNotEmpty()) {
+        final IndexResult result = getEntries(coords, projectName, platform, module);
+        if (result.hasExplicitDependencies()) {
+            // any module w/ discovered explicit dependencies is automatically live, even if only to serve as transitive dependency node
+            System.out.println(coords + " in " + projectName + " " + platform + ":" + module + " is live because it has explicit dependencies");
             return true;
         }
+        // without explicit dependencies, we need to check for a liveness level > 2
         String projectPath = mangleProjectPath(projectName);
         File pathDir = new File(indexDir, "path");
         File projectDir = new File(pathDir, projectPath);
@@ -105,15 +121,32 @@ public class SchemaIndexReader implements SchemaDirs {
         // hm... we may want to get more picky, like "check for sources file", "check for explicit 'create this' flag", etc.
 //        return moduleDir.isDirectory() && Objects.requireNonNull(moduleDir.list()).length > 0;
         File liveFile = new File(moduleDir, "live");
-        if (liveFile.exists() && !"0".equals(GFileUtils.readFile(liveFile, "utf-8"))) {
+        String liveValue = "0";
+        if (liveFile.exists()) {
+            liveValue = GFileUtils.readFile(liveFile, "utf-8");
+        }
+        if ("0".equals(liveValue)) {
+            // definitely ignore
+            return false;
+        }
+        if ("1".equals(liveValue)) {
+            // TODO: evaluate if this node should be alive based on whether it depends on anything meaningful
+            return false;
+        } else {
+            // 2 or greater: definitely live
             return true;
         }
-        return false;
     }
 
     public IndexResult getEntries(BuildCoordinates coords, String projectName, SchemaPlatform platform, SchemaModule module) {
         String key = toKey(projectName, platform.getName(), module.getName());
-        return indexResults.computeIfAbsent(key, ()->readIndex(coords, projectName, platform, module));
+        return indexResults.computeValue(key, existing-> {
+            if (existing != null && existing.isStillValid()) {
+                return existing;
+            }
+            return readIndex(coords, projectName, platform, module);
+        });
+
     }
 
     private IndexResult readIndex(final BuildCoordinates coords, final String projectName, final SchemaPlatform platform, final SchemaModule module) {
@@ -124,7 +157,11 @@ public class SchemaIndexReader implements SchemaDirs {
         final String group = properties.resolvePattern(groupPattern, coords.getBuildName(), projectName, coords.getGroup(), coords.getVersion(), platform.getName(), module.getName());
         final String name = properties.resolvePattern(namePattern, coords.getBuildName(), projectName, coords.getGroup(), coords.getVersion(), platform.getName(), module.getName());
         final String version = this.version.toString();
-        final List<File> files = new ArrayList<>();
+
+        final List<File> internals = new ArrayList<>();
+        final List<File> externals = new ArrayList<>();
+        final List<File> projects = new ArrayList<>();
+        final List<File> unknown = new ArrayList<>();
 
         File coord = new File(indexRoot, "coord");
         File groupDir = new File(coord, group);
@@ -133,14 +170,61 @@ public class SchemaIndexReader implements SchemaDirs {
         if (versionDir.isDirectory()) {
             for (File dep : versionDir.listFiles()) {
                 if (dep.isDirectory()) {
-                    files.addAll(Arrays.asList(dep.listFiles()));
+                    final File[] children = dep.listFiles();
+                    if (children != null) {
+                        List<File> files = Arrays.asList(children);
+                        switch (dep.getName()) {
+                            case "internal":
+                                // internal dependencies are pointers to other plat:mod dependencies,
+                                // and are always created, even for dead dependency chains.
+                                internals.addAll(files);
+                                break;
+                            case "external":
+                                // internal dependencies are pointers to other plat:mod dependencies,
+                                // and are always created, even for dead dependency chains.
+                                externals.addAll(files);
+                                break;
+                            case "projects":
+                                // internal dependencies are pointers to other plat:mod dependencies,
+                                // and are always created, even for dead dependency chains.
+                                projects.addAll(files);
+                                break;
+                            case "unknown":
+                                // internal dependencies are pointers to other plat:mod dependencies,
+                                // and are always created, even for dead dependency chains.
+                                unknown.addAll(files);
+                                break;
+                            default:
+                                throw new IllegalStateException("Unexpected directory named " + dep.getAbsolutePath());
+                        }
+                    }
                 } else {
-                    files.add(dep);
+                    unknown.add(dep);
                 }
             }
         }
-        // hm
-        final IndexResult result = new IndexResult(Collections.unmodifiableList(files));
+
+        // now, read in the liveness file...
+        // without explicit dependencies, we need to check for a liveness level > 2
+        String projectPath = mangleProjectPath(projectName);
+        File pathDir = new File(indexDir, "path");
+        File projectDir = new File(pathDir, projectPath);
+        final String platMod = PlatformModule.unparse(platform.getName(), module.getName());
+        final File modDir = new File(projectDir, platMod);
+        // hm... we may want to get more picky, like "check for sources file", "check for explicit 'create this' flag", etc.
+        File liveFile = new File(modDir, "live");
+        String liveValue = "0";
+        if (liveFile.exists()) {
+            liveValue = GFileUtils.readFile(liveFile, "utf-8");
+        }
+
+        final IndexResult result = new IndexResult(
+                unmodifiableList(internals),
+                unmodifiableList(externals),
+                unmodifiableList(projects),
+                unmodifiableList(unknown),
+                Integer.parseInt(liveValue)
+        );
         return result;
     }
 

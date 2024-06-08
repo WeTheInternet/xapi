@@ -1,0 +1,24 @@
+<xapi-schema
+
+    platforms = [
+        <main
+            modules = [
+                <main
+                    requires = {
+                        project : [ "xapi-util", "main" ],
+                        project : [ "xapi-collect", "main" ],
+                        external : "javax.inject:javax.inject:1:sources", // really? sources? sounds like a leftover gwt hack
+                    }
+                /main>,
+                <test
+                    requires = {
+                        project : [ "xapi-inject", "jre:main" ],
+                        project : [ "xapi-common", "testTools" ],
+                        external : "junit:junit:4.12",
+                    }
+                /test>
+            ]
+        /main>
+    ]
+
+/xapi-schema>

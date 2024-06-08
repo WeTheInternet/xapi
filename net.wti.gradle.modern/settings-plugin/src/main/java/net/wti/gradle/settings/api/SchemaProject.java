@@ -33,7 +33,7 @@ public class SchemaProject implements Named, HasPath {
     private boolean force;
 
     public SchemaProject(
-            net.wti.gradle.api.MinimalProjectView view,
+            MinimalProjectView view,
             String name,
             boolean multiplatform,
             boolean virtual
@@ -41,7 +41,7 @@ public class SchemaProject implements Named, HasPath {
         this(null, view, name, multiplatform, virtual);
     }
 
-    public SchemaProject(SchemaProject parent, net.wti.gradle.api.MinimalProjectView view, String name, boolean multiplatform, boolean virtual) {
+    public SchemaProject(SchemaProject parent, MinimalProjectView view, String name, boolean multiplatform, boolean virtual) {
         this.view = view;
         this.name = name;
         this.parent = parent;

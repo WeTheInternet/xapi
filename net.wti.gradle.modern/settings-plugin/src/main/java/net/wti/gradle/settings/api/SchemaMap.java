@@ -161,7 +161,7 @@ public class SchemaMap implements HasAllProjects {
                 // that each project will write to disk as soon as information comes in...
                 // obviating the notion of instances of SchemaMap that can ever "see each other" across distinct gradle builds.
                 // Leaving this here moreso as a note that this should be fixed properly later.
-                // Later on: XapiLoaderPlugin is doing this with with schema index (and generated gradle projects)
+                // Later on: XapiSettingsPlugin is doing this with schema index (and generated gradle projects)
                 for (SchemaMap child : children.mappedValues()) {
                     child.getCallbacks().flushCallbacks(this);
                     // should probably be: child.close(map), which finalizes the list of projects,
@@ -389,7 +389,9 @@ public class SchemaMap implements HasAllProjects {
                 if (multiplatform) {
                     tailProject.setMultiplatform(true);
                 }
-                tailProject.setVirtual(virtual);
+                if (virtual) {
+                    tailProject.setVirtual(true);
+                }
             } else {
                 tailProject = new SchemaProject(oldTail, projectView, name, multiplatform, virtual);
                 tailProject.setParentGradlePath(parentPath);

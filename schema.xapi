@@ -11,7 +11,7 @@
     platforms = [
         <main />,
         // purposely using two different forms of references to main,
-        // so that we can detect and fix any wierdness as we go:
+        // so that we can detect and fix any weirdness as we go:
         <jre replace = "main" published = true/>,
         <gwt replace = main published = true/>,
         // TODO: move gwt into client/schema.xapi; add javafx, android, j2cl, j2objc, etc.
@@ -33,7 +33,7 @@
 
     projects = {
         // the projects below all have gwt, jre and other platforms
-        multiPlatform: [
+        multiplatform: [
 //            "inject",
 //            "collect",
 //            "common",
@@ -54,14 +54,15 @@
 
         // the projects below are effectively parents of multiple child projects.
         // it will be left to the schema.xapi of these projects to determine whether
-        // the child modules are multiPlatform, standalone, or nested multiProject
-        virtual: {
-//            ui: ["api", "autoui", "components", "generator", "html"],
-//            server: ["api", "gen", "vertx"], // hm, perhaps needs to be modeled as a single multiPlatform, with more platforms...
+        // the child modules are multiplatform, standalone, or nested multiProject
+        virtual: [ "ui" ]
+//        virtual: {
+//            ui: ["api", "autoui", "html"] // "components", "generator",
+//            server: ["api", "gen", "vertx"], // hm, perhaps needs to be modeled as a single multiplatform, with more platforms...
 //            dev: ["api", "bytecode", "file", "gen", "gwtc", "javac", "maven", "shell", "source", "template", "dist"],
 //            dist: ["gwt", "jre"],
 //            samples: ["demo"]
-        },
+//        },
     }
 
     // declare any external dependencies here,

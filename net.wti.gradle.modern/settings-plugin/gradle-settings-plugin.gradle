@@ -1,3 +1,6 @@
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     id 'java-library'
     id 'groovy'
@@ -49,7 +52,17 @@ gradlePlugin {
     }
 }
 
+PublishingExtension ext = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
+// the publishing plugin creates its own publication for the main jar that we don't want/need
+ext.publications.create('pluginMaven', MavenPublication) {
+    MavenPublication p ->
+        p.groupId = 'net.wti.unused'
+}
 
 test {
     useJUnitPlatform()
+    doFirst {
+        new File(buildDir, 'testRuntime.classpath').text = (tasks.test as Test).classpath.asPath
+    }
 }
+

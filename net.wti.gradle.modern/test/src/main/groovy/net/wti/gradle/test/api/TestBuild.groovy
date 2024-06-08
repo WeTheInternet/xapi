@@ -29,9 +29,7 @@ trait TestBuild implements Named, Flushable, HasBuildFiles {
     void initSettings(File settings) {
         settings.text += """
 // from ${getClass().simpleName} ${name ? "($name)" : ''}
-if (System.getProperty('${HasBuildFiles.SKIP_METADATA_SYS_PROP}') != 'true') {
-    enableFeaturePreview('GRADLE_METADATA')
-}
+// ... deleted some old code from here... should maybe delete this whole method...
 """
     }
 
@@ -72,7 +70,8 @@ if (System.getProperty('${HasBuildFiles.SKIP_METADATA_SYS_PROP}') != 'true') {
                     proj = realizedProjects.computeIfAbsent(key, {
                         TestProject p = new TestProject(key, dir)
                         if (p.path != ':') {
-                            settingsFile << "include('$p.path')\n"
+
+                            settingsFile << "// include('$p.path') // handled by xapi-settings now\n"
                         }
                         return p
                     })

@@ -112,9 +112,8 @@ gradle.beforeProject {
                     }
             }
 
-            if (path != ':schema') {
-                // we don't actually need the java plugin, so we leave it out, and just turn it on once in a while for manual verification
-//                plugins.apply 'java'
+            if (path != ':schema' && findProperty('xapiModern') != 'true') {
+
                 plugins.apply 'xapi-schema'
                 plugins.apply 'maven-publish'
                 plugins.apply 'xapi-publish'

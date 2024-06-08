@@ -1,6 +1,7 @@
 package net.wti.gradle.settings.api;
 
 import org.gradle.api.Named;
+import xapi.fu.Debuggable;
 import xapi.fu.data.SetLike;
 
 /**
@@ -97,13 +98,16 @@ public class SchemaModule implements Named {
 
     @Override
     public String toString() {
-        return "SchemaModule{" +
-                "name='" + name + '\'' +
-                ", publishedPattern='" + publishPattern + '\'' +
-                ", require=" + include +
-                ", published=" + published +
-                ", test=" + test +
-                '}';
+        if (Debuggable.debugEnabled()) {
+            return "SchemaModule{" +
+                    "name='" + name + '\'' +
+                    ", publishedPattern='" + publishPattern + '\'' +
+                    ", require=" + include +
+                    ", published=" + published +
+                    ", test=" + test +
+                    '}';
+        }
+        return "@" + name;
     }
 
 }

@@ -16,7 +16,7 @@ public interface Require extends Debuggable {
   }
 
   default void fail(Object[] debugValues) {
-    if (debugEnabled()) {
+    if (isDebugEnabled()) {
       assert false : debug(debugValues);
 
     }

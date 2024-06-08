@@ -127,7 +127,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
 
-        view.getLogger().quiet("All projects ({}):\n{}", map.getAllProjects().size(),
+        view.getLogger().info("All projects ({}):\n{}", map.getAllProjects().size(),
                 map.getAllProjects().map(s->s.getPathGradle() + "@" + s.getPublishedName()).join("\n"));
         settings.getGradle().beforeProject(p->{
             final Maybe<SchemaProject> match = map.getAllProjects()
@@ -202,18 +202,18 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         }
                         final File buildFile = new File(projDir, buildFileName);
 
-                        if (dryRun()) {
-                            view.getLogger().quiet("Dry run exiting early; found project {} at index {} with build file {}", project.getPathGradle(), project.getPathIndex(), buildFile.getAbsolutePath());
-                            return;
-                        }
 
                         if (project.isMultiplatform()) {
                             view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, buildFile, key);
-                            settings.include(projectName);
-                            final ProjectDescriptor proj = settings.findProject(projectName);
-                            proj.setProjectDir(projDir);
-                            proj.setBuildFileName(buildFileName);
-                            proj.setName(modKey);
+                            if (dryRun()) {
+                                view.getLogger().quiet("Dry run exiting early; skipping project creation for {} with build file {} for {}:{}", project.getPath(), buildFile.getAbsolutePath(), plat, mod);
+                            } else {
+                                settings.include(projectName);
+                                final ProjectDescriptor proj = settings.findProject(projectName);
+                                proj.setProjectDir(projDir);
+                                proj.setBuildFileName(buildFileName);
+                                proj.setName(modKey);
+                            }
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
                             view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, buildFile, key);
@@ -309,8 +309,11 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 out.startClosure("dependencies")
                         );
                         for (SchemaDependency dependency : project.getDependenciesOf(plat, mod)) {
+                            view.getLogger().info("Processing dependency {}:{}:{} -> {}", project, plat, mod, dependency);
+
                             if (!index.dependencyExists(dependency, project, plat, mod)) {
                                 // skipping a non-live dependency.
+                                view.getLogger().info("Skipping non-live dependency {}:{}:{} -> {}", project, plat, mod, dependency);
                                 continue;
                             }
                             final ClosureBuffer depOut = dependencies.out1();
@@ -415,8 +418,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 .print(project.getPathGradle())
                                 .print(" at file://")
                                 .println(buildFile);
-                        // all done writing generated project
-                        GFileUtils.writeFile(out.toSource(), buildFile, "UTF-8");
+                        if (dryRun()) {
+                            view.getLogger().info("Skipping write of generated build file due to dry run status");
+                        } else {
+                            // all done writing generated project
+                            GFileUtils.writeFile(out.toSource(), buildFile, "UTF-8");
+                        }
                     }
                 });
             });
@@ -469,7 +476,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
             project.forAllPlatformsAndModules((plat, mod) -> {
                 if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-
                     gradleProject.getLogger().quiet("Found multiplatform combination {}-{} for {} with gradle path {}",
                             plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
                 }

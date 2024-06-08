@@ -17,6 +17,10 @@ public enum DependencyKey {
      */
     version,
     /**
+     * Only meaningful for external dependencies. Handles both :classifier and :classifier@type (we ignore the @)
+     */
+    classifier,
+    /**
      * The appendix, containing platform/archive type suffix.
      * `main-api-source` or `gwt-spi`;
      */

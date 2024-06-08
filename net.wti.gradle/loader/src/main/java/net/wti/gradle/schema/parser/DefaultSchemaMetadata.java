@@ -45,7 +45,7 @@ import static xapi.gradle.fu.LazyString.lazyToString;
  *
  *     projects = {
  *         // the projects below all have gwt, jre and other platforms
- *         multiPlatform: [
+ *         multiplatform: [
  *             "collections",
  *             "common",
  *             "model",
@@ -59,7 +59,7 @@ import static xapi.gradle.fu.LazyString.lazyToString;
  *         // the projects below are effectively parents of multiple child projects.
  *         // it will be left to the schema.xapi of these projects to determine whether
  *         // the child modules are multiPlatform, standalone, or nested multiProject
- *         multiProject: {
+ *         multiproject: {
  *             dist: ["gwt", "jre"],
  *             samples: ["demo"]
  *         }

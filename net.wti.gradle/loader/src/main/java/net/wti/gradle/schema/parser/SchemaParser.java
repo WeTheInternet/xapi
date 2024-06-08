@@ -791,6 +791,7 @@ public interface SchemaParser {
                         // extract gId and version from name, reducing name to a simple(r) string
                         String[] bits = name.split(":");
                         switch (bits.length) {
+                            case 4: // just ignore classifier... this is deprecated class
                             case 3:
                                 // g:n:v
                                 version = bits[2];

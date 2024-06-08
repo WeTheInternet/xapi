@@ -56,7 +56,7 @@ plugins {
 
     projects = {
         // the projects below all have gwt, jre and other platforms
-        multiPlatform: [
+        multiplatform: [
             "inject",
             "common",
         ],

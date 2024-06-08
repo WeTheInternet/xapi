@@ -1,6 +1,7 @@
 package net.wti.gradle.settings.api;
 
 import net.wti.gradle.system.tools.GradleCoerce;
+import xapi.fu.Debuggable;
 
 import static net.wti.gradle.system.tools.GradleCoerce.isEmptyString;
 
@@ -157,13 +158,17 @@ public class SchemaDependency {
 
     @Override
     public String toString() {
-        return "SchemaDependency{" +
-                "type=" + type +
-                ", group='" + group + '\'' +
-                ", version='" + version + '\'' +
-                ", coords=" + coords +
-                ", name=" + name +
-                '}';
+        if (Debuggable.debugEnabled()) {
+            return "SchemaDependency{" +
+                    "type=" + type +
+                    ", group='" + group + '\'' +
+                    ", version='" + version + '\'' +
+                    ", coords=" + coords +
+                    ", name=" + name +
+                    '}';
+        } else {
+            return "{" + type + "}" + group + ":" + name + ":" + version + "(" + coords + ")";
+        }
     }
 
     public SchemaDependency withCoords(String plat, String mod) {

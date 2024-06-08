@@ -641,7 +641,7 @@ public interface XapiSchemaParser {
             }
 
             Log.tryLog(XapiSchemaParser.class, this,
-                    project.getPath(), " adding ", type, " dependencies: ", deps.map(o->o.join("->").replace("\n", " ")));
+                    project.getPathGradle(), " adding " + type + " dependencies: ", deps.map(o->o.join("->").replace("\n", " ")));
 
             for (Out2<PlatformModule, ListLike<Expression>> entry : deps.forEachItem()) {
                 final PlatformModule mod = entry.out1();
@@ -774,6 +774,7 @@ public interface XapiSchemaParser {
 
                     CharSequence gId = deps.getOrDefault(DependencyKey.group, UNKNOWN_VALUE);
                     CharSequence version = deps.getOrDefault(DependencyKey.version, UNKNOWN_VALUE);
+                    CharSequence classifier = deps.getOrDefault(DependencyKey.classifier, UNKNOWN_VALUE);
 
                     switch (type) {
                         case internal:
@@ -783,6 +784,9 @@ public interface XapiSchemaParser {
                             // extract gId and version from name, reducing name to a simple(r) string
                             String[] bits = name.split(":");
                             switch (bits.length) {
+                                case 4:
+                                    // g:n:v:c
+                                    classifier = bits[3];
                                 case 3:
                                     // g:n:v
                                     version = bits[2];
@@ -794,13 +798,16 @@ public interface XapiSchemaParser {
                                     break;
                                 default:
                                     throw new IllegalArgumentException(
-                                            "Invalid external dependencies, has " + bits.length + " colons, only 2 or 3 expected in " + name
+                                            "Invalid external dependencies, has " + bits.length + " colons, only 2, 3 or 4 expected in " + name
                                                     + "\nfrom expression:\n" + expr.toSource());
                             }
                             break;
                     }
                     // todo: extract corrected group/version for local projects as well
                     SchemaDependency dep = new SchemaDependency(type, platMod, gId.toString(), version.toString(), name);
+                    if (classifier != UNKNOWN_VALUE) {
+                        dep.setExtraGnv(classifier.toString());
+                    }
                     dependencies.add(dep);
 
                 }), null);

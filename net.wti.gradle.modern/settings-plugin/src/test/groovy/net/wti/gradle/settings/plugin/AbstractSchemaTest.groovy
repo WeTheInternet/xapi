@@ -1,24 +1,24 @@
-package net.wti.loader.plugin
+package net.wti.gradle.settings.plugin
 
 import net.wti.gradle.api.MinimalProjectView
-import net.wti.gradle.schema.map.SchemaMap
-import net.wti.gradle.schema.parser.DefaultSchemaMetadata
-import net.wti.gradle.schema.parser.SchemaParser
-import net.wti.gradle.schema.spi.SchemaProperties
-import net.wti.gradle.settings.ProjectDescriptorView
+import net.wti.gradle.settings.XapiSchemaParser
+import net.wti.gradle.settings.api.SchemaMap
+import net.wti.gradle.settings.api.SchemaProperties
+import net.wti.gradle.settings.schema.DefaultSchemaMetadata
 import net.wti.gradle.test.AbstractMultiBuildTest
-import org.gradle.StartParameter
-import org.gradle.api.initialization.ProjectDescriptor
 import org.gradle.api.initialization.Settings
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.plugins.ExtensionContainer
 
 import java.util.concurrent.Callable
 
-import static xapi.constants.X_Namespace.XAPI_VERSION
+import static xapi.constants.X_Namespace.XAPI_VERSION;
 
 /**
- * Created by James X. Nelson (James@WeTheInter.net) on 30/07/19 @ 4:41 AM.
+ * AbstractSchemaTest:
+ * <p>
+ * <p>
+ * Created by James X. Nelson (James@WeTheInter.net) on 08/06/2024 @ 7:28 a.m.
  */
 abstract class AbstractSchemaTest <S extends AbstractSchemaTest> extends AbstractMultiBuildTest<S> implements MinimalProjectView {
 
@@ -53,7 +53,7 @@ buildscript {
         )
     }
 }
-apply plugin: 'xapi-loader'
+apply plugin: 'xapi-settings'
 """
 
             buildFile.text = """
@@ -143,10 +143,10 @@ tasks.create 'testSchema', {
     }
 
     protected static String massagePlugins(List<CharSequence> list) {
-    return "    " + list.collect {
-        item ->
-            item.startsWithAny("id ") ? item : item.startsWithAny('"', "'") ?
-                    "id $item" : "id \"$item\""
+        return "    " + list.collect {
+            item ->
+                item.startsWithAny("id ") ? item : item.startsWithAny('"', "'") ?
+                        "id $item" : "id \"$item\""
         }.join("\n    ")
     }
 
@@ -162,8 +162,8 @@ tasks.create 'testSchema', {
     SchemaMap parseSchema() {
         // make sure we actually write out any generated project files before we try parsing
         doWork()
-        SchemaParser parser = {this} as SchemaParser
-        XapiLoaderPlugin plugin = new XapiLoaderPlugin()
+        XapiSchemaParser parser = {this} as XapiSchemaParser
+        XapiSettingsPlugin plugin = new XapiSettingsPlugin()
         DefaultSchemaMetadata schema = parser.parseSchema(this)
         SchemaMap map = plugin.buildMap(settings, parser, schema, SchemaProperties.getInstance())
         // forcibly realize the schema map
@@ -209,11 +209,10 @@ tasks.create 'testSchema', {
 """
     }
 
-    void addSourceCommon(boolean withParser = true) {
+    void addSourceCommon() {
         withProject'common', {
             it.buildFile << """
-version='$VERSION'${withParser ? """
-apply plugin: 'xapi-parser'""" : ''}
+version='$VERSION'
 """
             it.addSource 'api', 'test.common.api', 'CommonApi', '''
 package test.common.api;
@@ -222,16 +221,16 @@ public class CommonApi {}
         }
     }
 
-    void addSourceUtil(boolean xapiRequire = false, boolean extraDeps = true, boolean noPlugins = false) {
+    void addSourceUtil(boolean extraDeps = true, boolean noPlugins = false) {
         withProject 'util', {
+
+            // build.gradle
             it.buildFile << """
 version='$VERSION'
-apply plugin: '${xapiRequire ? '''xapi-require'
-xapiRequire.project 'common''' : noPlugins ? 'base' : 'xapi-parser'}'
+apply plugin: 'java'
 """
-            if (!xapiRequire) {
-                // create a util/schema.xapi which dependsOn common...
-                it.file('schema.xapi').text = """<xapi-schema
+            // create a util/schema.xapi which dependsOn common...
+            it.file('schema.xapi').text = """<xapi-schema
     requires = {
         project: common
     }
@@ -280,7 +279,8 @@ xapiRequire.project 'common''' : noPlugins ? 'base' : 'xapi-parser'}'
 """}
 /xapi-schema>
 """
-            }
+
+            // add some source in the gwt platform direction
             it.addSource 'gwt', 'test.util.main', 'UtilMain', '''
 package test.util.main;
 class UtilMain extends test.common.api.CommonApi {}

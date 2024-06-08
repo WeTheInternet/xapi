@@ -1,5 +1,8 @@
 package net.wti.gradle.settings.api;
 
+import xapi.fu.Debuggable;
+import xapi.fu.log.Log;
+
 /**
  * Abstraction layer over a platform descriptor, like <mod-name replace=["main"] published=true />
  *
@@ -81,12 +84,15 @@ public class DefaultSchemaPlatform implements SchemaPlatform {
 
     @Override
     public String toString() {
-        return "SchemaPlatform{" +
-                "name='" + name + '\'' +
-                ", publishPattern=" + publishPattern +
-                ", replace=" + replace +
-                ", published=" + published +
-                ", test=" + test +
-                '}';
+        if (Debuggable.debugEnabled()) {
+            return "SchemaPlatform{" +
+                    "name='" + name + '\'' +
+                    ", publishPattern=" + publishPattern +
+                    ", replace=" + replace +
+                    ", published=" + published +
+                    ", test=" + test +
+                    '}';
+        }
+        return "[" + name + "]";
     }
 }

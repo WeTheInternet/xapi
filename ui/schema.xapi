@@ -1,0 +1,32 @@
+<xapi-schema
+
+    platforms = [
+        <main />,
+        <jre replace = "main" published = true/>,
+        <gwt replace = main published = true/>,
+    ]
+
+    modules = [
+        <api />,
+        <spi />,
+        <main include = [ api, spi ] />,
+        <sample include = "main" published = true />,
+        <testTools include = "main" published = true />,
+        <test include = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
+    ]
+
+    projects = {
+        // the projects below all have gwt, jre and other platforms
+        multiplatform: [
+            "api",
+            "autoui",
+            "html",
+        ],
+
+        // the projects below are single-module projects.
+        standalone: [
+//            "util"
+        ],
+    }
+
+/xapi-schema>

@@ -14,38 +14,24 @@ plugins {
     id 'wrapper'
     id 'groovy'
 }
-String xapiHome = extensions.getByName('xapi.home')
-apply from: "$xapiHome/gradle/child-build.gradle"
-
-apply plugin: 'xapi-schema'
-
-import net.wti.gradle.system.spi.GradleServiceFinder
-
-xapiSchema {
-    platforms {
-        main
-    }
-    archives {
-        main.required().set([])
-    }
-    archives.create('test').require 'main'
-}
-
-TaskProvider required = tasks.register('publishRequired')
-
 group 'net.wti.core'
 version '0.5.1'
+
+tasks.register('publishRequired')
+
 gradle.beforeProject {
     Project p ->
 
     p.group 'net.wti.core'
     p.version '0.5.1'
 
-    p.apply plugin: 'xapi-schema'
-    p.apply plugin: 'maven-publish'
-    p.apply plugin: 'xapi-publish'
     p.apply plugin: 'idea'
+    p.apply from: "$p.rootDir.parentFile/gradle/xapi-env.gradle"
+    p.apply from: "$p.rootDir.parentFile/gradle/xapi-modern.gradle"
 
 }
 
-GradleServiceFinder.getService(project)
+wrapper {
+    gradleVersion = "8.8"
+    distributionType = "ALL"
+}

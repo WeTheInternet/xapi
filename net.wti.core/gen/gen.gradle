@@ -1,5 +1,5 @@
 plugins {
-    id 'xapi-require'
+    id 'java-library'
 }
 
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
@@ -8,8 +8,10 @@ repositories {
     jcenter()
 }
 
-xapiRequire.main().internal 'xapi-fu:main'
-xapiRequire.module('test').external 'junit:junit:4.12'
+dependencies {
+    api project(':xapi-fu')
+    testImplementation 'junit:junit:4.13.1'
+}
 
 
 description = 'XApi - Dev mode tools for source generation'

@@ -59,12 +59,13 @@ xapiSchema.whenReady {
     def schema ->
     dependencies {
         gwtTestCompile("net.wti.core:xapi-gen:$version") {
-            capabilities {
-                requireCapability("net.wti.core:xapi-gen-sources")
-            }
-            attributes {
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'xapi-source-jar'))
-            }
+            // we're migrating off the old mangled publications, and gwt is just going to have to break for a while :-/
+//            capabilities {
+//                requireCapability("net.wti.core:xapi-gen-sources")
+//            }
+//            attributes {
+//                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'xapi-source-jar'))
+//            }
 
         }
     }

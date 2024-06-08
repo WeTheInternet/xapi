@@ -1,11 +1,12 @@
 plugins {
-    id 'xapi-require'
+    id 'java-library'
 }
 repositories.jcenter()
 
-xapiRequire.module('test').configure {
-    external 'junit:junit:4.12'
-    external 'org.assertj:assertj-core:3.2.0'
+dependencies {
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'org.assertj:assertj-core:3.2.0'
 }
+
 description = 'XApi - FuJutsu: Functional objects, helpers and composers'
 
