@@ -74,9 +74,9 @@ class XapiSchemaIndexerTest extends AbstractSchemaTest<XapiSchemaIndexerTest> {
             }
             withProject(':consumer') {
                 TestProject proj ->
-                    proj.buildFile << """
+                    proj.file("modules/spi/consumerSpi.gradle") << """
 dependencies {
-  spiTransitive project(path: ':producer', configuration: 'spiOut')
+  api project(path: ':producer-spi')
 }
 """
                     proj.sourceFile("spi", "com.test", "CompileMe") << """
@@ -86,9 +86,9 @@ class CompileMe {
 """
             }
             // no code for producer module...
-            BuildResult result = runSucceed(":consumer:compileSpiJava")
+            BuildResult result = runSucceed(":consumer-spi:compileJava")
             expect:
-            result.task(':consumer:compileSpiJava').outcome == TaskOutcome.SUCCESS
+            result.task(':consumer-spi:compileJava').outcome == TaskOutcome.SUCCESS
         }
 
         @Override

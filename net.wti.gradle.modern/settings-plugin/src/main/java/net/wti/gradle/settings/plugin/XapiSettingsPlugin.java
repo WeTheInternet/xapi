@@ -7,7 +7,9 @@ import net.wti.gradle.settings.api.*;
 import net.wti.gradle.settings.index.SchemaIndex;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.system.tools.GradleCoerce;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.initialization.ProjectDescriptor;
@@ -16,7 +18,6 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.util.GFileUtils;
 import xapi.constants.X_Namespace;
 import xapi.dev.source.BuildScriptBuffer;
 import xapi.dev.source.ClosureBuffer;
@@ -28,6 +29,8 @@ import xapi.string.X_String;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 
 /**
  * XapiSettingsPlugin:
@@ -55,7 +58,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         if (schema.exists()) {
             final XapiSchemaParser parser = ()->root;
             final DefaultSchemaMetadata metadata = parser.getSchema();
-            if ("".equals(settings.getRootProject().getName())) {
+            if (settings.getRootProject().getName().isEmpty()) {
                 logger.quiet("Configuring default root project name of file://{} to {}", settings.getRootDir(), metadata.getName());
                 settings.getRootProject().setName(metadata.getName());
             }
@@ -138,7 +141,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 // This is a gradle project who matches one of our schema-backed project declarations.
                 // Lets setup some support utilities
 
-                setupProject(p, match.get(), properties, index, map);
+                setupProject(view, p, match.get(), properties, index, map);
             }
         });
         settings.getGradle().afterProject(p->{
@@ -182,6 +185,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 String projectName = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + key;
                 String projectSrcPath = "src/gradle/" + key;
                 String projectOutputPath = "src/" + key;
+                String modulePath = "modules/" + key;
                 map.whenResolved(() -> {
                     boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
                     if (isLive) {
@@ -196,32 +200,50 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
                         final File projectRoot = project.getView().getProjectDir();
                         String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
-                        final File projDir = new File(projectRoot, projectOutputPath);
+                        final File projDir = new File(projectRoot, modulePath);
+
                         if (new File(projDir, buildFileName + ".kts").exists()) {
                             buildFileName = buildFileName + ".kts";
                         }
-                        final File buildFile = new File(projDir, buildFileName);
+                        final File userBuildFile = new File(projDir, buildFileName);
+                        final File generatedFile = new File(projDir, "generated-" + buildFileName);
+                        String segment = project.getSubPath();
+                        String inclusion = "apply from: " +
+                                "\"$rootDir/" +
+                                segment + "/" +
+                                modulePath + "/"
+                                + generatedFile.getName() + "\"";
+                        if (userBuildFile.exists()) {
+                            String buildFileContents = readFile(userBuildFile);
+                            if (!buildFileContents.contains(inclusion)) {
+                                throw new GradleException("Fatal error; file " + userBuildFile.getAbsolutePath() + " does not contain expected test: " + inclusion);
+                            }
+                        } else {
+                            final BuildScriptBuffer defaultContent = makeDefaultBuildScript(inclusion);
+                            writeFile(userBuildFile, defaultContent.toSource());
+                        }
 
 
                         if (project.isMultiplatform()) {
-                            view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, buildFile, key);
-                            if (dryRun()) {
-                                view.getLogger().quiet("Dry run exiting early; skipping project creation for {} with build file {} for {}:{}", project.getPath(), buildFile.getAbsolutePath(), plat, mod);
+                            view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
+                            if (dryRun(view)) {
+                                view.getLogger().quiet("Dry run exiting early; skipping project creation for {} with build file {} for {}:{}", project.getPath(), userBuildFile.getAbsolutePath(), plat, mod);
                             } else {
                                 settings.include(projectName);
                                 final ProjectDescriptor proj = settings.findProject(projectName);
                                 proj.setProjectDir(projDir);
                                 proj.setBuildFileName(buildFileName);
                                 proj.setName(modKey);
+                                view.getLogger().quiet("Creating project {} named {} with build file {} for module {}:{}", projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
                             }
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
-                            view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, buildFile, key);
+                            view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
                         }
 
                         File projectSource = new File(projectRoot, projectSrcPath);
 
-                        // TODO: add a README.md into projectSource, describing how to contribute code to src/gradle/platMod/<magic filenames>
+                        // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
 
                         BuildScriptBuffer out = new BuildScriptBuffer();
                         final In2Out1<String, Out1<Printable<?>>, Boolean> maybeAdd =
@@ -417,17 +439,52 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         out.print("// Done generating buildfile for ")
                                 .print(project.getPathGradle())
                                 .print(" at file://")
-                                .println(buildFile);
-                        if (dryRun()) {
+                                .println(generatedFile);
+                        if (dryRun(view)) {
                             view.getLogger().info("Skipping write of generated build file due to dry run status");
                         } else {
                             // all done writing generated project
-                            GFileUtils.writeFile(out.toSource(), buildFile, "UTF-8");
+                            writeFile(generatedFile, out.toSource());
                         }
                     }
                 });
             });
         });
+    }
+
+    private static void writeFile(final File file, final String text) {
+        try {
+            final File parent = file.getParentFile();
+            if (!parent.isDirectory()) {
+                if (!parent.mkdirs()) {
+                    throw new IOException("Unable to create directory " + parent.getAbsolutePath());
+                }
+            }
+            ResourceGroovyMethods.setText(file, text);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to write to file " + file.getAbsolutePath(), e);
+        }
+    }
+
+    private static String readFile(final File file) {
+        try {
+            return ResourceGroovyMethods.getText(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to read file " + file.getAbsolutePath(), e);
+        }
+    }
+
+    private BuildScriptBuffer makeDefaultBuildScript(final String inclusion) {
+        BuildScriptBuffer b = new BuildScriptBuffer();
+        b.println("// This buildscript was generated as a place for you to manually configure your subproject as you wish.");
+        b.println("//");
+        b.println("// You can safely delete this file, and a new one will be generated for you in its place");
+        b.println("//");
+        b.println("// The only rule is that, somewhere in this file, even in a comment, you must include the following line:");
+        b.println(inclusion);
+        b.println("//");
+        b.println("// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.");
+        return b;
     }
 
     private void finalizeProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
@@ -442,7 +499,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         }
     }
 
-    private void setupProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
+    private void setupProject(final RootProjectView view, final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
         if (!project.isMultiplatform()) {
             // a multi-platform project will make the parent module an aggregator for client modules.
             // single-platform project will leave the main build.gradle file as the "main" module, and uses java-library plugin.
@@ -488,7 +545,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
                     // for now, lets apply our generated gradle source...
                     // if this gets too yucky, we can just replace it w/ direct (but hidden) "act on Project" object code
-                    if (dryRun()) {
+                    if (dryRun(view)) {
                         gradleProject.getLogger().quiet("Found index entry for {} with index path {}", project.getPathGradle(), project.getPathIndex());
                         return;
                     }
@@ -510,13 +567,14 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         }
     }
 
-    private boolean dryRun() {
-        return true;
+    private boolean dryRun(MinimalProjectView view) {
+        return !"false".equals(System.getProperty("xapiDryRun")) &&
+                !"false".equals(view.findProperty("xapiDryRun"));
     }
     private boolean maybeRead(final File dir, final String file, final In2<String, File> callback) {
         File target = new File(dir, file);
         if (target.isFile()) {
-            final String contents = GFileUtils.readFile(target);
+            final String contents = readFile(target);
             callback.in(contents, target);
             return true;
         }

@@ -61,6 +61,7 @@ ext.publications.create('pluginMaven', MavenPublication) {
 
 test {
     useJUnitPlatform()
+    systemProperty('xapiDryRun', 'false')
     doFirst {
         new File(buildDir, 'testRuntime.classpath').text = (tasks.test as Test).classpath.asPath
     }

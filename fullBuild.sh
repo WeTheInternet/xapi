@@ -70,15 +70,6 @@ function has_args() {
     if [[ -z "$args" ]]; then
         return 1
     fi
-    for arg in $args; do
-        echo "Checking $arg"
-        case "$arg" in
-            -*)
-            ;;
-            *)
-            return 1
-        esac
-    done
     return 0
 }
 has_args || args="build xapiPublish testClasses -x test -x check"

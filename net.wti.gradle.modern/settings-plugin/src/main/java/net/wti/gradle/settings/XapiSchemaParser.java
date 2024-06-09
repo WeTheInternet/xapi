@@ -470,6 +470,11 @@ public interface XapiSchemaParser {
 
         v   .withJsonContainerRecurse(In2.ignoreAll())
                 .withJsonPairTerminal((type, meta1) -> {
+                    if (virtual[0]) {
+                        // we should expect an array of virtual parent-project names: [ "ui", "logs", "etc" ]
+                        // or a map of parent-project: child-project names: { ui: [api, html, autoui, ], logs: [api, jre, web] }
+
+                    }
                     if (type.getKeyExpr() instanceof IntegerLiteralExpr) {
                         type.getValueExpr().accept(
                                 ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(XapiSchemaParser.class)
