@@ -1,6 +1,7 @@
 package net.wti.gradle.settings.api;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.settings.XapiSchemaParser;
 import net.wti.gradle.settings.impl.SchemaCallbacksDefault;
 import net.wti.gradle.settings.index.IndexingFailedException;
@@ -21,6 +22,7 @@ import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
+import xapi.fu.log.Log;
 import xapi.string.X_String;
 
 import java.io.File;
@@ -55,7 +57,7 @@ public class SchemaMap implements HasAllProjects {
         return map;
     }
 
-    private void setIndexProvider(final Out1<SchemaIndex> deferred) {
+    public void setIndexProvider(final Out1<SchemaIndex> deferred) {
         this.indexProvider = Lazy.deferred1(deferred);
     }
 
@@ -65,7 +67,7 @@ public class SchemaMap implements HasAllProjects {
     }
 
     public static SchemaMap fromView(MinimalProjectView srcView, XapiSchemaParser parser, DefaultSchemaMetadata rootMeta, SchemaProperties props) {
-        RootProjectView view = ProjectDescriptorView.rootView(srcView);
+        MinimalProjectView view = ProjectDescriptorView.rootView(srcView);
         return InternalProjectCache.buildOnce(SchemaMap.class, view, KEY_FOR_EXTENSIONS, v -> {
             SchemaCallbacksDefault callbacks = new SchemaCallbacksDefault();
             SchemaMap map = new SchemaMap(view, parser, rootMeta, callbacks);
@@ -97,7 +99,8 @@ public class SchemaMap implements HasAllProjects {
                     view,
                     view.getBuildName() + "_index", ignored-> {
                         final SchemaIndexerImpl index = new SchemaIndexerImpl(props);
-                        view.getLogger().quiet("Index has not yet run; starting one for SchemaMap");
+                        Log.loggerFor(SchemaMap.class, srcView)
+                                        .log(Log.LogLevel.INFO, "Index has not yet run; starting one for SchemaMap");
                         return index;
                     }
             );
@@ -150,30 +153,33 @@ public class SchemaMap implements HasAllProjects {
         // Create a resolver, so we can forcibly finish our SchemaMap parse on-demand,
         // but still give time for user configuration from settings.gradle to be fully parsed
         resolver = Lazy.withSpy(()->{
-
-            System.out.println(view.getClass().getSimpleName() + " is ready, loading children for file://" + view.getProjectDir());
+            Log.loggerFor(SchemaMap.class, view)
+                            .log(Log.LogLevel.INFO, view.getClass().getSimpleName() + " is ready for project " + view.getProjectDir());
             loadMetadata(getRootProject(), parser, root);
             callbacks.flushCallbacks(this);
 
-            // if we're done loading the root-most build, time to invoke child callbacks!
-            if (view.getGradle().getParent() == null) {
-                // This ...doesn't really work yet... we'll likely need a specially-serializable set of metadata
-                // that each project will write to disk as soon as information comes in...
-                // obviating the notion of instances of SchemaMap that can ever "see each other" across distinct gradle builds.
-                // Leaving this here moreso as a note that this should be fixed properly later.
-                // Later on: XapiSettingsPlugin is doing this with schema index (and generated gradle projects)
-                for (SchemaMap child : children.mappedValues()) {
-                    child.getCallbacks().flushCallbacks(this);
-                    // should probably be: child.close(map), which finalizes the list of projects,
-                    // so any not-internally-realized multi-module projects that later become multi-module
-                    // will easily know that they should create multiple sourcesets, rather than rely on multiple-projects.
-                }
-            } else {
-                // this is probably where we'd want to serialize some kind of metadata to disk,
-                // regarding whether each project is single-module, multi-platform or multi-module (implies multi-platform as well).
-                // This way, all participating builds will know which platform/module pairs are present as top-level gradle projects,
-                // vs. a sourceset glued into the "main" gradle project.
-            }
+            // Commenting out this attempt to handle SchemaMap from child builds in memory here somehow...
+            // because it's silly, since we shouldn't really be interacting w/ objects from other builds.
+//
+//            // if we're done loading the root-most build, time to invoke child callbacks!
+//            if (view.getGradle().getParent() == null) {
+//                // This ...doesn't really work yet... we'll likely need a specially-serializable set of metadata
+//                // that each project will write to disk as soon as information comes in...
+//                // obviating the notion of instances of SchemaMap that can ever "see each other" across distinct gradle builds.
+//                // Leaving this here moreso as a note that this should be fixed properly later.
+//                // Later on: XapiSettingsPlugin is doing this with schema index (and generated gradle projects)
+//                for (SchemaMap child : children.mappedValues()) {
+//                    child.getCallbacks().flushCallbacks(this);
+//                    // should probably be: child.close(map), which finalizes the list of projects,
+//                    // so any not-internally-realized multi-module projects that later become multi-module
+//                    // will easily know that they should create multiple sourcesets, rather than rely on multiple-projects.
+//                }
+//            } else {
+//                // this is probably where we'd want to serialize some kind of metadata to disk,
+//                // regarding whether each project is single-module, multi-platform or multi-module (implies multi-platform as well).
+//                // This way, all participating builds will know which platform/module pairs are present as top-level gradle projects,
+//                // vs. a sourceset glued into the "main" gradle project.
+//            }
 
             fixMetadata();
             callbacks.flushCallbacks(this);
@@ -275,11 +281,11 @@ public class SchemaMap implements HasAllProjects {
         return callbacks;
     }
 
-    public void addChild(String at, SchemaMap child) {
-        if (allowChild(rootSchema, at, child)) {
-            children.put(at, child);
-        }
-    }
+//    public void addChild(String at, SchemaMap child) {
+//        if (allowChild(rootSchema, at, child)) {
+//            children.put(at, child);
+//        }
+//    }
 
     protected boolean allowChild(DefaultSchemaMetadata root, String at, SchemaMap child) {
         // TODO: allow platform limitation properties to prevent a child schema map from being remembered.

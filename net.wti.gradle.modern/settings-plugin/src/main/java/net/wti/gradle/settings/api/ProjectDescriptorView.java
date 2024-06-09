@@ -1,6 +1,7 @@
 package net.wti.gradle.settings.api;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import org.gradle.api.Action;
 import org.gradle.api.Describable;
 import org.gradle.api.initialization.ProjectDescriptor;
@@ -41,7 +42,7 @@ import static net.wti.gradle.tools.InternalProjectCache.buildOnce;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 30/07/19 @ 1:42 AM.
  */
-public class ProjectDescriptorView implements MinimalProjectView {
+public class ProjectDescriptorView implements ProjectViewInternal {
 
     public static final String EXT_NAME = "_xapiRootProject";
 
@@ -193,7 +194,10 @@ public class ProjectDescriptorView implements MinimalProjectView {
         if (view instanceof RootProjectView) {
             return (RootProjectView) view;
         }
-        return rootView(view.getSettings());
+        if (view instanceof ProjectViewInternal) {
+            return rootView(((ProjectViewInternal) view).getSettings());
+        }
+        throw new IllegalArgumentException("Cannot find a RootProjectView from " + view.getClass() + ": " + view);
     }
     public static RootProjectView rootView(final Gradle gradle) {
         Settings settings;

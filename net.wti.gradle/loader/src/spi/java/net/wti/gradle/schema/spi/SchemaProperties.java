@@ -1,12 +1,14 @@
 package net.wti.gradle.schema.spi;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.schema.api.SchemaIndexReader;
 import net.wti.gradle.schema.api.SchemaPatternResolver;
 import net.wti.gradle.system.tools.GradleCoerce;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 import xapi.constants.X_Namespace;
+import xapi.fu.log.Log;
 import xapi.string.X_String;
 
 import java.io.File;
@@ -48,7 +50,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
         return indexLoc;
     }
 
-    default String getIndexIdProp(MinimalProjectView view) {
+    default String getIndexIdProp(ProjectViewInternal view) {
         // hm.  we need something a little better than this
         return getBuildName(view) + ".indexed." + System.identityHashCode(view.getGradle());
     }
@@ -71,7 +73,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
     }
 
     default String getProperty(String key, MinimalProjectView view) {
-        String value = MinimalProjectView.searchProperty(key, view);
+        String value = ProjectViewInternal.searchProperty(key, view);
         if (isNotEmpty(value)) {
             return value;
         }
@@ -114,13 +116,15 @@ public interface SchemaProperties extends SchemaPatternResolver {
                                 "Set xapi.strict=false to suppress this failure"
                 );
             } else {
-                view.getLogger().info("More than one " + debugInfo + " running for " + indexProp + "; consider integrating with index from xapi-loader plugin");
+                Log.loggerFor(view).log(SchemaProperties.class, Log.LogLevel.WARN,
+                        "More than one " + debugInfo + " running for " + indexProp + "; consider integrating with index from xapi-loader plugin");
             }
         }
         try {
             System.setProperty(indexProp, value);
         } catch (Exception e) {
-            view.getLogger().info("Unable to set indexProp {} to {}:\n{}", indexProp, value,e);
+            Log.loggerFor(view).log(SchemaProperties.class, Log.LogLevel.ERROR,
+                    "Unable to set indexProp ", indexProp, " to ", value,e);
         }
     }
 }

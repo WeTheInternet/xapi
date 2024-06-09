@@ -3,6 +3,7 @@ package net.wti.gradle.schema.map;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
@@ -133,7 +134,7 @@ public class SchemaMap implements HasAllProjects {
     private volatile Do onResolve;
 
     public SchemaMap(
-        MinimalProjectView view,
+        ProjectViewInternal view,
         SchemaParser parser,
         DefaultSchemaMetadata root,
         SchemaCallbacks callbacks

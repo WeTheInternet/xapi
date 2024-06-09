@@ -2,6 +2,7 @@ package net.wti.gradle.schema.index;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.impl.IndexingFailedException;
@@ -83,7 +84,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
     @Override
     public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map) {
-        String indexProp = properties.getIndexIdProp(view);
+        String indexProp = properties.getIndexIdProp((ProjectViewInternal)view);
         boolean alreadyDone = "true".equals(properties.getProperty(indexProp, view));
 
         ExecutorService exec = Executors.newWorkStealingPool(4);
@@ -99,7 +100,8 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         try {
             System.setProperty(indexProp, "running");
         } catch (Exception e) {
-            view.getLogger().info("Unable to set indexProp {} to running {}", indexProp, e);
+            Log.loggerFor(view).log(SchemaIndexerImpl.class, LogLevel.ERROR,
+                "Unable to set indexProp ", indexProp, " to running state", e);
         }
         populateIndex(view, map, index, buildName);
 

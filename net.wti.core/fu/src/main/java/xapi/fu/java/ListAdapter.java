@@ -1,5 +1,6 @@
 package xapi.fu.java;
 
+import xapi.fu.Debuggable;
 import xapi.fu.Maybe;
 import xapi.fu.data.ListLike;
 import xapi.fu.itr.ArrayIterable;
@@ -93,10 +94,13 @@ public class ListAdapter<T> implements ListLike<T>, Serializable {
 
     @Override
     public String toString() {
-        return "ListAdapter{" +
-            "list=" + list +
-            ", sparse=" + sparse +
-            '}';
+        if (Debuggable.debugEnabled()) {
+            return "ListAdapter{" +
+                "list=" + list +
+                ", sparse=" + sparse +
+                '}';
+        }
+        return String.valueOf(list);
     }
 
     @Override

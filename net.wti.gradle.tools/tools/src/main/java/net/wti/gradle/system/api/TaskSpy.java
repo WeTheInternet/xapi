@@ -1,6 +1,8 @@
 package net.wti.gradle.system.api;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.system.impl.ImmutableTaskSpy;
 import net.wti.gradle.system.service.GradleService;
 import org.gradle.BuildAdapter;
@@ -40,7 +42,7 @@ public interface TaskSpy {
      * @param <T>
      * @return
      */
-    static <T extends Task> TaskSpy spy(MinimalProjectView view, String path, Class<? extends T> cls, Action<? super T> callback) {
+    static <T extends Task> TaskSpy spy(ProjectViewInternal view, String path, Class<? extends T> cls, Action<? super T> callback) {
         final TaskSpy spy = GradleService.buildOnce(TaskWatcher.class, view.getRootProject(), EXT_NAME, onCreated -> {
             // code in here should only ever be called once (per however many times you send distinct ExtensionAware projectOrView as arguments)
             TaskWatcher watcher = new TaskWatcher();
@@ -76,7 +78,7 @@ final class TaskWatcher {
 
     }
 
-    public TaskWatcher viewOnce(final MinimalProjectView view, final InitializeOnce once) {
+    public TaskWatcher viewOnce(final ProjectViewInternal view, final InitializeOnce once) {
         final TaskWatcher result;
         final Gradle gradle = view.getGradle();
         synchronized (bank) {
@@ -90,7 +92,7 @@ final class TaskWatcher {
         return result;
     }
 
-    private void installMechanations(final MinimalProjectView view) {
+    private void installMechanations(final ProjectViewInternal view) {
         final Gradle gradle = view.getGradle();
         final TaskExecutionGraphInternal tg = (TaskExecutionGraphInternal) gradle.getTaskGraph();
         gradle.addBuildListener(new BuildAdapter() {

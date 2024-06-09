@@ -156,7 +156,7 @@ tasks.create 'testSchema', {
 
     @Override
     String getRootProjectName() {
-        return getClass().simpleName
+        return rootDir.name //getClass().simpleName
     }
 
     SchemaMap parseSchema() {

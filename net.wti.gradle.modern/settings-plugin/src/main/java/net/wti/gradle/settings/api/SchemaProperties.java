@@ -1,8 +1,11 @@
 package net.wti.gradle.settings.api;
 
+import net.wti.gradle.api.BuildCoordinates;
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.system.tools.GradleCoerce;
 import xapi.constants.X_Namespace;
+import xapi.fu.log.Log;
 import xapi.string.X_String;
 
 import java.io.File;
@@ -44,7 +47,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
         return indexLoc;
     }
 
-    default String getIndexIdProp(MinimalProjectView view) {
+    default String getIndexIdProp(BuildCoordinates view) {
         // hm.  we need something a little better than this
         return getBuildName(view) + ".indexed." + view.getBuildName();
     }
@@ -67,14 +70,14 @@ public interface SchemaProperties extends SchemaPatternResolver {
     }
 
     default String getProperty(String key, MinimalProjectView view) {
-        String value = MinimalProjectView.searchProperty(key, view);
+        String value = ProjectViewInternal.searchProperty(key, view);
         if (isNotEmpty(value)) {
             return value;
         }
         return defaultValue(value);
     }
 
-    default String getBuildName(MinimalProjectView root) {
+    default String getBuildName(BuildCoordinates root) {
         String name = root.getBuildName();
         if (X_String.isEmpty(name) || ":".equals(name)) {
             return "_";//metadata.getName();
@@ -110,13 +113,15 @@ public interface SchemaProperties extends SchemaPatternResolver {
                                 "Set xapi.strict=false to suppress this failure"
                 );
             } else {
-                view.getLogger().info("More than one " + debugInfo + " running for " + indexProp + "; consider integrating with index from xapi-loader plugin");
+                Log.loggerFor(view).log(SchemaProperties.class, Log.LogLevel.INFO,
+                    "More than one " + debugInfo + " running for " + indexProp + "; consider integrating with index from xapi-settings plugin");
             }
         }
         try {
             System.setProperty(indexProp, value);
         } catch (Exception e) {
-            view.getLogger().info("Unable to set indexProp {} to {}:\n{}", indexProp, value, e);
+            Log.loggerFor(view).log(SchemaProperties.class, Log.LogLevel.ERROR,
+                "Unable to set indexProp ", indexProp,  " to ", value, e);
         }
     }
 }

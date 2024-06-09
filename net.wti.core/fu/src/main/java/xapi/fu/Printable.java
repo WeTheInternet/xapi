@@ -96,6 +96,18 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
     public String toSource() {
       return target.toString();
     }
+
+    @Override
+    public Printable<?> printBefore(final String s) {
+      target.append(s, 0, s.length());
+      return this;
+    }
+
+    @Override
+    public Printable<?> printAfter(final String s) {
+      print(s);
+      return this;
+    }
   }
 
   default Self println() {
@@ -278,5 +290,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
     return (Self) this;
   }
 
+  Printable<?> printBefore(String s);
+  Printable<?> printAfter(String s);
 
 }

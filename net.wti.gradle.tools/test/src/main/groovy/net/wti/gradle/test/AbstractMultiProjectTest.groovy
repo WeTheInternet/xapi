@@ -1,6 +1,7 @@
 package net.wti.gradle.test
 
 import net.wti.gradle.api.MinimalProjectView
+import net.wti.gradle.internal.ProjectViewInternal
 import net.wti.gradle.test.api.TestBuild
 import net.wti.gradle.test.api.TestBuildDir
 import net.wti.gradle.test.api.TestFileTools
@@ -33,7 +34,7 @@ import static org.gradle.api.logging.LogLevel.*
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:04 AM.
  */
-abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools, TestBuildDir, MinimalProjectView {
+abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools, TestBuildDir, ProjectViewInternal {
 
     LogLevel LOG_LEVEL = QUIET
     Boolean XAPI_DEBUG = true// Boolean.getBoolean("xapi.debug")

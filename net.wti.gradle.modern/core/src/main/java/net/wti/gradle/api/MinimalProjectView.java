@@ -35,72 +35,17 @@ public interface MinimalProjectView extends ExtensionAware, BuildCoordinates {
 
     Object findProperty(String key);
 
-    Instantiator getInstantiator();
-
-    CollectionCallbackActionDecorator getDecorator();
-
     MinimalProjectView findView(String name);
-
-    Gradle getGradle();
-
-    Settings getSettings();
-
-    void whenSettingsReady(Action<Settings> callback);
-
-    void whenReady(Action<? super MinimalProjectView> callback);
 
     default MinimalProjectView getRootProject() {
         return findView(":");
     }
 
-    default String getBuildName() {
-        return extractBuildName(getGradle());
-    }
+    String getBuildName();
 
-    static String extractBuildName(Gradle gradle) {
-        final BuildState owner = ((GradleInternal) gradle).getOwner();
-        try {
-            String path = owner.getBuildIdentifier().getBuildPath();
-            return path;
-        } catch (NoSuchMethodError e) {
-            Object o;
-            try {
-                Method m = owner.getClass().getMethod("getCurrentPrefixForProjectsInChildBuilds");
-                m.setAccessible(true);
-                o = m.invoke(owner);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                throw new GradleException("Can't extract build name!", ex);
-            }
-            return ((Path)o).getPath();
-        }
-//        final Path id = owner.getCurrentPrefixForProjectsInChildBuilds();
-//        return id.getPath();
-    }
-
+    @Override
     String getGroup();
+    @Override
     String getVersion();
 
-    Logger getLogger();
-
-    static String searchProperty(String key, MinimalProjectView view) {
-        String maybe = System.getProperty(key);
-        if (isEmptyString(maybe)) {
-            if (view != null) {
-                Object candidate = view.findProperty(key);
-                if (candidate != null) {
-                    maybe = String.valueOf(candidate);
-                }
-            }
-        }
-        if (isNotEmptyString(maybe)) {
-            return maybe;
-        }
-        // convert to env var; universally forces camelCase, kebob-case and dot.case. to UPPER_SNAKE_CASE
-        String envKey = key.replaceAll("([A-Z][a-z]*)", "_$1").replaceAll("[.-]", "_").toUpperCase();
-        maybe = System.getenv(envKey);
-        if (isNotEmptyString(maybe)) {
-            return maybe;
-        }
-        return null;
-    }
 }

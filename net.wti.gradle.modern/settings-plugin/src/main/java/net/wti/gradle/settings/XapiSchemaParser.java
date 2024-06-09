@@ -1,13 +1,12 @@
 package net.wti.gradle.settings;
 
 import net.wti.gradle.api.MinimalProjectView;
-import net.wti.gradle.tools.InternalProjectCache;
+import net.wti.gradle.settings.api.*;
+import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.javaparser.JavaParser;
 import net.wti.javaparser.ParseException;
 import net.wti.javaparser.ast.expr.*;
 import net.wti.javaparser.ast.visitor.ComposableXapiVisitor;
-import net.wti.gradle.settings.api.*;
-import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import xapi.fu.*;
@@ -25,11 +24,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import static net.wti.gradle.settings.api.QualifiedModule.UNKNOWN_VALUE;
 import static net.wti.gradle.tools.InternalProjectCache.buildOnce;
 import static net.wti.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
-import static net.wti.gradle.settings.api.QualifiedModule.UNKNOWN_VALUE;
 
 /**
  * Converts schema.xapi files into {@link DefaultSchemaMetadata} classes.
@@ -40,6 +42,10 @@ import static net.wti.gradle.settings.api.QualifiedModule.UNKNOWN_VALUE;
  * Created by James X. Nelson (James@WeTheInter.net) on 29/07/19 @ 5:09 AM.
  */
 public interface XapiSchemaParser {
+
+    static XapiSchemaParser fromView(MinimalProjectView root) {
+        return root::getRootProject;
+    }
 
     MinimalProjectView getView();
 

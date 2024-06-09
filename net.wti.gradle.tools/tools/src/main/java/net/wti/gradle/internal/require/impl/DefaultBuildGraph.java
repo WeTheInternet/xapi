@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.require.impl;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.require.api.BuildGraph;
@@ -63,7 +64,7 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
 
             @Override
             public void afterEvaluate(Project gradleProject, ProjectState projectState) {
-                MinimalProjectView view = project.findView(gradleProject.getPath());
+                ProjectViewInternal view = project.findView(gradleProject.getPath());
                 if (view instanceof ProjectView) {
                     ProjectGraph graph = ((ProjectView) view).getProjectGraph();
                     graph.drainTasks(ReadyState.AFTER_CREATED);

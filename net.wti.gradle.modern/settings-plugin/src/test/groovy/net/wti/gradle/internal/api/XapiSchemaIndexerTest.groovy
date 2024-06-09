@@ -1,12 +1,16 @@
 package net.wti.gradle.internal.api
 
+import net.wti.gradle.settings.XapiSchemaParser
+import net.wti.gradle.settings.api.SchemaMap
+import net.wti.gradle.settings.api.SchemaProperties
+import net.wti.gradle.settings.index.SchemaIndex
+import net.wti.gradle.settings.index.SchemaIndexerImpl
 import net.wti.gradle.settings.plugin.AbstractSchemaTest
+import net.wti.gradle.settings.schema.DefaultSchemaMetadata
 import net.wti.gradle.test.api.TestProject
-import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
-
-import static org.gradle.api.logging.LogLevel.INFO
+import xapi.fu.Out1
 
 /**
  * XapiSchemaIndexerTest:
@@ -27,10 +31,38 @@ class XapiSchemaIndexerTest extends AbstractSchemaTest<XapiSchemaIndexerTest> {
 
         def "A schema is written for a single module project"() {
             given:
+
+            // setup schema + source files
             addSourceCommon()
             addSourceUtil( false)
-            runSucceed(INFO, "compileJava")
+            flush()
+
+            // manually trigger an index, so we can debug
+            SchemaProperties props = SchemaProperties.getInstance()
+            SchemaIndexerImpl indexer = new SchemaIndexerImpl(props)
+            XapiSchemaParser parser = XapiSchemaParser.fromView(this)
+            final DefaultSchemaMetadata root = parser.getSchema()
+            SchemaMap map = SchemaMap.fromView(this, parser, root, props)
+            final Out1<SchemaIndex> deferred = indexer.index(this, buildName, map)
+            map.setIndexProvider(deferred)
+            def gwtPlatform, mainPlatform, apiModule, mainModule
+            map.rootProject.forAllPlatformsAndModules {
+                plat, mod ->
+                    if (plat.name == 'gwt') {
+                        gwtPlatform = plat
+                    } else if (plat.name == 'main') {
+                        mainPlatform = plat
+                    }
+                    if (mod.name == 'api') {
+                        apiModule = mod
+                    } else if (mod.name == 'main') {
+                        mainModule = mod
+                    }
+            }
+            map.resolve()
+//            runSucceed(INFO, "compileJava")
             expect:
+//            index.getReader().getEntries(this, "common", gwtPlatform, mainModule).hasExplicitDependencies()
             new File(indexDir, 'path').listFiles()?.length == 7
         }
 

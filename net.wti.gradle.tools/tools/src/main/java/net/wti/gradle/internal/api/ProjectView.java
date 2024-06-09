@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.api;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.internal.impl.DefaultProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
 import net.wti.gradle.internal.require.api.ProjectGraph;
@@ -12,7 +13,6 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.component.BuildIdentifier;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
@@ -54,7 +54,7 @@ import java.util.concurrent.Callable;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/31/18 @ 12:45 AM.
  */
-public interface ProjectView extends MinimalProjectView {
+public interface ProjectView extends ProjectViewInternal {
 
     String EXT_NAME = System.getProperty("xapi.view", "_xapi");
 
@@ -186,7 +186,7 @@ public interface ProjectView extends MinimalProjectView {
     }
 
     @Override
-    default MinimalProjectView findView(String name) {
+    default ProjectViewInternal findView(String name) {
         if (!name.startsWith(":")) {
             name = ":" + name;
         }
@@ -205,7 +205,7 @@ public interface ProjectView extends MinimalProjectView {
 
     @Override
     default String getBuildName() {
-        return MinimalProjectView.super.getBuildName();
+        return ProjectViewInternal.super.getBuildName();
     }
 
 }

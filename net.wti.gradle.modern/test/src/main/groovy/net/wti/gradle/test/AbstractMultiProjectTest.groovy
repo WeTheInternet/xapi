@@ -1,12 +1,14 @@
 package net.wti.gradle.test
 
 import net.wti.gradle.api.MinimalProjectView
+import net.wti.gradle.internal.ProjectViewInternal
 import net.wti.gradle.test.api.TestBuild
 import net.wti.gradle.test.api.TestBuildDir
 import net.wti.gradle.test.api.TestFileTools
 import org.gradle.StartParameter
 import org.gradle.api.Action
 import org.gradle.api.Describable
+import org.gradle.api.artifacts.component.BuildIdentifier
 import org.gradle.api.initialization.ProjectDescriptor
 import org.gradle.api.initialization.Settings
 import org.gradle.api.internal.CollectionCallbackActionDecorator
@@ -23,6 +25,7 @@ import org.gradle.internal.extensibility.DefaultConvention
 import org.gradle.internal.instantiation.InstanceGenerator
 import org.gradle.internal.reflect.DirectInstantiator
 import org.gradle.internal.reflect.Instantiator
+import org.gradle.internal.service.ServiceRegistry
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.Path
@@ -36,7 +39,7 @@ import static org.gradle.api.logging.LogLevel.*
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/26/18 @ 2:04 AM.
  */
-abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools, TestBuildDir, MinimalProjectView {
+abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> extends Specification implements TestBuild, TestFileTools, TestBuildDir, ProjectViewInternal {
 
     LogLevel LOG_LEVEL = QUIET
     Boolean XAPI_DEBUG = true// Boolean.getBoolean("xapi.debug")
@@ -89,12 +92,20 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
                 }
             })
         }
-        settings = Mock(Settings) {
+        settings = Mock(SettingsInternal) {
             _ * getExtensions() >> convention
             _ * getGradle() >> Mock(GradleInternal) {
                 _ * getSettings() >> settings
+                _ * getServices() >> Mock(ServiceRegistry) {
+                    _ * get(_) >> { args ->
+                        return Mock(args[0])
+                    }
+                }
                 _ * getOwner() >> Mock(BuildState) {
                     _ * getCurrentPrefixForProjectsInChildBuilds() >> Path.path(rootDir.name)
+                    _ * getBuildIdentifier() >> Mock(BuildIdentifier) {
+                        _ * getBuildPath() >> getBuildName()
+                    }
                 }
             }
             _ * getStartParameter() >> Mock(StartParameter) {
@@ -305,5 +316,10 @@ allprojects { group = "$group" }
     @Override
     void whenSettingsReady(final Action<Settings> callback) {
         callback.execute(settings)
+    }
+
+    @Override
+    String getBuildName() {
+        return rootDir.name
     }
 }

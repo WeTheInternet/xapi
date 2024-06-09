@@ -4,7 +4,9 @@ import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.PlatformModule;
 import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectSet;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DefaultNamedDomainObjectSet;
+import org.gradle.internal.reflect.Instantiator;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.data.ListLike;
@@ -51,8 +53,11 @@ public class SchemaProject implements Named, HasPath {
         this.multiplatform = multiplatform;
         this.virtual = virtual;
         children = X_Jdk.mapOrderedInsertion();
-        modules = new DefaultNamedDomainObjectSet<>(SchemaModule.class, view.getInstantiator(), view.getDecorator());
-        platforms = new DefaultNamedDomainObjectSet<>(SchemaPlatform.class, view.getInstantiator(), view.getDecorator());
+
+        final Instantiator instantiator = net.wti.gradle.internal.ProjectViewInternal.findInstantiator(view);
+        final CollectionCallbackActionDecorator decorator = net.wti.gradle.internal.ProjectViewInternal.findDecorator(view);
+        modules = new DefaultNamedDomainObjectSet<>(SchemaModule.class, instantiator, decorator);
+        platforms = new DefaultNamedDomainObjectSet<>(SchemaPlatform.class, instantiator, decorator);
         dependencies = X_Jdk.multiListOrderedInsertion();
     }
 

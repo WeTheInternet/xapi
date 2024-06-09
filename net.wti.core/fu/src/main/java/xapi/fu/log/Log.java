@@ -171,6 +171,9 @@ public interface Log extends Debuggable {
     loggerFor(cls, inst).log(cls, e);
   }
 
+  static Log loggerFor(Object inst) {
+    return loggerFor(Log.class, inst);
+  }
   static Log loggerFor(Class<?> cls, Object inst) {
     if (inst instanceof Log) {
       return (Log)inst;

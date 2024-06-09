@@ -4,10 +4,10 @@ import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.XapiSchemaParser;
 import net.wti.gradle.settings.api.*;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
+import net.wti.gradle.tools.GradleFiles;
 import net.wti.gradle.tools.HasAllProjects;
 import net.wti.javaparser.ast.expr.UiContainerExpr;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
-import org.gradle.util.GFileUtils;
 import xapi.fu.*;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static net.wti.gradle.tools.GradleFiles.*;
 import static xapi.string.X_String.isNotEmptyTrimmed;
 
 /**
@@ -92,7 +93,8 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         try {
             System.setProperty(indexProp, "running");
         } catch (Exception e) {
-            view.getLogger().info("Unable to set indexProp {} to running {}", indexProp, e);
+            Log.loggerFor(view).log(SchemaIndexerImpl.class, LogLevel.ERROR,
+                    "Unable to set indexProp ", indexProp, " to running state", e);
         }
         populateIndex(view, map, index, buildName);
 
@@ -239,7 +241,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     File modDir = index.calcProjectDir(project, plat.getName(), mod.getName());
                     File force = new File(modDir, "force");
                     if (force.exists()) {
-                        final String forceContents = GFileUtils.readFile(force);
+                        final String forceContents = readFile(force);
                         if (!"false".equals(forceContents)) {
                             index.markExplicitInclude(project, plat, mod);
                         }
@@ -265,7 +267,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             // and liveness level 1 for "this module depends on something that is live".
             File projectDir = liveness.getProjectDir();
             File liveFile = new File(projectDir, "live");
-            GFileUtils.writeFile(liveness.isForce() ? "3" : liveness.isExplicit() ? "4" : "2", liveFile, "utf-8");
+            writeFile(liveFile, liveness.isForce() ? "3" : liveness.isExplicit() ? "4" : "2");
             // now, go through all of this project's out/ edges, marking each one as at-least-level-1
             markOutEdges(map, index, liveness.getProjectDir());
 //            markInEdges(map, index, liveness.getProjectDir());
@@ -273,10 +275,10 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             File multiplatformFile = new File(projectDir, "multiplatform");
             File virtualFile = new File(projectDir, "virtual");
             File forceFile = new File(projectDir, "force");
-            GFileUtils.writeFile(Boolean.toString(liveness.isMultiplatform()), multiplatformFile, "utf-8");
-            GFileUtils.writeFile(Boolean.toString(liveness.isVirtual()), virtualFile, "utf-8");
+            writeFile(multiplatformFile, Boolean.toString(liveness.isMultiplatform()));
+            writeFile(virtualFile, Boolean.toString(liveness.isVirtual()));
             if (liveness.isForce()) {
-                GFileUtils.writeFile("true", forceFile, "utf-8");
+                writeFile(forceFile, "true");
             } else if (forceFile.exists()) {
                 forceFile.delete();
             }
@@ -297,7 +299,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 for (File platModDir : allPlatMods) {
                     if (platModDir.isDirectory()) {
                         File liveFile = new File(platModDir, "live");
-                        String contents = GFileUtils.readFile(liveFile);
+                        String contents = readFile(liveFile);
                         if (contents.isEmpty() || "0".equals(contents)) {
                             // not live, do not count
                         } else {
@@ -309,7 +311,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             if (modCount > 1) {
                 // forcibly write a multiplatform file. TODO: validate it wasn't explicitly marked single-platform
                 File multiplatformFile = new File(projectDir, "multiplatform");
-                GFileUtils.writeFile("true", multiplatformFile, "utf-8");
+                writeFile(multiplatformFile, "true");
             }
         }
     }
@@ -332,14 +334,14 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             for (File mangledProjects : outDir.listFiles()) {
                 for (File platMods : mangledProjects.listFiles()) {
                     File linkFile = new File(platMods, "link");
-                    String nextPath = GFileUtils.readFile(linkFile, "utf-8");
+                    String nextPath = readFile(linkFile);
                     final File readLink = new File(index.getDirByPpm(), nextPath);
                     File liveFile = new File(readLink, "live");
-                    String value = GFileUtils.readFile(liveFile, "utf-8");
+                    String value = readFile(liveFile);
                     int intVal = Integer.parseInt(value);
                     if (intVal < 1) {
                         // only create a "1" file if a child edge results in a >1 liveness.
-                        GFileUtils.writeFile("1", liveFile, "utf-8");
+                        writeFile(liveFile, "1");
                         markOutEdges(map, index, readLink);
                     }
                 }
@@ -453,8 +455,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     if (hasSrc) {
                         // yay! record that this module has sources.
                         File moduleDir = new File(projectDir, configName);
-                        GFileUtils.writeFile(srcDir.getAbsolutePath(),
-                                new File(moduleDir, "sources"), "UTF-8");
+                        writeFile(new File(moduleDir, "sources"), srcDir.getAbsolutePath());
                     }
 
                     // Ok, we now have a coords/group/name/version directory, place our dependency information there.
@@ -484,7 +485,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                 String mangledName = PlatformModule.parse(name).toPlatMod();
                                 depFile = new File(internalDeps, mangledName);
                                 // hm, we have nothing interesting to write into internal dependencies, the filename is a key...
-                                GFileUtils.touch(depFile);
+                                touch(depFile);
                                 if (!depFile.isFile()) {
                                     throw new IllegalStateException(depFile + " does not exist after touching it; check filesystem usage (df -h) or existence+permissions (ls -la)");
                                 }
@@ -524,24 +525,24 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     final File forceFile = new File(modDir, "force");
                     final File liveFile = new File(modDir, "live");
                     if (module.isTest()) {
-                        GFileUtils.writeFile("true", testFile);
+                        writeFile( testFile, "true");
                     } else if (testFile.exists()){
                         testFile.delete();
                     }
                     if (module.isPublished()) {
-                        GFileUtils.writeFile("true", publishFile);
+                        writeFile(publishFile, "true");
                     } else if (publishFile.exists()) {
                         publishFile.delete();
-                        GFileUtils.deleteQuietly(publishFile);
+                        GradleFiles.deleteQuietly(publishFile);
                     }
                     if (module.isForce()) {
-                        GFileUtils.writeFile("true", forceFile);
-                        GFileUtils.writeFile("3", liveFile);
+                        writeFile(forceFile, "true");
+                        writeFile(liveFile, "3");
                     } else if (forceFile.exists()) {
                         forceFile.delete();
                     }
                     if (!liveFile.exists()) {
-                        GFileUtils.writeFile("0", liveFile);
+                        writeFile(liveFile, "0");
                     }
                 } // end all modules
             } // end all platforms
@@ -580,14 +581,14 @@ public class SchemaIndexerImpl implements SchemaIndexer {
 
         // touch / initialize both liveness files, so we'll know if this is an active node or not.
         if (livenessIn.isFile()) {
-            GFileUtils.touch(livenessIn);
+            touch(livenessIn);
         } else {
-            GFileUtils.writeFile("0", livenessIn, "utf-8");
+            writeFile(livenessIn, "0");
         }
         if (livenessOut.isFile()) {
-            GFileUtils.touch(livenessOut);
+            touch(livenessOut);
         } else {
-            GFileUtils.writeFile("0", livenessOut, "utf-8");
+            writeFile(livenessOut, "0");
         }
 
         // Now, write links from ppm directories to matching liveness file
@@ -596,17 +597,17 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         String linkSeg = requestedDir.getAbsolutePath().replace(index.getDirByPpm().getAbsolutePath(), "").substring(1);
         if (inLink.isFile()) {
             String bad;
-            assert linkSeg.equals((bad = GFileUtils.readFile(inLink))) : "Error, path disagreement in " + inLink + "; was " + bad + "; is " + linkSeg;
+            assert linkSeg.equals((bad = readFile(inLink))) : "Error, path disagreement in " + inLink + "; was " + bad + "; is " + linkSeg;
         } else {
-            GFileUtils.writeFile(linkSeg, inLink, "utf-8");
+            writeFile(inLink, linkSeg);
         }
 
         linkSeg = requestorDir.getAbsolutePath().replace(index.getDirByPpm().getAbsolutePath(), "").substring(1);
         if (outLink.isFile()) {
             String bad;
-            assert linkSeg.equals((bad = GFileUtils.readFile(outLink))) : "Error, path disagreement in " + outLink + "; was " + bad + "; is " + linkSeg;
+            assert linkSeg.equals((bad = readFile(outLink))) : "Error, path disagreement in " + outLink + "; was " + bad + "; is " + linkSeg;
         } else {
-            GFileUtils.writeFile(linkSeg, outLink, "utf-8");
+            writeFile(outLink, linkSeg);
         }
 
         // hm... submit a task that will check if this dependency is explicit or if the module has sources, and increase liveness count.
@@ -621,7 +622,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         if (modType == null) {
             modType = module.getName();
         }
-        GFileUtils.writeFile(platType + ":" + modType, depFile, "utf-8");
+        writeFile(depFile, platType + ":" + modType);
     }
 
     protected String guessBuildName(File rootDir) {

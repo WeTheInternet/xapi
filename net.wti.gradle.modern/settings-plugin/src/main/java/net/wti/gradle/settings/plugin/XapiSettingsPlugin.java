@@ -2,12 +2,13 @@ package net.wti.gradle.settings.plugin;
 
 import net.wti.gradle.api.BuildCoordinates;
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.settings.XapiSchemaParser;
 import net.wti.gradle.settings.api.*;
 import net.wti.gradle.settings.index.SchemaIndex;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.system.tools.GradleCoerce;
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import net.wti.gradle.tools.GradleFiles;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -29,8 +30,6 @@ import xapi.string.X_String;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 
 /**
  * XapiSettingsPlugin:
@@ -56,7 +55,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         final File schema = new File(settings.getRootDir(), "schema.xapi");
         RootProjectView root = RootProjectView.rootView(settings);
         if (schema.exists()) {
-            final XapiSchemaParser parser = ()->root;
+            final XapiSchemaParser parser = XapiSchemaParser.fromView(root);
             final DefaultSchemaMetadata metadata = parser.getSchema();
             if (settings.getRootProject().getName().isEmpty()) {
                 logger.quiet("Configuring default root project name of file://{} to {}", settings.getRootDir(), metadata.getName());
@@ -71,7 +70,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
 
             // Write the index...
-            String propertiesClass = MinimalProjectView.searchProperty(X_Namespace.PROPERTY_SCHEMA_PROPERTIES_INJECT, root);
+            String propertiesClass = ProjectViewInternal.searchProperty(X_Namespace.PROPERTY_SCHEMA_PROPERTIES_INJECT, root);
             SchemaProperties properties;
             if (X_String.isNotEmpty(propertiesClass)) {
                 final Class<?> cls;
@@ -214,13 +213,13 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 modulePath + "/"
                                 + generatedFile.getName() + "\"";
                         if (userBuildFile.exists()) {
-                            String buildFileContents = readFile(userBuildFile);
+                            String buildFileContents = GradleFiles.readFile(userBuildFile);
                             if (!buildFileContents.contains(inclusion)) {
                                 throw new GradleException("Fatal error; file " + userBuildFile.getAbsolutePath() + " does not contain expected test: " + inclusion);
                             }
                         } else {
                             final BuildScriptBuffer defaultContent = makeDefaultBuildScript(inclusion);
-                            writeFile(userBuildFile, defaultContent.toSource());
+                            GradleFiles.writeFile(userBuildFile, defaultContent.toSource());
                         }
 
 
@@ -245,7 +244,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
 
-                        BuildScriptBuffer out = new BuildScriptBuffer();
+                        BuildScriptBuffer out = new BuildScriptBuffer(false);
                         final In2Out1<String, Out1<Printable<?>>, Boolean> maybeAdd =
                                 (name, buffer) -> {
                                     In2<String, File> cb = (script, file) ->
@@ -271,7 +270,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             maybeAdd.io("buildscript.end", getBuildscript);
 
                             final In2<String, File> addPlugin = (plugins, file) -> {
-                                out.getPlugins().printBefore("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
                                 for (String s : plugins.split("[\\n\\r]+")) {
                                     if (!s.startsWith("//")) {
                                         out.addPlugin(s);
@@ -342,7 +341,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             switch (dependency.getTransitivity()) {
                                 case api:
                                     if (out.addPlugin("java-library")) {
-                                        out.getPlugins().printBefore("// GenInclude ")
+                                        out.getPlugins().print("// GenInclude ")
                                                 .print(getClass().getSimpleName())
                                                 .println(" adding java-library b/c api dependencies used");
                                     }
@@ -444,34 +443,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             view.getLogger().info("Skipping write of generated build file due to dry run status");
                         } else {
                             // all done writing generated project
-                            writeFile(generatedFile, out.toSource());
+                            GradleFiles.writeFile(generatedFile, out.toSource());
                         }
                     }
                 });
             });
         });
-    }
-
-    private static void writeFile(final File file, final String text) {
-        try {
-            final File parent = file.getParentFile();
-            if (!parent.isDirectory()) {
-                if (!parent.mkdirs()) {
-                    throw new IOException("Unable to create directory " + parent.getAbsolutePath());
-                }
-            }
-            ResourceGroovyMethods.setText(file, text);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Unable to write to file " + file.getAbsolutePath(), e);
-        }
-    }
-
-    private static String readFile(final File file) {
-        try {
-            return ResourceGroovyMethods.getText(file);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Unable to read file " + file.getAbsolutePath(), e);
-        }
     }
 
     private BuildScriptBuffer makeDefaultBuildScript(final String inclusion) {
@@ -574,7 +551,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
     private boolean maybeRead(final File dir, final String file, final In2<String, File> callback) {
         File target = new File(dir, file);
         if (target.isFile()) {
-            final String contents = readFile(target);
+            final String contents = GradleFiles.readFile(target);
             callback.in(contents, target);
             return true;
         }

@@ -1,6 +1,3 @@
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
-
 plugins {
     id 'java-library'
     id 'groovy'
@@ -29,6 +26,7 @@ tasks.named('compileJava').configure {
         t.dependsOn makeShadow
 }
 dependencies {
+    api "net.wti.core:xapi-fu:${->version}"
     api project(':xapi-gradle-core')
     if (System.getProperty("idea.version")) {
         api files(provider {makeShadow.get().outputs.files.singleFile.listFiles()[0]})

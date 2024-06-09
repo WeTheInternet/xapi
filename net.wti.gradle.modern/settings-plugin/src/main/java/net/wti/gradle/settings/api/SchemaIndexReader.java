@@ -1,17 +1,19 @@
 package net.wti.gradle.settings.api;
 
-import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.api.BuildCoordinates;
-import org.gradle.util.GFileUtils;
+import net.wti.gradle.api.MinimalProjectView;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static java.util.Collections.unmodifiableList;
 import static net.wti.gradle.settings.api.QualifiedModule.mangleProjectPath;
+import static net.wti.gradle.tools.GradleFiles.readFile;
 
 /**
  * SchemaIndexReader:
@@ -37,14 +39,14 @@ public class SchemaIndexReader implements SchemaDirs {
         // if the parent project-wide directory is marked as multiplatform=true, we treat it as multiplatform
         File multiplatformFile;
         multiplatformFile = new File(projectDir, "multiplatform");
-        if (multiplatformFile.exists() && "true".equals(GFileUtils.readFile(multiplatformFile).trim())) {
+        if (multiplatformFile.exists() && "true".equals(readFile(multiplatformFile).trim())) {
             return true;
         }
         // also allow the modules themselves to specify "I am multiplatform"
         final String key = PlatformModule.unparse(coords);
         File moduleDir = new File(projectDir, key);
         multiplatformFile = new File(moduleDir, "multiplatform");
-        if (multiplatformFile.exists() && "true".equals(GFileUtils.readFile(multiplatformFile).trim())) {
+        if (multiplatformFile.exists() && "true".equals(readFile(multiplatformFile).trim())) {
             return true;
         }
         return false;
@@ -53,7 +55,7 @@ public class SchemaIndexReader implements SchemaDirs {
     public boolean dependencyExists(final SchemaDependency dependency, final SchemaProject project, final SchemaPlatform plat, final SchemaModule mod) {
         final File dir = calcDependencyProjectDir(dependency, project, plat, mod);
         final File live = new File(dir, "live");
-        return live.exists() && !"0".equals(GFileUtils.readFile(live, "utf-8"));
+        return live.exists() && !"0".equals(readFile(live));
     }
 
     @Override
@@ -123,7 +125,7 @@ public class SchemaIndexReader implements SchemaDirs {
         File liveFile = new File(moduleDir, "live");
         String liveValue = "0";
         if (liveFile.exists()) {
-            liveValue = GFileUtils.readFile(liveFile, "utf-8");
+            liveValue = readFile(liveFile);
         }
         if ("0".equals(liveValue)) {
             // definitely ignore
@@ -215,7 +217,7 @@ public class SchemaIndexReader implements SchemaDirs {
         File liveFile = new File(modDir, "live");
         String liveValue = "0";
         if (liveFile.exists()) {
-            liveValue = GFileUtils.readFile(liveFile, "utf-8");
+            liveValue = readFile(liveFile);
         }
 
         final IndexResult result = new IndexResult(

@@ -2,6 +2,7 @@ package xapi.dev.source;
 
 import xapi.dev.source.CharBuffer;
 import xapi.fu.Lazy;
+import xapi.fu.Printable;
 import xapi.fu.data.SetLike;
 import xapi.fu.java.X_Jdk;
 
@@ -17,35 +18,48 @@ import xapi.fu.java.X_Jdk;
  */
 public class BuildScriptBuffer extends GradleBuffer {
 
-    private final Lazy<ClosureBuffer> buildscript;
-    private final Lazy<ClosureBuffer> plugins;
+    private final Lazy<Printable<?>> buildscript;
+    private final Lazy<Printable<?>> plugins;
     private final SetLike<String> pluginList;
 
+    private final boolean allowPluginsBlock;
+
     public BuildScriptBuffer() {
+        this(true);
+    }
+    public BuildScriptBuffer(boolean allowPluginsBlock) {
+        this.allowPluginsBlock = allowPluginsBlock;
         final CharBuffer top = new CharBuffer();
         final CharBuffer bottom = new CharBuffer();
         buffer.addToBeginning(bottom);
         buffer.addToBeginning(top);
 
-        plugins = Lazy.deferred1(()-> startClosure(bottom).setName("plugins"));
-        buildscript = Lazy.deferred1(()-> startClosure(top).setName("buildscript"));
+        plugins = Lazy.deferred1(()-> {
+            if (allowPluginsBlock) {
+                final ClosureBuffer pluginsClosure = startClosure(bottom).setName("plugins");
+                return pluginsClosure;
+            }
+            PrintBuffer buff = new PrintBuffer();
+            bottom.addToEnd(buff);
+            return buff;
+        });
+        buildscript = Lazy.deferred1(()-> {
+            if (allowPluginsBlock) {
+                return startClosure(top).setName("buildscript");
+            }
+            PrintBuffer buff = new PrintBuffer();
+            top.addToEnd(buff);
+            return buff;
+        });
         pluginList = X_Jdk.set();
     }
 
-    public ClosureBuffer getBuildscript() {
+    public Printable<?> getBuildscript() {
         return buildscript.out1();
     }
 
-    public ClosureBuffer getPlugins() {
+    public Printable<?> getPlugins() {
         return plugins.out1();
-    }
-
-    public boolean hasBuildscript() {
-        return buildscript.isFull1() && buildscript.out1().buffer.isNotEmpty();
-    }
-
-    public boolean hasPlugins() {
-        return plugins.isFull1() && plugins.out1().buffer.isNotEmpty();
     }
 
     public boolean addPlugin(String pluginId) {
@@ -61,19 +75,25 @@ public class BuildScriptBuffer extends GradleBuffer {
             key = key.replaceAll("[\"']", "");
         }
         if (pluginList.addIfMissing(key)) {
-            final ClosureBuffer out = getPlugins();
-            out.println().indent();
-            if (!hasId) {
-                out.append("id\t");
+            final Printable<?> out = getPlugins();
+            if (allowPluginsBlock) {
+                out.println().indent();
+                if (!hasId) {
+                    out.append("id\t");
+                }
+                if (!hasQuote) {
+                    out.append("\"");
+                }
+                out.append(pluginId);
+                if (!hasQuote) {
+                    out.append("\"");
+                }
+                out.outdent();
+            } else {
+                out.println()
+                   .append("apply plugin: \"").append(pluginId).append("\"")
+                   .println();
             }
-            if (!hasQuote) {
-                out.append("\"");
-            }
-            out.append(pluginId);
-            if (!hasQuote) {
-                out.append("\"");
-            }
-            out.outdent();
             return true;
         }
         return false;

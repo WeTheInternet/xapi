@@ -1,6 +1,7 @@
 package net.wti.loader.plugin;
 
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.internal.api.ProjectView;
 import xapi.dev.source.BuildScriptBuffer;
 import xapi.dev.source.ClosureBuffer;
@@ -70,7 +71,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
 
 
             // Write the index...
-            String propertiesClass = MinimalProjectView.searchProperty(X_Namespace.PROPERTY_SCHEMA_PROPERTIES_INJECT, root);
+            String propertiesClass = ProjectViewInternal.searchProperty(X_Namespace.PROPERTY_SCHEMA_PROPERTIES_INJECT, root);
             SchemaProperties properties;
             if (X_String.isNotEmpty(propertiesClass)) {
                 final Class<?> cls;
@@ -246,7 +247,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                             maybeAdd.io("buildscript.end", getBuildscript);
 
                             final In2<String, File> addPlugin = (plugins, file) -> {
-                                out.getPlugins().printBefore("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
                                 for (String s : plugins.split("[\\n\\r]+")) {
                                     if (!s.startsWith("//")) {
                                         out.addPlugin(s);
@@ -314,7 +315,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                             switch (dependency.getTransitivity()) {
                                 case api:
                                     if (out.addPlugin("java-library")) {
-                                        out.getPlugins().printBefore("// GenInclude ")
+                                        out.getPlugins().print("// GenInclude ")
                                                 .print(getClass().getSimpleName())
                                                 .println(" adding java-library b/c api dependencies used");
                                     }

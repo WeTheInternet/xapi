@@ -14,7 +14,7 @@ import xapi.string.X_String;
  * <p>
  * <p> This is primarily used to generate buildscripts on the fly from a settings.gradle plugin.
  * <p>
- * Created by James X. Nelson (James@WeTheInter.net) on 21/03/2021 @ 1:55 a.m..
+ * Created by James X. Nelson (James@WeTheInter.net) on 21/03/2021 @ 1:55 a.m.
  */
 public class GradleBuffer implements Printable<GradleBuffer> {
 
@@ -165,11 +165,13 @@ public class GradleBuffer implements Printable<GradleBuffer> {
         return this.buffer.newVariable(cls, name, reuseExisting);
     }
 
-    public PrintBuffer printBefore(String before) {
+    @Override
+    public Printable<?> printBefore(String before) {
         return buffer.printBefore(before);
     }
 
-    public PrintBuffer printAfter(String before) {
+    @Override
+    public Printable<?> printAfter(String before) {
         return buffer.printAfter(before);
     }
 }

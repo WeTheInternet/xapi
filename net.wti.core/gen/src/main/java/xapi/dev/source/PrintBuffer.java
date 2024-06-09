@@ -268,6 +268,7 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
    * @return - A buffer pointed at this text, capable of further before/after
    *         branching
    */
+  @Override
   public PrintBuffer printBefore(final String prefix) {
     final PrintBuffer buffer = new PrintBuffer(new StringBuilder(prefix));
     addToBeginning(buffer);

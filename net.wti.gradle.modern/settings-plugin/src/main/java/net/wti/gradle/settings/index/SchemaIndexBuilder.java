@@ -2,7 +2,7 @@ package net.wti.gradle.settings.index;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.api.*;
-import org.gradle.util.GFileUtils;
+import net.wti.gradle.tools.GradleFiles;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.data.SetLike;
@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import static net.wti.gradle.tools.GradleFiles.writeFile;
 
 /**
  * Responsible for building a SchemaIndex; basically just exposes the setters of a SchemaIndex
@@ -147,7 +149,7 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
         final File projectDir = index.calcProjectDir(project);
         if (project.isMultiplatform()) {
             File multiplatform = new File(projectDir, "multiplatform");
-            GFileUtils.writeFile("true", multiplatform, "utf-8");
+            writeFile(multiplatform, "true");
         } else {
             // we should really validate that there's only one live platform/module.
             // ....later
