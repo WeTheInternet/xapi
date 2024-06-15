@@ -2,7 +2,6 @@ package net.wti.gradle.settings.index;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.api.*;
-import net.wti.gradle.tools.GradleFiles;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.data.SetLike;
@@ -10,6 +9,7 @@ import xapi.fu.java.X_Jdk;
 import xapi.gradle.fu.LazyString;
 
 import java.io.File;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -153,6 +153,31 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
         } else {
             // we should really validate that there's only one live platform/module.
             // ....later
+        }
+
+    }
+
+    public void compressNodes(final IndexNodePool nodes) {
+        // we should have already pruned any leaf nodes that ultimately depend on nothing.
+        // now that we've processed the whole graph at least once, we're now ready to
+        // also prune anything which has includes, but no other liveness reasons.
+        for (IndexNode node : nodes.getAllNodes()) {
+            final SetLike<IndexNode> dependencies = node.getCompressedDependencies();
+            final EnumSet<LivenessReason> reasons = node.getLivenessReasons();
+            if (reasons.isEmpty()) {
+                // this node should be erased
+                nodes.delete(node.getIdentity());
+            } else if (reasons.size() == 1) {
+                if (reasons.contains(LivenessReason.has_includes)) {
+                    if (dependencies.isEmpty()) {
+                        // a module that only includes, but has nothing it depends on is worthless
+                        nodes.delete(node.getIdentity());
+                    } else if (!node.hasOutgoing()) {
+                        // a module that only includes, but nothing that is live depends on, should be deleted
+                        nodes.delete(node.getIdentity());
+                    }
+                }
+            }
         }
 
     }

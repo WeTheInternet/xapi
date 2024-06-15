@@ -47,7 +47,7 @@ public class GradleFiles {
             if (file.exists()) {
                     Files.setLastModifiedTime(Paths.get(file.getAbsolutePath()), FileTime.from(Instant.now()));
             } else {
-                if (!file.createNewFile()) {
+                if (!file.createNewFile() && !file.exists()) {
                     throw new GradleException("Cannot touch " + file.getAbsolutePath());
                 }
             }

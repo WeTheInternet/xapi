@@ -53,8 +53,10 @@ gradle.beforeProject {
         }
         version = findProperty('xapiVersion')
 
-        plugins.apply 'idea'
-        plugins.apply 'xapi-schema'
+        if (p.findProperty('xapiModern') != 'true') {
+            plugins.apply 'idea'
+            plugins.apply 'xapi-schema'
+        }
 
         // TODO: remove this by priming xapiLocal repo with all external dependencies
         repositories.jcenter()
@@ -65,7 +67,6 @@ gradle.beforeProject {
 
 gradle.beforeProject {
     Project p ->
-
         p.with {
             sourceCompatibility = '1.8'
             targetCompatibility = '1.8'
@@ -112,7 +113,7 @@ gradle.beforeProject {
                     }
             }
 
-            if (path != ':schema' && findProperty('xapiModern') != 'true') {
+            if (path != ':schema' && p.findProperty('xapiModern') != 'true') {
 
                 plugins.apply 'xapi-schema'
                 plugins.apply 'maven-publish'

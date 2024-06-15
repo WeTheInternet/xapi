@@ -13,7 +13,9 @@ public class DefaultSchemaPlatform implements SchemaPlatform {
     private final String replace;
     private String publishPattern;
     private boolean published;
+    private boolean sourcePublished;
     private boolean test;
+    private boolean disabled;
 
     public DefaultSchemaPlatform(
             String name,
@@ -43,8 +45,29 @@ public class DefaultSchemaPlatform implements SchemaPlatform {
         return replace;
     }
 
+    @Override
     public boolean isPublished() {
         return published;
+    }
+
+    @Override
+    public boolean isSourcePublished() {
+        return sourcePublished;
+    }
+
+    @Override
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    @Override
+    public void setSourcePublished(final boolean sourcePublished) {
+        this.sourcePublished = sourcePublished;
+    }
+
+    @Override
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     @Override

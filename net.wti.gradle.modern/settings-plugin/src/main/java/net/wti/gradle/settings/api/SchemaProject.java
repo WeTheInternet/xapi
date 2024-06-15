@@ -6,7 +6,6 @@ import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DefaultNamedDomainObjectSet;
-import org.gradle.api.specs.Spec;
 import org.gradle.internal.reflect.Instantiator;
 import xapi.fu.In1;
 import xapi.fu.In2;
@@ -17,6 +16,8 @@ import xapi.fu.data.SetLike;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
+import xapi.fu.log.Log;
+import xapi.string.X_String;
 
 /**
  * Abstraction layer over a project descriptor, like <project-name virtual=true multiplatform=false />
@@ -24,6 +25,8 @@ import xapi.fu.java.X_Jdk;
  * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-06 @ 4:39 a.m..
  */
 public class SchemaProject implements Named, HasPath {
+
+    private static final Log LOG = Log.loggerFor(SchemaProject.class);
     private final String name;
     private final MapLike<String, SchemaProject> children;
     private final NamedDomainObjectSet<SchemaModule> modules;
@@ -101,7 +104,7 @@ public class SchemaProject implements Named, HasPath {
             final SchemaPlatform existing = platforms.getByName(platform.getName());
             platforms.remove(platform);
             result = existing.update(platform);
-            platforms.add(existing.update(platform));
+            platforms.add(result);
         } else {
             platforms.add((result = platform));
         }
@@ -301,6 +304,59 @@ public class SchemaProject implements Named, HasPath {
 
     public void setForce(final boolean force) {
         this.force = force;
+    }
+
+    public void trimPlatforms(final String explicit) {
+        assert X_String.isNotEmpty(explicit) : "Don't try to trim non-explicit platform";
+        SchemaPlatform[] all = platforms.toArray(new SchemaPlatform[0]);
+        SetLike<SchemaPlatform> winners = X_Jdk.setHashIdentity();
+        for (String allowed : explicit.split(",")) {
+            SchemaPlatform winner = findPlatform(allowed);
+            if (winner == null) {
+                LOG.log(SchemaProject.class, Log.LogLevel.WARN,
+                        "Project " + getPathGradle() + " did not have platform " + allowed);
+                if (winners.isEmpty() && !explicit.contains(",")) {
+                    LOG.log(SchemaProject.class, Log.LogLevel.WARN,
+                            "Project " + getPathGradle() + " will instead retain platform 'main'");
+                    // no winning platform... only leave main alive
+                    for (SchemaPlatform platform : all) {
+                        if ("main".equals(platform.getName())) {
+                            winner = platform;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (winner != null) {
+                // there is a winning platform. It and everything it replaces lives. Everything else dies.
+                winners.add(winner);
+                while (winner != null) {
+                    final String replace = winner.getReplace();
+                    if (X_String.isEmpty(replace)) {
+                        winner = null;
+                    } else {
+                        SchemaPlatform newWinner = findPlatform(replace);
+                        assert newWinner != null : "Bad platform " + winner.getName() +
+                                " tries to replace platform " + replace + "; but no such platform exists" +
+                                " in '" + platforms.getNames() + "'";
+                        winner = newWinner;
+                        winners.add(winner);
+                    }
+                }
+
+            }
+        }
+
+        for (SchemaPlatform platform : all) {
+            if (!winners.contains(platform)) {
+                // prune this non-live platform!
+                LOG.log(SchemaProject.class, Log.LogLevel.INFO,
+                        "Project " + getPathGradle() + " pruning non-live platform " + platform.getName());
+                platforms.remove(platform);
+                platform.setDisabled(true);
+            }
+        }
+
     }
 }
 

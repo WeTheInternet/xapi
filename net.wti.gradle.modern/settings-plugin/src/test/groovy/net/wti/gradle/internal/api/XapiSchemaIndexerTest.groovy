@@ -4,7 +4,6 @@ import net.wti.gradle.settings.XapiSchemaParser
 import net.wti.gradle.settings.api.SchemaMap
 import net.wti.gradle.settings.api.SchemaProperties
 import net.wti.gradle.settings.index.SchemaIndex
-import net.wti.gradle.settings.index.SchemaIndexerImpl
 import net.wti.gradle.settings.plugin.AbstractSchemaTest
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata
 import net.wti.gradle.test.api.TestProject
@@ -39,12 +38,10 @@ class XapiSchemaIndexerTest extends AbstractSchemaTest<XapiSchemaIndexerTest> {
 
             // manually trigger an index, so we can debug
             SchemaProperties props = SchemaProperties.getInstance()
-            SchemaIndexerImpl indexer = new SchemaIndexerImpl(props)
             XapiSchemaParser parser = XapiSchemaParser.fromView(this)
-            final DefaultSchemaMetadata root = parser.getSchema()
+            final DefaultSchemaMetadata root = parser.getSchema("")
             SchemaMap map = SchemaMap.fromView(this, parser, root, props)
-            final Out1<SchemaIndex> deferred = indexer.index(this, buildName, map)
-            map.setIndexProvider(deferred)
+            final Out1<SchemaIndex> deferred = map.getIndexProvider()
             def gwtPlatform, mainPlatform, apiModule, mainModule
             map.rootProject.forAllPlatformsAndModules {
                 plat, mod ->
@@ -60,6 +57,7 @@ class XapiSchemaIndexerTest extends AbstractSchemaTest<XapiSchemaIndexerTest> {
                     }
             }
             map.resolve()
+            SchemaIndex index = deferred.out1()
 //            runSucceed(INFO, "compileJava")
             expect:
 //            index.getReader().getEntries(this, "common", gwtPlatform, mainModule).hasExplicitDependencies()

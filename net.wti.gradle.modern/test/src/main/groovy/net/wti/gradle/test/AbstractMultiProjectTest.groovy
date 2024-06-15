@@ -51,6 +51,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
     private String version = "1.0"
     private String group = "test"
     private boolean initializedSettings
+    private Map<String, TestProjectView> subprojects = new LinkedHashMap<>()
     Settings settings
 
     DefaultConvention convention
@@ -70,12 +71,12 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
         convention = new DefaultConvention(new InstanceGenerator() {
             @Override
             <T> T newInstanceWithDisplayName(final Class<? extends T> type, final Describable displayName, final Object... parameters) throws ObjectInstantiationException {
-                throw new UnsupportedOperationException("Cannot create $type")
+                return DirectInstantiator.INSTANCE.newInstance(type, parameters)
             }
 
             @Override
-            <T> T newInstance(final Class<? extends T> aClass, final Object... objects) throws ObjectInstantiationException {
-                throw new UnsupportedOperationException("Cannot create $aClass")
+            <T> T newInstance(final Class<? extends T> type, final Object... parameters) throws ObjectInstantiationException {
+                return DirectInstantiator.INSTANCE.newInstance(type, parameters)
             }
         })
         // initialize our mocks with some state...
@@ -280,7 +281,9 @@ allprojects { group = "$group" }
     @Override
     MinimalProjectView findView(String s) {
         if (s != ':') {
-            println "Ignoring request for view $s and just returning $this"
+            return this.subprojects.computeIfAbsent(s, {missing ->
+                return new TestProjectView(this, s)
+            })
         }
         return this
     }

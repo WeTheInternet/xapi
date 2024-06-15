@@ -2,6 +2,7 @@ package net.wti.gradle.settings;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.api.*;
+import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.javaparser.JavaParser;
 import net.wti.javaparser.ParseException;
@@ -49,21 +50,23 @@ public interface XapiSchemaParser {
 
     MinimalProjectView getView();
 
-    default DefaultSchemaMetadata getSchema() {
-        return buildOnce(getView().getRootProject(), DefaultSchemaMetadata.EXT_NAME, this::parseSchema);
+    default DefaultSchemaMetadata getSchema(final String explicitPlatform) {
+        return buildOnce(getView().getRootProject(), DefaultSchemaMetadata.EXT_NAME, v->parseSchema(v, explicitPlatform));
     }
 
     /**
      * Find the schema.xapi file for a given project, and parse it.
      *
-     * @param p - A SimpleProjectView, to be able to look up properties and locate a project directory.
+     * @param p                - A SimpleProjectView, to be able to look up properties and locate a project directory.
+     * @param explicitPlatform - The value of property xapi.platform, if not null or empty, will limit the scope of realized platforms
      * @return A parsed {@link DefaultSchemaMetadata} file.
      */
-    default DefaultSchemaMetadata parseSchema(MinimalProjectView p) {
+    default DefaultSchemaMetadata parseSchema(MinimalProjectView p, final String explicitPlatform) {
         File schemaFile = getProperties().getRootSchemaFile(p);
-        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, schemaFile);
+        IndexNodePool nodes = new IndexNodePool();
+        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, schemaFile, nodes);
         if (schemaFile.exists()) {
-            return parseSchemaFile(null, metadata, p.getProjectDir());
+            return parseSchemaFile(null, metadata, p.getProjectDir(), explicitPlatform);
         }
         return metadata;
     }
@@ -71,23 +74,24 @@ public interface XapiSchemaParser {
     /**
      * Parse a supplied "schema.xapi" file.
      *
+     * @param parent           Optional parent of the target metadata.
+     * @param metadata         A schema metadata instance for us to fill out.
+     * @param relativeRoot     In case the schemaFile is relative, where to try resolving it.
+     * @param explicitPlatform
      * @return A parsed {@link DefaultSchemaMetadata} file.
-     * @param parent Optional parent of the target metadata.
-     * @param metadata A schema metadata instance for us to fill out.
-     * @param relativeRoot In case the schemaFile is relative, where to try resolving it.
      * @return A parsed {@link DefaultSchemaMetadata} file.
-     *
+     * <p>
      * We will throw illegal argument exceptions if you provide a non-existent absolute-path-to-a-schema-file.
      * Relative paths will be more forgiving.
      */
     default DefaultSchemaMetadata parseSchemaFile(
             DefaultSchemaMetadata parent,
             DefaultSchemaMetadata metadata,
-            File relativeRoot
-    ) {
+            File relativeRoot,
+            final String explicitPlatform) {
         File schemaFile = normalizeSchemaFile(relativeRoot, metadata.getSchemaFile());
         if (!schemaFile.exists()) {
-            return new DefaultSchemaMetadata(parent, schemaFile);
+            return new DefaultSchemaMetadata(parent, schemaFile, parent.getNodePool());
         }
         final UiContainerExpr expr;
         try (
@@ -103,7 +107,7 @@ public interface XapiSchemaParser {
         // hm, we're getting duplication of root schema as :name and :name:schema.xapi...
         // TODO: find out if above comment is even true, and do we even care?
 
-        final DefaultSchemaMetadata result = parseSchemaElement(parent, metadata, expr);
+        final DefaultSchemaMetadata result = parseSchemaElement(parent, metadata, expr, explicitPlatform);
         result.setSchemaLocation(schemaFile.getPath());
         return result;
     }
@@ -124,8 +128,8 @@ public interface XapiSchemaParser {
     default DefaultSchemaMetadata parseSchemaElement(
             DefaultSchemaMetadata parent,
             final DefaultSchemaMetadata metadata,
-            UiContainerExpr schema
-    ) {
+            UiContainerExpr schema,
+            final String explicitPlatform) {
         File schemaFile = metadata.getSchemaFile();
         ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(XapiSchemaParser.class)
                 .withUiContainerRecurse(In2.ignoreAll())
@@ -136,7 +140,7 @@ public interface XapiSchemaParser {
                     }
                     return false;
                 })
-                .withUiAttrTerminal(readProjectAttributes(metadata, schema))
+                .withUiAttrTerminal(readProjectAttributes(metadata, schema, explicitPlatform))
                 .visit(schema, metadata);
         // we should consider flushing a work queue here.
 
@@ -147,21 +151,21 @@ public interface XapiSchemaParser {
     default DefaultSchemaMetadata parseProjectElement(
             DefaultSchemaMetadata parent,
             final DefaultSchemaMetadata metadata,
-            UiContainerExpr schema
-    ) {
+            UiContainerExpr schema,
+            final String explicitPlatform) {
         ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(XapiSchemaParser.class)
                 .withUiContainerRecurse(In2.ignoreAll())
                 .withNameTerminal((ctr, meta)-> {
                     // the only name we visit is the <opening-element attrName=not-visited /opening-element>
                     metadata.setName(ctr.getName());
                 })
-                .withUiAttrTerminal(readProjectAttributes(metadata, schema))
+                .withUiAttrTerminal(readProjectAttributes(metadata, schema, explicitPlatform))
                 .visit(schema, metadata);
         schema.addExtra("xapi-schema-meta", metadata);
         return metadata;
     }
 
-    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes(final DefaultSchemaMetadata metadata, final UiContainerExpr projEl) {
+    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes(final DefaultSchemaMetadata metadata, final UiContainerExpr projEl, final String explicitPlatform) {
         return (attr, meta)->{
             switch (attr.getNameString()) {
                 case "multiplatform":
@@ -186,6 +190,9 @@ public interface XapiSchemaParser {
                 case "platforms":
                     // definition of platforms
                     addPlatforms(meta, attr.getExpression());
+                    if (X_String.isNotEmpty(explicitPlatform)) {
+                        meta.trimPlatforms(explicitPlatform);
+                    }
                     break;
                 case "modules":
                     // definition of modules per platform
@@ -581,13 +588,13 @@ public interface XapiSchemaParser {
                 , null);
     }
 
-    default void loadMetadata(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser) {
-        loadPlatforms(project, metadata, parser);
+    default void loadMetadata(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser, final String explicitPlatform) {
+        loadPlatforms(project, metadata, parser, explicitPlatform);
         loadModules(project, metadata, parser);
         loadExternals(project, metadata);
         final ListLike<UiContainerExpr> projects = metadata.getProjects();
         if (projects != null) {
-            map.loadProjects(project, this, metadata);
+            map.loadProjects(project, this, metadata, explicitPlatform);
         }
         loadRepositories(map, project, metadata);
         loadDependencies(map, project, metadata);
@@ -651,7 +658,7 @@ public interface XapiSchemaParser {
                 continue;
             }
 
-            Log.tryLog(XapiSchemaParser.class, this,
+            Log.tryLog(XapiSchemaParser.class, this, LogLevel.TRACE,
                     project.getPathGradle(), " adding " + type + " dependencies: ", deps.map(o->o.join("->").replace("\n", " ")));
 
             for (Out2<PlatformModule, ListLike<Expression>> entry : deps.forEachItem()) {
@@ -667,6 +674,7 @@ public interface XapiSchemaParser {
                 Log.loggerFor(XapiSchemaParser.class, this)
                         .log(XapiSchemaParser.class, LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
                 for (SchemaDependency dep : extracted) {
+                    // need to validate that dependencies point to valid targets!
                     insertDependencies(project, metadata, mod, dep);
                 }
             }
@@ -1086,7 +1094,7 @@ public interface XapiSchemaParser {
         return project.addModule(module);
     }
 
-    default void loadPlatforms(SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser) {
+    default void loadPlatforms(SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser, final String explicitPlatform) {
         final ListLike<UiContainerExpr> platforms = metadata.getPlatforms();
         if (platforms == null) {
             return;
@@ -1135,14 +1143,24 @@ public interface XapiSchemaParser {
             Maybe<UiAttrExpr> modules = platform.getAttribute("modules");
             if (modules.isPresent()) {
                 // we need to stash something that says "this module configuration applies only to our scoped platform".
-                ListLike<UiContainerExpr> extracted = extractModuleForPlatform(platform.getName(), metadata, modules.get());
+                extractModuleForPlatform(platform.getName(), metadata, modules.get());
             }
         }
+        if (X_String.isNotEmpty(explicitPlatform)) {
+            project.trimPlatforms(explicitPlatform);
+        }
         // now, go through all published platforms, and make sure all predecessors are also published.
-        final Set<String> once = new HashSet<>();
+        final Set<String> onceChildren = new HashSet<>();
+        final Set<String> onceSource = new HashSet<>();
         for (SchemaPlatform platform : added) {
+            if (platform.isDisabled()) {
+                continue;
+            }
             if (platform.isPublished()) {
-                publishChildren(project, platform, once);
+                publishChildren(project, platform, onceChildren);
+            }
+            if (platform.isSourcePublished()) {
+                publishChildrenSource(project, platform, onceSource);
             }
         }
     }
@@ -1260,6 +1278,18 @@ public interface XapiSchemaParser {
                 if (!toInclude.isPublished()) {
                     toInclude.setPublished(true);
                     publishChildren(project, toInclude, once);
+                }
+            }
+        }
+    }
+    default void publishChildrenSource(SchemaProject project, SchemaPlatform platform, Set<String> once) {
+        String include = platform.getReplace();
+        if (X_String.isNotEmpty(include)) {
+            if (once.add(include)) {
+                final SchemaPlatform toInclude = project.getPlatform(include);
+                if (!toInclude.isSourcePublished()) {
+                    toInclude.setSourcePublished(true);
+                    publishChildrenSource(project, toInclude, once);
                 }
             }
         }

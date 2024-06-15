@@ -322,5 +322,10 @@ public class ProjectDescriptorView implements ProjectViewInternal {
     public Settings getSettings() {
         return settings;
     }
+
+    @Override
+    public String toString() {
+        return getBuildName() + '^' + getGroup() + '^' + getVersion();
+    }
 }
 

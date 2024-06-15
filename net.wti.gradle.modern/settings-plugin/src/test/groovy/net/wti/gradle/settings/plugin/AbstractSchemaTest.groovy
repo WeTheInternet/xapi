@@ -164,7 +164,7 @@ tasks.create 'testSchema', {
         doWork()
         XapiSchemaParser parser = {this} as XapiSchemaParser
         XapiSettingsPlugin plugin = new XapiSettingsPlugin()
-        DefaultSchemaMetadata schema = parser.parseSchema(this)
+        DefaultSchemaMetadata schema = parser.parseSchema(this, explicitPlatform)
         SchemaMap map = plugin.buildMap(settings, parser, schema, SchemaProperties.getInstance())
         // forcibly realize the schema map
         map.resolve()
@@ -290,5 +290,10 @@ class UtilMain extends test.common.api.CommonApi {}
 
     List<CharSequence> initPlugins() {
         []
+    }
+
+    @Override
+    String toString() {
+        return buildName + '^' + group + '^' + version;
     }
 }

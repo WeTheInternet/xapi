@@ -63,6 +63,9 @@ public class XapiSchemaPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        if ("true".equals(project.findProperty("xapiModern"))) {
+            throw new IllegalStateException("Do not apply xapi-schema plugin to modern project " + project.getPath());
+        }
         // eagerly initialize the buildgraph, so it can hook up lifecycle events asap
         BuildGraph.findBuildGraph(project);
         final PluginContainer plugins = project.getPlugins();
@@ -131,7 +134,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
             // Include only the named platform and all parent platforms thereof.
             String limit = GradleCoerce.unwrapString(limiter);
             for (
-                PlatformConfig next = schema.getPlatforms().getByName(limit);
+                PlatformConfig next = schema.getPlatforms().findByName(limit);
                 next != null;
                 next = next.getParent() ) {
                 final PlatformConfig current = next;

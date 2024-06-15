@@ -51,6 +51,9 @@ public class XapiRequirePlugin implements Plugin<Project> {
     @Override
     @SuppressWarnings("unchecked")
     public void apply(Project project) {
+        if ("true".equals(project.findProperty("xapiModern"))) {
+            throw new IllegalStateException("Do not apply xapi-require plugin to modern project " + project.getPath());
+        }
         project.getPlugins().apply(XapiSchemaPlugin.class);
         ProjectView view = ProjectView.fromProject(project);
 

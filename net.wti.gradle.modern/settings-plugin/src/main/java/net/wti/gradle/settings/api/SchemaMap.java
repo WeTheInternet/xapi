@@ -1,9 +1,9 @@
 package net.wti.gradle.settings.api;
 
 import net.wti.gradle.api.MinimalProjectView;
-import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.settings.XapiSchemaParser;
 import net.wti.gradle.settings.impl.SchemaCallbacksDefault;
+import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.gradle.settings.index.IndexingFailedException;
 import net.wti.gradle.settings.index.SchemaIndex;
 import net.wti.gradle.settings.index.SchemaIndexerImpl;
@@ -46,16 +46,16 @@ public class SchemaMap implements HasAllProjects {
     public static final String KEY_FOR_EXTENSIONS = "xapiSchemaMap";
     private Lazy<SchemaIndex> indexProvider;
 
-    public static HasAllProjects fromView(MinimalProjectView view) {
-        return fromView(view, () -> view);
-    }
-
-    public static HasAllProjects fromView(MinimalProjectView view, XapiSchemaParser parser) {
-        SchemaProperties props = parser.getProperties();
-        final DefaultSchemaMetadata rootMeta = parser.getSchema();
-        SchemaMap map = fromView(view, parser, rootMeta, props);
-        return map;
-    }
+//    public static HasAllProjects fromView(MinimalProjectView view) {
+//        return fromView(view, () -> view);
+//    }
+//
+//    public static HasAllProjects fromView(MinimalProjectView view, XapiSchemaParser parser) {
+//        SchemaProperties props = parser.getProperties();
+//        final DefaultSchemaMetadata rootMeta = parser.getSchema(explicitPlatform);
+//        SchemaMap map = fromView(view, parser, rootMeta, props);
+//        return map;
+//    }
 
     public void setIndexProvider(final Out1<SchemaIndex> deferred) {
         this.indexProvider = Lazy.deferred1(deferred);
@@ -98,20 +98,24 @@ public class SchemaMap implements HasAllProjects {
                     SchemaIndexerImpl.class,
                     view,
                     view.getBuildName() + "_index", ignored-> {
-                        final SchemaIndexerImpl index = new SchemaIndexerImpl(props);
+                        final SchemaIndexerImpl index = new SchemaIndexerImpl(props, map.getNodePool());
                         Log.loggerFor(SchemaMap.class, srcView)
                                         .log(Log.LogLevel.INFO, "Index has not yet run; starting one for SchemaMap");
                         return index;
                     }
             );
             final String bn = props.getBuildName(view);
-            final Out1<SchemaIndex> deferred = indexer.index(view, bn, map);
+            final Out1<SchemaIndex> deferred = indexer.index(view, bn, map, rootMeta.getNodePool());
             map.setIndexProvider(deferred);
 //                });
 
 //            }
             return map;
         });
+    }
+
+    private IndexNodePool getNodePool() {
+        return rootSchema.getNodePool();
     }
 
     private final DefaultSchemaMetadata rootSchema;
@@ -211,11 +215,15 @@ public class SchemaMap implements HasAllProjects {
         for (SchemaProject project : getAllProjects()) {
             final Set<String> once = new HashSet<>();
             project.forAllPlatformsAndModules((plat, mod) -> {
+                if (plat.isDisabled()) {
+                    // don't process disabled platforms
+                    return;
+                }
                 PlatformModule myPlatMod = new PlatformModule(plat.getName(), mod.getName());
                 String platReplace = plat.getReplace();
                 if (isNotEmpty(platReplace)) {
                     // Need to bind gwt:api to main:api or jre:main to main:main
-                    PlatformModule intoPlatMod = myPlatMod.edit(plat.getReplace(), null);
+                    PlatformModule intoPlatMod = myPlatMod.edit(platReplace, null);
                     final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
                     project.getDependencies().get(myPlatMod).add(dep);
                 }
@@ -300,8 +308,9 @@ public class SchemaMap implements HasAllProjects {
         } else {
             // hm, we probably want to record more here, when adding child metadatas...
         }
+        String explicitPlatform = parser.getProperties().getProperty("xapi.platform", project.getView());
 //        if (metadata.isExplicit()) {
-        parser.loadMetadata(this, project, metadata, parser);
+        parser.loadMetadata(this, project, metadata, parser, explicitPlatform);
 //        }
 
     }
@@ -367,7 +376,7 @@ public class SchemaMap implements HasAllProjects {
         }).flatten(In1Out1.identity());
     }
 
-    public void loadProjects(SchemaProject sourceProject, XapiSchemaParser parser, DefaultSchemaMetadata metadata) {
+    public void loadProjects(SchemaProject sourceProject, XapiSchemaParser parser, DefaultSchemaMetadata metadata, final String explicitPlatform) {
         final ListLike<UiContainerExpr> projects = metadata.getProjects();
         for (UiContainerExpr project : projects) {
             String name = project.getName();
@@ -403,7 +412,7 @@ public class SchemaMap implements HasAllProjects {
                 tailProject.setParentGradlePath(parentPath);
             }
             this.projects.put(tailProject.getPath(), tailProject);
-            insertChild(oldTail, parser, metadata, project, tailProject);
+            insertChild(oldTail, parser, metadata, project, tailProject, explicitPlatform);
             tailProject = oldTail;
         }
     }
@@ -414,7 +423,7 @@ public class SchemaMap implements HasAllProjects {
                 ":" + parentPath + ":" + name;
     }
 
-    protected void insertChild(SchemaProject into, XapiSchemaParser parser, DefaultSchemaMetadata parent, final UiContainerExpr project, SchemaProject child) {
+    protected void insertChild(SchemaProject into, XapiSchemaParser parser, DefaultSchemaMetadata parent, final UiContainerExpr project, SchemaProject child, final String explicitPlatform) {
         for (SchemaModule module : into.getAllModules()) {
             child.addModule(module);
         }
@@ -442,20 +451,20 @@ public class SchemaMap implements HasAllProjects {
         // the project may have additional fields, like `modules =` or `platforms =`
         DefaultSchemaMetadata parsedChild = projectToMeta.get(child);
         if (parsedChild == null) {
-            parsedChild = new DefaultSchemaMetadata(parent, childSchema);
+            parsedChild = new DefaultSchemaMetadata(parent, childSchema, parent.getNodePool());
             projectToMeta.put(child, parsedChild);
             if (childSchema.exists()) {
                 // we only want to parse this schema file once; it is a non-configurable search heuristic,
                 // so no-need to keep parsing it just to add another <xapi-schema /> element.
-                parsedChild = parser.parseSchemaFile(parent, parsedChild, parentDir);
+                parsedChild = parser.parseSchemaFile(parent, parsedChild, parentDir, explicitPlatform);
             } else {
-                parsedChild = parser.parseProjectElement(parent, parsedChild, project);
+                parsedChild = parser.parseProjectElement(parent, parsedChild, project, explicitPlatform);
             }
         } else {
             assert parsedChild.getParent() == parent : "Existing " + parsedChild + " disagrees about who is parent:" +
                     "\n1:\n" + parsedChild.getParent() +" (previous value)" +
                     "\n2:\n" + parent + " (new value)";
-            parser.parseProjectElement(parent, parsedChild, project);
+            parser.parseProjectElement(parent, parsedChild, project, explicitPlatform);
         }
         loadMetadata(child, parser, parsedChild);
 //        loadProjectElement(child, parsedChild, project, parser);
@@ -463,29 +472,29 @@ public class SchemaMap implements HasAllProjects {
     }
     private final MapLike<SchemaProject, DefaultSchemaMetadata> projectToMeta = X_Jdk.mapIdentity();
 
-    private void loadProjectElement(final SchemaProject project, final DefaultSchemaMetadata meta, final UiContainerExpr element, final XapiSchemaParser parser) {
-        ComposableXapiVisitor.whenMissingFail(SchemaMap.class, ()->"")
-                .withUiContainerRecurse(In2.ignoreAll())
-                .withNameTerminal(In2.ignoreAll())
-                .withUiAttrTerminal((attr, ignore)->{
-                    switch (attr.getNameString()) {
-                        case "multiplatform":
-                        case "virtual":
-                            break;
-                        case "platforms":
-                        case "modules":
-                            parser.loadModules(project, meta, parser);
-                        case "dependencies":
-                            break;
-                        case "requires":
-                        case "require":
-                            break;
-                        default:
-                            throw new UnsupportedOperationException("projects = <element />, element " + element.getName() + " does not support attribute name " + attr.toSource());
-                    }
-                })
-                .visit(element, null);
-    }
+//    private void loadProjectElement(final SchemaProject project, final DefaultSchemaMetadata meta, final UiContainerExpr element, final XapiSchemaParser parser) {
+//        ComposableXapiVisitor.whenMissingFail(SchemaMap.class, ()->"")
+//                .withUiContainerRecurse(In2.ignoreAll())
+//                .withNameTerminal(In2.ignoreAll())
+//                .withUiAttrTerminal((attr, ignore)->{
+//                    switch (attr.getNameString()) {
+//                        case "multiplatform":
+//                        case "virtual":
+//                            break;
+//                        case "platforms":
+//                        case "modules":
+//                            parser.loadModules(project, meta, parser);
+//                        case "dependencies":
+//                            break;
+//                        case "requires":
+//                        case "require":
+//                            break;
+//                        default:
+//                            throw new UnsupportedOperationException("projects = <element />, element " + element.getName() + " does not support attribute name " + attr.toSource());
+//                    }
+//                })
+//                .visit(element, null);
+//    }
 
     @Override
     public String getGroup() {
@@ -523,5 +532,21 @@ public class SchemaMap implements HasAllProjects {
     @Override
     public File getRootSchemaFile() {
         return rootSchema.getSchemaFile();
+    }
+
+    public boolean hasGradleProject(final String path) {
+        for (SchemaProject value : projects.mappedValues()) {
+            if (value.getPathGradle().equals(path)) {
+                return true;
+            }
+            if (":".equals(value.getPathGradle())) {
+                // don't do any startWith checks on ":" -- everything is a match
+                continue;
+            }
+            if (path.equals(value.getPathGradle())) {
+                    return true;
+            }
+        }
+        return false;
     }
 }

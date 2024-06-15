@@ -41,6 +41,10 @@ public class XapiBasePlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        if ("true".equals(project.findProperty("xapiModern"))) {
+            throw new IllegalStateException("Do not apply xapi-base plugin to modern project " + project.getPath());
+        }
+
         final PluginContainer plugins = project.getPlugins();
         plugins.apply(JavaBasePlugin.class);
 

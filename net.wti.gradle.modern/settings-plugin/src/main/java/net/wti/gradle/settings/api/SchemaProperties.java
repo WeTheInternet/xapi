@@ -105,7 +105,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
         markStatus("false", indexProp, view, debugInfo);
     }
     default void markStatus(String value, String indexProp, MinimalProjectView view, String debugInfo) {
-        if (!"true".equals(System.getProperty(indexProp))) {
+        if (!"running".equals(System.getProperty(indexProp))) {
             // if we are running in strict mode, lets fail.
             if ("true".equals(getProperty("xapi.strict", view))) {
                 throw new IllegalStateException(

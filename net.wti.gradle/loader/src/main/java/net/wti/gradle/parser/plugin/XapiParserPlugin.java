@@ -44,6 +44,9 @@ public class XapiParserPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project proj) {
+        if ("true".equals(proj.findProperty("xapiModern"))) {
+            throw new IllegalStateException("Do not apply xapi-parser plugin to modern module " + proj.getPath());
+        }
         ProjectDescriptorView rootView = ProjectDescriptorView.rootView(proj.getGradle());
         final Project rootProj = proj.getRootProject();
         proj.getLogger().info("Setting up xapi parser plugin for {}", proj.getPath());
@@ -144,8 +147,10 @@ public class XapiParserPlugin implements Plugin<Project> {
         projectGraph.whenReady(ReadyState.CREATED - 0x20, i->{
             map.getCallbacks().forProject(proj.getPath(), schemaProject -> {
                 foundMe[0] = true;
-                proj.getLogger().quiet("Initializing parser plugin for detected project " + proj.getPath());
-                initializeProject(proj, map, schemaProject);
+                if (!"true".equals(proj.findProperty("xapiModern"))) {
+                    proj.getLogger().quiet("Initializing parser plugin for detected project " + proj.getPath());
+                    initializeProject(proj, map, schemaProject);
+                }
             });
             map.flushWork();
         });

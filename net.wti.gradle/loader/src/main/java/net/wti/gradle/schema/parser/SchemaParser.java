@@ -648,7 +648,7 @@ public interface SchemaParser {
                 continue;
             }
 
-            Log.tryLog(SchemaParser.class, this,
+            Log.tryLog(SchemaParser.class, this, LogLevel.TRACE,
                 project.getPath(), " adding ", type, " dependencies: ", deps.map(o->o.join("->").replace("\n", " ")));
 
             for (Out2<PlatformModule, ListLike<Expression>> entry : deps.forEachItem()) {

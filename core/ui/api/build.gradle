@@ -10,7 +10,6 @@ plugins {
 }
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-ui', 'api'
         req.project 'xapi-lang-dev', 'main'
         req.project 'xapi-core-parent:xapi-core-scope', 'main'
         req.project 'xapi-core-parent:xapi-core-event', 'main'
@@ -28,5 +27,9 @@ xapiRequire.module('test').configure {
         req.external 'junit:junit:4.12'
         req.external 'org.assertj:assertj-core:3.2.0'
 }
-
+xapiSchema.whenReady {
+    dependencies {
+        transitive project(":ui:ui-api")
+    }
+}
 description = 'XApi - Core UI Apis'

@@ -31,4 +31,9 @@ public class ImmutableBuildCoordinates implements BuildCoordinates {
     public String getVersion() {
         return version;
     }
+
+    @Override
+    public String toString() {
+        return buildName + '^' + group + '^' + version;
+    }
 }

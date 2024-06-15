@@ -1,8 +1,8 @@
 package net.wti.gradle.settings.schema;
 
 
+import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.javaparser.ast.expr.Expression;
-import net.wti.javaparser.ast.expr.IntegerLiteralExpr;
 import net.wti.javaparser.ast.expr.JsonPairExpr;
 import net.wti.javaparser.ast.expr.UiContainerExpr;
 import net.wti.gradle.settings.api.DependencyType;
@@ -13,6 +13,7 @@ import xapi.fu.data.MultiList;
 import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.gradle.fu.LazyString;
+import xapi.string.X_String;
 
 import java.io.File;
 
@@ -113,6 +114,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
      */
     private final boolean explicit;
     private final DefaultSchemaMetadata parent;
+    private final IndexNodePool nodes;
 
     private String defaultUrl;
     private String schemaLocation;
@@ -123,10 +125,11 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
     private Boolean explicitMultiplatform;
 
-    public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile) {
+    public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile, final IndexNodePool nodes) {
         this.parent = parent;
         this.schemaFile = schemaFile;
         this.explicit = schemaFile != null && schemaFile.exists();
+        this.nodes = nodes;
         depsProject = X_Jdk.multiListOrderedInsertion();
         depsInternal = X_Jdk.multiListOrderedInsertion();
         depsExternal = X_Jdk.multiListOrderedInsertion();
@@ -262,11 +265,6 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         }
         external.add(el);
     }
-
-    public void reducePlatformTo(String explicitPlatform) {
-        // TODO: tentatively disable certain platforms
-    }
-
     public File getSchemaFile() {
         return schemaFile;
     }
@@ -365,6 +363,10 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         return parent == null ? this : parent.getRoot();
     }
 
+    public IndexNodePool getNodePool() {
+        return nodes;
+    }
+
     public String getPath() {
         String me = getName();
         if (parent == null) {
@@ -375,5 +377,20 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         }
         String parentPath = parent.getPath();
         return parentPath + (parentPath.endsWith(":") ? "" : ":") + me;
+    }
+
+    public void trimPlatforms(final String explicitPlatform) {
+        assert X_String.isNotEmpty(explicitPlatform) : "Don't try to trim w/o explicit platform!";
+        UiContainerExpr winner = null;
+        for (UiContainerExpr platform : platforms) {
+            if (platform.getName().equals(explicitPlatform)) {
+                winner = platform;
+                break;
+            }
+        }
+        if (winner == null && !"main".equals(explicitPlatform)) {
+            // this is _probably_ a mistake
+        }
+
     }
 }

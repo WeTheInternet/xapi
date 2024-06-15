@@ -159,17 +159,16 @@ String realizedPath = prop('xapi.realized.path') ?: 'build/realized/'
 singleProject.forEach({
     parent, children ->
         String name = base(parent)
-
         include(name)
         project(name).buildFileName = "${parent}.gradle"
         project(name).projectDir = file parent
         for (String child : children) {
-            if (checkPlatform(parent, child)) {
-                String mod = ":$name-$child".toString()
-                include(mod)
-                project(mod).buildFileName = "$parent-${child}.gradle"
-                project(mod).projectDir = file "$parent/$realizedPath${child}".toString()
-            }
+//            if (checkPlatform(parent, child)) {
+//                String mod = ":$name-$child".toString()
+//                include(mod)
+//                project(mod).buildFileName = "$parent-${child}.gradle"
+//                project(mod).projectDir = file "$parent/$realizedPath${child}".toString()
+//            }
         }
 })
 

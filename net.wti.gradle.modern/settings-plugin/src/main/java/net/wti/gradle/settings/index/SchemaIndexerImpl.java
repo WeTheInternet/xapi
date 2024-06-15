@@ -28,9 +28,11 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     public static final String EXT_NAME = "_xapiBuildIndexer";
 
     private final SchemaProperties properties;
+    private final IndexNodePool nodes;
 
-    public SchemaIndexerImpl(final SchemaProperties properties) {
+    public SchemaIndexerImpl(final SchemaProperties properties, final IndexNodePool nodePool) {
         this.properties = properties;
+        this.nodes = nodePool;
     }
 
     private class IndexingParser implements XapiSchemaParser {
@@ -76,7 +78,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     }
 
     @Override
-    public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map) {
+    public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map, final IndexNodePool nodes) {
         String indexProp = properties.getIndexIdProp(view);
         boolean alreadyDone = "true".equals(properties.getProperty(indexProp, view));
 
@@ -111,7 +113,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     if (only instanceof IndexingFailedException) {
                         throw new IndexingFailedException(errMsg + " : " + only.getMessage());
                     }
-                    throw new IndexingFailedException(errMsg, only instanceof IndexingFailedException ? null : only);
+                    throw new IndexingFailedException(errMsg, only);
                 }
                 throw new DefaultMultiCauseException(errMsg, failures);
             }
@@ -161,7 +163,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 }
             } // end for(;;){}
             // now, run an analyze, so we can mark all live transitive / interim dependencies
-            analyzeIndex(view, index, map, properties);
+            analyzeIndex(view, index, map, properties, nodes);
             // TODO: mark/sweep old modules somehow... in case some poor soul tries to read all "/live" files or something silly
             // finalize our index results
             result = index.build();
@@ -214,7 +216,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         return indexDir;
     }
 
-    private void analyzeIndex(final MinimalProjectView view, final SchemaIndexBuilder index, final HasAllProjects map, final SchemaProperties properties) {
+    private void analyzeIndex(final MinimalProjectView view, final SchemaIndexBuilder index, final HasAllProjects map, final SchemaProperties properties, final IndexNodePool nodes) {
         // search through, and discover the full set of "project:platform:module" that we want to consider realized.
         // we first want to mark anything with source or explicitly marked as included
         // next, anything which depends on said modules should be marked as included.
@@ -231,11 +233,17 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 // hokay! check if the module has sources, or is explicitly marked as live via properties.
                 File projDir = pv.getProjectDir();
                 File projSrc = new File(projDir, "src");
+                PlatformModule platMod = nodes.getPlatformModule(plat.getName(), mod.getName());
+                final ModuleIdentity id = nodes.getIdentity(pv, project.getPathGradle(), platMod);
+                final IndexNode node = nodes.getNode(id);
+
+
                 String modulePrefix = QualifiedModule.unparse(plat.getName(), mod.getName());
                 File moduleSrc = new File(projSrc, modulePrefix);
                 if (hasSources(moduleSrc)) {
                     // This module is live due to having sources!
                     index.markWithSource(project, plat, mod, moduleSrc);
+                    node.addLiveness(LivenessReason.has_source);
                 } else {
                     String mangleProject = QualifiedModule.mangleProjectPath(project.getPathGradle());
                     File modDir = index.calcProjectDir(project, plat.getName(), mod.getName());
@@ -244,6 +252,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                         final String forceContents = readFile(force);
                         if (!"false".equals(forceContents)) {
                             index.markExplicitInclude(project, plat, mod);
+                            node.addLiveness(LivenessReason.forced);
                         }
                     } else {
                         // check if this module should be live b/c of schema properties
@@ -251,15 +260,18 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                         final String liveValue = properties.getProperty(liveKey, view);
                         if ("true".equals(liveValue)) {
                             index.markExplicitInclude(project, plat, mod);
+                            node.addLiveness(LivenessReason.forced);
                         }
                     }
-                    // TODO (maybe): have a schema.xapi means of marking specific project/platform/module as live.
                 }
                 // now... anybody who depends on us also needs to be a live module...
             });
         }
         // flush callbacks so we mark all live modules.
         map.flushWork();
+
+        // now, we should be able to prune and compress the IndexNode graph
+        index.compressNodes(nodes);
 
         // now, transverse all explicitly-live modules, and mark anything depending on these modules as also-live.
         index.forAllLiveModules(liveness -> {
@@ -320,7 +332,11 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         if (!moduleSrc.isDirectory()) {
             return false;
         }
-        for (File file : moduleSrc.listFiles()) {
+        final File[] children = moduleSrc.listFiles();
+        if (children == null) {
+            return false;
+        }
+        for (File file : children) {
             if (file.isDirectory() && ! "build".equals(file.getName())) {
                 return true;
             }
@@ -464,7 +480,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                             case unknown:
                             case project:
                                 File projectDeps = new File(versionDir.out1(), "project");
-                                if (!projectDeps.isDirectory() && !projectDeps.mkdirs()) {
+                                if (!projectDeps.isDirectory() && !projectDeps.mkdirs() && !projectDeps.isDirectory()) {
                                     // we should throw some generic "can't write files" error here...
                                     throw new IllegalStateException("Unable to create project directory " + projectDeps + "; check disk usage and filesystem permissions");
                                 }
@@ -628,6 +644,10 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     protected String guessBuildName(File rootDir) {
         // TODO: check w/ git
         return rootDir.getAbsoluteFile().getName();
+    }
+
+    public IndexNodePool getNodes() {
+        return nodes;
     }
 }
 

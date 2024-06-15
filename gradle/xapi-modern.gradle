@@ -87,3 +87,7 @@ configurations.runtimeElements.attributes {
         attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
         attrs.attribute(ATTR_PLATFORM_TYPE, "main")
 }
+
+if (!findProperty('xapi.repo.mvn')) {
+    project.extensions.add("xapi.mvn.repo", "$rootDir/repo");
+}
