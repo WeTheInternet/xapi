@@ -1,7 +1,5 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
-apply plugin: "java-library"
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -20,7 +18,7 @@ apply plugin: 'maven-publish'
 
 publishing.publications.withType(MavenPublication).configureEach {
 MavenPublication pub ->
-pub.artifactId = "ui"
+pub.artifactId = "autoui"
 pub.groupId = "net.wetheinter"
 }
 
@@ -28,10 +26,5 @@ SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/src/main/java")
-
-dependencies {
-  api             project(path: ":ui:ui-api")
-}
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :ui at file://$rootDir/ui/modules/main/generated-uiMain.gradle
+// Done generating buildfile for :ui:autoui at file://$rootDir/ui/autoui/modules/main/generated-autouiMain.gradle

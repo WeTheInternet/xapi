@@ -20,18 +20,18 @@ apply plugin: 'maven-publish'
 
 publishing.publications.withType(MavenPublication).configureEach {
 MavenPublication pub ->
-pub.artifactId = "ui"
-pub.groupId = "net.wetheinter"
+pub.artifactId = "xapi-base-test"
+pub.groupId = "net.wetheinter.jre"
 }
 
 SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/src/main/java")
 
 dependencies {
-  api             project(path: ":ui:ui-api")
+  api             project(path: ":base:base-jreSample")
+  api             project(path: ":base:base-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :ui at file://$rootDir/ui/modules/main/generated-uiMain.gradle
+// Done generating buildfile for :base at file://$rootDir/base/modules/jreTest/generated-baseJreTest.gradle

@@ -20,7 +20,7 @@ apply plugin: 'maven-publish'
 
 publishing.publications.withType(MavenPublication).configureEach {
 MavenPublication pub ->
-pub.artifactId = "ui"
+pub.artifactId = "xapi-base-spi"
 pub.groupId = "net.wetheinter"
 }
 
@@ -28,10 +28,10 @@ SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/src/main/java")
+main.java.srcDir("$rootDir/base/src/spi/java")
 
 dependencies {
-  api             project(path: ":ui:ui-api")
+  api             project(path: ":base:base-api")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :ui at file://$rootDir/ui/modules/main/generated-uiMain.gradle
+// Done generating buildfile for :base at file://$rootDir/base/modules/spi/generated-baseSpi.gradle
