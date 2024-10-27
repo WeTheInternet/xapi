@@ -1,7 +1,7 @@
 package xapi.gradle.plugin;
 
 import net.wti.gradle.PublishXapi;
-import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
+import net.wti.gradle.api.GradleCrossVersionService;
 import net.wti.manifest.ManifestPlugin;
 import org.gradle.BuildAdapter;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -76,16 +76,18 @@ public class XapiBasePlugin implements Plugin<Project> {
     private final Instantiator instantiator;
     private final ObjectFactory objectFactory;
     private final ProjectConfigurationActionContainer actions;
+    private final GradleCrossVersionService migrationService;
     private Lazy<String> prefix;
     private String path;
     private final Map<String, Boolean> created;
 
     @Inject
-    public XapiBasePlugin(Instantiator instantiator, ObjectFactory objectFactory, ProjectConfigurationActionContainer actions) {
+    public XapiBasePlugin(Instantiator instantiator, ObjectFactory objectFactory, ProjectConfigurationActionContainer actions, final Gradle gradle) {
         this.instantiator = instantiator;
         this.objectFactory = objectFactory;
         created = new ConcurrentHashMap<>();
         this.actions = actions;
+        migrationService = GradleCrossVersionService.getService(gradle);
     }
 
     @Override
@@ -438,27 +440,18 @@ public class XapiBasePlugin implements Plugin<Project> {
         );
 
         // Must have a Usage.JAVA_API usage case, for compile-scoping
-        classesVariant.artifact(new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile) {
-            @Override
-            public File getFile() {
-                return javaCompile.get().getDestinationDir();
-            }
-        });
+        classesVariant.artifact(migrationService.publishArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile, jc->jc.get().getDestinationDir()));
 
         ConfigurationVariant resourcesVariant = runtimeVariants.create("resources");
         resourcesVariant.getAttributes().attribute(
             USAGE_ATTRIBUTE,
             getResourceUsage()
         );
-        resourcesVariant.artifact(new IntermediateJavaArtifact(
+        resourcesVariant.artifact(migrationService.publishArtifact(
             ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY,
-            processResources
-        ) {
-            @Override
-            public File getFile() {
-                return processResources.get().getDestinationDir();
-            }
-        });
+            processResources,
+            pr -> pr.get().getDestinationDir()
+        ));
     }
 
     private Usage getResourceUsage() {

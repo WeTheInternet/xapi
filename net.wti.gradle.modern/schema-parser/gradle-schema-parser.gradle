@@ -2,7 +2,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id 'java-library'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'maven-publish'
+    id 'com.gradleup.shadow' version '8.3.3'
 }
 
 description = '''This module exists solely to use shadow jar repackaging for the xapi lang codebase.

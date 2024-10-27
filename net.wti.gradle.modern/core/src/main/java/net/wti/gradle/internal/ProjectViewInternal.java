@@ -1,5 +1,6 @@
 package net.wti.gradle.internal;
 
+import net.wti.gradle.api.GradleCrossVersionService;
 import net.wti.gradle.api.MinimalProjectView;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -59,6 +60,9 @@ public interface ProjectViewInternal extends MinimalProjectView {
         return extractBuildName(getGradle());
     }
 
+    default GradleCrossVersionService getGradleVersionService() {
+        return GradleCrossVersionService.getService(getGradle());
+    }
     static String extractBuildName(Gradle gradle) {
         final BuildState owner = ((GradleInternal) gradle).getOwner();
         try {

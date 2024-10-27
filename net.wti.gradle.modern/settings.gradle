@@ -12,3 +12,4 @@ add('core')
 add('test')
 add('schema-parser')
 add('settings-plugin')
+add('migration') // a temporary means to handle multiple gradle versions

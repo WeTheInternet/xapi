@@ -1,0 +1,27 @@
+import org.gradle.api.tasks.TaskProvider
+
+plugins {
+    id 'java-library'
+}
+Sync ijCheat = tasks.create('ijCheat', Sync) {
+    Sync s ->
+        s.dependsOn ':xapi-gradle-core:compileJava'
+        s.from(provider{project(':xapi-gradle-core').tasks.getByName('compileJava').outputs.files})
+        s.destinationDir(layout.buildDirectory.dir('ijCheat').get().asFile)
+}
+
+dependencies {
+    // the gloves are off... dirty hack just to make it go.
+    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-core-api-5.3.1.jar'))
+    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-core-5.3.1.jar'))
+    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-model-core-5.3.1.jar'))
+    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-base-services-5.3.1.jar'))
+    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/commons-lang-2.6.jar'))
+    compileOnly ijCheat.outputs.files
+}
+
+tasks.named('compileJava').configure {
+    Task t ->
+        t.dependsOn ijCheat
+}
+

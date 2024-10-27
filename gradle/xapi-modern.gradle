@@ -63,10 +63,10 @@ boolean publishTests = findProperty('publishTests') == 'true'
 PublishArtifact testArt = !publishTests ? null : artifacts.add('archives', testJar.get())
 ext.publications.create("main", MavenPublication, {
     pub ->
-        if (tasks.names.contains('shadowJar')) {
-            shadow.component(pub)
-        } else {
-            afterEvaluate {
+        afterEvaluate {
+            if (tasks.names.contains('shadowJar')) {
+                shadow.component(pub)
+            } else {
                 pub.from(components.getByName('java'))
             }
         }

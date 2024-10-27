@@ -3,22 +3,25 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 buildscript {
     repositories {
-        jcenter()
+        gradlePluginPortal()
         maven {
             name = 'xapiLocal'
             url = new URI("file://$rootDir/repo")
         }
     }
     dependencies {
-//        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
-        classpath 'com.gradleup.shadow:shadow-gradle-plugin:8.3.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+//        classpath 'com.gradleup.shadow:shadow-gradle-plugin:8.3.3'
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
 }
-
-setProperty('xapi.main.component', 'shadow')
-plugins.apply 'com.gradleup.shadow'
+//plugins {
+//    id 'com.gradleup.shadow' version '8.3.3'
+//}
+//setProperty('xapi.main.component', 'shadow')
 apply from: "$rootDir/gradle/xapi-env.gradle"
+plugins.apply 'com.github.johnrengelman.shadow'
+//plugins.apply 'com.gradleup.shadow'
 plugins.apply 'xapi-require'
 
 (tasks.jar as Jar).archiveClassifier.set 'default'

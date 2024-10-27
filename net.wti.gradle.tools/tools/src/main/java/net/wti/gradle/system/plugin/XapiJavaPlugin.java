@@ -1,7 +1,7 @@
 package net.wti.gradle.system.plugin;
 
+import net.wti.gradle.api.GradleCrossVersionService;
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import org.gradle.api.*;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
@@ -10,7 +10,7 @@ import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.TaskDependencyFactory;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -23,14 +23,14 @@ import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.api.tasks.testing.Test;
-import org.gradle.internal.cleanup.BuildOutputCleanupRegistry;
 import org.gradle.internal.component.external.model.JavaEcosystemVariantDerivationStrategy;
 import org.gradle.internal.component.external.model.VariantDerivationStrategy;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 import javax.inject.Inject;
-import java.io.File;
-import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
 
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 import static org.gradle.api.plugins.JavaPlugin.*;
@@ -50,17 +50,17 @@ import static org.gradle.api.plugins.JavaPlugin.*;
 public class XapiJavaPlugin implements Plugin<ProjectInternal> {
 
     private final ObjectFactory objectFactory;
-    private final TaskDependencyFactory taskFactory;
+    private GradleCrossVersionService migrationService;
 
 
     @Inject
-    public XapiJavaPlugin(final ObjectFactory objectFactory, final TaskDependencyFactory taskFactory) {
+    public XapiJavaPlugin(final ObjectFactory objectFactory) {
         this.objectFactory = objectFactory;
-        this.taskFactory = taskFactory;
     }
 
     @Override
     public void apply(ProjectInternal project) {
+        this.migrationService = GradleCrossVersionService.getService(project.getGradle());
         project.getPlugins().apply(JavaBasePlugin.class);
         project.getPlugins().withType(JavaPlugin.class).all(illegal-> {
             throw new GradleException("Do not apply java plugin and XapiJavaPlugin at the same time.\n" +
@@ -69,68 +69,86 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
                 // It's where we're putting our "running without java plugin" shims (that are mutually exclusive w/ java plugin).
         });
         JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
-        BuildOutputCleanupRegistry buildOutputCleanupRegistry = project.getServices().get(BuildOutputCleanupRegistry.class);
+        boolean configureExtras = false;
+        SourceSet main = javaConvention.getSourceSets().maybeCreate(SourceSet.MAIN_SOURCE_SET_NAME);
+        SourceSet test = javaConvention.getSourceSets().maybeCreate(SourceSet.TEST_SOURCE_SET_NAME);
+        if (project.getGradle().getGradleVersion().startsWith("5")) {
+            try {
+                final Class<?> cleanupRegistry = Thread.currentThread().getContextClassLoader().loadClass("org.gradle.internal.execution.BuildOutputCleanupRegistry");
+                final Object buildOutputCleanupRegistry = project.getServices().get(cleanupRegistry);
+                test.setCompileClasspath(project.getLayout().configurableFiles(main.getOutput(), project.getConfigurations().getByName(TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME)));
+                test.setRuntimeClasspath(project.getLayout().configurableFiles(test.getOutput(), main.getOutput(), project.getConfigurations().getByName(TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME)));
 
-        configureSourceSets(javaConvention, buildOutputCleanupRegistry);
+                // Register the project's source set output directories
+                javaConvention.getSourceSets().all(sourceSet -> {
+                    try {
+                        cleanupRegistry.getMethod("registerOutputs", Object.class).invoke(buildOutputCleanupRegistry, sourceSet.getOutput());
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    }
+//                    buildOutputCleanupRegistry.registerOutputs(sourceSet.getOutput());
+                });
+                configureExtras = true;
+            } catch (ClassNotFoundException ignoreGradleVersion) {
+            }
+        }
+        if (configureExtras) {
+            configureExtras(project);
+        } else {
+            project.getConfigurations().getByName("testImplementation").extendsFrom(
+                project.getConfigurations().maybeCreate("testRuntime")
+            );
+        }
         configureConfigurations(project, javaConvention);
-
         configureJavaDoc(javaConvention);
         configureTest(project, javaConvention);
 //        configureArchivesAndComponent(project, javaConvention);
         configureBuild(project);
 
         final ProjectView view = ProjectView.fromProject(project);
+
         // we will probably want to create our own strategy and abandon this one...
         VariantDerivationStrategy strat;
         try {
-            strat = new JavaEcosystemVariantDerivationStrategy();
-        } catch (IllegalAccessError ignored) {
+            Class<?> legacyClass = Thread.currentThread().getContextClassLoader().loadClass("org.gradle.internal.component.external.model.JavaEcosystemVariantDerivationStrategy");
+            final Constructor<?> ctor = legacyClass.getConstructor();
+                strat = (VariantDerivationStrategy) ctor.newInstance();
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
+            e.printStackTrace();
             try {
-                final Method method = JavaEcosystemVariantDerivationStrategy.class.getMethod("getInstance");
-                final Object result = method.invoke(null);
-                strat = (VariantDerivationStrategy) result;
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to get a JavaEcosystemVariantDerivationStrategy", e);
+                strat = (VariantDerivationStrategy) JavaEcosystemVariantDerivationStrategy.class.getMethod("getInstance").invoke(null);
+            } catch (NoSuchMethodError | NoSuchMethodException | IllegalAccessException |
+                     InvocationTargetException fatal) {
+                throw new RuntimeException("Unable to get a JavaEcosystemVariantDerivationStrategy", fatal);
             }
         }
         view.getComponentMetadata().setVariantDerivationStrategy(strat);
     }
 
-    private void configureSourceSets(JavaPluginConvention pluginConvention, final BuildOutputCleanupRegistry buildOutputCleanupRegistry) {
-        Project project = pluginConvention.getProject();
-
-        SourceSet main = pluginConvention.getSourceSets().maybeCreate(SourceSet.MAIN_SOURCE_SET_NAME);
-
-        SourceSet test = pluginConvention.getSourceSets().maybeCreate(SourceSet.TEST_SOURCE_SET_NAME);
-        test.setCompileClasspath(project.getLayout().configurableFiles(main.getOutput(), project.getConfigurations().getByName(TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME)));
-        test.setRuntimeClasspath(project.getLayout().configurableFiles(test.getOutput(), main.getOutput(), project.getConfigurations().getByName(TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME)));
-
-        // Register the project's source set output directories
-        pluginConvention.getSourceSets().all(sourceSet -> buildOutputCleanupRegistry.registerOutputs(sourceSet.getOutput()));
+    private void configureExtras(ProjectInternal project) {
+        ConfigurationContainer configurations = project.getConfigurations();
+        Configuration compileConfiguration = configurations.getByName(COMPILE_CONFIGURATION_NAME);
+        Configuration runtimeConfiguration = configurations.getByName(RUNTIME_CONFIGURATION_NAME);
+        Configuration compileTestsConfiguration = configurations.getByName(TEST_COMPILE_CONFIGURATION_NAME);
+        Configuration testRuntimeConfiguration = configurations.getByName(TEST_RUNTIME_CONFIGURATION_NAME);
+        compileTestsConfiguration.extendsFrom(compileConfiguration);
+        testRuntimeConfiguration.extendsFrom(runtimeConfiguration);
+        testRuntimeConfiguration.setCanBeConsumed(false);
     }
-
     private void configureConfigurations(ProjectInternal project, JavaPluginConvention javaConvention) {
         ConfigurationContainer configurations = project.getConfigurations();
 
-        Configuration compileConfiguration = configurations.getByName(COMPILE_CONFIGURATION_NAME);
         Configuration implementationConfiguration = configurations.getByName(IMPLEMENTATION_CONFIGURATION_NAME);
-        Configuration runtimeConfiguration = configurations.getByName(RUNTIME_CONFIGURATION_NAME);
         Configuration runtimeOnlyConfiguration = configurations.getByName(RUNTIME_ONLY_CONFIGURATION_NAME);
-        Configuration compileTestsConfiguration = configurations.getByName(TEST_COMPILE_CONFIGURATION_NAME);
         Configuration testImplementationConfiguration = configurations.getByName(TEST_IMPLEMENTATION_CONFIGURATION_NAME);
-        Configuration testRuntimeConfiguration = configurations.getByName(TEST_RUNTIME_CONFIGURATION_NAME);
         Configuration testRuntimeOnlyConfiguration = configurations.getByName(TEST_RUNTIME_ONLY_CONFIGURATION_NAME);
         Configuration testCompileClasspathConfiguration = configurations.getByName(TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME);
         Configuration testRuntimeClasspathConfiguration = configurations.getByName(TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME);
-
-        compileTestsConfiguration.extendsFrom(compileConfiguration);
         testImplementationConfiguration.extendsFrom(implementationConfiguration);
-        testRuntimeConfiguration.extendsFrom(runtimeConfiguration);
         // blech... this causes testRuntime to try to be resolved as a configuration-with-capability,
         // mostly because we've been lazy about isolating runtime classpaths; we should emulate the same
         // structure as compile classpaths, where we do not add any outgoing settings until _after_
         // the "dependency bucket" configurations, like runtimeConfiguration
-        testRuntimeConfiguration.setCanBeConsumed(false);
         testRuntimeOnlyConfiguration.extendsFrom(runtimeOnlyConfiguration);
         testCompileClasspathConfiguration.setCanBeConsumed(false);
         testRuntimeClasspathConfiguration.setCanBeConsumed(false);
@@ -196,20 +214,10 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         NamedDomainObjectContainer<ConfigurationVariant> runtimeVariants = publications.getVariants();
         ConfigurationVariant classesVariant = runtimeVariants.create("classes");
         classesVariant.getAttributes().attribute(USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_CLASSES));
-        classesVariant.artifact(new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile) {
-            @Override
-            public File getFile() {
-                return javaCompile.get().getDestinationDir();
-            }
-        });
+        classesVariant.artifact(migrationService.publishArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile, jc -> jc.get().getDestinationDir()));
         ConfigurationVariant resourcesVariant = runtimeVariants.create("resources");
         resourcesVariant.getAttributes().attribute(USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_RESOURCES));
-        resourcesVariant.artifact(new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY, processResources) {
-            @Override
-            public File getFile() {
-                return processResources.get().getDestinationDir();
-            }
-        });
+        resourcesVariant.artifact(migrationService.publishArtifact(ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY, processResources, pr->pr.get().getDestinationDir()));
     }
 
     private void configureBuild(Project project) {

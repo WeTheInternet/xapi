@@ -32,11 +32,12 @@ tasks.named('jar', Jar).configure {
 dependencies {
     api "net.wti.core:xapi-fu:${->version}"
     api project(':xapi-gradle-core')
-    if (System.getProperty("idea.version")) {
-        api files(provider {makeShadow.get().outputs.files.singleFile.listFiles()[0]})
-    } else {
-        api project(path: ':xapi-gradle-schema-parser', configuration: 'shadow')
-    }
+//    if (System.getProperty("idea.version")) {
+//        api files(provider {makeShadow.get().outputs.files.singleFile.listFiles()[0]})
+//    } else {
+//        api project(path: ':xapi-gradle-schema-parser', configuration: 'shadow')
+//    }
+    api project(path: ':xapi-gradle-schema-parser', configuration: 'shadow')
     compileOnly gradleApi()
 
     testImplementation project(':xapi-gradle-test')

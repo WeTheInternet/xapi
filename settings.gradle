@@ -3,9 +3,13 @@ buildscript {
         maven {
             name = 'xapiLocal'
             url = new java.net.URI("file://$rootDir/repo")
+            metadataSources { sources ->
+                sources.mavenPom()
+            }
         }
     }
     dependencies {
+        classpath 'net.wti.gradle.modern:xapi-gradle-schema-parser:0.5.1'
         classpath 'net.wti.gradle.modern:xapi-gradle-settings-plugin:0.5.1'
     }
 }

@@ -3,8 +3,6 @@ package net.wti.gradle.internal.require.api;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
 import net.wti.gradle.internal.impl.DefaultProjectView;
-import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
-import net.wti.gradle.internal.require.api.ArchiveRequest.ArchiveRequestType;
 import net.wti.gradle.require.api.DependencyKey;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.Transitivity;
@@ -27,11 +25,10 @@ import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.java.TargetJvmVersion;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
+import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.internal.file.FileCollectionInternal;
-import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
@@ -40,7 +37,6 @@ import org.gradle.internal.Actions;
 import org.gradle.util.GUtil;
 import xapi.gradle.fu.LazyString;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
@@ -360,26 +356,7 @@ public interface ArchiveGraph extends Named, GraphNode {
             final FileCollection filtered = srcDirs.filter(File::exists);
             if (!filtered.isEmpty()) {
                 final Jar srcJarTask = sourceJarTask.get();
-                final TaskDependencyFactory taskFactory = ((GradleInternal)view.getGradle()).getServices().get(TaskDependencyFactory.class);
-                IntermediateJavaArtifact sourceJar = new IntermediateJavaArtifact(taskFactory, "sources", srcJarTask) {
-                    @Override
-                    public File getFile() {
-                        return srcJarTask.getArchiveFile().get().getAsFile();
-                    }
-
-                    @Override
-                    public String getExtension() {
-                        return "jar";
-                    }
-
-                    @Nullable
-                    @Override
-                    public String getClassifier() {
-                        // blech.  maven publications require this to be a classifier'd artifact.
-                        // what we should really be doing is N publications, for the -sources, or -compile variants...
-                        return "sources";
-                    }
-                };
+                AbstractPublishArtifact sourceJar = view.getGradleVersionService().publishArtifact("sources", srcJarTask, task->task.getArchiveFile().get().getAsFile());
                 outgoing.variants(variants->{
                     // TODO: distinguish between sources and source-jars
                     final ConfigurationVariant variant = variants.maybeCreate("sources");

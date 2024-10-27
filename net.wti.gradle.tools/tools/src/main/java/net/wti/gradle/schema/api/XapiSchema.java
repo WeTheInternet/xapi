@@ -2,9 +2,9 @@ package net.wti.gradle.schema.api;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import net.wti.gradle.api.GradleCrossVersionService;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.ReadyState;
-import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import net.wti.gradle.internal.require.api.ArchiveGraph;
 import net.wti.gradle.internal.require.api.DefaultUsageType;
 import net.wti.gradle.internal.require.api.PlatformGraph;
@@ -19,14 +19,13 @@ import net.wti.gradle.system.tools.GradleMessages;
 import org.gradle.api.Action;
 import org.gradle.api.UnknownTaskException;
 import org.gradle.api.artifacts.ConfigurationPublications;
+import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Usage;
-import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
-import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
+import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
-import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
@@ -303,8 +302,7 @@ public class XapiSchema {
         final ConfigurationPublications exportedRuntime = archGraph.configExportedRuntime().getOutgoing();
         view.getLogger().info("Configuring {}; realized? {}", archGraph.getPath(), archGraph.realized());
         if (archGraph.realized()) {
-            final TaskDependencyFactory taskFactory = ((GradleInternal)view.getGradle()).getServices().get(TaskDependencyFactory.class);
-
+            GradleCrossVersionService crossVersion = view.getGradleVersionService();
             if (archConfig.isTest()) {
                 archGraph.whenReady(ReadyState.AFTER_CREATED, done->{
                     if (!(
@@ -323,21 +321,10 @@ public class XapiSchema {
                 });
             }
 
-            IntermediateJavaArtifact compiled = new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask()) {
-                @Override
-                public File getFile() {
-                    return archGraph.getJavacTask().get().getDestinationDir();
-                }
-            };
-            IntermediateJavaArtifact packaged = new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JAR_TYPE, archGraph.getJarTask()) {
-                @Override
-                public File getFile() {
-                    return archGraph.getJarTask().get().getArchiveFile().get().getAsFile();
-                }
-            };
+            AbstractPublishArtifact compiled = crossVersion.publishArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask(), jc -> jc.get().getDestinationDir());
+            AbstractPublishArtifact packaged = crossVersion.publishArtifact(ArtifactTypeDefinition.JAR_TYPE, archGraph.getJarTask(), jt->jt.get().getArchiveFile().get().getAsFile());
 
-
-            final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion(), null, taskFactory);
+            final PublishArtifact artifact = crossVersion.lazyArtifact(archGraph.getJarTask(), archGraph.getVersion());
             view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
             exportedRuntime.artifact(artifact);
 

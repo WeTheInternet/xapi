@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.impl;
 
+import net.wti.gradle.api.GradleCrossVersionService;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.require.api.BuildGraph;
@@ -358,10 +359,11 @@ public class DefaultProjectView implements ProjectView {
         if (named.equals(getPath())) {
             return this;
         }
+        final GradleCrossVersionService migration = getGradleVersionService();
         if (!DefaultProjectView.isWtiGradle()) {
-            return ProjectView.fromProject(projectFinder.findProject(named));
+            return ProjectView.fromProject(migration.findProject(projectFinder, named));
         }
-        final ProjectInternal proj = projectFinder.findProject(named);
+        final ProjectInternal proj = migration.findProject(projectFinder, named);
         if (proj == null) {
             if (":schema".equals(named) || ":xapi-schema".equals(named)) {
                 // TODO use a boolean parameter instead of ugly hardcoded "quieter failure" code here

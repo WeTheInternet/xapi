@@ -1,4 +1,4 @@
-package net.wti.gradle.internal.impl;
+package net.wti.gradle.internal;
 
 import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.internal.tasks.TaskDependencyFactory;
@@ -11,10 +11,10 @@ import java.util.Date;
  * Borrowed from {@link JavaPlugin}; it's a pain it's not visible...
  * hopefully that isn't a warning sign we're ignoring...
  */
-public abstract class IntermediateJavaArtifact extends AbstractPublishArtifact {
+public abstract class IntermediateJavaArtifactModern extends AbstractPublishArtifact {
     private final String type;
 
-    public IntermediateJavaArtifact(TaskDependencyFactory dependencyFactory, String type, Object task) {
+    public IntermediateJavaArtifactModern(TaskDependencyFactory dependencyFactory, String type, Object task) {
         super(dependencyFactory, task);
         this.type = type;
     }

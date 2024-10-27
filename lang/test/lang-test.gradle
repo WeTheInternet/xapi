@@ -18,6 +18,8 @@ xapiRequire.main().configure {
 }
 
 dependencies {
-    implementation("org.spockframework:spock-core:1.2-groovy-2.4")
+    implementation("org.spockframework:spock-core:1.2-groovy-2.5")
+//    implementation("org.spockframework:spock-core:1.2-groovy-2.4")
     implementation project(':xapi-core-parent:xapi-core-reflect')
+    implementation localGroovy()
 }

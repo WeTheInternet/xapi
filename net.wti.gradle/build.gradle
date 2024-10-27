@@ -23,6 +23,7 @@ xapiSchema {
     }
     archives.create('test').require 'main'
 }
+
 gradle.beforeProject {
     Project p ->
         // this is only possible to do from the root build script, using .beforeProject

@@ -7,5 +7,6 @@ apply from: "$rootDir.parentFile.parent/gradle/xapi-env.gradle"
 dependencies {
     api "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
     api "net.wti.gradle.tools:xapi-gradle-deprecated:${->version}"
+    api "net.wti.gradle.modern:xapi-gradle-migration:${->version}"
 }
 group = "net.wti.gradle"

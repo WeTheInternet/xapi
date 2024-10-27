@@ -4,34 +4,45 @@ buildscript {
     apply from: "$rootDir.parent/gradle/xapi-env.gradle"
     dependencies {
         classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
+        if (!System.getProperty('idea.version')) {
+            classpath "net.wti.gradle.modern:xapi-gradle-migration:${-> version}"
+        }
     }
 }
-
 plugins {
     id 'idea'
 }
-apply plugin: 'xapi-require'
 if (gradle.getParent() == null || gradle.getParent().getParent() == null) {
     group = 'xapi-buildSrc'
 } else {
     String compName = gradle.getParent().getParent().getStartParameter().getCurrentDir().getName()
     group = "$compName-xapi-buildSrc"
 }
-xapiSchema {
-    platforms { main }
-    archives { main }
+if (System.getProperty('idea.version')) {
+    // modern... intellij is dumb and won't use custom version of gradle correctly
+    setProperty('xapiModern', 'true')
+} else {
+    // legacy
+    apply plugin: 'xapi-require'
+    xapiSchema {
+        platforms { main }
+        archives { main }
+    }
 }
 
 String v = version
 
-xapiRequire.main().configure {
-    external "net.wti.gradle:xapi-gradle-loader:$v", 'main'
-    external "net.wti.gradle:xapi-gradle-plugin:$v", 'main'
-    external "net.wti.gradle:xapi-gradle-api:$v", 'main'
-    external "net.wti.gradle.tools:xapi-gradle-tools:$v"
-    external "net.wti.gradle.tools:xapi-gradle-deprecated:$v"
-    external "net.wti.core:xapi-lang-core:$v", 'main'
-    external "net.wti.core:xapi-fu:$v", 'main'
+dependencies {
+    if (!System.getProperty('idea.version')) {
+        implementation "net.wti.gradle.modern:xapi-gradle-migration:$v"
+    }
+    implementation "net.wti.gradle:xapi-gradle-loader:$v"
+    implementation "net.wti.gradle:xapi-gradle-plugin:$v"
+    implementation "net.wti.gradle:xapi-gradle-api:$v"
+    implementation "net.wti.gradle.tools:xapi-gradle-tools:$v"
+    implementation "net.wti.gradle.tools:xapi-gradle-deprecated:$v"
+    implementation "net.wti.core:xapi-lang-core:$v"
+    implementation "net.wti.core:xapi-fu:$v"
 }
 
 if (
