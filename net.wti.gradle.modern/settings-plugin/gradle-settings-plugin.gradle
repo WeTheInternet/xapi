@@ -25,6 +25,10 @@ tasks.named('compileJava').configure {
     Task t ->
         t.dependsOn makeShadow
 }
+tasks.named('jar', Jar).configure {
+    Jar jar ->
+        jar.from(provider {makeShadow.get().outputs.files} )
+}
 dependencies {
     api "net.wti.core:xapi-fu:${->version}"
     api project(':xapi-gradle-core')

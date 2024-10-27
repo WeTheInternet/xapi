@@ -3,7 +3,7 @@ plugins {
     id 'groovy'
 }
 
-repositories.jcenter()
+//repositories.mavenCentral()
 
 String xapiHome = rootDir.parent
 apply from: "$xapiHome/gradle/xapi-env.gradle"

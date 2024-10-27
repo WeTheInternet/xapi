@@ -7,7 +7,11 @@ plugins {
 String xapiHome = "$rootDir.parent"
 apply from: "$xapiHome/gradle/xapi-env.gradle"
 apply from: "$xapiHome/gradle/int-test.gradle"
-repositories.jcenter()
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+}
 
 
 // force-realize a jar task for java-gradle-plugin to configure
@@ -48,9 +52,10 @@ xapiRequire.module('test').configure {
 // we'll leave it up to scripts to decide which plugin/gradle/groovy version they want to use...
 depend 'compileOnly', [
         project.dependencies.gradleApi(),
-        module('com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0'),
-        module('org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1'),
+        module('com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'),
+        module('org.jfrog.buildinfo:build-info-extractor-gradle:5.2.5'),
         module('com.github.jengelman.gradle.plugins:shadow:4.0.4')
+//        module('com.gradleup.shadow:shadow-gradle-plugin:8.3.3')
 ]
 
 tasks.withType(Test).configureEach({
