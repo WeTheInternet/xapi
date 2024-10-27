@@ -26,6 +26,7 @@ import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
+import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
@@ -302,6 +303,7 @@ public class XapiSchema {
         final ConfigurationPublications exportedRuntime = archGraph.configExportedRuntime().getOutgoing();
         view.getLogger().info("Configuring {}; realized? {}", archGraph.getPath(), archGraph.realized());
         if (archGraph.realized()) {
+            final TaskDependencyFactory taskFactory = ((GradleInternal)view.getGradle()).getServices().get(TaskDependencyFactory.class);
 
             if (archConfig.isTest()) {
                 archGraph.whenReady(ReadyState.AFTER_CREATED, done->{
@@ -321,13 +323,13 @@ public class XapiSchema {
                 });
             }
 
-            IntermediateJavaArtifact compiled = new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask()) {
+            IntermediateJavaArtifact compiled = new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, archGraph.getJavacTask()) {
                 @Override
                 public File getFile() {
                     return archGraph.getJavacTask().get().getDestinationDir();
                 }
             };
-            IntermediateJavaArtifact packaged = new IntermediateJavaArtifact(ArtifactTypeDefinition.JAR_TYPE, archGraph.getJarTask()) {
+            IntermediateJavaArtifact packaged = new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JAR_TYPE, archGraph.getJarTask()) {
                 @Override
                 public File getFile() {
                     return archGraph.getJarTask().get().getArchiveFile().get().getAsFile();
@@ -335,7 +337,7 @@ public class XapiSchema {
             };
 
 
-            final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion());
+            final LazyPublishArtifact artifact = new LazyPublishArtifact(archGraph.getJarTask(), archGraph.getVersion(), null, taskFactory);
             view.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(artifact);
             exportedRuntime.artifact(artifact);
 

@@ -1,6 +1,7 @@
 package net.wti.gradle.internal.impl;
 
 import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
+import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.plugins.JavaPlugin;
 
 import javax.annotation.Nullable;
@@ -13,9 +14,14 @@ import java.util.Date;
 public abstract class IntermediateJavaArtifact extends AbstractPublishArtifact {
     private final String type;
 
-    public IntermediateJavaArtifact(String type, Object task) {
-        super(task);
+    public IntermediateJavaArtifact(TaskDependencyFactory dependencyFactory, String type, Object task) {
+        super(dependencyFactory, task);
         this.type = type;
+    }
+
+    @Override
+    public boolean shouldBePublished() {
+        return true;
     }
 
     @Override

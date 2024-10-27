@@ -27,9 +27,11 @@ import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.java.TargetJvmVersion;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.file.FileCollectionInternal;
+import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
@@ -358,7 +360,8 @@ public interface ArchiveGraph extends Named, GraphNode {
             final FileCollection filtered = srcDirs.filter(File::exists);
             if (!filtered.isEmpty()) {
                 final Jar srcJarTask = sourceJarTask.get();
-                IntermediateJavaArtifact sourceJar = new IntermediateJavaArtifact("sources", srcJarTask) {
+                final TaskDependencyFactory taskFactory = ((GradleInternal)view.getGradle()).getServices().get(TaskDependencyFactory.class);
+                IntermediateJavaArtifact sourceJar = new IntermediateJavaArtifact(taskFactory, "sources", srcJarTask) {
                     @Override
                     public File getFile() {
                         return srcJarTask.getArchiveFile().get().getAsFile();

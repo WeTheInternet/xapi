@@ -10,6 +10,7 @@ import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.plugins.DefaultArtifactPublicationSet;
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -49,10 +50,13 @@ import static org.gradle.api.plugins.JavaPlugin.*;
 public class XapiJavaPlugin implements Plugin<ProjectInternal> {
 
     private final ObjectFactory objectFactory;
+    private final TaskDependencyFactory taskFactory;
+
 
     @Inject
-    public XapiJavaPlugin(ObjectFactory objectFactory) {
+    public XapiJavaPlugin(final ObjectFactory objectFactory, final TaskDependencyFactory taskFactory) {
         this.objectFactory = objectFactory;
+        this.taskFactory = taskFactory;
     }
 
     @Override
@@ -192,7 +196,7 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         NamedDomainObjectContainer<ConfigurationVariant> runtimeVariants = publications.getVariants();
         ConfigurationVariant classesVariant = runtimeVariants.create("classes");
         classesVariant.getAttributes().attribute(USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_CLASSES));
-        classesVariant.artifact(new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile) {
+        classesVariant.artifact(new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile) {
             @Override
             public File getFile() {
                 return javaCompile.get().getDestinationDir();
@@ -200,7 +204,7 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
         });
         ConfigurationVariant resourcesVariant = runtimeVariants.create("resources");
         resourcesVariant.getAttributes().attribute(USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_RESOURCES));
-        resourcesVariant.artifact(new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY, processResources) {
+        resourcesVariant.artifact(new IntermediateJavaArtifact(taskFactory, ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY, processResources) {
             @Override
             public File getFile() {
                 return processResources.get().getDestinationDir();
