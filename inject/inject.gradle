@@ -33,7 +33,6 @@ xapiRequire.main('gwt').configure {
     Requirable req ->
         req.project 'xapi-log', 'main'
         req.project 'xapi-common', 'gwt:main'
-        req.project 'xapi-dev-parent:xapi-dev-source', 'main:main'
 }
 
 xapiRequire.main('jre').configure {
@@ -52,6 +51,8 @@ xapiSchema.whenReady {
         gwtCompileOnly 'net.wetheinter:gwt-dev:2.8.0'
         gwtCompileOnly 'net.wetheinter:gwt-user:2.8.0'
 
-        jreAnnotationProcessor configurations.exportCompile
+    }
+    project.configurations {
+        jreAnnotationProcessor.extendsFrom exportCompile
     }
 }

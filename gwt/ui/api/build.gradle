@@ -1,9 +1,13 @@
+//plugins {
+//    id 'xapi-require'
+//}
+
 repositories {
     jcenter()
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    implementation project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
     compileOnly 'net.wetheinter:gwt-user:2.8.0'
 }
 

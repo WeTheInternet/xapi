@@ -1,0 +1,34 @@
+<xapi-schema
+    platforms = [
+        <main
+            modules = [
+                <api
+                    requires = {
+                        external : "net.wti.core:xapi-anno:0.5.1",
+                        external : "net.wti.core:xapi-fu:0.5.1",
+                    }
+                /api>,
+                <spi
+                    requires = {
+                        internal : "api"
+                    }
+                /spi>,
+                <main
+                    requires = {
+                        external : "javax.inject:javax.inject:1",
+                        external : "javax.annotation:javax.annotation-api:1.2",
+                    }
+                /main>,
+            ]
+        /main>,
+        <jre
+            modules = [
+                <main
+                    requires = {
+                        project : "xapi-util"
+                    }
+                /main>
+            ]
+        /jre>,
+    ]
+/xapi-schema>

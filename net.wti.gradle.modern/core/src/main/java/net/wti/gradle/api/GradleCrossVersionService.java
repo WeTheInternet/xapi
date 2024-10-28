@@ -1,12 +1,14 @@
 package net.wti.gradle.api;
 
 import net.wti.gradle.internal.GradleCrossVersionServiceModern;
+import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.provider.Provider;
+import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
 import java.util.ServiceLoader;
@@ -50,6 +52,7 @@ public interface GradleCrossVersionService {
     <T> AbstractPublishArtifact publishArtifactSources(String name, T task, Function<T, File> toFile);
     PublishArtifact lazyArtifact(Provider<?> task, String version);
     ProjectInternal findProject(ProjectFinder projectFinder, String path);
+    <T> NamedDomainObjectList<T> namedDomainList(Class<T> cls, Instantiator instantiator);
     default void init(Gradle gradle) {
     }
 }

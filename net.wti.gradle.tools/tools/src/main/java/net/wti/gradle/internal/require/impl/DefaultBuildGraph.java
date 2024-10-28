@@ -55,7 +55,7 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
         gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
             @Override
             public void beforeEvaluate(Project gradleProject) {
-                if ("true".equals(gradleProject.findProperty("xapiModern"))) {
+                if ("true".equals(String.valueOf(gradleProject.findProperty("xapiModern")))) {
                     return;
                 }
                 MinimalProjectView view = project.findView(gradleProject.getPath());
@@ -67,7 +67,7 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
 
             @Override
             public void afterEvaluate(Project gradleProject, ProjectState projectState) {
-                if ("true".equals(gradleProject.findProperty("xapiModern"))) {
+                if ("true".equals(String.valueOf(gradleProject.findProperty("xapiModern")))) {
                     return;
                 }
                 ProjectViewInternal view = project.findView(gradleProject.getPath());
@@ -123,10 +123,13 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
 
             @Override
             public void buildFinished(BuildResult result) {
-                if (result.getFailure() != null) {
-                    // no need to drain tasks if we're already broken.
-                    // (it will throw a misleading stacktrace b/c we aren't in the right execution context to invoke callbacks)
+                // no need to drain tasks if we're already broken.
+                // (it will throw a misleading stacktrace b/c we aren't in the right execution context to invoke callbacks)
+                result.rethrowFailure();
+                try {
                     drainTasks(Integer.MAX_VALUE);
+                } catch (Exception ignoreSuperfluous) {
+
                 }
             }
         });

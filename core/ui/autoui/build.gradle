@@ -18,7 +18,7 @@ xapiRequire.module('test').configure {
 }
 
 task packageTests(type: Jar) {
-    classifier = 'tests'
+    archiveClassifier.set 'tests'
     from(sourceSets.test.output)
 }
 

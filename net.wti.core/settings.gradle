@@ -16,3 +16,8 @@ project(':xapi-lang').name = 'xapi-lang-core'
 try {
     enableFeaturePreview('GRADLE_METADATA')
 } catch(ignored) {}
+
+// we define all our version information in <repo root>/gradle/xapiLib.toml file and access as `xapiLib.whatever` in a typesafe manner
+try {
+    dependencyResolutionManagement.versionCatalogs.create('xapiLib').from(files('../gradle/xapiLib.toml'))
+} catch(ignored) {}

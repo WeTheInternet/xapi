@@ -15,7 +15,8 @@ dependencies {
     api gradleTestKit()
     api 'org.junit.jupiter:junit-jupiter-api:5.3.2'
     implementation 'junit:junit:4.12' // TODO: get junit 5 vintage mode to work
-    api 'org.spockframework:spock-core:1.0-groovy-2.4', {
+    String spockVersion = System.getProperty('idea.version') ? '2.4' : '2.3'
+    api "org.spockframework:spock-core:1.0-groovy-$spockVersion", {
         exclude module: 'groovy-all'
     }
 }

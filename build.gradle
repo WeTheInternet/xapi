@@ -136,9 +136,9 @@ gradle.beforeProject {
                             p.files(tools)
                 }
 
-                artifacts {
-                    testRuntime testJar
-                }
+//                artifacts {
+//                    testRuntime testJar
+//                }
             }
 
     }

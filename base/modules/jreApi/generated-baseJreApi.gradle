@@ -1,37 +1,23 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
-apply plugin: "java-library"
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
 String repo = project.findProperty("xapi.mvn.repo")
 if (repo) {
-repositories {
-  maven {
+  repositories {
+    maven {
       name = 'xapiLocal'
       url = repo
+    }
   }
-}
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
 apply plugin: javaPlugin
-apply plugin: 'maven-publish'
-
-publishing.publications.withType(MavenPublication).configureEach {
-MavenPublication pub ->
-pub.artifactId = "xapi-base-api"
-pub.groupId = "net.wetheinter.jre"
-}
 
 SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
-
-dependencies {
-  api             "net.wti.core:xapi-anno:$version"
-  api             "net.wti.core:xapi-fu:$version"
-}
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :base at file://$rootDir/base/modules/jreApi/generated-baseJreApi.gradle

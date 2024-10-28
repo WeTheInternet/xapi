@@ -1,7 +1,11 @@
 package net.wti.gradle.internal;
 
 import net.wti.gradle.api.GradleCrossVersionService;
+import org.gradle.api.Named;
+import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.artifacts.PublishArtifact;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.DefaultNamedDomainObjectList;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
@@ -10,6 +14,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.TaskDependencyFactory;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.provider.Provider;
+import org.gradle.internal.reflect.Instantiator;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -64,6 +69,11 @@ public class GradleCrossVersionServiceModern implements GradleCrossVersionServic
     @Override
     public ProjectInternal findProject(final ProjectFinder projectFinder, final String path) {
         return projectFinder.getProject(path);
+    }
+
+    @Override
+    public <T> NamedDomainObjectList<T> namedDomainList(final Class<T> cls, final Instantiator instantiator) {
+        return new DefaultNamedDomainObjectList<>(cls, instantiator, Named.Namer.forType(cls), CollectionCallbackActionDecorator.NOOP);
     }
 
     @Override

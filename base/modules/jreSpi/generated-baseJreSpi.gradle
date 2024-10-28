@@ -1,0 +1,23 @@
+import org.gradle.api.tasks.SourceSet;
+
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :base at file://$rootDir/base/modules/jreSpi/generated-baseJreSpi.gradle

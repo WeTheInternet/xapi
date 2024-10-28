@@ -1,0 +1,9 @@
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+    req ->
+        req.project 'xapi-io', 'jre:main'
+        req.project 'xapi-inject', 'jre:main'
+}

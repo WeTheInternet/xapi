@@ -9,31 +9,23 @@ buildscript {
     }
 }
 plugins {
-    id 'xapi-require'
+    id 'java-library'
 }
-
 
 import org.gradle.internal.jvm.Jvm
 
-xapiRequire.main().configure {
-    req ->
-        req.external "net.wti.core:xapi-fu:${->version}", 'main'
-        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
-        req.project 'xapi-io', 'jre:main'
-        req.project 'xapi-core-parent:xapi-core-scope'
-        req.project 'xapi-inject', 'jre:main'
-        req.project 'xapi-dev-parent:xapi-dev-file'
-        req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
-}
-
-xapiRequire.module('test').configure {
-    req ->
-        req.external 'net.wetheinter:gwt-dev:2.8.0'
-        req.external 'net.wetheinter:gwt-user:2.8.0'
-        req.external 'net.wetheinter:gwt-elemental:2.8.0'
-        req.project 'xapi-common', 'testTools'
-        req.external 'org.assertj:assertj-core-java8:1.0.0m1'
-        
+dependencies {
+        api "net.wti.core:xapi-fu:${->version}"
+        api "net.wti.core:xapi-lang-core:${->version}"
+        api project(':xapi-core-parent:xapi-core-scope')
+        api project(':xapi-dev-parent:xapi-dev-file')
+        compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+        testImplementation 'net.wetheinter:gwt-dev:2.8.0'
+        testImplementation 'net.wetheinter:gwt-user:2.8.0'
+        testImplementation 'net.wetheinter:gwt-elemental:2.8.0'
+        testImplementation 'org.assertj:assertj-core-java8:1.0.0m1'
+        implementation project(':xapi-bridge-inject')
+        testImplementation project(':xapi-bridge-testTools')
 }
 
 dependencies {
@@ -42,7 +34,7 @@ dependencies {
         File tools = jvm.toolsJar
         if (tools) {
             compileOnly files(tools)
-            testCompile files(tools)
+            testImplementation files(tools)
         }
     } else {
         def view = xapiSchema.view
@@ -52,13 +44,17 @@ dependencies {
                     arch.tasks.javacTask.configure { javac->
                         // here is where we can set the per-archive-graph java 9+ module flags
                         // TODO, use / upgrade chainsaw plugin?
+                        javac.configure {
+                            JavaCompile jc ->
+//                                jc.javaCompiler = jc.javaToolchains.compilerFor {
+//                                    languageVersion = JavaLanguageVersion.of(8)
+//                                }
+                        }
                     }
                 }
             })
         })
     }
-
-
 }
 
 description = 'XApi - Java 8 compiler plugins'

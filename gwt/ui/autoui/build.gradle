@@ -17,7 +17,6 @@ xapiRequire.main().configure {
         req.project 'xapi-core-parent:xapi-core-event'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
         req.project 'xapi-model', 'gwt:main'
-        req.project 'xapi-dev-parent:xapi-dev-source'
         req.project 'xapi-inject', 'jre:main'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
@@ -42,7 +41,11 @@ xapiSchema.whenReady {
         }
     }
     configure gwtTest, {
-        logging.level = LogLevel.INFO
+        if (gradle.gradleVersion.startsWith("5")) {
+            logging.level = LogLevel.INFO
+        } else {
+            logging.levelInternal = LogLevel.INFO
+        }
         forkEvery = 1
         maxHeapSize = '2G'
         timeout = Duration.ofMinutes(10)

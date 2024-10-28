@@ -87,7 +87,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         final File rootDir = view.getProjectDir();
 
         File indexDir = calculateIndexDir(view, buildName, rootDir);
-        final SchemaIndexBuilder index = new SchemaIndexBuilder(view, rootDir, properties, exec, futures, indexDir);
+        final SchemaIndexBuilder index = new SchemaIndexBuilder(view, nodes, rootDir, properties, exec, futures, indexDir);
 
         if ("true".equals(System.getProperty(indexProp))) {
             return Out1.immutable(index);
@@ -236,8 +236,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 PlatformModule platMod = nodes.getPlatformModule(plat.getName(), mod.getName());
                 final ModuleIdentity id = nodes.getIdentity(pv, project.getPathGradle(), platMod);
                 final IndexNode node = nodes.getNode(id);
-
-
                 String modulePrefix = QualifiedModule.unparse(plat.getName(), mod.getName());
                 File moduleSrc = new File(projSrc, modulePrefix);
                 if (hasSources(moduleSrc)) {

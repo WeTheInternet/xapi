@@ -21,7 +21,6 @@ xapiRequire.main().configure {
     req ->
         req.internal 'api'
         req.external Transitivity.compile_only, 'net.wetheinter:jsinterop-annotations:2.8.0'
-        req.project 'xapi-dev-parent:xapi-dev-source'
         req.project 'xapi-dev-parent:xapi-dev-bytecode'
         return
 }
@@ -36,7 +35,6 @@ xapiRequire.module('gwt', 'main').configure {
         req.project 'xapi-model', 'main'
         req.external "net.wti.core:xapi-gen:$version", 'main'
         req.project 'xapi-lang-dev', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-source', 'main'
         req.project 'xapi-core-parent:xapi-core-reflect', 'main'
         req.project 'xapi-collect', 'jre:main'
         req.project 'xapi-inject', 'jre:main'

@@ -63,7 +63,8 @@ public class IndexNode {
         requires = X_Jdk.setLinkedSynchronized();
         includes = X_Jdk.setLinkedSynchronized();
         allDependencies = Lazy.deferred1(allDependenciesMapper.supply(this));
-        compressedDependencies = Lazy.deferred1(allDependenciesMapper.supply(this));
+//        compressedDependencies = Lazy.deferred1(allDependenciesMapper.supply(this));
+        compressedDependencies = Lazy.deferred1(compressedDependenciesMapper.supply(this));
         outgoingDependencies = X_Jdk.setLinkedSynchronized();
     }
 
@@ -178,6 +179,7 @@ public class IndexNode {
                 }
             }
         }
+
         return allChildren;
     }
 

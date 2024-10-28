@@ -1,6 +1,6 @@
 plugins {
     id 'xapi-require'
-    id 'groovy'
+//    id 'groovy'
 }
 
 // If this module ever moves AND YOU SEE THIS IN YOUR MERGE REQUEST,

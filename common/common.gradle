@@ -39,7 +39,6 @@ xapiRequire {
     main('gwt').configure {
         req ->
             req.project 'xapi-util', 'main'
-            req.project 'xapi-dev-parent:xapi-dev-source', 'main'
             req.project 'xapi-core-parent:xapi-core-reflect', 'main'
             req.project 'xapi-inject', 'main'
             req.external "net.wti.core:xapi-fu:$v", 'main'
@@ -88,11 +87,9 @@ xapiSchema.whenReady {
 apply from: "$rootDir/gradle/processor.gradle"
 
 dependencies {
-    // TODO: make this implementation and then force alllll downstream users to add this as well.
-    compile 'javax.inject:javax.inject:1'
+    implementation 'javax.inject:javax.inject:1'
     // alternatively, make it compile-transitive from xapi-inject, so at least it's obvious consumer wants @Inject
-
-    compile 'javax.annotation:javax.annotation-api:1.2'
-    testCompile 'junit:junit:4.12'
+    implementation 'javax.annotation:javax.annotation-api:1.2'
+    testImplementation 'junit:junit:4.12'
 }
 description = 'XApi - Core Interfaces and Abstractions'

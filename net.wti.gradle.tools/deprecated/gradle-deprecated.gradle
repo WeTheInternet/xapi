@@ -8,7 +8,7 @@ description = '''Xapi Gradle Deprecated: Older tools from the days of configure-
 
 repositories.jcenter()
 
-sourceCompatibility = '1.8'
+sourceCompatibility = JavaVersion.VERSION_1_8
 
 dependencies {
     compileOnly gradleApi()

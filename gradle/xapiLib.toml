@@ -1,0 +1,69 @@
+[versions]
+xapi = '0.5.1'
+playn = '2.0.6'
+swt = '4.5.1'
+gwt = '2.8.0'
+elemental = '1.0.0-RC1'
+jbox2d = '2.2.1.1'
+lwjgl = '3.1.2'
+lwjgl2 = '2.9.3'
+robovm = '2.3.18'
+android = '30'
+android-plugin = '7.3.0'
+android-kotlin = '1.5.31'
+j2objc-plugin = '0.7.1'
+spock = '1.0-groovy-2.4'
+#spock = '2.3-groovy-4.0'
+junit = '4.13.2'
+quarkus = '3.6.4'
+
+
+[libraries]
+xapi-fu = { module = "net.wti.core:xapi-fu", version.ref = "xapi" }
+xapi-gen = { module = "net.wti.core:xapi-gen", version.ref = "xapi" }
+xapi-lang-core = { module = "net.wti.core:xapi-lang-core", version.ref = "xapi" }
+
+xapi-lang-dev = { module = "net.wetheinter:xapi-lang-dev", version.ref = "xapi" }
+xapi-inject = { module = "net.wetheinter:xapi-inject", version.ref = "xapi" }
+xapi-inject-api = { module = "net.wetheinter:xapi-inject-api", version.ref = "xapi" }
+xapi-inject-jre = { module = "net.wetheinter:xapi-inject-jre", version.ref = "xapi" }
+xapi-inject-gwt = { module = "net.wetheinter:xapi-inject-gwt", version.ref = "xapi" }
+xapi-log-api = { module = "net.wetheinter:xapi-log-api", version.ref = "xapi" }
+xapi-io = { module = "net.wetheinter:xapi-io", version.ref = "xapi" }
+xapi-io-gwt = { module = "net.wetheinter:xapi-io-gwt", version.ref = "xapi" }
+xapi-io-jre = { module = "net.wetheinter:xapi-io-jre", version.ref = "xapi" }
+xapi-core-event = { module = "net.wetheinter:xapi-core-event", version.ref = "xapi" }
+xapi-common = { module = "net.wetheinter:xapi-common", version.ref = "xapi" }
+xapi-common-api = { module = "net.wetheinter:xapi-common-api", version.ref = "xapi" }
+xapi-common-spi = { module = "net.wetheinter:xapi-common-spi", version.ref = "xapi" }
+xapi-common-gwt = { module = "net.wetheinter:xapi-common-gwt", version.ref = "xapi" }
+xapi-elemental = { module = "net.wetheinter:xapi-gwt3", version.ref = "xapi" }
+elemental = { module = "com.google.elemental2:elemental2-dom", version.ref = "elemental" }
+xapi-model = { module = "net.wetheinter:xapi-model", version.ref = "xapi" }
+xapi-model-api = { module = "net.wetheinter:xapi-model-api", version.ref = "xapi" }
+xapi-model-jre = { module = "net.wetheinter:xapi-model-jre", version.ref = "xapi" }
+xapi-model-gwt = { module = "net.wetheinter:xapi-model-gwt", version.ref = "xapi" }
+xapi-util = { module = "net.wetheinter:xapi-util", version.ref = "xapi" }
+xapi-core-args = { module = "net.wetheinter:xapi-core-args", version.ref = "xapi" }
+xapi-core-ui-api = { module = "net.wetheinter:xapi-core-ui-api", version.ref = "xapi" }
+xapi-ui-api = { module = "net.wetheinter:ui-api", version.ref = "xapi" }
+xapi-dev-bytecode = { module = "net.wetheinter:xapi-dev-bytecode", version.ref = "xapi" }
+xapi-dev-file = { module = "net.wetheinter:xapi-dev-file", version.ref = "xapi" }
+xapi-server-api = { module = "net.wetheinter:xapi-server-api", version.ref = "xapi" }
+xapi-collect = { module = "net.wetheinter:xapi-collect", version.ref = "xapi" }
+xapi-collect-api = { module = "net.wetheinter:xapi-collect-api", version.ref = "xapi" }
+xapi-collect-gwt = { module = "net.wetheinter:xapi-collect-gwt", version.ref = "xapi" }
+
+xapi-gwt-dev = { module = "net.wetheinter:gwt-dev", version.ref = "gwt" }
+
+playn-jdk = { module = "io.playn:playn-java-lwjgl", version.ref = "playn" }
+playn-html = { module = "io.playn:playn-html", version.ref = "playn" }
+playn-android = { module = "io.playn:playn-android", version.ref = "playn" }
+playn-robovm = { module = "io.playn:playn-robovm", version.ref = "playn" }
+playn-scene = { module = "io.playn:playn-scene", version.ref = "playn" }
+playn-jbox2d = { module = "io.playn:playn-jbox2d", version.ref = "playn" }
+playn-java-base = { module = "io.playn:playn-java-base", version.ref = "playn" }
+playn-jbox2d-library = { module = "org.jbox2d:jbox2d-library", version.ref = "jbox2d" }
+
+spock = { module = "org.spockframework:spock-core", version.ref = "spock" }
+junit = { module = "junit:junit", version.ref = "junit" }

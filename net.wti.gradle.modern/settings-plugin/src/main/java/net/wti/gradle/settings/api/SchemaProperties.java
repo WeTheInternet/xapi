@@ -3,6 +3,7 @@ package net.wti.gradle.settings.api;
 import net.wti.gradle.api.BuildCoordinates;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
+import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.gradle.system.tools.GradleCoerce;
 import xapi.constants.X_Namespace;
 import xapi.fu.log.Log;
@@ -93,9 +94,9 @@ public interface SchemaProperties extends SchemaPatternResolver {
         return new File(getRootSchemaLocation(p));
     }
 
-    default SchemaIndexReader createReader(MinimalProjectView view, CharSequence version) {
+    default SchemaIndexReader createReader(MinimalProjectView view, final IndexNodePool nodes, CharSequence version) {
         String indexDir = getIndexLocation(view, this);
-        return new SchemaIndexReader(indexDir, version, this);
+        return new SchemaIndexReader(nodes, indexDir, version, this);
     }
 
     default void markDone(String indexProp, MinimalProjectView view, String debugInfo) {

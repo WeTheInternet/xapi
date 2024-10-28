@@ -31,6 +31,7 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
     private final List<Future<?>> futures;
     private final File indexDir;
     private final SchemaIndexReader reader;
+    private final IndexNodePool nodes;
 
     private String buildName;
     private CharSequence groupId;
@@ -46,22 +47,23 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
     }
 
     public SchemaIndexBuilder duplicate() {
-        SchemaIndexBuilder child = new SchemaIndexBuilder(view, rootDir, properties, executor, futures, indexDir);
+        SchemaIndexBuilder child = new SchemaIndexBuilder(view, nodes, rootDir, properties, executor, futures, indexDir);
         child.buildName = buildName;
         child.groupId = LazyString.nullableString(this::getGroupId);
         child.version = LazyString.nullableString(this::getVersion);
         return child;
     }
 
-    public SchemaIndexBuilder(MinimalProjectView view, File rootDir, final SchemaProperties properties, final ExecutorService exec, final List<Future<?>> futures, final File indexDir) {
+    public SchemaIndexBuilder(MinimalProjectView view, final IndexNodePool nodes, File rootDir, final SchemaProperties properties, final ExecutorService exec, final List<Future<?>> futures, final File indexDir) {
         this.view = view;
+        this.nodes = nodes;
         this.rootDir = rootDir;
         this.buildName = rootDir.getName();
         this.properties = properties;
         this.executor = exec;
         this.futures = futures;
         this.indexDir = indexDir;
-        this.reader = properties.createReader(view, new LazyString(this::getVersion));
+        this.reader = properties.createReader(view, nodes, new LazyString(this::getVersion));
     }
 
     @Override
@@ -128,6 +130,10 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
             }
             return versionDir;
         });
+    }
+
+    public IndexNodePool getNodes() {
+        return nodes;
     }
 
     public void markWithSource(final SchemaProject project, final SchemaPlatform plat, final SchemaModule mod, final File moduleSrc) {

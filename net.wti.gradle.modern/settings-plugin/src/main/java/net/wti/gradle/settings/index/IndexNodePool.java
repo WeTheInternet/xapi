@@ -22,6 +22,7 @@ import xapi.fu.java.X_Jdk;
  */
 public class IndexNodePool {
     private final MapLike<ModuleIdentity, IndexNode> allNodes;
+    private final MapLike<ModuleIdentity, IndexNode> deletedNodes;
     private final MapLike<String, PlatformModule> platMods;
     private final MapLike<String, ModuleIdentity> allIdentities;
     private static final In1Out1<ModuleIdentity, IndexNode> nodeFactory = IndexNode::new;
@@ -32,6 +33,7 @@ public class IndexNodePool {
 
     public IndexNodePool() {
         allNodes = X_Jdk.mapHashConcurrent();
+        deletedNodes = X_Jdk.mapHashConcurrent();
         platMods = X_Jdk.mapHashConcurrent();
         allIdentities = X_Jdk.mapHashConcurrent();
     }
@@ -48,6 +50,10 @@ public class IndexNodePool {
         return allNodes.computeIfAbsent(forIdentity, nodeFactory);
     }
 
+    public IndexNode getDeletedNode(ModuleIdentity forIdentity) {
+        return deletedNodes.get(forIdentity);
+    }
+
     public PlatformModule getPlatformModule(String platform, String module) {
         return platMods.computeIfAbsent(platform + ":" + module, ()->new PlatformModule(platform, module));
     }
@@ -56,10 +62,14 @@ public class IndexNodePool {
         return allNodes.mappedValues();
     }
 
+    public boolean isDeleted(final ModuleIdentity identity) {
+        return deletedNodes.has(identity);
+    }
     public void delete(final ModuleIdentity identity) {
         // we probably just want to mark this as disabled, but we'll try reducing giant-map-size first.
         final IndexNode was = allNodes.remove(identity);
         if (was != null) {
+            deletedNodes.put(identity, was);
             was.getLivenessReasons().clear();
             was.setDeleted(true);
             // when we delete a node, we should also remove ourselves from any outgoing dependencies.

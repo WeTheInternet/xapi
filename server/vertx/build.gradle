@@ -18,7 +18,7 @@ xapiRequire.main().configure {
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'
         req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac'
         req.external 'io.vertx:vertx-web:3.5.3'
         req.external 'io.vertx:vertx-hazelcast:3.5.3'
         req.external 'io.vertx:vertx-auth-oauth2:3.5.3'
@@ -28,7 +28,7 @@ xapiRequire.module('test').configure {
         req.project 'xapi-server-parent:xapi-server-gen', 'main:sample'
         req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
         req.project 'xapi-server-parent:xapi-server-gen', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac'
         req.external 'info.cukes:cucumber-java:1.2.5'
         req.external 'info.cukes:cucumber-junit:1.2.5'
 }

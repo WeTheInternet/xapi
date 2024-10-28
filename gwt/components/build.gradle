@@ -31,13 +31,17 @@ xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-process', 'jre:main'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
-        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
         req.project 'xapi-inject', 'jre:main'
         req.external 'junit:junit:4.12'
         req.external 'info.cukes:cucumber-java:1.2.5'
         req.external 'info.cukes:cucumber-junit:1.2.5'
         req.external 'org.assertj:assertj-core:3.2.0'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'
+}
+xapiSchema.whenReady {
+    dependencies {
+        transitive project(':xapi-dev-parent:xapi-dev-javac')
+    }
 }
 description = 'XApi - Web Component Implementation'
 

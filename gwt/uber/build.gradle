@@ -37,7 +37,6 @@ xapiRequire.main().configure {
         req.project 'xapi-collect', 'gwt:main'
         req.project 'xapi-common', 'gwt:testTools'
         req.project 'xapi-gwt3', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-source', 'main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-core-parent:xapi-core-reflect', 'main'
         req.project 'xapi-elemental', 'main'
@@ -58,7 +57,7 @@ xapiRequire.module('gwt', 'test').configure {
 }
 
 dependencies {
-    compile 'javax.inject:javax.inject:1:sources'
+    implementation 'javax.inject:javax.inject:1:sources'
 }
 
 description = 'XApi - Gwt uber jar'

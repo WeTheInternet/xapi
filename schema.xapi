@@ -34,6 +34,7 @@
     projects = {
         // the projects below all have gwt, jre and other platforms
         multiplatform: [
+            "base",
 //            "inject",
 //            "collect",
 //            "common",

@@ -15,8 +15,8 @@ SourceSet java9 = sourceSets.maybeCreate("java9")
 
 if (JavaVersion.current().isJava9Compatible()) {
     java9.java.srcDir("src/main/java9")
-    dependencies.add(java9.compileOnlyConfigurationName, java.runtimeClasspath)
-    dependencies.add(java9.compileOnlyConfigurationName, java.compileClasspath)
+    dependencies.add(java9.compileOnlyConfigurationName, project.files(java.runtimeClasspath))
+    dependencies.add(java9.compileOnlyConfigurationName, project.files(java.compileClasspath))
     gradle.projectsEvaluated {
         tasks.named('jar', Jar).configure({ jar ->
             jar.manifest.attributes['Multi-Release'] = 'true'
@@ -53,8 +53,9 @@ if (JavaVersion.current().isJava9Compatible()) {
 }
 
 dependencies {
-    compile project(':xapi-dev-parent:xapi-dev-source')
-    testCompile 'junit:junit:4.12'
+    implementation "net.wti.core:xapi-fu:$version"
+    implementation 'javax.inject:javax.inject:1'
+    testImplementation 'junit:junit:4.12'
 }
 
 description = 'XApi - Core reflection apis and interfaces'

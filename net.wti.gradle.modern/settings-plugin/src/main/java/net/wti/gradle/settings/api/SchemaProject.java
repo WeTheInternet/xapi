@@ -177,11 +177,9 @@ public class SchemaProject implements Named, HasPath {
 
     @Override
     public String toString() {
-        return "SchemaProject{" +
-                "path='" + getPath() + '\'' +
-                ", multiplatform=" + multiplatform +
-                ", virtual=" + virtual +
-                ", children=[" + children.keys().join(" , ") + "]" +
+        return "proj{" +
+                "path='" + getPath() + (multiplatform ? "+multi" : "") + (virtual ? "+virt" : "") +
+                (children.isEmpty() ? "" : "[" + children.keys().join(" , ") + "]" ) +
                 '}';
     }
 
@@ -242,6 +240,7 @@ public class SchemaProject implements Named, HasPath {
     public ListLike<SchemaDependency> getDependenciesOf(SchemaPlatform platform, SchemaModule module) {
         ListLike<SchemaDependency> result = X_Jdk.list();
         getDependencies().forEachPair((platMod, dep) -> {
+
             if (platMod.getPlatform() == null) {
                 if (platMod.getModule() == null) {
                     result.add(dep);

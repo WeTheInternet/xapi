@@ -9,8 +9,8 @@ This handles the basics of publishing and path manifest production.'''
 
 repositories.mavenCentral()
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 dependencies {
     compileOnly gradleApi()

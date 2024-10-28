@@ -5,6 +5,8 @@ import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.settings.XapiSchemaParser;
 import net.wti.gradle.settings.api.*;
+import net.wti.gradle.settings.index.IndexNode;
+import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.gradle.settings.index.SchemaIndex;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.system.tools.GradleCoerce;
@@ -21,6 +23,7 @@ import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.tasks.SourceSet;
 import xapi.constants.X_Namespace;
 import xapi.dev.source.BuildScriptBuffer;
+import xapi.dev.source.CharBuffer;
 import xapi.dev.source.ClosureBuffer;
 import xapi.dev.source.LocalVariable;
 import xapi.fu.*;
@@ -170,7 +173,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         });
 
         map.getCallbacks().perProject(project -> {
-            logger.trace("Processing xapi schema for project {}", project);
+            logger.info("Processing xapi schema for project {}", project);
             String gradlePath = ":" + project.getSubPath().replace('/', ':');
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
@@ -206,6 +209,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 final String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
                 map.whenResolved(() -> {
                     boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
+                    if (logger.isTraceEnabled() && !isLive) {
+                        logger.trace("Not live: {}@{}", project.getPathIndex(), plat+"-"+mod);
+                    }
                     if (isLive) {
                         if (++liveCnt[0] > 1) {
                             if (!project.isMultiplatform()) {
@@ -314,7 +320,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         }
                         out
                                 .println("String repo = project.findProperty(\"xapi.mvn.repo\")")
-                                .print("if (repo)").startClosure()
+                                .print("if (repo) ").startClosure()
                                     .startClosure("repositories")
                                         .startClosure("maven")
                                             .println("name = 'xapiLocal'")
@@ -366,11 +372,29 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         for (SchemaDependency dependency : project.getDependenciesOf(plat, mod)) {
                             view.getLogger().info("Processing dependency {}:{}:{} -> {}", project, plat, mod, dependency);
 
-                            if (!index.dependencyExists(dependency, project, plat, mod)) {
+                            PlatformModule platMod = PlatformModule.parse(dependency.getName());
+                            IndexNodePool pool = map.getRootSchema().getNodePool();
+                            final ModuleIdentity depIdent = pool.getIdentity(view, project.getPathIndex(), platMod);
+                            final IndexNode node = pool.getNode(depIdent);
+                            boolean canSkip = dependency.getType() == DependencyType.internal; // just do internal for now.
+                            if (canSkip && !index.dependencyExists(dependency, project, plat, mod)) {
                                 // skipping a non-live dependency.
                                 view.getLogger().info("Skipping non-live dependency {}:{}:{} -> {}", project, plat, mod, dependency);
                                 continue;
                             }
+                            if (canSkip && pool.isDeleted(depIdent)) {
+                                view.getLogger().quiet("Skipping deleted dependency {}", depIdent);
+                                continue;
+                            }
+                            if (canSkip && !node.isLive()) {
+                                // when a node is not live, we should skip it if it has no compressed dependencies
+//                                if (node.getCompressedDependencies().isEmpty()) {
+//                                if (node.getAllDependencies().isEmpty()) {
+//                                    view.getLogger().quiet("Skipping non-live module w/ no compressed dependencies {}", depIdent);
+//                                    continue;
+//                                }
+                            }
+
                             final ClosureBuffer depOut = dependencies.out1();
                             switch (dependency.getTransitivity()) {
                                 case api:
@@ -379,32 +403,32 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                                 .print(getClass().getSimpleName())
                                                 .println(" adding java-library b/c api dependencies used");
                                     }
-                                    depOut.append(
+                                    depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "api" : key + "Api"
                                     );
                                     break;
                                 case compile_only:
-                                    depOut.append("compileOnly");
-                                    depOut.append(
+                                    depOut.print("compileOnly");
+                                    depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "compileOnly" : key + "CompileOnly"
                                     );
                                     break;
                                 case impl:
-                                    depOut.append(
+                                    depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "implementation" : key + "Implementation"
                                     );
                                     break;
                                 case runtime:
-                                    depOut.append(
+                                    depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "runtime" : key + "Runtime"
                                     );
                                     break;
                                 case runtime_only:
-                                    depOut.append(
+                                    depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "runtimeOnly" : key + "RuntimeOnly"
                                     );
@@ -412,7 +436,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 default:
                                     throw new IllegalArgumentException("transitivity " + dependency.getTransitivity() + " is not supported!");
                             }
-                            depOut.append(" ");
+                            depOut.print(" ");
                             switch (dependency.getType()) {
                                 case unknown:
                                 case project:
@@ -448,11 +472,51 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                         path = project.getName();
                                     }
                                     String simpleName = path.substring(path.lastIndexOf(":") + 1);
-                                    PlatformModule platMod = PlatformModule.parse(dependency.getName());
                                     if (index.isMultiPlatform(view, project.getPathIndex(), platMod)) {
                                         path = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + simpleName + "-" + platMod.toPlatMod();
                                     }
-                                    depOut.println("project(path: \"" + path + "\")");
+                                    if (pool.isDeleted(depIdent)) {
+                                        logger.quiet("Removing elided dependency " + depIdent);
+                                        // when a dependency is deleted, we should instead absorb all of its non-deleted dependencies.
+                                        depOut.print("/* elided " + path + " */ ");
+                                        final IndexNode deletedDep = pool.getDeletedNode(depIdent);
+                                        String prefix = "";
+                                        for (IndexNode alive : deletedDep.getCompressedDependencies()) {
+                                            depOut.print(prefix);
+                                            final ModuleIdentity id = alive.getIdentity();
+                                            String subPath = id.getProjectPath();
+                                            String simpleSubName = path.substring(path.lastIndexOf(":") + 1);
+                                            if (index.isMultiPlatform(view, id.getProjectPath(), id.getPlatformModule())) {
+                                                subPath = id.getProjectPath() + ":" + simpleSubName + "-" + id.getPlatformModule().toPlatMod();
+                                            }
+                                            depOut.println("project(path: \"" + subPath + "\")");
+                                            prefix = ",\n" + depOut.getIndent() + Printable.INDENT;
+                                        }
+                                        depOut.println();
+                                    } else {
+//                                        if (node.isLive()) {
+                                            depOut.println("project(path: \"" + path + "\")");
+//                                        } else {
+//                                            depOut.print("/* compressed " + path + " */ ");
+//                                            logger.quiet("Compressing non-live node {}", node.getIdentity());
+//                                            final IndexNode nonLiveDep = pool.getNode(depIdent);
+//                                            String prefix = "";
+//
+//                                            for (IndexNode alive : nonLiveDep.getCompressedDependencies()) {
+//                                                depOut.print(prefix);
+//                                                final ModuleIdentity id = alive.getIdentity();
+//                                                String subPath = id.getProjectPath();
+//                                                String simpleSubName = path.substring(path.lastIndexOf(":") + 1);
+//                                                if (index.isMultiPlatform(view, id.getProjectPath(), id.getPlatformModule())) {
+//                                                    subPath = id.getProjectPath() + ":" + simpleSubName + "-" + id.getPlatformModule().toPlatMod();
+//                                                }
+//                                                depOut.println("project(path: \"" + subPath + "\")");
+//                                                prefix = ",\n" + depOut.getIndent() + Printable.INDENT;
+//                                            }
+//                                            depOut.println();
+//
+//                                        }
+                                    }
                                     break;
                                 case external:
                                     depOut.println("\"" + dependency.getGNV() + "\"");
@@ -472,7 +536,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         out.print("// Done generating buildfile for ")
                                 .print(project.getPathGradle())
                                 .print(" at file://")
-                                .println(generatedFile);
+                                .println(generatedFile.getPath().replace(settings.getSettingsDir().getPath(), "$rootDir"));
                         if (dryRun(view)) {
                             view.getLogger().info("Skipping write of generated build file due to dry run status");
                         } else {

@@ -76,8 +76,11 @@ public interface UsageType extends Named {
     default ModuleDependency newDependency(ProjectGraph project, ArchiveGraph consumer, ArchiveGraph producer, Transitivity transitivity) {
         final DependencyHandler deps = consumer.getView().getDependencies();
         final ModuleDependency dep = (ModuleDependency) deps.create(producer.getView().getService().getProject());
-        // TODO: add validation that target configuration exists.
-        dep.setTargetConfiguration(findProducerConfig(producer, transitivity).getName());
+        if (!"true".equals(String.valueOf(producer.getView().findProperty("xapiModern")))) {
+            // modern project references should not mess with target configurations
+            // TODO: add validation that target configuration exists.
+            dep.setTargetConfiguration(findProducerConfig(producer, transitivity).getName());
+        }
         return dep;
     }
 

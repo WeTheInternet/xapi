@@ -20,7 +20,7 @@ gradle.beforeProject {
     p.plugins.apply('java-library')
     p.plugins.apply('maven-publish')
 
-    p.sourceCompatibility = '1.8'
+    p.sourceCompatibility = JavaVersion.VERSION_1_8
 
 
     // for this ultra-core, zero-dependency buildSrc project, we want to always install

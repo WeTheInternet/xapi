@@ -15,7 +15,7 @@ xapiRequire.main.configure {
         req.project 'xapi-process', 'jre:main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-server-parent:xapi-server-api', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac'
         req.project 'xapi-dev-parent:xapi-dev-api', 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'

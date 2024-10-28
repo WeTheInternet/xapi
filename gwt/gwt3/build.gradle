@@ -1,11 +1,11 @@
 plugins {
     id 'xapi-require'
 }
-
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-common', 'gwt:main'
-        req.project 'xapi-gwt-ui-parent:xapi-gwt-ui-api'
+        req.project ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.project ":xapi-gwt-ui-parent:xapi-gwt-ui-api"
         req.external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
         req.external 'com.google.elemental2:elemental2-promise:1.0.0-RC1'
         req.external 'com.google.jsinterop:base:1.0.0-RC1'
@@ -20,10 +20,8 @@ xapiRequire.module('test').configure {
         req.project 'xapi-inject', 'jre:main'
         req.project 'xapi-collect', 'jre:main'
 }
-
 dependencies {
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     compileOnly 'net.wetheinter:gwt-user:2.8.0'
 }
-
 description = 'XApi - GWT 3'

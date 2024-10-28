@@ -181,22 +181,24 @@ public class XapiSchema {
         if (root == self) {
             // When we are the schema root, we must wait until we are evaluated before we let other XapiSchema instances
             // read from our values.
-            rpg.whenReady(ReadyState.RUN_FINALLY + 1, ready->{
+            rpg.whenReady(ReadyState.RUN_FINALLY + 1, ready -> {
                 platforms.configureEach(plat ->
-                    archives.configureEach(arch-> {
-                        rpg.whenReady(ReadyState.RUN_FINALLY + 2, allReady->{
-                            final ArchiveConfig inst = plat.getArchive(arch.getName());
-                            inst.require(arch.required());
-                            inst.setPublishedProvider(self.lazyProvider(arch::isPublished));
-                            inst.setSourceAllowed(arch.isSourceAllowed());
-                            inst.setTest(arch.isTest());
-                            self.getLogger().trace("root schema ({}~{}) declared {}", new LazyString(()-> GradleService.buildId(self.getGradle()).toString()), self.getPath(), inst);
-                            final PlatformConfig rootPlat = plat.getRoot();
-                        });
+                        archives.configureEach(arch -> {
+                            rpg.whenReady(ReadyState.RUN_FINALLY + 2, allReady -> {
+                                final ArchiveConfig inst = plat.getArchive(arch.getName());
+                                inst.require(arch.required());
+                                inst.setPublishedProvider(self.lazyProvider(arch::isPublished));
+                                inst.setSourceAllowed(arch.isSourceAllowed());
+                                inst.setTest(arch.isTest());
+                                self.getLogger().trace("root schema ({}~{}) declared {}", new LazyString(() -> GradleService.buildId(self.getGradle()).toString()), self.getPath(), inst);
+                                final PlatformConfig rootPlat = plat.getRoot();
+                            });
 
-                    })
+                        })
                 );
             });
+        } else if ("true".equals(String.valueOf(self.findProperty("xapiModern")))) {
+            return;
         } else {
             root.whenReady(evaluated->{
                 // We must further wait for the schema root to be in a state of task-flushing before we try to read from it.
@@ -238,6 +240,9 @@ public class XapiSchema {
         }
 //        self.getBuildGraph().whenReady(ReadyState.AFTER_CREATED, p->{
         spg.whenReady(ReadyState.AFTER_CREATED, p->{
+            if ("true".equals(String.valueOf(self.findProperty("xapiModern")))) {
+                return;
+            }
             platforms.configureEach(plat -> {
                 plat.getArchives().configureEach(arch -> {
                     final ArchiveGraph archive = self.getProjectGraph()
@@ -251,27 +256,31 @@ public class XapiSchema {
         });
 
         self.getPlugins().withType(IdeaPlugin.class).all( plugin -> {
-            platforms.configureEach(plat -> {
+            if ("true".equals(String.valueOf(self.findProperty("xapiModern")))) {
+                return;
+            }
+            final Action<? super PlatformConfig> handlePlatforms = plat -> {
                 plat.getArchives().configureEach(arch -> {
-                    if (!arch.isTest()) {
-                        return;
-                    }
-                    final ArchiveGraph archive = self.getProjectGraph()
-                        .platform(plat.getName())
-                        .archive(arch.getName());
-                    if (!archive.srcExists()) {
-                        view.getLogger().info("Skipping module {}; source set? {}", archive.getPath(), self.getSourceSets().findByName(archive.getSrcName()));
-                        return;
-                    }
+                            if (!arch.isTest()) {
+                                return;
+                            }
+                            final ArchiveGraph archive = self.getProjectGraph()
+                                    .platform(plat.getName())
+                                    .archive(arch.getName());
+                            if (!archive.srcExists()) {
+                                view.getLogger().info("Skipping module {}; source set? {}", archive.getPath(), self.getSourceSets().findByName(archive.getSrcName()));
+                                return;
+                            }
 //                            self.getGradle().buildFinished(res->{
-                    final IdeaModule module = plugin.getModel().getModule();
-                    final SourceSet srcSet = archive.getSource().getSrc();
-                    addTestDirs(self, module, srcSet, true);
-                    addTestDirs(self, module, srcSet, false);
+                            final IdeaModule module = plugin.getModel().getModule();
+                            final SourceSet srcSet = archive.getSource().getSrc();
+                            addTestDirs(self, module, srcSet, true);
+                            addTestDirs(self, module, srcSet, false);
 //                            });
                         }
-                    );
-                });
+                );
+            };
+            platforms.configureEach(handlePlatforms);
         });
         self.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
             report.record(self.getSchema())

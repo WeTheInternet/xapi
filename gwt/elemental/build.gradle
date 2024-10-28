@@ -7,7 +7,7 @@ import org.gradle.internal.jvm.Jvm
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-gwt-ui-parent:xapi-gwt-ui-html', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project 'xapi-dev-parent:xapi-dev-javac'
         req.external 'net.wetheinter:gwt-elemental:2.8.0'
         req.external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
         req.external 'net.wetheinter:gwt-user:2.8.0'
@@ -26,7 +26,7 @@ dependencies {
     File tools = Jvm.current().toolsJar
     if (tools) {
         compileOnly files(tools)
-        testCompile files(tools)
+        testImplementation files(tools)
     }
 }
 

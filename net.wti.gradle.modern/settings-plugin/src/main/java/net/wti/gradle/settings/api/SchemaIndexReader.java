@@ -2,6 +2,8 @@ package net.wti.gradle.settings.api;
 
 import net.wti.gradle.api.BuildCoordinates;
 import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.settings.index.IndexNodePool;
+import xapi.fu.Lazy;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 
@@ -28,6 +30,7 @@ import static net.wti.gradle.tools.GradleFiles.readFile;
 public class SchemaIndexReader implements SchemaDirs {
 
     private final CharSequence version;
+    private final IndexNodePool nodes;
     private SchemaPatternResolver properties;
 
     public boolean isMultiPlatform(final MinimalProjectView view, final String path, final PlatformModule coords) {
@@ -98,11 +101,15 @@ public class SchemaIndexReader implements SchemaDirs {
 
     private final String indexDir;
     private final MapLike<String, IndexResult> indexResults;
+    private final MapLike<String, Boolean> livenessCheck;
 
-    public SchemaIndexReader(final String indexDir, final CharSequence version, SchemaPatternResolver patterns) {
+
+    public SchemaIndexReader(final IndexNodePool nodes, final String indexDir, final CharSequence version, SchemaPatternResolver patterns) {
+        this.nodes = nodes;
         this.version = version;
         this.indexDir = indexDir;
         this.indexResults = X_Jdk.mapHashConcurrent();
+        this.livenessCheck = X_Jdk.mapHashConcurrent();
         this.properties = patterns;
     }
 
@@ -115,29 +122,63 @@ public class SchemaIndexReader implements SchemaDirs {
         }
         // without explicit dependencies, we need to check for a liveness level > 2
         String projectPath = mangleProjectPath(projectName);
-        File pathDir = new File(indexDir, "path");
-        File projectDir = new File(pathDir, projectPath);
         final String platMod = PlatformModule.unparse(platform.getName(), module.getName());
         File moduleDir;
-        moduleDir = new File(projectDir, platMod);
-        // hm... we may want to get more picky, like "check for sources file", "check for explicit 'create this' flag", etc.
+        return checkLive(coords, projectPath, platMod);
+    }
+
+    public boolean checkLive(final BuildCoordinates coords, final String projectPath, final String platMod) {
+        final String key = projectPath + "@" + platMod;
+        return livenessCheck.computeIfAbsent(key, ()-> {
+            File pathDir = new File(indexDir, "path");
+            File projectDir = new File(pathDir, projectPath);
+            final File moduleDir = new File(projectDir, platMod);
+            // hm... we may want to get more picky, like "check for sources file", "check for explicit 'create this' flag", etc.
 //        return moduleDir.isDirectory() && Objects.requireNonNull(moduleDir.list()).length > 0;
-        File liveFile = new File(moduleDir, "live");
-        String liveValue = "0";
-        if (liveFile.exists()) {
-            liveValue = readFile(liveFile);
-        }
-        if ("0".equals(liveValue)) {
-            // definitely ignore
-            return false;
-        }
-        if ("1".equals(liveValue)) {
-            // TODO: evaluate if this node should be alive based on whether it depends on anything meaningful
-            return false;
-        } else {
-            // 2 or greater: definitely live
-            return true;
-        }
+            File liveFile = new File(moduleDir, "live");
+            String liveValue = "0";
+            if (liveFile.exists()) {
+                liveValue = readFile(liveFile);
+            }
+            if ("0".equals(liveValue)) {
+                // definitely ignore
+                return false;
+            }
+            if ("1".equals(liveValue)) {
+                // check for in links
+                File inDir = new File(moduleDir, "in");
+                final File[] ins = inDir.listFiles();
+                if (ins == null) {
+                    return false;
+                }
+                for (File projIn : ins) {
+                    final File[] platModIn = projIn.listFiles();
+                    if (platModIn == null) {
+                        // empty? should perhaps raise an error
+                        continue;
+                    }
+                    for (File platModDir : platModIn) {
+                        File link = new File(platModDir, "link");
+                        if (link.exists()) {
+                            // if the target of this link is live, then so are we.
+                            final String targetPlatmod = platModDir.getName();
+                            final String targetProject = projIn.getName();
+
+                            if (checkLive(coords, targetProject, targetPlatmod)) {
+                                return true;
+                            }
+                        }
+                    }
+
+                }
+
+                // TODO: evaluate if this node should be alive based on whether it depends on anything meaningful
+                return false;
+            } else {
+                // 2 or greater: definitely live
+                return true;
+            }
+        });
     }
 
     public IndexResult getEntries(BuildCoordinates coords, String projectName, SchemaPlatform platform, SchemaModule module) {

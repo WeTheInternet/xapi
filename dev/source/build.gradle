@@ -1,11 +1,16 @@
 plugins {
-    id 'xapi-require'
+    id 'java-library'
 }
 
 String v = version
-xapiRequire.main().configure {
-    external "net.wti.core:xapi-fu:$v", 'main'
+
+repositories.maven {
+    name = 'xapiLocal'
+    url = new File(rootDir, 'repo')
 }
-xapiRequire.module('test').external 'junit:junit:4.12'
+dependencies {
+    implementation "net.wti.core:xapi-fu:$v"
+    testImplementation "junit:junit:4.13.2"
+}
 
 description = 'XApi - Dev mode tools for source generation'

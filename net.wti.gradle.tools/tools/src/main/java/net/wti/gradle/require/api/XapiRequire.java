@@ -23,10 +23,9 @@ public class XapiRequire extends BaseRequire<RequirePlatform> implements Requira
     private final ProjectView view;
 
     public XapiRequire(ProjectView view) {
-        this.registrations = new DefaultNamedDomainObjectList<>(
-            XapiRegistration.class,
-            view.getInstantiator(),
-            Namer.forType(XapiRegistration.class)
+        this.registrations = view.getGradleVersionService().namedDomainList(
+                XapiRegistration.class,
+                view.getInstantiator()
         );
         this.view = view;
         platforms = new RequirePlatformContainer(view, this);

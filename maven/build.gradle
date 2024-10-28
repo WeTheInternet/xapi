@@ -12,13 +12,13 @@ xapiRequire.main().configure {
 }
 
 dependencies {
-    compile project(':xapi-dev-parent:xapi-dev-maven')
-    compile 'org.apache.maven:maven-plugin-api:3.2.5'
-    compile 'org.apache.maven.plugin-tools:maven-plugin-annotations:3.4'
-    compile 'net.wetheinter:gwt-codeserver:2.8.0'
-    compile 'net.wetheinter:gwt-dev:2.8.0'
-    compile 'net.wetheinter:gwt-user:2.8.0'
-    testCompile 'junit:junit:4.12'
+    implementation project(':xapi-dev-parent:xapi-dev-maven')
+    implementation 'org.apache.maven:maven-plugin-api:3.2.5'
+    implementation 'org.apache.maven.plugin-tools:maven-plugin-annotations:3.4'
+    implementation 'net.wetheinter:gwt-codeserver:2.8.0'
+    implementation 'net.wetheinter:gwt-dev:2.8.0'
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+    testImplementation 'junit:junit:4.12'
 }
 
 description = 'XApi - Maven plugins'

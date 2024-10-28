@@ -1,12 +1,17 @@
 package net.wti.gradle.migrate;
 
 import net.wti.gradle.api.GradleCrossVersionService;
+import org.gradle.api.Named;
+import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.artifacts.PublishArtifact;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.DefaultNamedDomainObjectList;
 import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.provider.Provider;
+import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
 import java.util.function.Function;
@@ -61,5 +66,10 @@ public class GradleCrossVersionServiceLegacy implements GradleCrossVersionServic
 
     @Override
     public void init(final Gradle gradle) {
+    }
+
+    @Override
+    public <T> NamedDomainObjectList<T> namedDomainList(final Class<T> cls, final Instantiator instantiator) {
+        return new DefaultNamedDomainObjectList<>(cls, instantiator, Named.Namer.forType(cls));
     }
 }

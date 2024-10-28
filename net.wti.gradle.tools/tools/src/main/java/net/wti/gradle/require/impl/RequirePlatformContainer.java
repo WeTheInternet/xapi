@@ -30,7 +30,7 @@ public class RequirePlatformContainer extends AbstractNamedDomainObjectContainer
         schema.whenReady(ready->{
             // Push this validation later, since we want to be able to call xapiRequire _before_ the schema callbacks are invoked.
             final PlatformConfigInternal platform = schema.findPlatform(name);
-            if (platform == null) {
+            if (platform == null && !"true".equals(System.getProperty("idea.version"))) {
                 throw new IllegalArgumentException(
                     (":".equals(view.getPath()) ? view.getProjectDir() : view.getPath())
                     + " -> platform " + name + " not found in schema: " + schema);

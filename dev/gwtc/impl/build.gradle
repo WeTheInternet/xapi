@@ -40,7 +40,11 @@ xapiRequire.module('gwt', 'test').configure {
 description = 'XApi - Gwt Compiler Implementation'
 
 tasks.withType(Test) {
-    logging.level = LogLevel.INFO
+    if (gradle.gradleVersion.startsWith("5")) {
+        logging.level = LogLevel.INFO
+    } else {
+        logging.levelInternal = LogLevel.INFO
+    }
     forkEvery = 1
     maxHeapSize = '2G'
     timeout = Duration.ofMinutes(10)

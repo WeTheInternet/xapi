@@ -510,7 +510,7 @@ public interface ArchiveGraph extends Named, GraphNode {
         final ProjectGraph targetProject = self.getBuildGraph().getProject(projName);
         final PlatformGraph targetPlatform = targetProject.platform(platName);
         final ArchiveGraph into = targetPlatform.archive(modName);
-        // TODO: consider extra signifigance when modName or platName are empty (i.e. use a wider target like "all modules", "all platforms", etc.)
+        // TODO: consider extra significance when modName or platName are empty (i.e. use a wider target like "all modules", "all platforms", etc.)
 
         targetPlatform.whenReady(ReadyState.BEFORE_FINISHED - 0x20, ready->{
 
@@ -603,9 +603,10 @@ public interface ArchiveGraph extends Named, GraphNode {
 
         if (coords == null) {
             // An external w/out additional xapiCoords
-            mod.setTargetConfiguration(
-                type.deriveConfiguration(base, dep, false, trans, lenient)
-            );
+            if (mod.getArtifacts().isEmpty()) { // maybe make this gradle 8-only
+                final String derived = type.deriveConfiguration(base, dep, false, trans, lenient);
+                mod.setTargetConfiguration(derived);
+            }
         } else {
             String[] bits = coords.split(":");
             assert bits.length <3 : "Invalid Xapi descriptor contains more than one : character -> " + coords;

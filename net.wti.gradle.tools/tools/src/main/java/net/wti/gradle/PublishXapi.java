@@ -145,7 +145,7 @@ public class PublishXapi {
                         type = comp.findByName("xapi") == null ? "java" : "xapi";
                     }
                     if ("shadow".equals(type)) {
-                        pub.artifact(p.getTasks().getByName("shadowJar"));
+                        pub.artifact(p.provider(()->p.getTasks().getByName("shadowJar")));
                         pub.pom(pom -> {
                             pom.withXml( xml -> {
                                 final Node dependenciesNode = xml.asNode().appendNode("dependencies");

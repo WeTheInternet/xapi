@@ -30,7 +30,8 @@ def multiProject = [
         // The key of the map is the directory/artifact name.
         // The value is the list of sub-directories to create as "child modules".
         // All multiProject children are created as normal projects all the time.
-        'lang': ['dev', 'test']
+        'lang': ['dev', 'test'],
+        'bridge': ['inject', 'testTools']
 ]
 def singleProject = [
         // For singleProject mode, the key is the directory/artifact name.
@@ -284,7 +285,7 @@ System.properties: ${System.properties.toString().split(", ")}
 """
 
 def composite = prop('xapi.composite')
-if (composite == 'true') {
+if (composite == 'true' && !System.getProperty('idea.version')) {
     System.setProperty('xapi.composite', 'false')
     logger.quiet("Including net.wti.core|gradle as included builds because composite={}", composite.toString())
     includeBuild('net.wti.gradle.tools')
@@ -305,4 +306,7 @@ if (composite == 'true') {
 
 try {
     enableFeaturePreview('GRADLE_METADATA')
+} catch(ignored) {}
+try {
+    dependencyResolutionManagement.versionCatalogs.create('xapiLib').from(files('gradle/xapiLib.toml'))
 } catch(ignored) {}

@@ -82,25 +82,24 @@ if (!extensions.findByName('installRebuild')) {
             }
             plugins.apply 'java'
 
-            def buildPlugin = tasks.create "buildProject_${mod.replace('.' as char, '_' as char)}", GradleBuild, {
-                GradleBuild b ->
-                    b.dir = new File(xapiHome.toString(), "$mod".toString())
-                    b.tasks = ['build']
-                    b.startParameter.excludedTaskNames = ['test']
-                    b.startParameter.parallelProjectExecutionEnabled = true
-                    b.startParameter.buildCacheEnabled = true
-                    // whatever buildSrc is creating these "build other gradle worlds"
-                    // will be in charge of adding _all_ desired rebuilds;
-                    // we will not attempt to deal with cascading rebuilds.
-                    b.startParameter.projectProperties << ['xapi.changing' : 'false', 'xapi.composite': 'false']
-                    b.onlyIf {
+            def buildPlugin = tasks.create "buildProject_${mod.replace('.' as char, '_' as char)}", Exec, {
+                Exec exe ->
+                    exe.workingDir = new File(xapiHome.toString(), "$mod".toString())
+                    exe.commandLine = ['bash', '-lc',
+                                       "./gradlew build -x test " +
+                                               "--parallel --build-cache " +
+                                               "-Dxapi.changing=false -Dxapi.composite=false"]
+                    exe.doFirst {
+                        exe.logger.quiet('Command: "{}"', exe.commandLine.join('" "'))
+                    }
+                    exe.onlyIf {
                         boolean build = xapiChanging && 'true' != System.getProperty("xapi.built.$mod")
                         if (build) {
-                            logger.quiet "Adding composite $b.dir"
+                            logger.quiet "Adding composite $exe.workingDir"
                         }
                         return build
                     }
-                    b.doFirst {
+                    exe.doFirst {
                         System.setProperty("xapi.built.$mod", 'true')
                     }
             }

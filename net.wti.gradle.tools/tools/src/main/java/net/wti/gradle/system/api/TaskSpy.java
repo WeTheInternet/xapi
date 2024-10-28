@@ -119,9 +119,9 @@ final class TaskWatcher {
                         super.afterExecute(task, state);
                     }
                 });
-                tg.onNewTask(t -> {
-                    // notify all whenConsidered + setup whenSelected
-                });
+//                tg.onNewTask(t -> {
+//                    // notify all whenConsidered + setup whenSelected
+//                });
                 tg.addTaskExecutionGraphListener(taskExecutionGraph -> {
 
                 });

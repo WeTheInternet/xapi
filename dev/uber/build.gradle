@@ -4,31 +4,44 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 buildscript {
     repositories {
         gradlePluginPortal()
+        mavenLocal()
         maven {
             name = 'xapiLocal'
             url = new URI("file://$rootDir/repo")
         }
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
-//        classpath 'com.gradleup.shadow:shadow-gradle-plugin:8.3.3'
+        if (gradle.gradleVersion.startsWith("5")) {
+            classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+        } else {
+            // this is a hacked version where we allow any gradle version and build in java 8
+            classpath 'com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:8.3.5-SNAPSHOT'
+        }
+
         classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
     }
 }
 //plugins {
 //    id 'com.gradleup.shadow' version '8.3.3'
 //}
-//setProperty('xapi.main.component', 'shadow')
+setProperty('xapi.main.component', 'shadow')
 apply from: "$rootDir/gradle/xapi-env.gradle"
-plugins.apply 'com.github.johnrengelman.shadow'
-//plugins.apply 'com.gradleup.shadow'
+
+
+//plugins.apply 'com.github.johnrengelman.shadow'
+if (gradle.gradleVersion.startsWith("5")) {
+    plugins.apply 'com.github.johnrengelman.shadow'
+} else {
+    plugins.apply 'java-library'
+    plugins.apply 'com.gradleup.shadow'
+}
 plugins.apply 'xapi-require'
 
 (tasks.jar as Jar).archiveClassifier.set 'default'
 
 tasks.named('shadowJar').configure {
     ShadowJar jar ->
-        jar.classifier = null
+        jar.archiveClassifier.set(null)
         jar.zip64=true
         jar.minimize {
             DependencyFilter filter ->

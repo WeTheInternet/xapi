@@ -114,7 +114,6 @@ public class XapiJavaPlugin implements Plugin<ProjectInternal> {
             final Constructor<?> ctor = legacyClass.getConstructor();
                 strat = (VariantDerivationStrategy) ctor.newInstance();
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
-            e.printStackTrace();
             try {
                 strat = (VariantDerivationStrategy) JavaEcosystemVariantDerivationStrategy.class.getMethod("getInstance").invoke(null);
             } catch (NoSuchMethodError | NoSuchMethodException | IllegalAccessException |

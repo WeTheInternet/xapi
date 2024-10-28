@@ -23,7 +23,7 @@ dependencies {
     File tools = Jvm.current().toolsJar
     if (tools) {
         compileOnly files(tools)
-        testCompile files(tools)
+        testImplementation files(tools)
     }
 }
 
