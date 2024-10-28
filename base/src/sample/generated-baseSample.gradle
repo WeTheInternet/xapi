@@ -24,7 +24,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
-  api project(path: ":base:base-main")
+  api project(path: ":base-main")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :base at file://$rootDir/base/src/sample/generated-baseSample.gradle

@@ -14,15 +14,13 @@ String v = version
 xapiRequire.module('api').configure {
     Requirable req ->
         req.external "net.wti.core:xapi-fu:$v", 'main'
-        req.project 'xapi-common', 'spi' // for some terribly reason, if we move this down, it will break.
-        // specifically, it seems like we can only inherit a single configuration from any given project (firstSeenDependency)
-        req.project 'xapi-common', 'api'
+        req.project ':base-spi', ':base-api'
 }
 
 xapiRequire.module('spi').configure {
     Requirable req ->
         req.external "net.wti.core:xapi-fu:$v", 'main'
-        req.project 'xapi-common', 'api'
+        req.project ':base-api'
         req.project 'xapi-collect', 'api'
 }
 xapiRequire.main().configure {
@@ -42,7 +40,7 @@ xapiRequire.main('jre').configure {
 
 xapiRequire.module('jre', 'test').configure {
     Requirable req ->
-        req.project 'xapi-common', 'testTools'
+        req.project ':base-testTools'
         req.project Transitivity.runtime, 'xapi-model', 'jre:main'
 }
 

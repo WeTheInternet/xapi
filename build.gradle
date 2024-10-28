@@ -7,6 +7,8 @@ afterEvaluate {
     plugins.apply 'xapi-schema'
 }
 
+
+import net.wti.gradle.internal.api.ProjectView
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm
 
@@ -37,53 +39,51 @@ gradle.beforeProject {
         }
 
         if (p.buildscript.repositories.empty) {
-        p.buildscript.repositories.maven {
-            name = 'xapiLocal'
-            url = new File(rootDir, 'repo')
+            p.buildscript.repositories.maven {
+                name = 'xapiLocal'
+                url = new File(rootDir, 'repo')
+            }
+            // TODO make this obsolete by priming all external dependencies to xapiLocal
+            p.buildscript.repositories.mavenCentral()
         }
-        // TODO make this obsolete by priming all external dependencies to xapiLocal
-        p.buildscript.repositories.jcenter()
-    }
 }
 gradle.beforeProject {
-    Project p -> p.with {
+    Project p ->
         if (p.group != 'net.wetheinter') {
             p.logger.info "allprojects group was $p.group"
             p.group = 'net.wetheinter'
         }
-        version = findProperty('xapiVersion')
-
-        if (p.findProperty('xapiModern') != 'true') {
-            plugins.apply 'idea'
-            plugins.apply 'xapi-schema'
+        p.version = findProperty('xapiVersion')
+        final boolean isModern = p.findProperty('xapiModern') == 'true' ||
+                (
+                        p.file('gradle.properties').exists() &&
+                        p.file('gradle.properties').text.contains("xapiModern=true")
+                )
+        if (isModern) {
+            p.logger.info("Modern project: {}", p.path)
+        } else {
+            p.logger.info("Legacy project: {}", p.path)
+            p.plugins.apply 'idea'
+            p.plugins.apply 'xapi-schema'
         }
-
-        // TODO: remove this by priming xapiLocal repo with all external dependencies
-        repositories.jcenter()
-
-    }
-
-}
-
-gradle.beforeProject {
-    Project p ->
+        p.repositories {
+            maven {
+                name = 'xapiExternal'
+                File repo = new File("$project.rootDir/repoMvn".toString())
+                if (!repo.exists()) {
+                    repo = new File("$project.rootDir.parent/xapi/repoMvn".toString())
+                }
+                url = repo.toURI()
+                metadataSources { sources ->
+                    sources.mavenPom()
+                }
+            }
+            mavenCentral()
+        }
         p.with {
             sourceCompatibility = '1.8'
             targetCompatibility = '1.8'
 
-            p.repositories {
-                maven {
-                    name = 'xapiExternal'
-                    File repo = new File("$project.rootDir/repoMvn".toString())
-                    if (!repo.exists()) {
-                        repo = new File("$project.rootDir.parent/xapi/repoMvn".toString())
-                    }
-                    url = repo.toURI()
-                    metadataSources { sources ->
-                        sources.mavenPom()
-                    }
-                }
-            }
 
             tasks.withType(JavaCompile) {
                 options.encoding = 'UTF-8'
@@ -113,7 +113,7 @@ gradle.beforeProject {
                     }
             }
 
-            if (path != ':schema' && p.findProperty('xapiModern') != 'true') {
+            if (path != ':schema' && !isModern) {
 
                 plugins.apply 'xapi-schema'
                 plugins.apply 'maven-publish'
@@ -125,9 +125,7 @@ gradle.beforeProject {
                         jar.archiveClassifier.set 'test'
                         jar.from sourceSets.test.output
                 }
-
 //        Gwt.maybeInstall(p)
-
                 File tools = Jvm.current().toolsJar
                 if (tools) {
                     p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
@@ -135,12 +133,11 @@ gradle.beforeProject {
                     p.dependencies.add JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME,
                             p.files(tools)
                 }
-
 //                artifacts {
 //                    testRuntime testJar
 //                }
             }
-
+        return
     }
 }
 

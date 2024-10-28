@@ -16,7 +16,7 @@ xapiRequire.main().configure {
 }
 
 xapiRequire.module('test').configure {
-    req -> req.project 'xapi-common', 'testTools'
+    req -> req.project ':base-testTools'
 }
 
 dependencies {

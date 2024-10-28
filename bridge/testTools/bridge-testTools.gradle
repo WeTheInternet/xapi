@@ -4,5 +4,5 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-common', 'testTools'
+        req.project ':base-testTools'
 }

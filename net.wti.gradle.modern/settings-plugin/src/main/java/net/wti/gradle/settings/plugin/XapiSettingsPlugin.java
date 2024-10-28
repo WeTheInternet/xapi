@@ -153,6 +153,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 p.getExtensions().add("xapiModern", "true");
             }
 
+
             final Maybe<SchemaProject> match = map.getAllProjects()
                     .firstMatch(m -> {
                         return m.getPathGradle().equals(p.getPath());
@@ -182,19 +183,18 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             String gradlePath = ":" + project.getSubPath().replace('/', ':');
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
-                logger.quiet("Including {} for project {}", gradlePath, project);
-                // consider removing this parent project;
-                settings.include(gradlePath);
-                if (dir.isDirectory()) {
-                    final ProjectDescriptor p = settings.project(gradlePath);
-                    if (new File(dir, project.getName() + ".gradle").exists()) {
-                        p.setProjectDir(dir);
-                        p.setBuildFileName(project.getName() + ".gradle");
-                    } else if (new File(dir, project.getName() + ".gradle.kts").exists()) {
-                        p.setProjectDir(dir);
-                        p.setBuildFileName(project.getName() + ".gradle.kts");
-                    } else {
-                        // TODO generate a useful "defaults" script that can be applied / used as default buildscript
+                logger.quiet("Including {} for project {}; multiplatform? {}", gradlePath, project, project.isMultiplatform());
+                if (!project.isMultiplatform()) {
+                    settings.include(gradlePath);
+                    if (dir.isDirectory()) {
+                        final ProjectDescriptor p = settings.project(gradlePath);
+                        if (new File(dir, project.getName() + ".gradle").exists()) {
+                            p.setProjectDir(dir);
+                            p.setBuildFileName(project.getName() + ".gradle");
+                        } else if (new File(dir, project.getName() + ".gradle.kts").exists()) {
+                            p.setProjectDir(dir);
+                            p.setBuildFileName(project.getName() + ".gradle.kts");
+                        }
                     }
                 }
             }
@@ -205,7 +205,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             project.forAllPlatformsAndModules((plat, mod) -> {
                 String key = QualifiedModule.unparse(plat.getName(), mod.getName());
                 String modKey = project.getName() + "-" + key;
-                String projectName = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + key;
+                String projectName = gradlePath + "-" + key;
                 String moduleSourcePath = "src" + File.separator + key;
                 String buildscriptSrcPath = "src/gradle/" + key;
                 final File moduleSource = new File(aggregatorRoot, moduleSourcePath);
@@ -288,6 +288,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
 
                         BuildScriptBuffer out = new BuildScriptBuffer(false);
+
                         final In2Out1<String, Out1<Printable<?>>, Boolean> maybeAdd =
                                 (name, buffer) -> {
                                     In2<String, File> cb = (script, file) ->
@@ -330,7 +331,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         }
 
                         out.println("// GenStart " + getClass().getSimpleName());
-
+                        out.getPlugins().println("ext.xapiModern = 'true'");
                         if (X_String.isNotEmpty(maybeInclude)) {
                             out.printlns(maybeInclude);
                         }
@@ -344,6 +345,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         out.println("String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'");
                         out.println("apply plugin: javaPlugin");
+                        // TODO: pull this from schema.xapi
+                        out.println("repositories.mavenCentral()");
                         // To start, setup the sourceset!
                         String srcSetName = project.isMultiplatform() ? "main" : key;
                         LocalVariable main = out.addVariable(SourceSet.class, srcSetName, true);
@@ -488,8 +491,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                         path = project.getName();
                                     }
                                     String simpleName = path.substring(path.lastIndexOf(":") + 1);
+
                                     if (index.isMultiPlatform(view, project.getPathIndex(), platMod)) {
-                                        path = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + simpleName + "-" + platMod.toPlatMod();
+                                        path = ":" + simpleName + "-" + platMod.toPlatMod();
                                     }
                                     if (pool.isDeleted(depIdent)) {
                                         logger.quiet("Removing elided dependency " + depIdent);
@@ -624,8 +628,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
             project.forAllPlatformsAndModules((plat, mod) -> {
                 if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-                    gradleProject.getLogger().info("Found multiplatform combination {}-{} for {} with gradle path {}",
+                    gradleProject.getLogger().quiet("Found multiplatform combination {}-{} for {} with gradle path {}",
                             plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
+                    String suffix = PlatformModule.unparse(plat.getName(), mod.getName());
+                    String path = project.getPathGradle() + "-" + suffix;
+                    logger.quiet("Making modern: " + path);
+                    gradleProject.findProject(path).getExtensions().add("xapiModern", "true");
                 }
             });
 

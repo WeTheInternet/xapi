@@ -17,8 +17,9 @@ xapiRequire.module('test').external 'junit:junit:4.12'
 xapiRequire.module('api').configure {
     req ->
         req.external "net.wti.core:xapi-fu:$v", "main"
+        req.external "net.wti.core:xapi-gen:$v", "main"
         req.external "javax.inject:javax.inject:1"
-        req.internal 'xapi-common:main'
+        req.project ':base-main'
 }
 
 xapiRequire.module('gwt', 'main').configure {

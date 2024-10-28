@@ -22,7 +22,7 @@ xapiRequire.main().configure {
 }
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-common', 'testTools'
+        req.project ':base-testTools'
         req.external 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
         req.external 'org.eclipse.jetty:jetty-servlet:9.2.14.v20151106'
         req.project 'xapi-dev-parent:xapi-dev-scanner'

@@ -133,7 +133,6 @@ public class SchemaIndexReader implements SchemaDirs {
             File projectDir = new File(pathDir, projectPath);
             final File moduleDir = new File(projectDir, platMod);
             // hm... we may want to get more picky, like "check for sources file", "check for explicit 'create this' flag", etc.
-//        return moduleDir.isDirectory() && Objects.requireNonNull(moduleDir.list()).length > 0;
             File liveFile = new File(moduleDir, "live");
             String liveValue = "0";
             if (liveFile.exists()) {
@@ -161,33 +160,34 @@ public class SchemaIndexReader implements SchemaDirs {
                 if (outs == null) {
                     return false;
                 }
-                // we should prune any liveness=1 which do not have any outgoing edges
-                for (File projIn : ins) {
-                    final File[] platModIn = projIn.listFiles();
-                    if (platModIn == null) {
-                        // empty? should perhaps raise an error
-                        continue;
-                    }
-                    for (File platModDir : platModIn) {
-                        File link = new File(platModDir, "link");
-                        if (link.exists()) {
-                            // if the target of this link is live, then so are we.
-                            final String targetPlatmod = platModDir.getName();
-                            final String targetProject = projIn.getName();
-                            if (checkLive(targetProject, targetPlatmod)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-
-                // TODO: evaluate if this node should be alive based on whether it depends on anything meaningful
-                return false;
+                return checkIfDirHasLiveness(outs) && checkIfDirHasLiveness(ins);
             } else {
                 // 2 or greater: definitely live
                 return true;
             }
         });
+    }
+
+    private boolean checkIfDirHasLiveness(final File[] ins) {
+        for (File projIn : ins) {
+            final File[] platModIn = projIn.listFiles();
+            if (platModIn == null) {
+                // empty? should perhaps raise an error
+                continue;
+            }
+            for (File platModDir : platModIn) {
+                File link = new File(platModDir, "link");
+                if (link.exists()) {
+                    // if the target of this link is live, then so are we.
+                    final String targetPlatmod = platModDir.getName();
+                    final String targetProject = projIn.getName();
+                    if (checkLive(targetProject, targetPlatmod)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public IndexResult getEntries(BuildCoordinates coords, String projectName, SchemaPlatform platform, SchemaModule module) {

@@ -24,8 +24,8 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
-  api project(path: ":ui:ui-main")
-  api project(path: ":ui:ui-gwtApi")
+  api project(path: ":ui-main")
+  api project(path: ":ui-gwtApi")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui at file://$rootDir/ui/modules/gwt/generated-uiGwt.gradle

@@ -3,6 +3,6 @@ plugins {
 }
 
 xapiRequire.main().project 'xapi-io', 'main'
-xapiRequire.module('test').project 'xapi-common', 'testTools'
+xapiRequire.module('test').project ':base-testTools'
 
 description = 'XApi - java.io.File utilities'

@@ -536,6 +536,7 @@ public class SchemaMap implements HasAllProjects {
 
     public boolean hasGradleProject(final String path) {
         for (SchemaProject value : projects.mappedValues()) {
+
             if (value.getPathGradle().equals(path)) {
                 return true;
             }
@@ -545,6 +546,11 @@ public class SchemaMap implements HasAllProjects {
             }
             if (path.equals(value.getPathGradle())) {
                     return true;
+            }
+            if (value.isMultiplatform()) {
+                if (value.hasProject(path.replaceFirst(":", ""))) {
+                    return true;
+                }
             }
         }
         return false;

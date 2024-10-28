@@ -19,9 +19,18 @@
                         external : "javax.annotation:javax.annotation-api:1.2",
                     }
                 /main>,
+                <testTools
+                    requires = {
+                        project : ":xapi-util",
+                        external : "junit:junit:4.12",
+                        external : "junit:junit:4.12:sources"
+                    }
+                /testTools>
             ]
         /main>,
-        <jre
+        <gwt replace = "main" published = true
+        /gwt>,
+        <jre replace = "main" published = true
             modules = [
                 <main
                     requires = {

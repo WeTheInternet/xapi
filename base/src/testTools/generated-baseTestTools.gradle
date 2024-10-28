@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
+ext.xapiModern = 'true'
 
 apply plugin: "java-library"
 // GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
@@ -17,14 +18,20 @@ if (repo) {
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
 apply plugin: javaPlugin
+repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/base/src/testTools/java")
+main.resources.srcDir("$rootDir/base/src/testTools/resources")
 
 dependencies {
-  api project(path: ":base:base-main")
+  api project(path: ":xapi-util")
+  api "junit:junit:4.12"
+  api "junit:junit:4.12:sources"
+  api project(path: ":base-main")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :base at file://$rootDir/base/src/testTools/generated-baseTestTools.gradle

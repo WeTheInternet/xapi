@@ -26,7 +26,7 @@ main.resources.setSrcDirs([]);
 dependencies {
   api "net.wti.core:xapi-fu:0.5.1"
   api "javax.validation:validation-api:1.0.0.GA"
-  api project(path: ":ui:ui-api")
+  api project(path: ":ui-api")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui at file://$rootDir/ui/modules/gwtApi/generated-uiGwtApi.gradle

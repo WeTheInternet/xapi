@@ -28,7 +28,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('gwt', 'main').configure {
     req ->
-        req.project 'xapi-common', 'jre:main'
+        req.project ':base-jre'
         req.project 'xapi-collect', 'gwt:main'
         req.project 'xapi-io', 'gwt:main'
         req.project 'xapi-io', 'main:main' // shouldn't need to do this! :'(
@@ -44,7 +44,7 @@ xapiRequire.module('gwt', 'main').configure {
 
 xapiRequire.module('gwt', 'test').configure {
     req ->
-        req.project 'xapi-common', 'testTools'
+        req.project ':base-testTools'
         req.external 'junit:junit:4.12'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
         req.project 'xapi-model', 'jre:main'
@@ -71,7 +71,7 @@ xapiSchema.whenReady {
 
 xapiRequire.module('jre', 'main').configure {
     req ->
-        req.project 'xapi-common', 'jre:main'
+        req.project ':base-jre'
         req.project 'xapi-model', 'main'
         req.project 'xapi-io', 'main'
         req.project 'xapi-dev-parent:xapi-dev-template'

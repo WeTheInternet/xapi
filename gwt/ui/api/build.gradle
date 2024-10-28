@@ -1,10 +1,9 @@
-//plugins {
-//    id 'xapi-require'
-//}
-
-repositories {
-    jcenter()
+plugins {
+    id 'java-library'
 }
+
+apply from: "$rootDir/gradle/xapi-env.gradle"
+apply from: "$rootDir/gradle/xapi-modern.gradle"
 
 dependencies {
     implementation project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')

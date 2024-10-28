@@ -11,7 +11,7 @@ repositories {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-common'
+        req.project ':base-main'
         req.project 'xapi-dev-parent:xapi-dev'
         req.project 'xapi-gwt3'
         req.project 'xapi-components', 'main'

@@ -164,17 +164,19 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
                 logger.info("Including {} for project {}", gradlePath, project);
-                settings.include(gradlePath);
-                if (dir.isDirectory()) {
-                    final ProjectDescriptor p = settings.project(gradlePath);
-                    if (new File(dir, project.getName() + ".gradle").exists()) {
-                        p.setProjectDir(dir);
-                        p.setBuildFileName(project.getName() + ".gradle");
-                    } else if (new File(dir, project.getName() + ".gradle.kts").exists()) {
-                        p.setProjectDir(dir);
-                        p.setBuildFileName(project.getName() + ".gradle.kts");
-                    } else {
-                        // TODO generate a useful "defaults" script that can be applied / used as default buildscript
+                if (!project.isMultiplatform()) {
+                    settings.include(gradlePath);
+                    if (dir.isDirectory()) {
+                        final ProjectDescriptor p = settings.project(gradlePath);
+                        if (new File(dir, project.getName() + ".gradle").exists()) {
+                            p.setProjectDir(dir);
+                            p.setBuildFileName(project.getName() + ".gradle");
+                        } else if (new File(dir, project.getName() + ".gradle.kts").exists()) {
+                            p.setProjectDir(dir);
+                            p.setBuildFileName(project.getName() + ".gradle.kts");
+                        } else {
+                            // TODO generate a useful "defaults" script that can be applied / used as default buildscript
+                        }
                     }
                 }
             }

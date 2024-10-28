@@ -10,7 +10,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-common', 'jre:main'
+        req.project ':base-jre'
         req.project 'xapi-process', 'jre:main'
         req.project 'xapi-collect', 'jre:main'
         req.project 'xapi-io', 'jre:main'
@@ -19,7 +19,7 @@ xapiRequire.main().configure {
 }
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-common', 'testTools'
+        req.project ':base-testTools'
         req.project 'xapi-model', 'jre:main'
 }
 

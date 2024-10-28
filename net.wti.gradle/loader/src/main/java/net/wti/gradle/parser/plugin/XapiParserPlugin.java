@@ -247,8 +247,6 @@ public class XapiParserPlugin implements Plugin<Project> {
                 }
             });
         }
-
-
     }
 
     private void initializeProject(

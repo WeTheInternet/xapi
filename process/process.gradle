@@ -24,7 +24,7 @@ xapiRequire.module('gwt', 'main').configure {
 }
 xapiRequire.module('gwt', 'test').configure {
     req ->
-        req.project 'xapi-common', 'testTools'
+        req.project ':base-testTools'
 }
 
 xapiRequire.module('jre', 'main').configure {
@@ -32,7 +32,7 @@ xapiRequire.module('jre', 'main').configure {
         req.project 'xapi-inject', 'jre:main'
 }
 xapiRequire.module('jre', 'test').configure {
-    req -> req.project 'xapi-common', 'testTools'
+    req -> req.project ':base-testTools'
 }
 
 gradle.projectsEvaluated {
