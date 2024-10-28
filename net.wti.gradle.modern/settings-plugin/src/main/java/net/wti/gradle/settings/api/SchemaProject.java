@@ -178,7 +178,7 @@ public class SchemaProject implements Named, HasPath {
     @Override
     public String toString() {
         return "proj{" +
-                "path='" + getPath() + (multiplatform ? "+multi" : "") + (virtual ? "+virt" : "") +
+                "path='" + getPath() + "'" + (multiplatform ? "+multi" : "") + (virtual ? "+virt" : "") +
                 (children.isEmpty() ? "" : "[" + children.keys().join(" , ") + "]" ) +
                 '}';
     }

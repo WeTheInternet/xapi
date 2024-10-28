@@ -8,17 +8,23 @@ do_all=y
 args=$(
  (($# == 0)) && echo "build xapiPublish" || echo "$@"
 )
-pushd net.wti.gradle.tools > /dev/null
+pushd net.wti.core > /dev/null
 # the tools will install themselves to local repo whenever we build them.
 ./gradlew $args -x test
 popd > /dev/null
 
+pushd net.wti.gradle.modern > /dev/null
+# the tools will install themselves to local repo whenever we build them.
+./gradlew $args -x test
+popd > /dev/null
+
+
 if [ "$do_all" == y ]; then
-    pushd net.wti.core > /dev/null
+    pushd net.wti.gradle > /dev/null
     ./gradlew $args -x test
     popd > /dev/null
 
-    pushd net.wti.gradle > /dev/null
+    pushd net.wti.gradle.tools > /dev/null
     ./gradlew $args -x test
     popd > /dev/null
 fi

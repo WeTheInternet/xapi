@@ -99,7 +99,7 @@ public class X_Namespace {
   public static final String PROPERTY_MODEL_STRATEGY = "xapi.model.strategy";
   /**
    * "xapi.properties" System property for setting the class to act as
-   * runtime {@link xapi.util.service.PropertyService}. Default implementation backed by System.properties
+   * runtime xapi.util.service.PropertyService. Default implementation backed by System.properties
    */
   public static final String PROPERTY_PROVIDER = "xapi.properties";
   /**
@@ -274,5 +274,6 @@ public class X_Namespace {
 
   public static String PROPERTY_DEFAULT_URI_PATH = "xapiUriPath";
 
+  public static final String TIMESTAMP_FORMAT = "yyyy-MM-dd'.'HH-mm-ss.SSSZZZ";
 
 }

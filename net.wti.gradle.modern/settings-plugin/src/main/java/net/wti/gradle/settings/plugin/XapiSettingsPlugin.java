@@ -23,7 +23,6 @@ import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.tasks.SourceSet;
 import xapi.constants.X_Namespace;
 import xapi.dev.source.BuildScriptBuffer;
-import xapi.dev.source.CharBuffer;
 import xapi.dev.source.ClosureBuffer;
 import xapi.dev.source.LocalVariable;
 import xapi.fu.*;
@@ -33,6 +32,9 @@ import xapi.string.X_String;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 /**
  * XapiSettingsPlugin:
@@ -48,6 +50,9 @@ import java.io.File;
 public class XapiSettingsPlugin implements Plugin<Settings> {
 
     private final Logger logger;
+    private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+            .appendPattern(X_Namespace.TIMESTAMP_FORMAT)
+            .toFormatter();
 
     @Inject
     public XapiSettingsPlugin() {
@@ -177,7 +182,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             String gradlePath = ":" + project.getSubPath().replace('/', ':');
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
-                logger.info("Including {} for project {}", gradlePath, project);
+                logger.quiet("Including {} for project {}", gradlePath, project);
+                // consider removing this parent project;
                 settings.include(gradlePath);
                 if (dir.isDirectory()) {
                     final ProjectDescriptor p = settings.project(gradlePath);
@@ -200,7 +206,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 String key = QualifiedModule.unparse(plat.getName(), mod.getName());
                 String modKey = project.getName() + "-" + key;
                 String projectName = gradlePath + (gradlePath.endsWith(":") ? "" : ":") + key;
-                String modulePath = "modules/" + key;
                 String moduleSourcePath = "src" + File.separator + key;
                 String buildscriptSrcPath = "src/gradle/" + key;
                 final File moduleSource = new File(aggregatorRoot, moduleSourcePath);
@@ -208,10 +213,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 final String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
                 map.whenResolved(() -> {
                     boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
-                    if (logger.isTraceEnabled() && !isLive) {
-                        logger.trace("Not live: {}@{}", project.getPathIndex(), plat+"-"+mod);
-                    }
-                    if (isLive) {
+                    if (!isLive) {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Not live: {}@{}-{}", project.getPathIndex(), plat, mod);
+                        }
+                    } else { // isLive == true
+                        logger.quiet("Live: {}@{}-{}", project.getPathIndex(), plat, mod);
                         if (++liveCnt[0] > 1) {
                             if (!project.isMultiplatform()) {
                                 throw new IllegalStateException("A project (" + project.getPathGradle() + ") with more than one live module must be multiplatform=true (cannot be standalone)");
@@ -228,7 +235,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         final String inclusion = "apply from: " +
                                 "\"$rootDir/" +
                                 segment + "/" +
-                                modulePath + "/"
+                                moduleSourcePath + "/"
                                 + generatedFile.getName() + "\"";
                         final BuildScriptBuffer defaultContent = makeDefaultBuildScript(inclusion);
                         String defaultSource = defaultContent.toSource();
@@ -242,8 +249,18 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 defaultSource = "";
                                 // need to mark this node as "has explicit buildscript"... much sooner than now!
                                 // if (buildFileContents.equals(defaultSource)) { //...
+                            } else if ("true".equals(view.findProperty("forceRegen")) || "all".equals(view.findProperty("force"))) {
+                                File backup = new File(view.getProjectDir(), "build/buildscripts/backup-" + LocalDateTime.now().format(formatter) + "-" + userBuildFile.getName());
+                                backup.getParentFile().mkdirs();
+                                logger.quiet("User passed -Pforce=all or -PforceBuildscripts=true; forcibly overwriting user-owned submodule " + userBuildFile.getName());
+                                logger.quiet("A backup of this file was created in " + backup.getAbsolutePath());
+                                if (backup.exists()) {
+                                    backup.delete();
+                                }
+                                userBuildFile.renameTo(backup);
                             } else {
-                                throw new GradleException("Fatal error; file " + userBuildFile.getAbsolutePath() + " does not contain expected text: " + inclusion);
+                                throw new GradleException("Fatal error; file " + userBuildFile.getAbsolutePath() + " does not contain expected text: " + inclusion
+                                    + "\nSet -PforceRegen=true or -Pforce=all to forcibly overwrite user-owned .gradle files (you should git commit first!)");
                             }
                         }
                         if (X_String.isNotEmpty(defaultSource)){
@@ -607,7 +624,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
             project.forAllPlatformsAndModules((plat, mod) -> {
                 if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-                    gradleProject.getLogger().quiet("Found multiplatform combination {}-{} for {} with gradle path {}",
+                    gradleProject.getLogger().info("Found multiplatform combination {}-{} for {} with gradle path {}",
                             plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
                 }
             });

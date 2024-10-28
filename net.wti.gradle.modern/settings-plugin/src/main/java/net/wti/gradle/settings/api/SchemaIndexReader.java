@@ -123,11 +123,10 @@ public class SchemaIndexReader implements SchemaDirs {
         // without explicit dependencies, we need to check for a liveness level > 2
         String projectPath = mangleProjectPath(projectName);
         final String platMod = PlatformModule.unparse(platform.getName(), module.getName());
-        File moduleDir;
-        return checkLive(coords, projectPath, platMod);
+        return checkLive(projectPath, platMod);
     }
 
-    public boolean checkLive(final BuildCoordinates coords, final String projectPath, final String platMod) {
+    public boolean checkLive(final String projectPath, final String platMod) {
         final String key = projectPath + "@" + platMod;
         return livenessCheck.computeIfAbsent(key, ()-> {
             File pathDir = new File(indexDir, "path");
@@ -147,10 +146,22 @@ public class SchemaIndexReader implements SchemaDirs {
             if ("1".equals(liveValue)) {
                 // check for in links
                 File inDir = new File(moduleDir, "in");
+                if (!inDir.exists()) {
+                    return false;
+                }
                 final File[] ins = inDir.listFiles();
                 if (ins == null) {
                     return false;
                 }
+                File outDir = new File(moduleDir, "out");
+                if (!outDir.exists()) {
+                    return false;
+                }
+                final File[] outs = outDir.listFiles();
+                if (outs == null) {
+                    return false;
+                }
+                // we should prune any liveness=1 which do not have any outgoing edges
                 for (File projIn : ins) {
                     final File[] platModIn = projIn.listFiles();
                     if (platModIn == null) {
@@ -163,13 +174,11 @@ public class SchemaIndexReader implements SchemaDirs {
                             // if the target of this link is live, then so are we.
                             final String targetPlatmod = platModDir.getName();
                             final String targetProject = projIn.getName();
-
-                            if (checkLive(coords, targetProject, targetPlatmod)) {
+                            if (checkLive(targetProject, targetPlatmod)) {
                                 return true;
                             }
                         }
                     }
-
                 }
 
                 // TODO: evaluate if this node should be alive based on whether it depends on anything meaningful
