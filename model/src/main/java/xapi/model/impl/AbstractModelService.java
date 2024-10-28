@@ -4,13 +4,11 @@
 package xapi.model.impl;
 
 import xapi.annotation.compile.MagicMethod;
-import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.KeyOnly;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
-import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.inject.X_Inject;
 import xapi.model.api.*;
@@ -187,7 +185,8 @@ public abstract class AbstractModelService implements ModelService
     return getSerializer(type).modelToString(getModelType(model), model, context, false);
   }
 
-  protected ModelManifest findManifest(final Class<?> type) {
+  @Override
+  public ModelManifest findManifest(final Class<?> type) {
     String stringType = classToTypeName.get(type);
     return stringType == null ? null : findManifest(stringType);
   }

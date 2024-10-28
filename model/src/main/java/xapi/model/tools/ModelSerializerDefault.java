@@ -9,6 +9,7 @@ import xapi.collect.api.*;
 import xapi.collect.proxy.api.CollectionProxy;
 import xapi.collect.proxy.impl.MapOf;
 import xapi.dev.source.CharBuffer;
+import xapi.fu.Do;
 import xapi.fu.In2Out1;
 import xapi.fu.X_Fu;
 import xapi.fu.data.*;
@@ -90,7 +91,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     return module;
   }
 
-  public static ModelModule deserialize(final String chars) {
+  public static ModelModule deserializeModule(final String chars) {
     final StringCharIterator iter = new StringCharIterator(chars);
     return deserialize(iter, X_Inject.instance(PrimitiveSerializer.class));
   }
@@ -782,6 +783,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     final ModelSerializer serializer = newSerializer(Class.class.cast(propertyType), ctx);
     final CharBuffer was = ctx.getBuffer();
     ctx.setBuffer(out);
+    final Do release = ctx.fixManifest(propertyType);
     try {
       if (keyOnly) {
           if (autoSave) {
@@ -803,6 +805,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       }
     } finally {
       ctx.setBuffer(was);
+      release.done();
     }
   }
 

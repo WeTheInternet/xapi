@@ -203,7 +203,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 String modulePath = "modules/" + key;
                 String moduleSourcePath = "src" + File.separator + key;
                 String buildscriptSrcPath = "src/gradle/" + key;
-                final File gradleProjectDir = new File(aggregatorRoot, modulePath);
                 final File moduleSource = new File(aggregatorRoot, moduleSourcePath);
                 final File buildscriptSrc = new File(aggregatorRoot, buildscriptSrcPath);
                 final String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
@@ -223,8 +222,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // user may freely create and check in their own projects, and we'll happily hook them up,
                         // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
 
-                        final File userBuildFile = new File(gradleProjectDir, buildFileName);
-                        final File generatedFile = new File(gradleProjectDir, "generated-" + buildFileName);
+                        final File userBuildFile = new File(moduleSource, buildFileName);
+                        final File generatedFile = new File(moduleSource, "generated-" + buildFileName);
 
                         final String inclusion = "apply from: " +
                                 "\"$rootDir/" +
@@ -259,7 +258,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             } else {
                                 settings.include(projectName);
                                 final ProjectDescriptor proj = settings.findProject(projectName);
-                                proj.setProjectDir(gradleProjectDir);
+                                proj.setProjectDir(moduleSource);
                                 proj.setBuildFileName(buildFileName);
                                 proj.setName(modKey);
                                 view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}", projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);

@@ -459,7 +459,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
   }
 
   @Override
-  protected ModelManifest findManifest(final Class<?> type) {
+  public ModelManifest findManifest(final Class<?> type) {
     return modelManifests.get(type);
   }
 

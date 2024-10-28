@@ -447,7 +447,8 @@ public class ModelManifest {
   }
 
   public boolean isKeyOnly(final String name) {
-    return getMethodData(name).c2sEnabled;
+    final MethodData methodData = getMethodData(name);
+    return methodData.keyOnly;
   }
 
   public boolean isClientToServerEncrypted(final String name) {

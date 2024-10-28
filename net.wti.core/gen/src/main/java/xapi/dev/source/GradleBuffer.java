@@ -102,11 +102,12 @@ public class GradleBuffer implements Printable<GradleBuffer> {
         final ClosureBuffer parent = this instanceof ClosureBuffer ? (ClosureBuffer) this : null;
         ClosureBuffer kid = new ClosureBuffer(parent, this);
         // "physically" attach our closure.
-        boolean finishLine = !isIndentNeeded();
+        final boolean finishLine = isIndentNeeded();
         if (finishLine) {
             println();
         }
         into.addToEnd(new CharBuffer() {
+
             @Override
             public String toSource() {
                 return kid.toSource();
@@ -173,5 +174,19 @@ public class GradleBuffer implements Printable<GradleBuffer> {
     @Override
     public Printable<?> printAfter(String before) {
         return buffer.printAfter(before);
+    }
+
+    @Override
+    public GradleBuffer println() {
+        try {
+            return Printable.super.println();
+        } finally {
+            setIndentNeeded(true);
+        }
+    }
+
+    @Override
+    public GradleBuffer println(final String str) {
+        return Printable.super.println(str);
     }
 }

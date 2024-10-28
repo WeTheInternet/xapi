@@ -22,7 +22,10 @@ public interface ModelService {
   <M extends Model> void query(ModelManifest manifest, ModelQuery<M> query, SuccessHandler<ModelQueryResult<M>> callback);
   void query(ModelQuery<Model> query, SuccessHandler<ModelQueryResult<Model>> callback);
   <M extends Model> CharBuffer serialize(final Class<M> cls, final M model);
-  <M extends Model> CharBuffer serialize(final ModelManifest manifest, final M model);
+
+    ModelManifest findManifest(Class<?> type);
+
+    <M extends Model> CharBuffer serialize(final ModelManifest manifest, final M model);
   <M extends Model> Class<M> typeToClass(String kind);
   <M extends Model> M deserialize(final Class<M> cls, final CharIterator model);
   <M extends Model> M deserialize(final ModelManifest manifest, final CharIterator model);

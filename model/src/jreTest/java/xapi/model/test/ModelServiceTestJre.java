@@ -168,7 +168,7 @@ public class ModelServiceTestJre {
     module.addManifest(ModelUtil.createManifest(ModelRating.class));
     final String serialized = ModelSerializerDefault.serialize(module);
     System.out.println(serialized);
-    final ModelModule deserialized = ModelSerializerDefault.deserialize(serialized);
+    final ModelModule deserialized = ModelSerializerDefault.deserializeModule(serialized);
     Assert.assertEquals(module, deserialized);
   }
 

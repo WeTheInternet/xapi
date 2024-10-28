@@ -4,6 +4,8 @@
 package xapi.model.api;
 
 import xapi.dev.source.CharBuffer;
+import xapi.fu.Do;
+import xapi.model.impl.AbstractModelService;
 import xapi.model.service.ModelService;
 
 /**
@@ -15,7 +17,7 @@ public class ModelSerializationContext {
   private ModelService service;
   private CharBuffer buffer;
   private PrimitiveSerializer primitives;
-  private final ModelManifest manifest;
+  private ModelManifest manifest;
   private boolean clientToServer;
 
   public ModelSerializationContext(final CharBuffer buffer, final ModelService service, final ModelManifest manifest) {
@@ -90,5 +92,21 @@ public class ModelSerializationContext {
       return manifest.getPropertyNames();
     }
     return model.getPropertyNames();
+  }
+
+  private static final AutoCloseable doNothing = ()->{};
+  public Do fixManifest(final Class<?> subtype) {
+    if (manifest == null) {
+      return Do.NOTHING;
+    }
+    if (manifest.getModelType() == subtype) {
+      return Do.NOTHING;
+    }
+    final ModelManifest curManifest = manifest;
+    final ModelManifest newManifest = manifest = service.findManifest(subtype);
+    return ()->{
+      assert manifest == newManifest : "Manifest changed to " + manifest + " but we expected " + newManifest;
+      manifest = curManifest;
+    };
   }
 }

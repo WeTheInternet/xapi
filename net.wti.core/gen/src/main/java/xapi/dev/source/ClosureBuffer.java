@@ -38,6 +38,9 @@ public class ClosureBuffer extends GradleBuffer {
     public ClosureBuffer(ClosureBuffer parent, GradleBuffer owner) {
         super(owner);
         this.parent = parent;
+//        this.setIndentNeeded(parent == null || parent.isIndentNeeded());
+        this.setIndentNeeded(false);
+        this.setIndent(parent == null ? INDENT : parent.getIndent() + INDENT);
         variables = X_Jdk.mapOrderedInsertion();
     }
 
@@ -71,16 +74,18 @@ public class ClosureBuffer extends GradleBuffer {
 
         printParameters(b, multiline);
 
+        String prefix = "";
+//        String prefix = getIndent();
         if (multiline) {
-            String prefix = "";
             for (String line : lines) {
                 b.append(prefix).append(line).append("\n");
-                prefix = INDENT;
+//                prefix = INDENT;
+//                prefix = getIndent();
             }
+            b.append(getIndent().replaceFirst(INDENT, ""));
         } else {
             b.append(body);
         }
-
         b.append("}");
         if (multiline) {
             b.append("\n");

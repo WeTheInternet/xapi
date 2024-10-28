@@ -89,7 +89,13 @@ public class ModelDeserializationContext {
 
   public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType) {
     final ModelService svc = getService();
-    final ModelDeserializationContext ctx = new ModelDeserializationContext(svc.create(propertyType), svc, getManifest());
+    final ModelDeserializationContext ctx;
+    if (manifest == null) {
+        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, getManifest());
+    } else {
+        final ModelManifest childType = svc.findManifest(propertyType);
+        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
+    }
     ctx.subModel = true;
     return ctx;
   }

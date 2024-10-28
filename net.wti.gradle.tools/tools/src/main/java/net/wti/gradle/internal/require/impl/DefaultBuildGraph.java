@@ -128,8 +128,8 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
                 result.rethrowFailure();
                 try {
                     drainTasks(Integer.MAX_VALUE);
-                } catch (Exception ignoreSuperfluous) {
-
+                } catch (Exception failed) {
+                    log.error("FIX THIS LAST: Failed draining build graph tasks (this can happen randomly to unrelated projects if there are other build errors)", failed);
                 }
             }
         });
