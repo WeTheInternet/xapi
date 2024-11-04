@@ -4,7 +4,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-collect'
+        req.project ':collect'
         req.project 'xapi-dev-parent:xapi-dev-api'
         req.project 'xapi-dev-parent:xapi-dev-bytecode'
 }

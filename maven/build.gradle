@@ -8,7 +8,7 @@ plugins {
 }
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-collect', 'jre:main'
+        req.project ':collect-jre'
 }
 
 dependencies {

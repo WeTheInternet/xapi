@@ -26,7 +26,7 @@ main.resources.srcDir("$rootDir/inject/src/spi/resources")
 
 dependencies {
   implementation project(path: ":base-api")
-  implementation project(path: ":xapi-bridge-collect")
+  implementation project(path: ":collect-api")
   implementation "net.wti.core:xapi-fu:$version"
 }
 // GenEnd XapiSettingsPlugin

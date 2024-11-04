@@ -32,7 +32,7 @@ dependencies {
   implementation project(path: ":xapi-core-parent:xapi-core-reflect")
   implementation project(path: ":inject-main")
   implementation project(path: ":log-api")
-  implementation project(path: ":xapi-bridge-collect")
+  implementation project(path: ":collect-api")
   implementation "net.wetheinter:gwt-user:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
   implementation "net.wti.core:xapi-fu:0.5.1"

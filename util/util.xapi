@@ -4,7 +4,7 @@
     modules = [
         <main
             requires = {
-                project: ":xapi-collect",
+                project: { ":collect" : main },
                 @transitive
                 project: { ":log" : api },
                 project: ":xapi-core-parent:xapi-core-reflect",

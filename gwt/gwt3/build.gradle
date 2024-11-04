@@ -18,7 +18,7 @@ xapiRequire.module('test').configure {
         req.external 'info.cukes:cucumber-junit:1.2.5'
         req.external 'org.hamcrest:hamcrest-library:1.1'
         req.project ':inject-jre'
-        req.project 'xapi-collect', 'jre:main'
+        req.project ':collect-jre'
 }
 dependencies {
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'

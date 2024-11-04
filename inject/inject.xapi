@@ -14,14 +14,14 @@
                     requires = {
                         external : "net.wti.core:xapi-fu:$version",
                         project : { base: api },
-                        project : { ":xapi-bridge-collect": main }
+                        project : { collect: api }
                     }
                 /spi>,
                 <main
                     requires = {
                         project : ":log",
                         project : ":base",
-                        project : { ":xapi-bridge-collect" : main },
+                        project : { collect: api},
                         @transitive
                         external : "net.wti.core:xapi-gen:$version",
                     }

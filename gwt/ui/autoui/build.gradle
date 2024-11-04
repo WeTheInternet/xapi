@@ -12,7 +12,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-collect'
+        req.project 'collect', 'main:main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
         req.project 'xapi-core-parent:xapi-core-event'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'

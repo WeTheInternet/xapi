@@ -16,7 +16,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-collect', 'jre:main'
+        req.project ':collect-jre'
         req.project 'xapi-model', 'jre:main'
         req.external 'junit:junit:4.12'
 }

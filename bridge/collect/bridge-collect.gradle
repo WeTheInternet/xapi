@@ -4,5 +4,5 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-collect', 'api'
+        req.project ':collect-api'
 }

@@ -6,7 +6,7 @@
                 <main
                     requires = {
                         project : { ":util" : "main:main" },
-                        project : { ":xapi-collect" : "main:main" },
+                        project : { ":collect" : main },
                         external : "javax.inject:javax.inject:1:sources", // really? sources? sounds like a leftover gwt hack
                     }
                 /main>,

@@ -4,7 +4,7 @@
         modules = [
             <api
                 requires = {
-                    project: { ":xapi-bridge-collect" : main },
+                    project: { ":collect" : api },
                     @transitive
                     project: { ":xapi-core-parent:xapi-core-args" : main },
                     @transitive(false)

@@ -13,7 +13,7 @@ xapiRequire.main().configure {
         req.external "net.wti.core:xapi-gen:$version", "main"
         req.project ':util'
         req.project ':log-api'
-        req.project ':xapi-collect', "main"
+        req.project ':collect-main'
         req.project ':inject-main'
         req.project 'xapi-core-parent:xapi-core-reflect'
 }

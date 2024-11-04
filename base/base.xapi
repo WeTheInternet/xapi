@@ -50,7 +50,7 @@
                         project : { ":xapi-core-parent:xapi-core-reflect" : "main" },
                         project : { ":inject" : "main:main" },
                         project : { ":log" : "api" },
-                        project : { ":xapi-bridge-collect" : main },
+                        project : { ":collect" : api },
                         external : "net.wti.core:xapi-fu:0.5.1",
                         external : "com.google.elemental2:elemental2-core:1.0.0-RC1",
                         external : "com.google.jsinterop:base:1.0.0-RC1",

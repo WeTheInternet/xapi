@@ -28,7 +28,7 @@ main.java.srcDir("$rootDir/log/src/api/java")
 main.resources.srcDir("$rootDir/log/src/api/resources")
 
 dependencies {
-  implementation project(path: ":xapi-bridge-collect")
+  implementation project(path: ":collect-api")
   api project(path: ":xapi-core-parent:xapi-core-args")
   compileOnly "net.wetheinter:gwt-dev:2.8.0"
   compileOnly "javax.inject:javax.inject:1"

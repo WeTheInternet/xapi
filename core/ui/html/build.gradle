@@ -8,7 +8,7 @@ repositories {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-collect'
+        req.project ':collect'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
 }
 

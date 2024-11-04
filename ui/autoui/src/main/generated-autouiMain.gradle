@@ -24,7 +24,7 @@ main.resources.setSrcDirs([]);
 
 dependencies {
   implementation project(path: ":util")
-  implementation project(path: ":xapi-collect")
+  implementation project(path: ":collect-main")
   implementation "javax.inject:javax.inject:1:sources"
 }
 // GenEnd XapiSettingsPlugin

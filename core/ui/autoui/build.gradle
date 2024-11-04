@@ -5,7 +5,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project ':util'
-        req.project 'xapi-collect', 'main'
+        req.project ':collect-main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
         req.external 'javax.inject:javax.inject:1:sources'
 }

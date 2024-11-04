@@ -34,7 +34,7 @@ xapiRequire.main().configure {
     req ->
         req.project ':util'
         req.project ':inject-gwt'
-        req.project 'xapi-collect', 'gwt:main'
+        req.project 'collect-gwt'
         req.project ':base-gwtTestTools'
         req.project 'xapi-gwt3', 'main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
@@ -48,7 +48,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('gwt', 'test').configure {
     req ->
-        req.project 'xapi-collect', 'jre:main'
+        req.project ':collect-jre'
         req.external 'net.wetheinter:gwt-codeserver:2.8.0'
         req.external 'net.wetheinter:gwt-user:2.8.0'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'

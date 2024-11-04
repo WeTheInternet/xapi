@@ -1,0 +1,50 @@
+<xapi-schema
+    platforms = [
+        <main
+            modules = [
+                <api
+                    requires = {
+                        @transitive
+                        external: "net.wti.core:xapi-fu:$version",
+                        external: "net.wti.core:xapi-gen:$version",
+                        @transitive
+                        external: "javax.inject:javax.inject:1",
+                        @transitive
+                        project: { base: main }
+                    }
+                /api>,
+                <sample force=true />,
+                <testTools force=true />,
+                <main
+                    requires = {
+                        @transitive
+                        project : inject
+                    }
+                /main>,
+                <test
+                    requires = {
+                        external: "junit:junit:4.13"
+                    }
+                /test>
+            ]
+        /main>,
+        <gwt
+            modules = [
+                <main
+                    requires = {
+                        project: inject,
+                        @transitive(false)
+                        external : "net.wetheinter:gwt-user:2.8.0",
+                        @transitive(false)
+                        external : "net.wetheinter:gwt-dev:2.8.0"
+                    }
+                /main>
+            ]
+        /gwt>,
+        <jre
+            modules = [
+                main
+            ]
+        /jre>
+    ]
+/xapi-schema>

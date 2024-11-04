@@ -30,7 +30,7 @@ main.resources.srcDir("$rootDir/inject/src/main/resources")
 dependencies {
   implementation project(path: ":log-main")
   implementation project(path: ":base-main")
-  implementation project(path: ":xapi-bridge-collect")
+  implementation project(path: ":collect-api")
   api "net.wti.core:xapi-gen:$version"
   api project(path: ":inject-api")
   api project(path: ":inject-spi")
