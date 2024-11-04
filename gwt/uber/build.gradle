@@ -40,7 +40,7 @@ xapiRequire.main().configure {
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-core-parent:xapi-core-reflect', 'main'
         req.project 'xapi-elemental', 'main'
-        req.project 'xapi-model', 'gwt:main'
+        req.project ':model-gwt'
         req.project 'xapi-process', 'gwt:main'
         req.project ':io-gwt'
         req.project 'xapi-dev-gwtc:xapi-gwtc-api', 'main'

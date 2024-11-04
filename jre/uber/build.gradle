@@ -20,7 +20,7 @@ xapiRequire.main().configure {
 xapiRequire.module('test').configure {
     req ->
         req.project ':base-testTools'
-        req.project 'xapi-model', 'jre:main'
+        req.project ':model-jre'
 }
 
 description = 'XApi - Jre uber jar'

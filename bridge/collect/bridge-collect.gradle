@@ -1,8 +1,0 @@
-plugins {
-    id 'xapi-require'
-}
-
-xapiRequire.main().configure {
-    req ->
-        req.project ':collect-api'
-}

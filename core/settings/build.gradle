@@ -11,13 +11,13 @@ xapiRequire.main().configure {
     req ->
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project ':io-main'
-        req.project 'xapi-model', 'main'
+        req.project ':model-main'
 }
 
 xapiRequire.module('test').configure {
     req ->
         req.project ':collect-jre'
-        req.project 'xapi-model', 'jre:main'
+        req.project ':model-jre'
         req.external 'junit:junit:4.12'
 }
 

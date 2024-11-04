@@ -73,8 +73,8 @@
                 /test>,
                 <testTools
                     requires = {
-                        project : ":xapi-elemental",
-                        project : ":xapi-server-parent:xapi-server-api",
+                        project : { ":xapi-elemental" : main },
+                        project : { ":xapi-server-parent:xapi-server-api" : main },
                         external : "junit:junit:4.12",
                         external : "junit:junit:4.12:sources",
                         external : "org.hamcrest:hamcrest-core:1.3",
@@ -101,7 +101,7 @@
                         external : "junit:junit:4.13",
                         project : ":inject-main",
                         internal : "main:testTools",
-                        project : ":util"
+                        project : { ":util" : main }
                     }
                 /test>
             ]

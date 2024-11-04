@@ -11,7 +11,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-process', 'main'
-        req.project 'xapi-model', 'main'
+        req.project ':model-main'
         req.project ':io-main'
         req.project 'xapi-core-parent:xapi-core-scope'
         req.external "net.wti.core:xapi-lang-core:$version", 'main'

@@ -15,7 +15,7 @@ tasks.withType(JavaCompile).configureEach {
 xapiRequire.main().configure {
     req ->
         req.external Transitivity.compile_only, "net.wti.gradle:xapi-gradle-api:$version", 'main'
-        req.project 'xapi-model', 'main'
+        req.project ':model-main'
         req.project 'xapi-process', 'main'
         req.project Transitivity.impl, ':inject-jre'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'

@@ -49,7 +49,7 @@
             "ui",
             "inject",
             "collect",
-//            "model",
+            "model",
             "log",
 //            "util",
             "io",

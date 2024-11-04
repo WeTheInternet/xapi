@@ -68,7 +68,7 @@
                     requires = {
                         project : { ":base" : "testTools" },
                         @transitive("runtime_only")
-                        project : ":xapi-bridge-model",
+                        project : { model : "jre:main" },
                     }
                 /testTools>
             ]

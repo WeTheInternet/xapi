@@ -13,7 +13,7 @@ xapiRequire.main().configure {
         req.project 'xapi-lang-dev', 'main'
         req.project 'xapi-core-parent:xapi-core-scope', 'main'
         req.project 'xapi-core-parent:xapi-core-event', 'main'
-        req.project 'xapi-model', 'main'
+        req.project ':model-main'
         req.project 'xapi-dev-parent:xapi-dev-file', 'main'
         req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
         req.external 'javax.validation:validation-api:1.0.0.GA'
@@ -22,7 +22,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-model', 'jre:main'
+        req.project ':model-jre'
         req.project ':base-testTools'
         req.external 'junit:junit:4.12'
         req.external 'org.assertj:assertj-core:3.2.0'

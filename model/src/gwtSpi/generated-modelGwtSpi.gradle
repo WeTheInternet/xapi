@@ -26,10 +26,9 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
-  implementation project(path: ":base-testTools")
-  runtimeOnly project(path: ":model-jre")
-  api project(path: ":inject-testTools")
-  api project(path: ":inject-jre")
+  implementation "net.wetheinter:gwt-user:2.8.0"
+  implementation "net.wetheinter:gwt-dev:2.8.0"
+  api project(path: ":model-spi")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :inject at file://$rootDir/inject/src/jreTestTools/generated-injectJreTestTools.gradle
+// Done generating buildfile for :model at file://$rootDir/model/src/gwtSpi/generated-modelGwtSpi.gradle

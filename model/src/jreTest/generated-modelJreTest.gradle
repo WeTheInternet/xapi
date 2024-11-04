@@ -24,12 +24,12 @@ SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/model/src/jreTest/java")
 
 dependencies {
-  implementation project(path: ":base-testTools")
-  runtimeOnly project(path: ":model-jre")
-  api project(path: ":inject-testTools")
-  api project(path: ":inject-jre")
+  implementation "junit:junit:4.13"
+  api project(path: ":model-jreSample")
+  api project(path: ":model-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :inject at file://$rootDir/inject/src/jreTestTools/generated-injectJreTestTools.gradle
+// Done generating buildfile for :model at file://$rootDir/model/src/jreTest/generated-modelJreTest.gradle

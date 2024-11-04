@@ -1,0 +1,79 @@
+<xapi-schema
+    platforms = [
+        <main
+            modules = [
+                <api
+                    requires = {
+                        project: collect,
+                        project: { inject: main }
+                    }
+                /api>,
+                <main
+                    requires = {
+                        @transitive(false)
+                        external : "net.wetheinter:jsinterop-annotations:2.8.0",
+                        @transitive
+                        project : ":xapi-dev-parent:xapi-dev-bytecode"
+                    }
+                /main>
+            ]
+        /main>,
+        <gwt
+            requires = {
+                @transitive(false)
+                external : "net.wetheinter:gwt-user:2.8.0",
+                @transitive(false)
+                external : "net.wetheinter:gwt-dev:2.8.0"
+            }
+            modules = [
+                <main
+                    requires = {
+                        @transitive(false)
+                        project: [ {base : jre}, {collect: jre}, {inject: jre} ],
+                        @transitive
+                        project: [ base, collect, io ],
+                        project: { "xapi-lang-dev" : main },
+                        project: { "xapi-core-parent:xapi-core-reflect" : main },
+                        external: "net.wti.core:xapi-gen:$version"
+
+                    }
+                /main>,
+                <sample force=true />,
+                <testTools force=true />,
+                <test
+                    requires = {
+                        project: base,
+                        project: { ":xapi-server-parent:xapi-server-api" : main },
+                        project: {model: "jre:main"},
+                        project: {io: "jre:main"},
+                        @transitive("runtime_only")
+                        project: {inject: "jre:main"},
+                        external: "junit:junit:4.13",
+                        external: "net.sourceforge.htmlunit:htmlunit:2.19",
+                        external: "net.wti.core:xapi-gen:$version"
+                    }
+                /test>
+            ]
+        /gwt>,
+        <jre
+            modules = [
+                <main
+                    requires = {
+                        project: [ base, inject ],
+                        project: [ { model : main }, { io : main } ],
+                        @transitive
+                        project: { ":dev:template" : main }
+
+                    }
+                /main>,
+                <sample force=true />,
+                <testTools force=true />,
+                <test
+                    requires = {
+                        external : "junit:junit:4.13"
+                    }
+                /test>
+            ]
+        /jre>
+    ]
+/xapi-schema>

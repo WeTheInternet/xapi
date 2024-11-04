@@ -31,7 +31,7 @@ def multiProject = [
         // The value is the list of sub-directories to create as "child modules".
         // All multiProject children are created as normal projects all the time.
         'lang': ['dev', 'test'],
-        'bridge': ['inject', 'model', 'testTools']
+        'bridge': ['inject', 'testTools']
 ]
 def singleProject = [
         // For singleProject mode, the key is the directory/artifact name.
@@ -40,7 +40,7 @@ def singleProject = [
         // on the classpath and available to browse and debug.
 //        'inject': ['gwt', 'jre'],
 //        'collect': ['gwt', 'jre'],
-        'model': ['gwt', 'jre'],
+//        'model': ['gwt', 'jre'],
 //        'log': ['gwt', 'jre'],
 //        'io': ['gwt', 'jre'],
         'ui': ['gwt', 'jre'],
