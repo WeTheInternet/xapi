@@ -6,7 +6,7 @@ package net.wti.gradle.settings.index;
  * <p>
  * Created by James X. Nelson (James@WeTheInter.net) on 10/06/2024 @ 1:46 a.m.
  */
-enum LivenessReason {
+public enum LivenessReason {
     /**
      * If a module's only reason to be live is that it has includes, then it is elligible for compression.
      */

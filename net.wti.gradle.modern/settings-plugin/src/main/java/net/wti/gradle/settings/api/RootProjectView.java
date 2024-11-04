@@ -1,10 +1,17 @@
 package net.wti.gradle.settings.api;
 
-import net.wti.gradle.api.BuildCoordinates;
+import net.wti.gradle.api.MinimalProjectView;
+import net.wti.gradle.internal.ProjectViewInternal;
 import org.gradle.BuildAdapter;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
+import org.gradle.api.internal.GradleInternal;
+import org.gradle.api.invocation.Gradle;
 import xapi.fu.In1;
+
+import java.lang.reflect.InvocationTargetException;
+
+import static net.wti.gradle.tools.InternalGradleCache.buildOnce;
 
 /**
  * RootProjectView:
@@ -14,10 +21,13 @@ import xapi.fu.In1;
  */
 public class RootProjectView extends ProjectDescriptorView {
 
+    public static final String EXT_NAME = "_xapiRootProject";
+    private static final String EXTENSION_NAME = "_xapiRoot";
     private In1<RootProjectView> beforeSettings, afterSettings;
 
     public RootProjectView(final Settings settings, final ProjectDescriptor descriptor) {
         super(settings, descriptor);
+        settings.getExtensions().add(EXTENSION_NAME, this);
         if (beforeSettings == null) {
             beforeSettings = In1.IGNORED;
         }
@@ -55,6 +65,36 @@ public class RootProjectView extends ProjectDescriptorView {
                 }
             }
         });
+    }
+
+    public static RootProjectView rootView(Settings settings) {
+        final ProjectDescriptor rootProject = settings.getRootProject();
+        return buildOnce(settings, EXT_NAME,
+                s-> new RootProjectView(settings, rootProject));
+    }
+
+    public static RootProjectView rootView(MinimalProjectView view) {
+        if (view instanceof RootProjectView) {
+            return (RootProjectView) view;
+        }
+        if (view instanceof ProjectViewInternal) {
+            return rootView(((ProjectViewInternal) view).getSettings());
+        }
+        throw new IllegalArgumentException("Cannot find a RootProjectView from " + view.getClass() + ": " + view);
+    }
+
+    public static RootProjectView rootView(final Gradle gradle) {
+        Settings settings;
+        try {
+            settings = ((GradleInternal) gradle).getSettings();
+        } catch (Exception original) {
+            try {
+                settings = (Settings)gradle.getClass().getMethod("getSettings").invoke(gradle);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new RuntimeException("Can't get Settings from Gradle " + gradle.getClass() + " : " + gradle, e.getCause() == null ? e : e.getCause());
+            }
+        }
+        return rootView(settings);
     }
 
     @Override

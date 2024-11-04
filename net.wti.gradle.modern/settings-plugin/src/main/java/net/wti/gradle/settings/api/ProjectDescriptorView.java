@@ -7,7 +7,6 @@ import org.gradle.api.Describable;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
-import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.SettingsInternal;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
@@ -24,29 +23,21 @@ import xapi.constants.X_Namespace;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.data.ListLike;
-import xapi.fu.data.MapLike;
 import xapi.fu.data.SetLike;
 import xapi.fu.java.X_Jdk;
 import xapi.string.X_String;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static net.wti.gradle.tools.InternalProjectCache.buildOnce;
-
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 30/07/19 @ 1:42 AM.
  */
 public class ProjectDescriptorView implements ProjectViewInternal {
-
-    public static final String EXT_NAME = "_xapiRootProject";
-
-    private static final MapLike<Gradle, ProjectDescriptorView> rootViews = X_Jdk.mapWeak();
 
     private final Settings settings;
     private final Out1<File> projectDir;
@@ -182,35 +173,6 @@ public class ProjectDescriptorView implements ProjectViewInternal {
             return version;
         });
 
-    }
-
-    public static RootProjectView rootView(Settings settings) {
-        final ProjectDescriptor rootProject = settings.getRootProject();
-        return buildOnce(settings, EXT_NAME,
-                s-> new RootProjectView(settings, rootProject));
-    }
-
-    public static RootProjectView rootView(MinimalProjectView view) {
-        if (view instanceof RootProjectView) {
-            return (RootProjectView) view;
-        }
-        if (view instanceof ProjectViewInternal) {
-            return rootView(((ProjectViewInternal) view).getSettings());
-        }
-        throw new IllegalArgumentException("Cannot find a RootProjectView from " + view.getClass() + ": " + view);
-    }
-    public static RootProjectView rootView(final Gradle gradle) {
-        Settings settings;
-        try {
-            settings = ((GradleInternal) gradle).getSettings();
-        } catch (Exception original) {
-            try {
-                settings = (Settings)gradle.getClass().getMethod("getSettings").invoke(gradle);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                throw new RuntimeException("Can't get Settings from Gradle " + gradle.getClass() + " : " + gradle, e.getCause() == null ? e : e.getCause());
-            }
-        }
-        return rootView(settings);
     }
 
     @Override

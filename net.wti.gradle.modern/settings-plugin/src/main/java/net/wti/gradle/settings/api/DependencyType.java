@@ -1,6 +1,5 @@
 package net.wti.gradle.settings.api;
 
-
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-10 @ 3:22 a.m..
  */

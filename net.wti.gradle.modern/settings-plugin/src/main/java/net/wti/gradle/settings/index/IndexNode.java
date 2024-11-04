@@ -1,6 +1,7 @@
 package net.wti.gradle.settings.index;
 
 import net.wti.gradle.settings.api.ModuleIdentity;
+import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Lazy;
@@ -45,6 +46,7 @@ public class IndexNode {
     private final Lazy<SetLike<IndexNode>> compressedDependencies;
     private final SetLike<IndexNode> outgoingDependencies;
     private final ModuleIdentity identity;
+    private final In1<IndexNode> onAdd;
 
     private boolean resolved, allowCompress = true;
     private volatile Integer compressed;
@@ -54,16 +56,22 @@ public class IndexNode {
     private static final In2Out1<IndexNode, IndexNode, Boolean> isRequirementFilter = IndexNode::isRequirement;
     private boolean deleted;
 
+    @Deprecated // requires.map(allDependenciesMapper) is super gross / wrong
     private boolean isRequirement(IndexNode node) {
         return requires.contains(node) || requires.map(allDependenciesMapper).anyMatch(setLikeContains, node);
     }
 
-    public IndexNode(ModuleIdentity identity) {
+    /**
+     * You must get instances of IndexNode from {@link IndexNodePool}.
+     * @param identity the build+project+platform+module identity of this index node.
+     *                 The {@link ModuleIdentity} serves as the IndexNode's identity for hashCode/equals
+     */
+    protected IndexNode(ModuleIdentity identity, final In1<IndexNode> onAdd) {
         this.identity = identity;
+        this.onAdd = onAdd;
         requires = X_Jdk.setLinkedSynchronized();
         includes = X_Jdk.setLinkedSynchronized();
         allDependencies = Lazy.deferred1(allDependenciesMapper.supply(this));
-//        compressedDependencies = Lazy.deferred1(allDependenciesMapper.supply(this));
         compressedDependencies = Lazy.deferred1(compressedDependenciesMapper.supply(this));
         outgoingDependencies = X_Jdk.setLinkedSynchronized();
     }

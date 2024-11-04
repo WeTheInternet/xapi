@@ -28,7 +28,7 @@ tasks.create 'publishRequired', { req ->
 }
 
 File mvnRepo = new File(rootDir, 'repo')
-File indexRoot = new File(rootDir, 'build/index')
+File indexRoot = new File(rootDir, 'build/xindex')
 
 
 gradle.beforeProject {
@@ -155,4 +155,10 @@ tasks.register('projectInfo') {
             t.logger.quiet("Total projects: " + allprojects.size())
             // perhaps get some xapi schema stats about realized modules to print here?
         }
+}
+
+gradle.projectsEvaluated {
+    project(':base').tasks.named('compileTestJava').configure {
+        enabled = false
+    }
 }

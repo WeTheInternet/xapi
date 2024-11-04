@@ -2,8 +2,10 @@ package net.wti.gradle.schema.spi;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
+import net.wti.gradle.internal.system.InternalProjectCache;
 import net.wti.gradle.schema.api.SchemaIndexReader;
 import net.wti.gradle.schema.api.SchemaPatternResolver;
+import net.wti.gradle.system.spi.GradleServiceFinder;
 import net.wti.gradle.system.tools.GradleCoerce;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
@@ -36,27 +38,32 @@ public interface SchemaProperties extends SchemaPatternResolver {
         if (prop == null && view != null) {
             prop = view.getRootProject().getProjectDir();
             if (prop != null) {
-                prop = new File((File)prop, "build/index");
+                prop = new File((File)prop, "build/xindex");
             }
         }
         assert prop != null || view == null: view + " has root project with null projectDir";
-        return prop == null ? new File("./build/index").getAbsolutePath() : String.valueOf(prop);
+        return prop == null ? new File("./build/xindex").getAbsolutePath() : String.valueOf(prop);
     }
 
     String defaultValue(String key);
 
     default String getIndexLocation(MinimalProjectView view) {
-        final String indexLoc = getProperty(X_Namespace.PROPERTY_INDEX_PATH, view);
+        final String indexLoc = getProperty(view, X_Namespace.PROPERTY_INDEX_PATH);
         return indexLoc;
     }
+
 
     default String getIndexIdProp(ProjectViewInternal view) {
         // hm.  we need something a little better than this
         return getBuildName(view) + ".indexed." + System.identityHashCode(view.getGradle());
     }
 
+    default String getIndexId(MinimalProjectView view) {
+        return getProperty(view, X_Namespace.KEY_INDEX_ID);
+    }
+
     default String getPublishGroupPattern(MinimalProjectView view, final String platformName) {
-        final String configured = getProperty(X_Namespace.PROPERTY_PUBLISH_GROUP_PATTERN, view);
+        final String configured = getProperty(view, X_Namespace.PROPERTY_PUBLISH_GROUP_PATTERN);
         if (X_String.isEmptyTrimmed(configured)) {
             return "main".equals(platformName) ? "$group" : "$group.$platform";
         }
@@ -64,7 +71,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
     }
 
     default String getPublishNamePattern(MinimalProjectView view, final String moduleName) {
-        final String configured = getProperty(X_Namespace.PROPERTY_PUBLISH_NAME_PATTERN, view);
+        final String configured = getProperty(view, X_Namespace.PROPERTY_PUBLISH_NAME_PATTERN);
         if (X_String.isEmptyTrimmed(configured)) {
             return "main".equals(moduleName) ? "$name" : "$name-$module";
         }
@@ -72,7 +79,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
         return configured;
     }
 
-    default String getProperty(String key, MinimalProjectView view) {
+    default String getProperty(final MinimalProjectView view, final String key)  {
         String value = ProjectViewInternal.searchProperty(key, view);
         if (isNotEmpty(value)) {
             return value;
@@ -110,7 +117,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
     default void markStatus(String value, String indexProp, MinimalProjectView view, String debugInfo) {
         if (!"true".equals(System.getProperty(indexProp))) {
             // if we are running in strict mode, lets fail.
-            if ("true".equals(getProperty("xapi.strict", view))) {
+            if ("true".equals(getProperty(view,"xapi.strict"))) {
                 throw new IllegalStateException(
                         "More than one " + debugInfo + "running for " + indexProp + " is illegal; please limit operation to once per gradle build.\n" +
                                 "Set xapi.strict=false to suppress this failure"

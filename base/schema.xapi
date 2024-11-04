@@ -21,20 +21,62 @@
                 /main>,
                 <testTools
                     requires = {
-                        project : ":xapi-util",
+                        project : { ":util" : "main:main" },
                         external : "junit:junit:4.12",
                         external : "junit:junit:4.12:sources"
                     }
-                /testTools>
+                /testTools>,
+                <test
+                    requires = {
+                        internal : testTools
+                    }
+                /test>
             ]
         /main>,
         <gwt replace = "main" published = true
+            modules = [
+                <main
+                    requires = {
+                        project : { ":util" : "main:main" },
+                        project : { ":xapi-core-parent:xapi-core-reflect" : "main" },
+                        project : ":xapi-inject",
+                        external : "net.wetheinter:gwt-user:2.8.0",
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        external : "net.wti.core:xapi-fu:0.5.1",
+                        external : "com.google.elemental2:elemental2-core:1.0.0-RC1",
+                        external : "com.google.jsinterop:base:1.0.0-RC1",
+                        external : "javax.inject:javax.inject:1",
+                        external : "javax.inject:javax.inject:1:sources",
+                        external : "javax.validation:validation-api:1.0.0.GA",
+                        external : "javax.validation:validation-api:1.0.0.GA:sources"
+                    }
+                /main>,
+                <test
+                    requires = {
+                        external : "net.wetheinter:gwt-dev:2.8.0"
+                    }
+                /test>,
+                <testTools
+                    requires = {
+                        project : ":xapi-elemental",
+                        project : ":xapi-server-parent:xapi-server-api",
+                        external : "junit:junit:4.12",
+                        external : "junit:junit:4.12:sources",
+                        external : "org.hamcrest:hamcrest-core:1.3",
+                        external : "org.hamcrest:hamcrest-core:1.3:sources",
+                        external : "net.sourceforge.htmlunit:htmlunit:2.19",
+                        external : "net.wetheinter:gwt-user:2.8.0",
+                        external : "net.wetheinter:gwt-elemental:2.8.0",
+                        external : "net.wetheinter:gwt-dev:2.8.0"
+                    }
+                /testTools>,
+            ]
         /gwt>,
         <jre replace = "main" published = true
             modules = [
                 <main
                     requires = {
-                        project : "xapi-util"
+                        project : { "util": "main:main" }
                     }
                 /main>
             ]

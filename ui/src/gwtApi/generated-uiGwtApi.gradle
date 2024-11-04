@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
+ext.xapiModern = 'true'
 
 apply plugin: "java-library"
 // GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
@@ -17,6 +18,7 @@ if (repo) {
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
 apply plugin: javaPlugin
+repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -26,7 +28,7 @@ main.resources.setSrcDirs([]);
 dependencies {
   api "net.wti.core:xapi-fu:0.5.1"
   api "javax.validation:validation-api:1.0.0.GA"
-  api project(path: ":ui:ui-api")
+  api project(path: ":ui-api")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui at file://$rootDir/ui/src/gwtApi/generated-uiGwtApi.gradle

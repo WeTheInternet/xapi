@@ -3,11 +3,11 @@ plugins {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 xapiRequire {
-    main.main.project ':xapi-common'
+    main.main.project ':base-main'
 }
 
 SourceSet java = sourceSets.getByName("main")
@@ -54,6 +54,7 @@ if (JavaVersion.current().isJava9Compatible()) {
 
 dependencies {
     implementation "net.wti.core:xapi-fu:$version"
+    implementation "net.wti.core:xapi-gen:$version"
     implementation 'javax.inject:javax.inject:1'
     testImplementation 'junit:junit:4.12'
 }

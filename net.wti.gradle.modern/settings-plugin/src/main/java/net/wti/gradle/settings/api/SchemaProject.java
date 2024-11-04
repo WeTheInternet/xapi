@@ -32,7 +32,7 @@ public class SchemaProject implements Named, HasPath {
     private final NamedDomainObjectSet<SchemaModule> modules;
     private final NamedDomainObjectSet<SchemaPlatform> platforms;
     private final MultiList<PlatformModule, SchemaDependency> dependencies;
-    private boolean multiplatform, virtual;
+    private Boolean multiplatform, virtual, inherit;
     private final SchemaProject parent;
     private final MinimalProjectView view;
     private boolean loaded;
@@ -42,18 +42,20 @@ public class SchemaProject implements Named, HasPath {
     public SchemaProject(
             MinimalProjectView view,
             String name,
-            boolean multiplatform,
-            boolean virtual
+            Boolean multiplatform,
+            Boolean virtual,
+            Boolean inherit
     ) {
-        this(null, view, name, multiplatform, virtual);
+        this(null, view, name, multiplatform, virtual, inherit);
     }
 
-    public SchemaProject(SchemaProject parent, MinimalProjectView view, String name, boolean multiplatform, boolean virtual) {
+    public SchemaProject(SchemaProject parent, MinimalProjectView view, String name, Boolean multiplatform, Boolean virtual, final Boolean inherit) {
         this.view = view;
         this.name = name;
         this.parent = parent;
         this.multiplatform = multiplatform;
         this.virtual = virtual;
+        this.inherit = inherit;
         children = X_Jdk.mapOrderedInsertion();
         final Instantiator instantiator = ProjectViewInternal.findInstantiator(view);
         final CollectionCallbackActionDecorator decorator = ProjectViewInternal.findDecorator(view);
@@ -75,11 +77,15 @@ public class SchemaProject implements Named, HasPath {
     }
 
     public boolean isMultiplatform() {
-        return multiplatform;
+        return Boolean.TRUE.equals(multiplatform);
     }
 
     public boolean isVirtual() {
-        return virtual;
+        return Boolean.TRUE.equals(virtual);
+    }
+
+    public boolean isInherit() {
+        return Boolean.TRUE.equals(inherit);
     }
 
     public SchemaModule addModule(SchemaModule module) {
@@ -178,27 +184,30 @@ public class SchemaProject implements Named, HasPath {
     @Override
     public String toString() {
         return "proj{" +
-                "path='" + getPath() + "'" + (multiplatform ? "+multi" : "") + (virtual ? "+virt" : "") +
+                "path='" + getPath() + "'" +
+                (isMultiplatform() ? "+multi" : "") +
+                (isVirtual() ? "+virt" : "") +
+                (isInherit() ? "+inherit" : "") +
                 (children.isEmpty() ? "" : "[" + children.keys().join(" , ") + "]" ) +
                 '}';
     }
 
     public MappedIterable<? extends SchemaModule> getAllModules() {
         final SetLike<SchemaModule> mods = X_Jdk.setLinked();
-        if (parent != null) {
+        if (inherit && parent != null) {
             mods.addNow(parent.getAllModules());
+            mods.removeAllEquality(X_Jdk.toSet(modules));
         }
-        mods.removeAllEquality(X_Jdk.toSet(modules));
         mods.addNow(modules);
         return mods;
     }
 
     public MappedIterable<? extends SchemaPlatform> getAllPlatforms() {
         final SetLike<SchemaPlatform> mods = X_Jdk.setLinked();
-        if (parent != null) {
+        if (inherit && parent != null) {
             mods.addNow(parent.getAllPlatforms());
+            mods.removeAllEquality(X_Jdk.toSet(platforms));
         }
-        mods.removeAllEquality(X_Jdk.toSet(platforms));
         mods.addNow(platforms);
         return mods;
     }
@@ -208,11 +217,11 @@ public class SchemaProject implements Named, HasPath {
     }
 
     public void forAllPlatforms(In1<SchemaPlatform> callback) {
-        platforms.all(callback::in);
+        getAllPlatforms().forAll(callback::in);
     }
 
     public void forAllModules(In1<SchemaModule> callback) {
-        modules.all(callback::in);
+        getAllModules().forAll(callback::in);
     }
 
     public void forAllPlatformsAndModules(In2<SchemaPlatform, SchemaModule> callback) {
@@ -356,6 +365,29 @@ public class SchemaProject implements Named, HasPath {
             }
         }
 
+    }
+
+    public boolean hasExplicitDependencies(final PlatformModule module) {
+        return dependencies.getMaybe(module).mapIfPresent(deps-> {
+            for (SchemaDependency dep : deps) {
+                if (dep.getType() != DependencyType.internal) {
+                    return true;
+                }
+            }
+            return false;
+        }).ifAbsentReturn(false);
+    }
+
+    public SchemaModule getDefaultModule() {
+        return modules.getByName("main");
+    }
+
+    public SchemaPlatform getDefaultPlatform() {
+        return platforms.getByName("main");
+    }
+
+    public boolean hasModule(final String includes) {
+        return modules.getNames().contains(includes);
     }
 }
 

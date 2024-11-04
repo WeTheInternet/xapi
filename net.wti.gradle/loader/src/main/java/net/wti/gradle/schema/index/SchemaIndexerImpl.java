@@ -85,7 +85,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     @Override
     public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map) {
         String indexProp = properties.getIndexIdProp((ProjectViewInternal)view);
-        boolean alreadyDone = "true".equals(properties.getProperty(indexProp, view));
+        boolean alreadyDone = "true".equals(properties.getProperty(view, indexProp));
 
         ExecutorService exec = Executors.newWorkStealingPool(4);
         List<Future<?>> futures = new CopyOnWriteArrayList<>();
@@ -222,6 +222,13 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     }
 
     private void analyzeIndex(final MinimalProjectView view, final SchemaIndexBuilder index, final HasAllProjects map, final SchemaProperties properties) {
+        if ( 1 < 2) {
+            return;
+            // dead code below! this is legacy impl, and letting it run makes things explode.
+            // we're very close to just deleting all the legacy mess...
+        }
+        File indexDir = new File(properties.getIndexLocation(view));
+
         // search through, and discover the full set of "project:platform:module" that we want to consider realized.
         // we first want to mark anything with source or explicitly marked as included
         // next, anything which depends on said modules should be marked as included.
@@ -255,7 +262,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     } else {
                         // check if this module should be live b/c of schema properties
                         String liveKey = "live_" + mangleProject + "_" + modulePrefix;
-                        final String liveValue = properties.getProperty(liveKey, view);
+                        final String liveValue = properties.getProperty(view, liveKey);
                         if ("true".equals(liveValue)) {
                             index.markExplicitInclude(project, plat, mod);
                         }
@@ -319,6 +326,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 // forcibly write a multiplatform file. TODO: validate it wasn't explicitly marked single-platform
                 File multiplatformFile = new File(projectDir, "multiplatform");
                 GFileUtils.writeFile("true", multiplatformFile, "utf-8");
+                System.out.println("Forcing multiplatform to true " + projectDir);
             }
         }
     }

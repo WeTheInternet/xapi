@@ -40,10 +40,8 @@ def singleProject = [
         // on the classpath and available to browse and debug.
         'inject': ['gwt', 'jre'],
         'collect': ['gwt', 'jre'],
-        'common': ['gwt', 'jre'],
         'model': ['gwt', 'jre'],
         'log': ['gwt', 'jre'],
-        'util': ['gwt', 'jre'],
         'io': ['gwt', 'jre'],
         'ui': ['gwt', 'jre'],
         'process': ['gwt', 'jre'],

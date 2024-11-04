@@ -1,5 +1,6 @@
 <xapi-schema
 
+    multiplatform = true
     platforms = [
         <main />,
         <jre replace = "main" published = true/>,

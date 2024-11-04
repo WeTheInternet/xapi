@@ -66,7 +66,7 @@ public class PlatformModule implements CharSequence {
         if (names.length > 2) {
             throw new IllegalArgumentException("Illegal internal name " + platMod + " (cannot contain more than 1:colon)");
         }
-        return edit(names[0], names.length == 1 ? PlatformModule.defaultModule.toString() : names[1]);
+        return edit(names.length == 1 ? PlatformModule.defaultPlatform.toString() : names[0], names[names.length-1]);
     }
     public PlatformModule edit(String platform, String module) {
         return new PlatformModule(

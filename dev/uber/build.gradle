@@ -97,7 +97,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-common', 'test'
+        req.project ':base-test'
 
 }
 

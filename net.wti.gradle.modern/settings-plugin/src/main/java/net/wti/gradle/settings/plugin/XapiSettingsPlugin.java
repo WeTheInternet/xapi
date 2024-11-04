@@ -11,6 +11,7 @@ import net.wti.gradle.settings.index.SchemaIndex;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.system.tools.GradleCoerce;
 import net.wti.gradle.tools.GradleFiles;
+import net.wti.gradle.tools.InternalGradleCache;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -62,17 +63,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
     public void apply(final Settings settings) {
         final File schema = new File(settings.getRootDir(), "schema.xapi");
         RootProjectView root = RootProjectView.rootView(settings);
+        final IndexNodePool nodes = IndexNodePool.fromSettings(settings);
         if (schema.exists()) {
             String explicitPlatform = getPlatform(settings);
             if (explicitPlatform != null) {
                 // add to extensions so code later on can use findProperty() to get platform
                 settings.getExtensions().add("xapi.platform", explicitPlatform);
-            }
-            final XapiSchemaParser parser = XapiSchemaParser.fromView(root);
-            final DefaultSchemaMetadata metadata = parser.getSchema(explicitPlatform);
-            if (settings.getRootProject().getName().isEmpty()) {
-                logger.quiet("Configuring default root project name of file://{} to {}", settings.getRootDir(), metadata.getName());
-                settings.getRootProject().setName(metadata.getName());
             }
 
             // Write the index...
@@ -92,6 +88,15 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 }
             } else {
                 properties = SchemaProperties.getInstance();
+            }
+            // if this happens more than once, we will blow up.
+            // This is actually ideal, since we _really_ don't want two copies of indexes fighting over who is "right"
+            root.getExtensions().add(X_Namespace.KEY_SCHEMA_PROPERTIES_ID, properties);
+            final XapiSchemaParser parser = XapiSchemaParser.fromView(root);
+            final DefaultSchemaMetadata metadata = parser.getSchema(explicitPlatform);
+            if (settings.getRootProject().getName().isEmpty()) {
+                logger.quiet("Configuring default root project name of file://{} to {}", settings.getRootDir(), metadata.getName());
+                settings.getRootProject().setName(metadata.getName());
             }
 
             // Transverse the full */*/schema.xapi hierarchy
@@ -205,12 +210,14 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             project.forAllPlatformsAndModules((plat, mod) -> {
                 String key = QualifiedModule.unparse(plat.getName(), mod.getName());
                 String modKey = project.getName() + "-" + key;
-                String projectName = gradlePath + "-" + key;
+                String projectName = project.isMultiplatform() ? gradlePath + "-" + key : gradlePath;
                 String moduleSourcePath = "src" + File.separator + key;
+                String gradleSourcePath = project.isMultiplatform() ? moduleSourcePath : "";
                 String buildscriptSrcPath = "src/gradle/" + key;
-                final File moduleSource = new File(aggregatorRoot, moduleSourcePath);
+                final File gradleSourceDir = new File(aggregatorRoot, gradleSourcePath);
+                final File moduleSourceDir = new File(aggregatorRoot, moduleSourcePath);
                 final File buildscriptSrc = new File(aggregatorRoot, buildscriptSrcPath);
-                final String buildFileName = project.getName() + GradleCoerce.toTitleCase(key) + ".gradle";
+                final String buildFileName = project.getName() + (project.isMultiplatform() ? GradleCoerce.toTitleCase(key) : "") + ".gradle";
                 map.whenResolved(() -> {
                     boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
                     if (!isLive) {
@@ -221,6 +228,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         logger.quiet("Live: {}@{}-{}", project.getPathIndex(), plat, mod);
                         if (++liveCnt[0] > 1) {
                             if (!project.isMultiplatform()) {
+                                if (liveCnt[0] == 2) {
+                                    // might be main and test?
+                                }
                                 throw new IllegalStateException("A project (" + project.getPathGradle() + ") with more than one live module must be multiplatform=true (cannot be standalone)");
                             }
                         }
@@ -229,13 +239,13 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // user may freely create and check in their own projects, and we'll happily hook them up,
                         // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
 
-                        final File userBuildFile = new File(moduleSource, buildFileName);
-                        final File generatedFile = new File(moduleSource, "generated-" + buildFileName);
+                        final File userBuildFile = new File(gradleSourceDir, buildFileName);
+                        final File generatedFile = new File(gradleSourceDir, "generated-" + buildFileName);
 
                         final String inclusion = "apply from: " +
                                 "\"$rootDir/" +
                                 segment + "/" +
-                                moduleSourcePath + "/"
+                                (gradleSourcePath.isEmpty() ? "" : gradleSourcePath + "/")
                                 + generatedFile.getName() + "\"";
                         final BuildScriptBuffer defaultContent = makeDefaultBuildScript(inclusion);
                         String defaultSource = defaultContent.toSource();
@@ -269,20 +279,20 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
 
                         if (project.isMultiplatform()) {
-                            view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
+                            view.getLogger().quiet("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
                             if (dryRun(view)) {
                                 view.getLogger().quiet("Dry run exiting early; skipping project creation for {} with build file {} for {}:{}", project.getPath(), userBuildFile.getAbsolutePath(), plat, mod);
                             } else {
                                 settings.include(projectName);
                                 final ProjectDescriptor proj = settings.findProject(projectName);
-                                proj.setProjectDir(moduleSource);
+                                proj.setProjectDir(gradleSourceDir);
                                 proj.setBuildFileName(buildFileName);
                                 proj.setName(modKey);
                                 view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}", projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
                             }
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
-                            view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
+                            view.getLogger().quiet("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
                         }
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
@@ -348,27 +358,27 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // TODO: pull this from schema.xapi
                         out.println("repositories.mavenCentral()");
                         // To start, setup the sourceset!
-                        String srcSetName = project.isMultiplatform() ? "main" : key;
+                        String srcSetName = project.isMultiplatform() ? "test".equals(key) ? "test" : "main" : key;
                         LocalVariable main = out.addVariable(SourceSet.class, srcSetName, true);
                         main.setInitializerPattern("sourceSets.maybeCreate('$1')", srcSetName);
                         main.invoke("java.setSrcDirs($2)", "[]");
                         main.invoke("resources.setSrcDirs($2)", "[]");
 
                         // lets have a look at the types of source dirs to decide what sourcesets to create.
-                        if (moduleSource.isDirectory()) {
-                            for (String sourceDir : moduleSource.list()) {
+                        if (moduleSourceDir.isDirectory()) {
+                            for (String sourceDir : moduleSourceDir.list()) {
                                 switch (sourceDir) {
                                     case "java":
                                     case "groovy":
                                     case "kotlin":
                                         main.access("java.srcDir(\"$2/$3\")",
-                                                moduleSource.getPath().replace(rootDir, "$rootDir"),
+                                                moduleSourceDir.getPath().replace(rootDir, "$rootDir"),
                                                 sourceDir
                                         );
                                         break;
                                     case "resources":
                                         main.access("resources.srcDir(\"$2/resources\")",
-                                                moduleSource.getPath().replace(rootDir, "$rootDir")
+                                                moduleSourceDir.getPath().replace(rootDir, "$rootDir")
                                         );
                                         break;
                                     default:
@@ -388,13 +398,29 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         Lazy<ClosureBuffer> dependencies = Lazy.deferred1(()->
                                 out.startClosure("dependencies")
                         );
+                        IndexNodePool pool = map.getNodePool();
                         for (SchemaDependency dependency : project.getDependenciesOf(plat, mod)) {
                             view.getLogger().info("Processing dependency {}:{}:{} -> {}", project, plat, mod, dependency);
 
-                            PlatformModule platMod = PlatformModule.parse(dependency.getName());
-                            IndexNodePool pool = map.getRootSchema().getNodePool();
-                            final ModuleIdentity depIdent = pool.getIdentity(view, project.getPathIndex(), platMod);
-                            final IndexNode node = pool.getNode(depIdent);
+                            PlatformModule platMod = dependency.getCoords();
+
+                            final IndexNode node;
+                            final ModuleIdentity depIdent;
+                            switch (dependency.getType()) {
+                                case internal:
+                                    final PlatformModule internalCoords = PlatformModule.parse(dependency.getName());
+                                    depIdent = pool.getIdentity(view, project.getPathGradle(), internalCoords);
+                                    node = pool.getNode(depIdent);
+                                    break;
+                                case project:
+                                    String name = dependency.getName();
+                                    depIdent = pool.getIdentity(view, name.startsWith(":") ? name : ":" + name, platMod);
+                                    node = pool.getNode(depIdent);
+                                    break;
+                                default:
+                                    depIdent = null;
+                                    node = null;
+                            }
                             boolean canSkip = dependency.getType() == DependencyType.internal; // just do internal for now.
                             if (canSkip && !index.dependencyExists(dependency, project, plat, mod)) {
                                 // skipping a non-live dependency.
@@ -405,7 +431,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 view.getLogger().quiet("Skipping deleted dependency {}", depIdent);
                                 continue;
                             }
-                            if (canSkip && !node.isLive()) {
+                            if (canSkip && node != null && !node.isLive()) {
                                 // when a node is not live, we should skip it if it has no compressed dependencies
 //                                if (node.getCompressedDependencies().isEmpty()) {
 //                                if (node.getAllDependencies().isEmpty()) {
@@ -458,6 +484,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             depOut.print(" ");
                             switch (dependency.getType()) {
                                 case unknown:
+                                    view.getLogger().warn("Unknown dependency type {}", dependency);
+                                    break;
                                 case project:
                                     String path = dependency.getName();
                                     if (!path.startsWith(":")) {
@@ -475,7 +503,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     if (index.isMultiPlatform(view, path, coords)) {
                                         // multi-platform needs to convert to a subproject dependency.
                                         String simpleName = path.substring(path.lastIndexOf(":") + 1);
-                                        path = path + ":" + simpleName + "-" + unparsed;
+                                        path = path + "-" + unparsed;
                                     } else {
                                         // not multi-platform, we expect this to be a single-module dependency,
                                         // so, for now, no need to do anything; a plain project dependency is correct.
@@ -490,10 +518,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     if (":".equals(path)) {
                                         path = project.getName();
                                     }
-                                    String simpleName = path.substring(path.lastIndexOf(":") + 1);
+                                    final PlatformModule internalCoords = PlatformModule.parse(dependency.getName());
+//                                    String simpleName = path.substring(path.lastIndexOf(":") + 1);
+                                    if (index.isMultiPlatform(view, project.getPathIndex(), internalCoords)) {
+//                                        path = ":" + simpleName + "-" + platMod.toPlatMod();
+                                        path = path + "-" + internalCoords.toPlatMod();
 
-                                    if (index.isMultiPlatform(view, project.getPathIndex(), platMod)) {
-                                        path = ":" + simpleName + "-" + platMod.toPlatMod();
                                     }
                                     if (pool.isDeleted(depIdent)) {
                                         logger.quiet("Removing elided dependency " + depIdent);
@@ -651,16 +681,16 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                     String key = QualifiedModule.unparse(plat.getName(), mod.getName());
                     String path = gradleProject.getProjectDir().getAbsolutePath() +
 //                            File.separator + "mods" + File.separator + key + File.separator +
-                            File.separator + "src" + File.separator + key + File.separator +
-                            project.getName() + X_String.toTitleCase(key) + ".gradle";
+                            (project.isMultiplatform() ? File.separator + "src" + File.separator + key : "") +
+                            File.separator + project.getName() + (project.isMultiplatform() ? X_String.toTitleCase(key) : "") + ".gradle";
                     if (new File(path + ".kts").exists()) {
                         path = path + ".kts";
                     }
                     final String finalPath = path;
                     gradleProject.getLogger().quiet("{} is sourcing generated path {}", gradleProject.getPath(), finalPath);
-                    gradleProject.apply(o-> {
-                        o.from(finalPath);
-                    });
+//                    gradleProject.apply(o-> {
+//                        o.from(finalPath);
+//                    });
                 }
             });
         }

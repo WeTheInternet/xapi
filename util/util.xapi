@@ -1,0 +1,13 @@
+<xapi-schema
+    inherit = false
+    platforms = [ main ]
+    modules = [
+        <main
+            requires = {
+                project: ":xapi-collect",
+                project: ":xapi-core-parent:xapi-core-reflect",
+                project: { ":base" : api }
+            }
+        /main>
+    ]
+/xapi-schema>

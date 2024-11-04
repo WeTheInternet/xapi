@@ -24,14 +24,14 @@ xapiRequire.main().configure {
         req.external 'net.wetheinter:gwt-user:2.8.0'
         req.project ':xapi-dev-gwtc:xapi-gwtc-api'
         req.project ':xapi-dev-parent:xapi-dev-shell'
-        req.project Transitivity.impl, 'xapi-common', 'gwt:testTools'
+        req.project Transitivity.impl, ':base-gwtTestTools'
         req.external Transitivity.impl, 'junit:junit:4.12' // a bit yucky... we look for junit types in our main tooling
 }
 
 xapiRequire.module('gwt', 'test').configure {
     req ->
         req.project 'xapi-gwt', 'main'
-        req.project 'xapi-common', 'gwt:testTools'
+        req.project ':base-gwtTestTools'
         req.project 'xapi-dev-parent:xapi-dev-maven'
 }
 

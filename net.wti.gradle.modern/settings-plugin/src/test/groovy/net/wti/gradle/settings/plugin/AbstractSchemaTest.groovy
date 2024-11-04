@@ -73,8 +73,13 @@ allprojects {
 }
 """
 
-            // create a basic schema.xapi
-            file('schema.xapi').text = """
+            // create the schema.xapi
+            file('schema.xapi').text = schemaText
+        }
+    }
+
+    String getSchemaText() {
+        """
 <xapi-schema
     name = "$rootProjectName"
     version = "$VERSION"
@@ -126,20 +131,7 @@ allprojects {
         ,
     ]
 /xapi-schema>
-
 """
-            file('schema', 'schema.gradle').text = """
-plugins {
-    id 'xapi-schema'
-}
-
-tasks.create 'testSchema', {
-    doLast {
-        logger.quiet "\$xapiSchema"
-    }
-}
-"""
-        }
     }
 
     protected static String massagePlugins(List<CharSequence> list) {
@@ -164,7 +156,7 @@ tasks.create 'testSchema', {
         doWork()
         XapiSchemaParser parser = {this} as XapiSchemaParser
         XapiSettingsPlugin plugin = new XapiSettingsPlugin()
-        DefaultSchemaMetadata schema = parser.parseSchema(this, explicitPlatform)
+        DefaultSchemaMetadata schema = parser.parseSchema(this, nodes, explicitPlatform)
         SchemaMap map = plugin.buildMap(settings, parser, schema, SchemaProperties.getInstance())
         // forcibly realize the schema map
         map.resolve()

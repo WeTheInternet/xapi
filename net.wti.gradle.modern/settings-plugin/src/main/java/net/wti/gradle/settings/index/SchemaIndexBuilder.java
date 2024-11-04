@@ -167,7 +167,7 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
         // we should have already pruned any leaf nodes that ultimately depend on nothing.
         // now that we've processed the whole graph at least once, we're now ready to
         // also prune anything which has includes, but no other liveness reasons.
-        for (IndexNode node : nodes.getAllNodes()) {
+        for (IndexNode node : nodes.getAllLiveNodes()) {
             final SetLike<IndexNode> dependencies = node.getCompressedDependencies();
             final EnumSet<LivenessReason> reasons = node.getLivenessReasons();
             if (reasons.isEmpty()) {

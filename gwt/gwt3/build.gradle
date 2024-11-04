@@ -3,7 +3,7 @@ plugins {
 }
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-common', 'gwt:main'
+        req.project ':base-gwt'
         req.project ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
         req.project ":xapi-gwt-ui-parent:xapi-gwt-ui-api"
         req.external 'com.google.elemental2:elemental2-dom:1.0.0-RC1'

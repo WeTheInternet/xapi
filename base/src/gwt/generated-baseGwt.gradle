@@ -1,0 +1,48 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+
+apply plugin: "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/base/src/gwt/java")
+main.resources.srcDir("$rootDir/base/src/gwt/resources")
+
+dependencies {
+  api project(path: ":util")
+  api project(path: ":xapi-core-parent:xapi-core-reflect")
+  api project(path: ":xapi-inject")
+  api "net.wetheinter:gwt-user:2.8.0"
+  api "net.wetheinter:gwt-dev:2.8.0"
+  api "net.wti.core:xapi-fu:0.5.1"
+  api "com.google.elemental2:elemental2-core:1.0.0-RC1"
+  api "com.google.jsinterop:base:1.0.0-RC1"
+  api "javax.inject:javax.inject:1"
+  api "javax.inject:javax.inject:1:sources"
+  api "javax.validation:validation-api:1.0.0.GA"
+  api "javax.validation:validation-api:1.0.0.GA:sources"
+  api project(path: ":base-main")
+  api project(path: ":base-gwtApi")
+  api project(path: ":base-gwtSpi")
+}
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :base at file://$rootDir/base/src/gwt/generated-baseGwt.gradle

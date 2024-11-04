@@ -7,8 +7,9 @@ buildscript{
 plugins {
     id 'xapi-require'
 }
-
-xapiRequire.main().project 'xapi-util', 'main'
+xapiRequire.main().project ':util'
+xapiRequire.main().project ':xapi-collect', "main"
+xapiRequire.main().external "net.wti.core:xapi-fu:$version"
 xapiRequire.module('test').external 'junit:junit:4.12'
 
 description = 'XApi - Scope API'

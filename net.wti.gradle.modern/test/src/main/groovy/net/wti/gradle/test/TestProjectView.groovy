@@ -2,6 +2,7 @@ package net.wti.gradle.test
 
 import net.wti.gradle.api.MinimalProjectView
 import org.gradle.api.Describable
+import org.gradle.api.initialization.Settings
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.reflect.ObjectInstantiationException
 import org.gradle.internal.extensibility.DefaultConvention
@@ -74,5 +75,10 @@ class TestProjectView implements MinimalProjectView {
     @Override
     ExtensionContainer getExtensions() {
         return extensions
+    }
+
+    @Override
+    Settings getSettings() {
+        return sourceView.getSettings()
     }
 }

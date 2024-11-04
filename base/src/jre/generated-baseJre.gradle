@@ -27,7 +27,7 @@ main.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/base/src/jre/java")
 
 dependencies {
-  api project(path: ":xapi-util")
+  api project(path: ":util")
   api project(path: ":base-main")
   api project(path: ":base-jreApi")
   api project(path: ":base-jreSpi")

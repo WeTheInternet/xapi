@@ -48,4 +48,5 @@ public interface MinimalProjectView extends ExtensionAware, BuildCoordinates {
     @Override
     String getVersion();
 
+    Settings getSettings();
 }

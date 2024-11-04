@@ -143,8 +143,9 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
             if (match.isPresent()) {
                 // This is a gradle project who matches one of our schema-backed project declarations.
                 // Lets setup some support utilities
-
-                setupProject(p, match.get(), properties, index, map);
+                if (!"true".equals(p.getExtensions().findByName("xapiModern"))) {
+                    setupProject(p, match.get(), properties, index, map);
+                }
             }
         });
         settings.getGradle().afterProject(p->{
@@ -154,7 +155,9 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                 // This is a gradle project who matches one of our schema-backed project declarations.
                 // Lets setup some support utilities
 
-                finalizeProject(p, match.get(), properties, index, map);
+                if (!"true".equals(p.getExtensions().findByName("xapiModern"))) {
+                    finalizeProject(p, match.get(), properties, index, map);
+                }
             }
         });
 

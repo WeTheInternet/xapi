@@ -5,11 +5,14 @@ import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.gradle.system.tools.GradleCoerce;
+import net.wti.gradle.tools.InternalGradleCache;
 import xapi.constants.X_Namespace;
 import xapi.fu.log.Log;
 import xapi.string.X_String;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatterBuilder;
 
 import static xapi.string.X_String.isNotEmpty;
 
@@ -34,17 +37,18 @@ public interface SchemaProperties extends SchemaPatternResolver {
         if (prop == null && view != null) {
             prop = view.getRootProject().getProjectDir();
             if (prop != null) {
-                prop = new File((File)prop, "build/index");
+                prop = new File((File)prop, "build/xindex");
+                view.getRootProject().getExtensions().add(X_Namespace.PROPERTY_INDEX_PATH, ((File) prop).getAbsolutePath());
             }
         }
         assert prop != null || view == null: view + " has root project with null projectDir";
-        return prop == null ? new File("./build/index").getAbsolutePath() : String.valueOf(prop);
+        return prop == null ? new File("./build/xindex").getAbsolutePath() : String.valueOf(prop);
     }
 
     String defaultValue(String key);
 
     default String getIndexLocation(MinimalProjectView view) {
-        final String indexLoc = getProperty(X_Namespace.PROPERTY_INDEX_PATH, view);
+        final String indexLoc = getProperty(view.getRootProject(), X_Namespace.PROPERTY_INDEX_PATH);
         return indexLoc;
     }
 
@@ -53,8 +57,17 @@ public interface SchemaProperties extends SchemaPatternResolver {
         return getBuildName(view) + ".indexed." + view.getBuildName();
     }
 
+    default String getIndexTimestamp(MinimalProjectView view) {
+        return InternalGradleCache.buildOnce(view.getSettings(), X_Namespace.KEY_INDEX_ID,
+                missing -> {
+            return LocalDateTime.now().format(new DateTimeFormatterBuilder()
+                    .appendPattern(X_Namespace.TIMESTAMP_FORMAT_NO_TZ)
+                    .toFormatter());
+        });
+    }
+
     default String getPublishGroupPattern(MinimalProjectView view, final String platformName) {
-        final String configured = getProperty(X_Namespace.PROPERTY_PUBLISH_GROUP_PATTERN, view);
+        final String configured = getProperty(view, X_Namespace.PROPERTY_PUBLISH_GROUP_PATTERN);
         if (X_String.isEmptyTrimmed(configured)) {
             return "main".equals(platformName) ? "$group" : "$group.$platform";
         }
@@ -62,7 +75,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
     }
 
     default String getPublishNamePattern(MinimalProjectView view, final String moduleName) {
-        final String configured = getProperty(X_Namespace.PROPERTY_PUBLISH_NAME_PATTERN, view);
+        final String configured = getProperty(view, X_Namespace.PROPERTY_PUBLISH_NAME_PATTERN);
         if (X_String.isEmptyTrimmed(configured)) {
             return "main".equals(moduleName) ? "$name" : "$name-$module";
         }
@@ -70,10 +83,16 @@ public interface SchemaProperties extends SchemaPatternResolver {
         return configured;
     }
 
-    default String getProperty(String key, MinimalProjectView view) {
+    default String getProperty(MinimalProjectView view, String key) {
         String value = ProjectViewInternal.searchProperty(key, view);
         if (isNotEmpty(value)) {
             return value;
+        }
+        final InternalGradleCache<MinimalProjectView> cache = InternalGradleCache.getCache(view.getRootProject());
+        if (cache.contains(null, key)) {
+            return cache.getOrCreate(null, view, key, (not, missing)->{
+                throw new IllegalStateException("can't get here");
+            });
         }
         return defaultValue(value);
     }
@@ -108,7 +127,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
     default void markStatus(String value, String indexProp, MinimalProjectView view, String debugInfo) {
         if (!"running".equals(System.getProperty(indexProp))) {
             // if we are running in strict mode, lets fail.
-            if ("true".equals(getProperty("xapi.strict", view))) {
+            if ("true".equals(getProperty(view, "xapi.strict"))) {
                 throw new IllegalStateException(
                         "More than one " + debugInfo + "running for " + indexProp + " is illegal; please limit operation to once per gradle build.\n" +
                                 "Set xapi.strict=false to suppress this failure"

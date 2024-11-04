@@ -12,7 +12,7 @@ class SchemaIndexerImplTest extends AbstractSchemaTest<SchemaIndexerImplTest> {
 
     File indexDir
     void setup() {
-        indexDir = new File(rootDir, 'build/index')
+        indexDir = new File(rootDir, 'build/xindex')
         if (indexDir.isDirectory()) {
             indexDir.deleteDir()
         }

@@ -32,9 +32,21 @@
     ]
 
     projects = {
+
+        // the projects below are single-module projects.
+        standalone: [
+//            "lang",
+            <util
+                inherit = false
+                modules = [ main ]
+                platforms = [ main ]
+            /util>
+        ],
+
         // the projects below all have gwt, jre and other platforms
         multiplatform: [
             "base",
+            "ui",
 //            "inject",
 //            "collect",
 //            "common",
@@ -47,16 +59,10 @@
 //            "scope",
         ],
 
-        // the projects below are single-module projects.
-        standalone: [
-//            "lang",
-//            "util"
-        ],
-
         // the projects below are effectively parents of multiple child projects.
         // it will be left to the schema.xapi of these projects to determine whether
         // the child modules are multiplatform, standalone, or nested multiProject
-        virtual: [ "ui" ]
+//        virtual: [ "ui" ]
 //        virtual: {
 //            ui: ["api", "autoui", "html"] // "components", "generator",
 //            server: ["api", "gen", "vertx"], // hm, perhaps needs to be modeled as a single multiplatform, with more platforms...

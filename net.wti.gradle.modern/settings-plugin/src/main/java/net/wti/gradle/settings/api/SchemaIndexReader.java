@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Collections.unmodifiableList;
 import static net.wti.gradle.settings.api.QualifiedModule.mangleProjectPath;
@@ -38,6 +39,21 @@ public class SchemaIndexReader implements SchemaDirs {
         File projectDir = new File(pathDir, QualifiedModule.mangleProjectPath(path));
         if ("_".equals(projectDir.getName())) {
             projectDir = new File(pathDir, "_" + view.getBuildName());
+        }
+        final File[] allFiles = projectDir.listFiles();
+        if (allFiles != null && allFiles.length > 1) {
+            if (allFiles.length != 2) {
+                return true;
+            }
+            for (File file : allFiles) {
+                switch(file.getName()) {
+                    case "main":
+                    case "test":
+                        break;
+                    default:
+                        return true;
+                }
+            }
         }
         // if the parent project-wide directory is marked as multiplatform=true, we treat it as multiplatform
         File multiplatformFile;

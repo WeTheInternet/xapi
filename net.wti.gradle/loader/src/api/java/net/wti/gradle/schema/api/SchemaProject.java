@@ -30,7 +30,7 @@ public class SchemaProject implements Named, HasPath {
     private final NamedDomainObjectSet<SchemaModule> modules;
     private final NamedDomainObjectSet<SchemaPlatform> platforms;
     private final MultiList<PlatformModule, SchemaDependency> dependencies;
-    private boolean multiplatform, virtual;
+    private Boolean multiplatform, virtual;
     private final SchemaProject parent;
     private final MinimalProjectView view;
     private boolean loaded;
@@ -40,13 +40,13 @@ public class SchemaProject implements Named, HasPath {
     public SchemaProject(
         MinimalProjectView view,
         String name,
-        boolean multiplatform,
-        boolean virtual
+        Boolean multiplatform,
+        Boolean virtual
     ) {
         this(null, view, name, multiplatform, virtual);
     }
 
-    public SchemaProject(SchemaProject parent, MinimalProjectView view, String name, boolean multiplatform, boolean virtual) {
+    public SchemaProject(SchemaProject parent, MinimalProjectView view, String name, Boolean multiplatform, Boolean virtual) {
         this.view = view;
         this.name = name;
         this.parent = parent;
@@ -74,11 +74,11 @@ public class SchemaProject implements Named, HasPath {
     }
 
     public boolean isMultiplatform() {
-        return multiplatform;
+        return Boolean.TRUE.equals(multiplatform);
     }
 
     public boolean isVirtual() {
-        return virtual;
+        return Boolean.TRUE.equals(virtual);
     }
 
     public SchemaModule addModule(SchemaModule module) {
@@ -178,8 +178,8 @@ public class SchemaProject implements Named, HasPath {
     public String toString() {
         return "SchemaProject{" +
             "path='" + getPath() + '\'' +
-            ", multiplatform=" + multiplatform +
-            ", virtual=" + virtual +
+            (isMultiplatform() ? "+multi" : "") +
+            (isVirtual() ? "+virt" : "") +
             ", children=[" + children.keys().join(" , ") + "]" +
             '}';
     }

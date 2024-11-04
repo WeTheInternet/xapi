@@ -9,7 +9,7 @@ import xapi.fu.Out1;
  */
 public interface SchemaIndexer {
 
-    Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map, final IndexNodePool nodePool);
+    Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map);
 
 }
 

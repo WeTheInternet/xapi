@@ -21,7 +21,8 @@ trait TestFileTools implements HasTestFiles {
     }
 
     File file(String ... paths) {
-        File f = folderFactory(paths.init()).apply(paths.last())
+        paths = paths.collectMany { it.split("/").toList()}
+        File f = folderFactory(paths.dropRight(1)).apply(paths.last())
         !f.parentFile.exists() && f.mkdirs()
         !f.exists() && f.createNewFile()
         assert f.file : "Not a file: $f"

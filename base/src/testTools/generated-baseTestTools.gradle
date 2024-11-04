@@ -28,7 +28,7 @@ main.java.srcDir("$rootDir/base/src/testTools/java")
 main.resources.srcDir("$rootDir/base/src/testTools/resources")
 
 dependencies {
-  api project(path: ":xapi-util")
+  api project(path: ":util")
   api "junit:junit:4.12"
   api "junit:junit:4.12:sources"
   api project(path: ":base-main")

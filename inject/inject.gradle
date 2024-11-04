@@ -14,7 +14,8 @@ String v = version
 xapiRequire.module('api').configure {
     Requirable req ->
         req.external "net.wti.core:xapi-fu:$v", 'main'
-        req.project ':base-spi', ':base-api'
+        req.project ':base-spi'
+        req.project ':base-api'
 }
 
 xapiRequire.module('spi').configure {
@@ -30,7 +31,7 @@ xapiRequire.main().configure {
 xapiRequire.main('gwt').configure {
     Requirable req ->
         req.project 'xapi-log', 'main'
-        req.project 'xapi-common', 'gwt:main'
+        req.project ':base-gwt'
 }
 
 xapiRequire.main('jre').configure {

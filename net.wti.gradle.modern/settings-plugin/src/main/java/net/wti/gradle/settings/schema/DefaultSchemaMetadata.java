@@ -114,7 +114,6 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
      */
     private final boolean explicit;
     private final DefaultSchemaMetadata parent;
-    private final IndexNodePool nodes;
 
     private String defaultUrl;
     private String schemaLocation;
@@ -124,16 +123,17 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     private ListLike<UiContainerExpr> platforms, modules, external, projects, repositories;
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
     private Boolean explicitMultiplatform;
+    private boolean inherit;
 
-    public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile, final IndexNodePool nodes) {
+    public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile) {
         this.parent = parent;
         this.schemaFile = schemaFile;
         this.explicit = schemaFile != null && schemaFile.exists();
-        this.nodes = nodes;
         depsProject = X_Jdk.multiListOrderedInsertion();
         depsInternal = X_Jdk.multiListOrderedInsertion();
         depsExternal = X_Jdk.multiListOrderedInsertion();
         group = version = QualifiedModule.UNKNOWN_VALUE;
+        inherit = parent == null || parent.inherit;
     }
 
     public String getDefaultUrl() {
@@ -280,6 +280,10 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         return explicit;
     }
 
+    public Boolean isExplicitMultiplatform() {
+        return explicitMultiplatform;
+    }
+
     public void addProject(Expression expr) {
 
     }
@@ -363,10 +367,6 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         return parent == null ? this : parent.getRoot();
     }
 
-    public IndexNodePool getNodePool() {
-        return nodes;
-    }
-
     public String getPath() {
         String me = getName();
         if (parent == null) {
@@ -392,5 +392,13 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
             // this is _probably_ a mistake
         }
 
+    }
+
+    public void setInherit(final boolean inherit) {
+        this.inherit = inherit;
+    }
+
+    public boolean isInherit() {
+        return inherit;
     }
 }

@@ -1,0 +1,34 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+
+apply plugin: "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+main.resources.srcDir("$rootDir/base/src/jreTestTools/resources")
+
+dependencies {
+  api project(path: ":base-testTools")
+  api project(path: ":base-jre")
+}
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :base at file://$rootDir/base/src/jreTestTools/generated-baseJreTestTools.gradle

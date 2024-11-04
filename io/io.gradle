@@ -11,7 +11,8 @@ plugins {
     id 'xapi-require'
 }
 
-xapiRequire.main().project 'xapi-util'
+xapiRequire.main().project ':util'
+xapiRequire.main().project ':base-api'
 xapiRequire.module('test').configure {
     req ->
         req.project ':base-testTools'

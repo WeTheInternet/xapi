@@ -275,5 +275,9 @@ public class X_Namespace {
   public static String PROPERTY_DEFAULT_URI_PATH = "xapiUriPath";
 
   public static final String TIMESTAMP_FORMAT = "yyyy-MM-dd'.'HH-mm-ss.SSSZZZ";
+  public static final String TIMESTAMP_FORMAT_NO_TZ = "yyyy-MM-dd'.'HH-mm-ss.SSS";
 
+  public static final String KEY_SYNTHETIC = "synth";
+  public static final String KEY_INDEX_ID = "_xapiIndexId";
+  public static final String KEY_SCHEMA_PROPERTIES_ID = "_xapiSchemaProps";
 }

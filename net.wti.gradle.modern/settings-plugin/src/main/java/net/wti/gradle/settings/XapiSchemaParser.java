@@ -2,14 +2,18 @@ package net.wti.gradle.settings;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.api.*;
+import net.wti.gradle.settings.index.IndexNode;
 import net.wti.gradle.settings.index.IndexNodePool;
+import net.wti.gradle.settings.index.LivenessReason;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
+import net.wti.gradle.tools.InternalGradleCache;
 import net.wti.javaparser.JavaParser;
 import net.wti.javaparser.ParseException;
 import net.wti.javaparser.ast.expr.*;
 import net.wti.javaparser.ast.visitor.ComposableXapiVisitor;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import xapi.constants.X_Namespace;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MultiList;
@@ -31,7 +35,7 @@ import java.util.List;
 import java.util.Set;
 
 import static net.wti.gradle.settings.api.QualifiedModule.UNKNOWN_VALUE;
-import static net.wti.gradle.tools.InternalProjectCache.buildOnce;
+import static net.wti.gradle.tools.InternalGradleCache.buildOnce;
 import static net.wti.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
 /**
@@ -50,6 +54,10 @@ public interface XapiSchemaParser {
 
     MinimalProjectView getView();
 
+    default IndexNodePool getNodePool() {
+        return IndexNodePool.fromSettings(getView().getSettings());
+    }
+
     default DefaultSchemaMetadata getSchema(final String explicitPlatform) {
         return buildOnce(getView().getRootProject(), DefaultSchemaMetadata.EXT_NAME, v->parseSchema(v, explicitPlatform));
     }
@@ -57,14 +65,13 @@ public interface XapiSchemaParser {
     /**
      * Find the schema.xapi file for a given project, and parse it.
      *
-     * @param p                - A SimpleProjectView, to be able to look up properties and locate a project directory.
+     * @param p                - A {@link MinimalProjectView}, to be able to look up properties and locate a project directory.
      * @param explicitPlatform - The value of property xapi.platform, if not null or empty, will limit the scope of realized platforms
      * @return A parsed {@link DefaultSchemaMetadata} file.
      */
     default DefaultSchemaMetadata parseSchema(MinimalProjectView p, final String explicitPlatform) {
         File schemaFile = getProperties().getRootSchemaFile(p);
-        IndexNodePool nodes = new IndexNodePool();
-        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, schemaFile, nodes);
+        final DefaultSchemaMetadata metadata = new DefaultSchemaMetadata(null, schemaFile);
         if (schemaFile.exists()) {
             return parseSchemaFile(null, metadata, p.getProjectDir(), explicitPlatform);
         }
@@ -91,7 +98,7 @@ public interface XapiSchemaParser {
             final String explicitPlatform) {
         File schemaFile = normalizeSchemaFile(relativeRoot, metadata.getSchemaFile());
         if (!schemaFile.exists()) {
-            return new DefaultSchemaMetadata(parent, schemaFile, parent.getNodePool());
+            return new DefaultSchemaMetadata(parent, schemaFile);
         }
         final UiContainerExpr expr;
         try (
@@ -229,6 +236,10 @@ public interface XapiSchemaParser {
                 case "require":
                 case "requires":
                     addRequires(meta, PlatformModule.UNKNOWN, attr.getExpression());
+                    break;
+                case "inherit":
+                    boolean inherit = Boolean.parseBoolean(attr.getStringExpression(false, true));
+                    meta.setInherit(inherit);
                     break;
                 default:
                     throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
@@ -464,13 +475,19 @@ public interface XapiSchemaParser {
             } else {
                 projects = meta.getProjects();
             }
-            if (!module.hasAttribute("virtual")) {
-                module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
+            boolean inherit = true;
+            if (module.hasAttribute("inherit")) {
+                inherit = "true".equals(module.getAttributeRequiredString("inherit"));
             }
-            if (meta.isMultiPlatform()) {
-                module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(true));
-            } else if (!module.hasAttribute("multiplatform")) {
-                module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
+            if (inherit) {
+                if (!module.hasAttribute("virtual")) {
+                    module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
+                }
+                if (Boolean.TRUE.equals(meta.isExplicitMultiplatform())) {
+                    module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(true));
+                } else if (!module.hasAttribute("multiplatform")) {
+                    module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
+                }
             }
             String rootPath = meta.getRoot().getPath();
             String myPath = meta.getPath();
@@ -631,7 +648,7 @@ public interface XapiSchemaParser {
 
     }
     default void loadDependencies(SchemaMap map, SchemaProject project, DefaultSchemaMetadata metadata) {
-
+        final IndexNodePool nodepool = map.getNodePool();
         DependencyMap<CharSequence> depMap = new DependencyMap<>();
         depMap.put(DependencyKey.group, LazyString.nullableString(metadata::getGroup));
         depMap.put(DependencyKey.version, LazyString.nullableString(metadata::getVersion));
@@ -661,6 +678,7 @@ public interface XapiSchemaParser {
             Log.tryLog(XapiSchemaParser.class, this, LogLevel.TRACE,
                     project.getPathGradle(), " adding " + type + " dependencies: ", deps.map(o->o.join("->").replace("\n", " ")));
 
+            final In1Out1<PlatformModule, IndexNode> consumerFactory = nodepool.nodeFactory(getView(), project.getPath());
             for (Out2<PlatformModule, ListLike<Expression>> entry : deps.forEachItem()) {
                 final PlatformModule mod = entry.out1();
                 // TODO: also account for structured dependencies w/ name, transitivity, etc.
@@ -673,8 +691,38 @@ public interface XapiSchemaParser {
                 ).flatten(In1Out1.identity()).cached();
                 Log.loggerFor(XapiSchemaParser.class, this)
                         .log(XapiSchemaParser.class, LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
-                for (SchemaDependency dep : extracted) {
+                for (final SchemaDependency dep : extracted) {
                     // need to validate that dependencies point to valid targets!
+                    final IndexNode consumerNode = consumerFactory.io(mod);
+                    map.whenResolved(()->{
+                        switch (dep.getType()) {
+                            case external:
+                                consumerNode.addLiveness(LivenessReason.has_dependencies);
+                                break;
+                            case project:
+                                String path = dep.getName().startsWith(":") ? dep.getName() : ":" + dep.getName();
+                                if (map.hasGradleProject(path)) {
+                                    final SchemaProject otherProject = map.getProject(dep.getName());
+                                    final ModuleIdentity otherNodeId = nodepool.getIdentity(getView(), otherProject.getPathGradle(), dep.getCoords());
+                                    final IndexNode projectDepNode = nodepool.getNode(otherNodeId);
+
+                                    projectDepNode.addLiveness(LivenessReason.is_dependency);
+                                    // TODO: need to make this form of liveness conditional on this node being consumed,
+                                    // at least if it's a non-main platform
+                                    consumerNode.addLiveness(LivenessReason.has_dependencies);
+                                    consumerNode.include(projectDepNode);
+                                } else {
+                                    consumerNode.addLiveness(LivenessReason.has_dependencies);
+                                }
+                                break;
+                            case internal:
+                                // record the internal dependency for indexNode
+                                final IndexNode internalDepNode = consumerFactory.io(dep.getCoords());
+                                // internal is not explicitly live, but do record the dependency
+                                consumerNode.include(internalDepNode);
+                                break;
+                        }
+                    });
                     insertDependencies(project, metadata, mod, dep);
                 }
             }
@@ -707,7 +755,7 @@ public interface XapiSchemaParser {
                         case "project":
                         case "external":
                         case "unknown":
-                            is = DependencyType.valueOf(type);
+                            is = DependencyType.valueOf(type); // we should keep track of what "mode" we are in, for special value handling, later.
                             depType = DependencyKey.category;
                             exprs = SingletonIterator.singleItem(pair.getValueExpr());
                             deps.put(DependencyKey.name, pair.getKeyString());
@@ -1175,6 +1223,7 @@ public interface XapiSchemaParser {
         copy.setName(new NameExpr("requires"));
 
         JsonPairExpr synth = new JsonPairExpr("internal", copy.getExpression());
+        makeSynthetic(synth);
         JsonContainerExpr ctr = new JsonContainerExpr(false, Collections.singletonList(synth));
         copy.setExpression(ctr);
         insertModuleRequires(platform, metadata, copy, In1.receiver(module));
@@ -1182,11 +1231,20 @@ public interface XapiSchemaParser {
         // HMMM... this entire insertion is kinda obviated by a later search through all platforms for each module...
 
     }
+
+    default void makeSynthetic(JsonPairExpr synth) {
+        synth.addExtra(X_Namespace.KEY_SYNTHETIC, true);
+    }
+    default boolean isSynthetic(Expression e) {
+        return Boolean.TRUE.equals(e.getExtra(X_Namespace.KEY_SYNTHETIC));
+    }
+
     default void insertModuleRequires(String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr, In1<In1<SchemaModule>> moduleSource) {
-        Expression toRequire = attr.getExpression();
-        Pointer<String> platValue = Pointer.pointerTo(platform);
-        Pointer<String> modValue = Pointer.pointer();
-        Out1<PlatformModule> keyBuilder = () -> new PlatformModule(platValue.out1(), modValue.out1());
+        final Expression toRequire = attr.getExpression();
+        final Pointer<String> platValue = Pointer.pointerTo(platform);
+        final Pointer<String> modValue = Pointer.pointer();
+        final IndexNodePool nodePool = getNodePool();
+        final Out1<PlatformModule> keyBuilder = () -> new PlatformModule(platValue.out1(), modValue.out1());
         final In1<SchemaModule> insertModule = mod -> {
             modValue.in(mod.getName());
             ComposableXapiVisitor<Object> vis = whenMissingFail(XapiSchemaParser.class, () -> "Illegal contents for a require=... attribute");
@@ -1267,7 +1325,7 @@ public interface XapiSchemaParser {
     }
 
     default SchemaProperties getProperties() {
-        return SchemaProperties.getInstance();
+        return InternalGradleCache.buildOnce(getView(), X_Namespace.KEY_SCHEMA_PROPERTIES_ID, missing-> SchemaProperties.getInstance());
     }
 
     default void publishChildren(SchemaProject project, SchemaPlatform platform, Set<String> once) {

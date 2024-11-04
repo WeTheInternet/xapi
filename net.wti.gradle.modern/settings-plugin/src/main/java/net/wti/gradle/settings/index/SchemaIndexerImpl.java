@@ -78,9 +78,9 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     }
 
     @Override
-    public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map, final IndexNodePool nodes) {
+    public Out1<SchemaIndex> index(MinimalProjectView view, String buildName, HasAllProjects map) {
         String indexProp = properties.getIndexIdProp(view);
-        boolean alreadyDone = "true".equals(properties.getProperty(indexProp, view));
+        boolean alreadyDone = "true".equals(properties.getProperty(view, indexProp));
 
         ExecutorService exec = Executors.newWorkStealingPool(4);
         List<Future<?>> futures = new CopyOnWriteArrayList<>();
@@ -252,10 +252,13 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                             index.markExplicitInclude(project, plat, mod);
                             node.addLiveness(LivenessReason.forced);
                         }
+                    } else if (project.hasExplicitDependencies(platMod)){
+                        index.markExplicitInclude(project, plat, mod);
+                        node.addLiveness(LivenessReason.has_dependencies);
                     } else {
                         // check if this module should be live b/c of schema properties
                         String liveKey = "live_" + mangleProject + "_" + modulePrefix;
-                        final String liveValue = properties.getProperty(liveKey, view);
+                        final String liveValue = properties.getProperty(view, liveKey);
                         if ("true".equals(liveValue)) {
                             index.markExplicitInclude(project, plat, mod);
                             node.addLiveness(LivenessReason.forced);
@@ -327,6 +330,13 @@ public class SchemaIndexerImpl implements SchemaIndexer {
     }
 
     private boolean hasSources(final File moduleSrc) {
+        File gradleSrc = new File(moduleSrc.getParent(), "gradle/" + moduleSrc.getName());
+        if (gradleSrc.isDirectory()) {
+            final File[] children = gradleSrc.listFiles();
+            if (children != null && children.length > 0) {
+                return true;
+            }
+        }
         if (!moduleSrc.isDirectory()) {
             return false;
         }

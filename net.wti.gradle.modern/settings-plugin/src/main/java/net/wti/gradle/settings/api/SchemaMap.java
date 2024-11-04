@@ -10,7 +10,7 @@ import net.wti.gradle.settings.index.SchemaIndexerImpl;
 import net.wti.gradle.settings.model.SchemaPreload;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.tools.HasAllProjects;
-import net.wti.gradle.tools.InternalProjectCache;
+import net.wti.gradle.tools.InternalGradleCache;
 import net.wti.javaparser.ast.expr.UiContainerExpr;
 import net.wti.javaparser.ast.visitor.ComposableXapiVisitor;
 import org.gradle.api.UnknownDomainObjectException;
@@ -44,6 +44,7 @@ import static xapi.string.X_String.isNotEmpty;
 public class SchemaMap implements HasAllProjects {
 
     public static final String KEY_FOR_EXTENSIONS = "xapiSchemaMap";
+    private final IndexNodePool nodePool;
     private Lazy<SchemaIndex> indexProvider;
 
 //    public static HasAllProjects fromView(MinimalProjectView view) {
@@ -67,10 +68,11 @@ public class SchemaMap implements HasAllProjects {
     }
 
     public static SchemaMap fromView(MinimalProjectView srcView, XapiSchemaParser parser, DefaultSchemaMetadata rootMeta, SchemaProperties props) {
-        MinimalProjectView view = ProjectDescriptorView.rootView(srcView);
-        return InternalProjectCache.buildOnce(SchemaMap.class, view, KEY_FOR_EXTENSIONS, v -> {
+        RootProjectView view = RootProjectView.rootView(srcView);
+        IndexNodePool nodes = IndexNodePool.fromSettings(view.getSettings());
+        return InternalGradleCache.buildOnce(SchemaMap.class, view, KEY_FOR_EXTENSIONS, v -> {
             SchemaCallbacksDefault callbacks = new SchemaCallbacksDefault();
-            SchemaMap map = new SchemaMap(view, parser, rootMeta, callbacks);
+            SchemaMap map = new SchemaMap(view, nodes, parser, rootMeta, callbacks);
 
             String indexProp = props.getIndexIdProp(view);
             String indexState = System.getProperty(indexProp);
@@ -94,7 +96,7 @@ public class SchemaMap implements HasAllProjects {
 //            } else {
             // yikes! index hasn't run yet. Start it now!
 //                view.whenReady(ready ->{
-            SchemaIndexerImpl indexer = InternalProjectCache.buildOnce(
+            SchemaIndexerImpl indexer = InternalGradleCache.buildOnce(
                     SchemaIndexerImpl.class,
                     view,
                     view.getBuildName() + "_index", ignored-> {
@@ -105,7 +107,7 @@ public class SchemaMap implements HasAllProjects {
                     }
             );
             final String bn = props.getBuildName(view);
-            final Out1<SchemaIndex> deferred = indexer.index(view, bn, map, rootMeta.getNodePool());
+            final Out1<SchemaIndex> deferred = indexer.index(view, bn, map);
             map.setIndexProvider(deferred);
 //                });
 
@@ -114,8 +116,8 @@ public class SchemaMap implements HasAllProjects {
         });
     }
 
-    private IndexNodePool getNodePool() {
-        return rootSchema.getNodePool();
+    public IndexNodePool getNodePool() {
+        return nodePool;
     }
 
     private final DefaultSchemaMetadata rootSchema;
@@ -131,14 +133,16 @@ public class SchemaMap implements HasAllProjects {
     private volatile Do onResolve;
 
     public SchemaMap(
-            MinimalProjectView view,
-            XapiSchemaParser parser,
-            DefaultSchemaMetadata root,
-            SchemaCallbacks callbacks
+            final MinimalProjectView view,
+            final IndexNodePool nodes,
+            final XapiSchemaParser parser,
+            final DefaultSchemaMetadata root,
+            final SchemaCallbacks callbacks
     ) {
         onResolve = Do.NOTHING;
         this.rootSchema = root;
         this.view = view;
+        this.nodePool = nodes;
         this.callbacks = callbacks;
         children = mapOrderedInsertion();
         projects = mapOrderedInsertion();
@@ -149,10 +153,11 @@ public class SchemaMap implements HasAllProjects {
         tailProject = rootProject = new SchemaProject(
                 view,
                 rootName,
-                root.isMultiPlatform(),
-                !new File(root.getSchemaDir(), "src").exists()
+                null,
+                null,
+                true
         );
-        projects.put(tailProject.getPath(), tailProject);
+        projects.put(tailProject.getPathGradle(), tailProject);
 
         // Create a resolver, so we can forcibly finish our SchemaMap parse on-demand,
         // but still give time for user configuration from settings.gradle to be fully parsed
@@ -229,12 +234,14 @@ public class SchemaMap implements HasAllProjects {
                 }
                 // bind, say, jre:main to jre:api, or main:test to main:main
                 for (String includes : mod.getInclude()) {
-                    // build an { internal: "dependency" }
-                    PlatformModule intoPlatMod = myPlatMod.edit(null, includes);
-                    final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
-                    project.getDependencies().get(myPlatMod).add(dep);
-                    if (mod.isPublished()) {
-                        ensureChildrenPublished(project, mod, includes, once);
+                    if (project.hasModule(includes)) {
+                        // build an { internal: "dependency" }
+                        PlatformModule intoPlatMod = myPlatMod.edit(null, includes);
+                        final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
+                        project.getDependencies().get(myPlatMod).add(dep);
+                        if (mod.isPublished()) {
+                            ensureChildrenPublished(project, mod, includes, once);
+                        }
                     }
                 }
             });
@@ -308,7 +315,7 @@ public class SchemaMap implements HasAllProjects {
         } else {
             // hm, we probably want to record more here, when adding child metadatas...
         }
-        String explicitPlatform = parser.getProperties().getProperty("xapi.platform", project.getView());
+        String explicitPlatform = parser.getProperties().getProperty(project.getView(), "xapi.platform");
 //        if (metadata.isExplicit()) {
         parser.loadMetadata(this, project, metadata, parser, explicitPlatform);
 //        }
@@ -380,9 +387,13 @@ public class SchemaMap implements HasAllProjects {
         final ListLike<UiContainerExpr> projects = metadata.getProjects();
         for (UiContainerExpr project : projects) {
             String name = project.getName();
+
+            boolean inherit = project.getAttribute("inherit")
+                    .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
+                    .ifAbsentReturn(metadata.isInherit());
             boolean multiplatform = project.getAttribute("multiplatform")
                     .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
-                    .ifAbsentReturn(metadata.isMultiPlatform());
+                    .ifAbsentReturn(inherit && metadata.isMultiPlatform());
             boolean virtual = project.getAttribute("virtual")
                     .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn(false);
@@ -408,10 +419,10 @@ public class SchemaMap implements HasAllProjects {
                     tailProject.setVirtual(true);
                 }
             } else {
-                tailProject = new SchemaProject(oldTail, projectView, name, multiplatform, virtual);
+                tailProject = new SchemaProject(oldTail, projectView, name, multiplatform, virtual, inherit);
                 tailProject.setParentGradlePath(parentPath);
             }
-            this.projects.put(tailProject.getPath(), tailProject);
+            this.projects.put(tailProject.getPathGradle(), tailProject);
             insertChild(oldTail, parser, metadata, project, tailProject, explicitPlatform);
             tailProject = oldTail;
         }
@@ -424,21 +435,20 @@ public class SchemaMap implements HasAllProjects {
     }
 
     protected void insertChild(SchemaProject into, XapiSchemaParser parser, DefaultSchemaMetadata parent, final UiContainerExpr project, SchemaProject child, final String explicitPlatform) {
-        for (SchemaModule module : into.getAllModules()) {
-            child.addModule(module);
-        }
-        for (SchemaPlatform platform : into.getAllPlatforms()) {
-            child.addPlatform(platform);
-        }
 
         // TODO: have a property to be able to specify the project path, for cases when project name != directory name
         into.addProject(child);
         File childSchema = new File(parent.getSchemaDir(), child.getName());
-        if (!childSchema.exists()) {
-            childSchema = new File(childSchema.getParentFile(), child.getName() + ".xapi");
+        File maybe = new File(childSchema, child.getName() + ".xapi");
+        if (maybe.isFile()) {
+            childSchema = maybe;
         }
-        if (!childSchema.exists()) {
-            childSchema = new File(childSchema.getParentFile(), child.getName() + "/schema.xapi");
+        maybe = new File(childSchema, "schema.xapi");
+        if (maybe.isFile()) {
+            childSchema = maybe;
+        }
+        if (!childSchema.isFile()) {
+            childSchema = new File(childSchema.getParentFile(), child.getName() + ".xapi");
         }
         File parentDir = parent.getSchemaDir();
         if (!childSchema.exists()) {
@@ -451,9 +461,9 @@ public class SchemaMap implements HasAllProjects {
         // the project may have additional fields, like `modules =` or `platforms =`
         DefaultSchemaMetadata parsedChild = projectToMeta.get(child);
         if (parsedChild == null) {
-            parsedChild = new DefaultSchemaMetadata(parent, childSchema, parent.getNodePool());
+            parsedChild = new DefaultSchemaMetadata(parent, childSchema);
             projectToMeta.put(child, parsedChild);
-            if (childSchema.exists()) {
+            if (childSchema.isFile()) {
                 // we only want to parse this schema file once; it is a non-configurable search heuristic,
                 // so no-need to keep parsing it just to add another <xapi-schema /> element.
                 parsedChild = parser.parseSchemaFile(parent, parsedChild, parentDir, explicitPlatform);
@@ -467,6 +477,17 @@ public class SchemaMap implements HasAllProjects {
             parser.parseProjectElement(parent, parsedChild, project, explicitPlatform);
         }
         loadMetadata(child, parser, parsedChild);
+        if (parsedChild.isInherit()) {
+            for (SchemaModule module : into.getAllModules()) {
+                child.addModule(module);
+            }
+            for (SchemaPlatform platform : into.getAllPlatforms()) {
+                child.addPlatform(platform);
+            }
+        } else {
+            child.addModule(into.getDefaultModule());
+            child.addPlatform(into.getDefaultPlatform());
+        }
 //        loadProjectElement(child, parsedChild, project, parser);
 
     }
@@ -554,5 +575,12 @@ public class SchemaMap implements HasAllProjects {
             }
         }
         return false;
+    }
+
+    public SchemaProject getProject(final String projectPath) {
+        final String path = projectPath.startsWith(":") ? projectPath : ":" + projectPath;
+        return projects.getMaybe(path).getOrThrow(()->new IllegalArgumentException(
+                "No such project: " + path + "; available projects: " + projects.keys().join(", ")
+        ));
     }
 }

@@ -48,8 +48,6 @@ public interface ProjectViewInternal extends MinimalProjectView {
 
     Gradle getGradle();
 
-    Settings getSettings();
-
     void whenSettingsReady(Action<Settings> callback);
 
     void whenReady(Action<? super MinimalProjectView> callback);

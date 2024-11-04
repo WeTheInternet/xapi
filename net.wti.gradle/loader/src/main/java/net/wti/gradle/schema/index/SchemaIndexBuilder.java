@@ -2,8 +2,6 @@ package net.wti.gradle.schema.index;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.schema.api.*;
-import net.wti.gradle.schema.api.SchemaIndex;
-import net.wti.gradle.schema.api.SchemaIndexReader;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import org.gradle.util.GFileUtils;
 import xapi.fu.In1;
@@ -148,10 +146,11 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
 
     public void recordProject(final SchemaIndexBuilder index, final MinimalProjectView view, final SchemaProject project) {
         final File projectDir = index.calcProjectDir(project);
+        File multiplatform = new File(projectDir, "multiplatform");
         if (project.isMultiplatform()) {
-            File multiplatform = new File(projectDir, "multiplatform");
             GFileUtils.writeFile("true", multiplatform, "utf-8");
-        } else {
+        } else if (multiplatform.isFile()){
+            multiplatform.delete();
             // we should really validate that there's only one live platform/module.
             // ....later
         }

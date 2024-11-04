@@ -5,18 +5,20 @@
             modules = [
                 <main
                     requires = {
-                        project : [ "xapi-util", "main" ],
-                        project : [ "xapi-collect", "main" ],
+                        project : { ":util" : "main:main" },
+                        project : { ":xapi-collect" : "main:main" },
                         external : "javax.inject:javax.inject:1:sources", // really? sources? sounds like a leftover gwt hack
                     }
                 /main>,
                 <test
                     requires = {
-                        project : [ "xapi-inject", "jre:main" ],
-                        project : [ "xapi-common", "testTools" ],
+                        project : { "xapi-inject" : "jre:main" },
+                        project : { ":base" : "main:testTools" },
                         external : "junit:junit:4.12",
                     }
-                /test>
+                /test>,
+                <testTools force=true requires = { internal : sample } /testTools>,
+                <sample force=true /sample>
             ]
         /main>
     ]
