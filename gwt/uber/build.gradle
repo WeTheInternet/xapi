@@ -42,7 +42,7 @@ xapiRequire.main().configure {
         req.project 'xapi-elemental', 'main'
         req.project 'xapi-model', 'gwt:main'
         req.project 'xapi-process', 'gwt:main'
-        req.project 'xapi-io', 'gwt:main'
+        req.project ':io-gwt'
         req.project 'xapi-dev-gwtc:xapi-gwtc-api', 'main'
 }
 

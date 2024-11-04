@@ -15,7 +15,7 @@ xapiRequire.main().configure {
         req.project 'xapi-dev-parent:xapi-dev-api'
         req.project 'xapi-process', 'main'
         req.project 'xapi-model', 'jre:main'
-        req.project 'xapi-io', 'main'
+        req.project ':io-main'
         req.project 'xapi-dev-gwtc:xapi-gwtc-api'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
         req.external Transitivity.compile_only, 'javax.servlet:javax.servlet-api:3.1-b02'

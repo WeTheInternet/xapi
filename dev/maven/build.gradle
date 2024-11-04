@@ -26,7 +26,7 @@ xapiRequire.main().configure {
 xapiRequire.module('test').configure {
     req ->
         req.project ':base-testTools'
-        req.project 'xapi-io', 'jre:main'
+        req.project ':io-jre'
 }
 
 description = 'XApi - Pom scanner and portable maven api'

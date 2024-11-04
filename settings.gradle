@@ -42,7 +42,7 @@ def singleProject = [
 //        'collect': ['gwt', 'jre'],
         'model': ['gwt', 'jre'],
 //        'log': ['gwt', 'jre'],
-        'io': ['gwt', 'jre'],
+//        'io': ['gwt', 'jre'],
         'ui': ['gwt', 'jre'],
         'process': ['gwt', 'jre'],
         // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc

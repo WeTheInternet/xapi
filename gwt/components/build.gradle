@@ -20,7 +20,7 @@ xapiRequire.main().configure {
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-gwt3'
         req.project 'xapi-elemental'
-        req.project 'xapi-io', 'jre:main'
+        req.project ':io-jre'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
         req.external 'net.wetheinter:gwt-user:2.8.0'

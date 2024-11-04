@@ -1,0 +1,54 @@
+<xapi-schema
+    platforms = [
+        <main
+            modules = [
+                <main
+                    requires = {
+                        @transitive
+                        project: base,
+                        project: util,
+                        project: inject,
+                        project: collect
+                    }
+                /main>,
+                <api
+                    requires = {
+                        project: { collect: main }
+                    }
+                /api>,
+                <sample force=true />,
+                <testTools force=true />,
+                <test
+                    requires = {
+                        project: { base: testTools },
+                        external: "org.json:json:20141113"
+                    }
+                /test>
+            ]
+        /main>,
+        <gwt
+            modules = [
+                <main
+                    requires = {
+                        project: collect,
+                        project: { util : main },
+                        external: "net.wetheinter:jsinterop-annotations:2.8.0",
+                        external: "net.wetheinter:gwt-user:2.8.0"
+                    }
+                /main>,
+                <test
+                    requires = {
+                        project: { util: main },
+                        project: { inject: main },
+                        project: { collect: main },
+                        external: "net.sourceforge.htmlunit:htmlunit:2.19",
+                        external: "junit:junit:4.13",
+                        external: "net.wetheinter:gwt-user:2.8.0",
+                        external: "net.wetheinter:gwt-codeserver:2.8.0",
+                        external: "net.wetheinter:gwt-dev:2.8.0"
+                    }
+                /test>
+            ]
+        /gwt>
+    ]
+/xapi-schema>

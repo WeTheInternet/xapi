@@ -10,7 +10,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
-        req.project 'xapi-io', 'main'
+        req.project ':io-main'
         req.project 'xapi-model', 'main'
 }
 

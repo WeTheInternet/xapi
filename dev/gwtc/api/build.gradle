@@ -19,7 +19,7 @@ xapiRequire.main().configure {
         req.project 'xapi-process', 'main'
         req.project Transitivity.impl, ':inject-jre'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
-        req.project 'xapi-io', 'main'
+        req.project ':io-main'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
         req.external Transitivity.compile_only, 'junit:junit:4.12'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
