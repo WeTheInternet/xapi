@@ -16,7 +16,6 @@
                         project: { collect: main }
                     }
                 /api>,
-                <sample force=true />,
                 <testTools force=true />,
                 <test
                     requires = {

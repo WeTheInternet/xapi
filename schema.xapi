@@ -26,9 +26,9 @@
         <api />,
         <spi />,
         <main include = [ api, spi ] />,
-        <sample include = "main" published = true />,
+        // <sample include = "main" published = true />,
         <testTools include = "main" published = true />,
-        <test include = ["sample", testTools ] />, // purposely mixing strings and name references, to ensure visitor is robust
+        <test include = [ testTools ] />,
     ]
 
     projects = {
@@ -46,14 +46,12 @@
         // the projects below all have gwt, jre and other platforms
         multiplatform: [
             "base",
-            "ui",
             "inject",
             "collect",
             "model",
             "log",
-//            "util",
             "io",
-//            "process",
+            "process",
 //            "reflect",
 //            "scope",
         ],
@@ -65,7 +63,11 @@
             <dev
                 multiplatform = true
                 inherit = false
-            /dev>
+            /dev>,
+            <ui
+                multiplatform = true
+                inherit = false
+            /ui>
         ]
 //        virtual: {
 //            ui: ["api", "autoui", "html"] // "components", "generator",

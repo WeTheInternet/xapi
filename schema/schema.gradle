@@ -34,11 +34,11 @@ xapiSchema {
         api
         spi
         main.require api, spi
-        sample.require 'main'
-        sample.published = true
+//        sample.require 'main'
+//        sample.published = true
         testTools.require 'main'
         testTools.published = true
-        maybeCreate('test').require sample, testTools
+        maybeCreate('test').require testTools
     }
 }
 tasks.create 'testSchema', {

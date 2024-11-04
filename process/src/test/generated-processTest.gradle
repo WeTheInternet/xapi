@@ -1,0 +1,37 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+
+apply plugin: "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+repositories.mavenCentral()
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+test.java.srcDir("$rootDir/process/src/test/java")
+
+dependencies {
+  api project(path: ":process-testTools")
+}
+// GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/process/src/gradle/test/body.end
+tasks.named('test').configure {
+    maxHeapSize = '2G'
+}
+// Done generating buildfile for :process at file://$rootDir/process/src/test/generated-processTest.gradle

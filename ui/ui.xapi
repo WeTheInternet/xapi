@@ -1,0 +1,40 @@
+<xapi-schema
+    inherit = false
+    multiplatform = true
+    virtual = true
+    platforms = [
+        <main />,
+        <jre replace = "main" published = true/>,
+        <gwt replace = main published = true/>,
+    ]
+
+    modules = [
+        <api />,
+        <spi />,
+        <main include = [ api, spi ] />,
+        <testTools include = "main" published = true />,
+        <test include = [ testTools ] />,
+    ]
+
+    projects = {
+        // the projects below all have gwt, jre and other platforms
+        multiplatform: [
+            "autoui",
+            "html",
+        ],
+
+        // the projects below are single-module projects.
+        standalone: [
+            <api
+                inherit = false
+                requires = {
+                    @transitive
+                    project : { base : api },
+                    @transitive
+                    external : "javax.validation:validation-api:1.0.0.GA",
+                }
+            /api>
+        ],
+    }
+
+/xapi-schema>

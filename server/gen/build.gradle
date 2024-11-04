@@ -12,7 +12,7 @@ plugins {
 
 xapiRequire.main.configure {
     req ->
-        req.project 'xapi-process', 'jre:main'
+        req.project ':process-jre'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-server-parent:xapi-server-api', 'main'
         req.project 'xapi-dev-parent:xapi-dev-javac'

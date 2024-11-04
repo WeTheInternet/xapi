@@ -29,7 +29,7 @@ xapiRequire.module('test').configure {
 }
 xapiSchema.whenReady {
     dependencies {
-        transitive project(":ui-api")
+        transitive project(":ui:api")
     }
 }
 description = 'XApi - Core UI Apis'

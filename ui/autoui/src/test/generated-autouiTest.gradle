@@ -1,9 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
-
-apply plugin: "java-library"
-// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -29,8 +26,6 @@ dependencies {
   implementation project(path: ":inject-jre")
   implementation project(path: ":base-testTools")
   implementation "junit:junit:4.12"
-  api project(path: ":ui:autoui-sample")
-  api project(path: ":ui:autoui-testTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui:autoui at file://$rootDir/ui/autoui/src/test/generated-autouiTest.gradle

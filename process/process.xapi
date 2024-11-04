@@ -1,0 +1,47 @@
+<xapi-schema
+    platforms = [
+        <main
+            modules = [
+                <main
+                    requires = {
+                        project: io,
+                        @transitive
+                        project: ":xapi-core-parent:xapi-core-scope",
+                    }
+                /main>
+            ]
+        /main>,
+        <gwt
+            modules = [
+                <main
+                    requires = {
+                        project : inject,
+                        @transitive(false)
+                        external : "net.wetheinter:gwt-user:2.8.0"
+                    }
+                /main>,
+                <testTools
+                    requires = {
+                        @transitive
+                        project: { base : testTools }
+                    }
+                /testTools>
+            ]
+        /gwt>,
+        <jre
+            modules = [
+                <main
+                    requires = {
+                        project : inject
+                    }
+                /main>,
+                <testTools
+                    requires = {
+                        @transitive
+                        project : { base : testTools }
+                    }
+                /testTools>
+            ]
+        /jre>
+    ]
+/xapi-schema>

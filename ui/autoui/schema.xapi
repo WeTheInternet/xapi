@@ -17,8 +17,7 @@
                         external : "junit:junit:4.12",
                     }
                 /test>,
-                <testTools force=true requires = { internal : sample } /testTools>,
-                <sample force=true /sample>
+                <testTools force=true /testTools>,
             ]
         /main>
     ]

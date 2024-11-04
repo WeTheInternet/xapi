@@ -37,7 +37,6 @@ dependencies {
   implementation "net.wetheinter:gwt-codeserver:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
   api project(path: ":io-test")
-  api project(path: ":io-gwtSample")
   api project(path: ":io-gwtTestTools")
 }
 // GenEnd XapiSettingsPlugin

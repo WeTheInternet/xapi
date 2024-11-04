@@ -16,9 +16,6 @@
             <main
                 include = [ api ]
             /main>,
-            <sample
-                force=true
-            /sample>,
             <test
                 include = [ main ]
                 require = {

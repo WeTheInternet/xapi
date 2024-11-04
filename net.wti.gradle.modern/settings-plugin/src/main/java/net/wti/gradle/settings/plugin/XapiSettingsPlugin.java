@@ -511,9 +511,11 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     }
                                     // compute whether the target project is not-multiplatform / needs configuration: set too.
                                     final String unparsed = QualifiedModule.unparse(coords);
-                                    if (index.isMultiPlatform(view, path, coords)) {
+                                    // this is gross. need to consider deeply nested structures...
+                                    if (index.isVirtual(view, path, coords)) {
+                                        path = path + ":" + unparsed;
+                                    } else if (index.isMultiPlatform(view, path, coords)) {
                                         // multi-platform needs to convert to a subproject dependency.
-                                        String simpleName = path.substring(path.lastIndexOf(":") + 1);
                                         path = path + "-" + unparsed;
                                     } else {
                                         // not multi-platform, we expect this to be a single-module dependency,

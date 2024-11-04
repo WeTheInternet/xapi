@@ -29,7 +29,6 @@ test.java.srcDir("$rootDir/base/src/test/java")
 
 dependencies {
   implementation project(path: ":base-testTools")
-  api project(path: ":base-sample")
   api project(path: ":base-testTools")
 }
 // GenEnd XapiSettingsPlugin

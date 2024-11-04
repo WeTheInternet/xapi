@@ -65,10 +65,28 @@ public class SchemaIndexReader implements SchemaDirs {
         final String key = PlatformModule.unparse(coords);
         File moduleDir = new File(projectDir, key);
         multiplatformFile = new File(moduleDir, "multiplatform");
-        if (multiplatformFile.exists() && "true".equals(readFile(multiplatformFile).trim())) {
+        return multiplatformFile.exists() && "true".equals(readFile(multiplatformFile).trim());
+    }
+
+    public boolean isVirtual(final MinimalProjectView view, final String path, final PlatformModule coords) {
+        // this is kinda gross... each layer of parenting might be virtual/multiplatform.
+        // we're going to hack our way through, I suppose
+        File pathDir = new File(getDirIndex(), "path");
+        File projectDir = new File(pathDir, QualifiedModule.mangleProjectPath(path));
+        if ("_".equals(projectDir.getName())) {
+            projectDir = new File(pathDir, "_" + view.getBuildName());
+        }
+        // if the parent project-wide directory is marked as multiplatform=true, we treat it as multiplatform
+        File virtualFile;
+        virtualFile = new File(projectDir, "virtual");
+        if (virtualFile.exists() && "true".equals(readFile(virtualFile).trim())) {
             return true;
         }
-        return false;
+        // also allow the modules themselves to specify "I am multiplatform"
+        final String key = PlatformModule.unparse(coords);
+        File moduleDir = new File(projectDir, key);
+        virtualFile = new File(moduleDir, "virtual");
+        return virtualFile.exists() && "true".equals(readFile(virtualFile).trim());
     }
 
     public boolean dependencyExists(final SchemaDependency dependency, final SchemaProject project, final SchemaPlatform plat, final SchemaModule mod) {

@@ -38,7 +38,6 @@
 
                     }
                 /main>,
-                <sample force=true />,
                 <testTools force=true />,
                 <test
                     requires = {
@@ -66,7 +65,6 @@
 
                     }
                 /main>,
-                <sample force=true />,
                 <testTools force=true />,
                 <test
                     requires = {

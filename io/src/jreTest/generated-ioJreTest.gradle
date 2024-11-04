@@ -28,7 +28,6 @@ main.java.srcDir("$rootDir/io/src/jreTest/java")
 
 dependencies {
   api project(path: ":io-test")
-  api project(path: ":io-jreSample")
   api project(path: ":io-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin

@@ -31,7 +31,6 @@ dependencies {
   implementation project(path: ":base-jreTestTools")
   implementation "junit:junit:4.13"
   api project(path: ":inject-test")
-  api project(path: ":inject-jreSample")
   api project(path: ":inject-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin

@@ -20,6 +20,7 @@
                 <main
                     requires = {
                         project : ":log",
+                        @transitive
                         project : ":base",
                         project : { collect: api},
                         @transitive
@@ -63,7 +64,6 @@
                         project : "base-jreTestTools"
                     }
                 /test>,
-                <sample force=true />,
                 <testTools
                     requires = {
                         project : { ":base" : "testTools" },

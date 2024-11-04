@@ -29,7 +29,6 @@ test.resources.srcDir("$rootDir/collect/src/test/resources")
 
 dependencies {
   implementation "junit:junit:4.13"
-  api project(path: ":collect-sample")
   api project(path: ":collect-testTools")
 }
 // GenEnd XapiSettingsPlugin

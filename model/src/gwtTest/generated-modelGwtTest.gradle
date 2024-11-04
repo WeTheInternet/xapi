@@ -38,7 +38,6 @@ dependencies {
   implementation "junit:junit:4.13"
   implementation "net.sourceforge.htmlunit:htmlunit:2.19"
   implementation "net.wti.core:xapi-gen:$version"
-  api project(path: ":model-gwtSample")
   api project(path: ":model-gwtTestTools")
 }
 // GenEnd XapiSettingsPlugin

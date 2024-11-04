@@ -25,8 +25,8 @@
                     requires = {
                         project : { ":inject" : "api" },
                         project : { ":util" : "main:main" },
-                        external : "junit:junit:4.12",
-                        external : "junit:junit:4.12:sources"
+                        @transitive
+                        external : "junit:junit:4.12"
                     }
                 /testTools>,
                 <test
@@ -75,14 +75,17 @@
                     requires = {
                         project : { ":xapi-elemental" : main },
                         project : { ":xapi-server-parent:xapi-server-api" : main },
+                        @transitive
                         external : "junit:junit:4.12",
+                        @transitive
                         external : "junit:junit:4.12:sources",
                         external : "org.hamcrest:hamcrest-core:1.3",
                         external : "org.hamcrest:hamcrest-core:1.3:sources",
                         external : "net.sourceforge.htmlunit:htmlunit:2.19",
                         external : "net.wetheinter:gwt-user:2.8.0",
                         external : "net.wetheinter:gwt-elemental:2.8.0",
-                        external : "net.wetheinter:gwt-dev:2.8.0"
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+
                     }
                 /testTools>,
             ]

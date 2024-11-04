@@ -28,7 +28,6 @@ main.java.srcDir("$rootDir/model/src/jreTest/java")
 
 dependencies {
   implementation "junit:junit:4.13"
-  api project(path: ":model-jreSample")
   api project(path: ":model-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin

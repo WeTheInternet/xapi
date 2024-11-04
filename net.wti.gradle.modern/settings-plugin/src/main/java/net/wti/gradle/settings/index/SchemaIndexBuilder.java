@@ -259,7 +259,8 @@ public class SchemaIndexBuilder implements SchemaIndex, SchemaDirs {
         }
 
         public boolean isVirtual() {
-            return project.isVirtual();
+            return project.isVirtual() ||
+                    ( project.getParent() != null && project.getParent().isVirtual() );
         }
 
         public boolean isForce() {

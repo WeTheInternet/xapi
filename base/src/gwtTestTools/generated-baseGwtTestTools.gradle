@@ -32,8 +32,8 @@ dependencies {
   implementation project(path: ":xapi-server-parent:xapi-server-api")
   implementation "net.wetheinter:gwt-user:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
-  implementation "junit:junit:4.12"
-  implementation "junit:junit:4.12:sources"
+  api "junit:junit:4.12"
+  api "junit:junit:4.12:sources"
   implementation "org.hamcrest:hamcrest-core:1.3"
   implementation "org.hamcrest:hamcrest-core:1.3:sources"
   implementation "net.sourceforge.htmlunit:htmlunit:2.19"

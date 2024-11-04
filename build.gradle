@@ -156,9 +156,3 @@ tasks.register('projectInfo') {
             // perhaps get some xapi schema stats about realized modules to print here?
         }
 }
-
-gradle.projectsEvaluated {
-    project(':base').tasks.named('compileTestJava').configure {
-        enabled = false
-    }
-}

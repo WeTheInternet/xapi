@@ -13,7 +13,6 @@
                         project: { base: main }
                     }
                 /api>,
-                <sample force=true />,
                 <testTools force=true />,
                 <main
                     requires = {

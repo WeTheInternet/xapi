@@ -29,7 +29,6 @@ test.resources.srcDir("$rootDir/inject/src/test/resources")
 
 dependencies {
   implementation project(path: ":inject-testTools")
-  api project(path: ":inject-sample")
   api project(path: ":inject-testTools")
 }
 // GenEnd XapiSettingsPlugin

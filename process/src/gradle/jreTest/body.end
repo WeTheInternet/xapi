@@ -1,0 +1,7 @@
+tasks.named('test').configure {
+    forkEvery = 1
+}
+
+import net.wti.gradle.test.task.TestIsolator
+def isolator = tasks.create("testIsolator", TestIsolator)
+tasks.withType(Test).configureEach isolator.&addTest
