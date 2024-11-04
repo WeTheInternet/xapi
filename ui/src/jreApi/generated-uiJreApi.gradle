@@ -26,8 +26,8 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
-  api "net.wti.core:xapi-fu:0.5.1"
-  api "javax.validation:validation-api:1.0.0.GA"
+  implementation "net.wti.core:xapi-fu:0.5.1"
+  implementation "javax.validation:validation-api:1.0.0.GA"
   api project(path: ":ui-api")
 }
 // GenEnd XapiSettingsPlugin

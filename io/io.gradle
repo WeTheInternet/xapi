@@ -12,7 +12,13 @@ plugins {
 }
 
 xapiRequire.main().project ':util'
-xapiRequire.main().project ':base-api'
+xapiRequire.main().project ':base-main'
+xapiRequire.main().project ':inject-main'
+xapiRequire.main().project ':xapi-collect', 'main:main'
+xapiRequire.module('api').configure {
+    req ->
+        req.project ':xapi-collect', 'main:main'
+}
 xapiRequire.module('test').configure {
     req ->
         req.project ':base-testTools'

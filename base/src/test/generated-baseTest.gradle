@@ -28,7 +28,7 @@ test.resources.srcDir("$rootDir/base/src/test/resources")
 test.java.srcDir("$rootDir/base/src/test/java")
 
 dependencies {
-  api project(path: ":base-testTools")
+  implementation project(path: ":base-testTools")
   api project(path: ":base-sample")
   api project(path: ":base-testTools")
 }

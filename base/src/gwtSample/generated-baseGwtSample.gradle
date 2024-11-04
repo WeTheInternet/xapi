@@ -27,6 +27,8 @@ main.resources.setSrcDirs([]);
 main.resources.srcDir("$rootDir/base/src/gwtSample/resources")
 
 dependencies {
+  implementation "net.wetheinter:gwt-user:2.8.0"
+  implementation "net.wetheinter:gwt-dev:2.8.0"
   api project(path: ":base-sample")
   api project(path: ":base-gwt")
 }

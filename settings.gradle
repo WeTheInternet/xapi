@@ -31,17 +31,17 @@ def multiProject = [
         // The value is the list of sub-directories to create as "child modules".
         // All multiProject children are created as normal projects all the time.
         'lang': ['dev', 'test'],
-        'bridge': ['inject', 'testTools']
+        'bridge': ['inject', 'model', 'collect', 'testTools']
 ]
 def singleProject = [
         // For singleProject mode, the key is the directory/artifact name.
         // The value is an array of "realizable platforms"; where a "realized platform"
         // is an implementation-target that has finalized, generated "staging resources"
         // on the classpath and available to browse and debug.
-        'inject': ['gwt', 'jre'],
+//        'inject': ['gwt', 'jre'],
         'collect': ['gwt', 'jre'],
         'model': ['gwt', 'jre'],
-        'log': ['gwt', 'jre'],
+//        'log': ['gwt', 'jre'],
         'io': ['gwt', 'jre'],
         'ui': ['gwt', 'jre'],
         'process': ['gwt', 'jre'],
@@ -206,7 +206,7 @@ include(':xapi-dev-parent:xapi-dev-source')
 include(':xapi-dev-parent:xapi-dev-bytecode')
 include(':xapi-dev-parent:xapi-dev-scanner')
 include(':xapi-dev-parent:xapi-dev-javac')
-include(':xapi-dev-parent:xapi-dev-template')
+//include(':xapi-dev-parent:xapi-dev-template')
 include(':xapi-dev-parent:xapi-dev-file')
 include(':xapi-dev-parent:xapi-dev-maven')
 include(':xapi-dev-parent:xapi-dist')
@@ -255,7 +255,7 @@ project(':xapi-dev-parent:xapi-dev-source').projectDir = file('dev/source')
 project(':xapi-dev-parent:xapi-dev-bytecode').projectDir = file('dev/bytecode')
 project(':xapi-dev-parent:xapi-dev-scanner').projectDir = file('dev/scanner')
 project(':xapi-dev-parent:xapi-dev-javac').projectDir = file('dev/javac')
-project(':xapi-dev-parent:xapi-dev-template').projectDir = file('dev/template')
+//project(':xapi-dev-parent:xapi-dev-template').projectDir = file('dev/template')
 project(':xapi-dev-parent:xapi-dev-file').projectDir = file('dev/file')
 project(':xapi-dev-parent:xapi-dev-maven').projectDir = file('dev/maven')
 project(':xapi-dev-parent:xapi-dist').projectDir = file('dev/dist')

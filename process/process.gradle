@@ -18,7 +18,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('gwt', 'main').configure {
     req ->
-        req.project 'xapi-inject', 'gwt:main'
+        req.project ':inject-gwt'
         req.project 'xapi-core-parent:xapi-core-scope'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 }
@@ -29,7 +29,7 @@ xapiRequire.module('gwt', 'test').configure {
 
 xapiRequire.module('jre', 'main').configure {
     req ->
-        req.project 'xapi-inject', 'jre:main'
+        req.project ':inject-jre'
 }
 xapiRequire.module('jre', 'test').configure {
     req -> req.project ':base-testTools'

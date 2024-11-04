@@ -20,7 +20,7 @@ xapiRequire.main().configure {
 xapiRequire.module('test').configure {
     req ->
         req.project ':base-testTools'
-        req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
+        req.project Transitivity.runtime, ':inject-jre'
 }
 
 description = 'XApi - Command line interface.'

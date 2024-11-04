@@ -102,5 +102,10 @@ public enum Transitivity {
      * Counterpart Transitivity: {@link #internal}
      *
      */
-    execution
+    execution,
+    /**
+     * A bit of a hack; but @transitive(annotation_processor) can be used to target annotation process classpath
+     */
+    annotation_processor,
+    test
 }

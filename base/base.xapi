@@ -4,7 +4,9 @@
             modules = [
                 <api
                     requires = {
+                        @transitive
                         external : "net.wti.core:xapi-anno:0.5.1",
+                        @transitive
                         external : "net.wti.core:xapi-fu:0.5.1",
                     }
                 /api>,
@@ -21,6 +23,7 @@
                 /main>,
                 <testTools
                     requires = {
+                        project : { ":inject" : "api" },
                         project : { ":util" : "main:main" },
                         external : "junit:junit:4.12",
                         external : "junit:junit:4.12:sources"
@@ -34,26 +37,38 @@
             ]
         /main>,
         <gwt replace = "main" published = true
+            requires = {
+                @transitive(false)
+                external : "net.wetheinter:gwt-user:2.8.0",
+                @transitive(false)
+                external : "net.wetheinter:gwt-dev:2.8.0"
+            }
             modules = [
                 <main
                     requires = {
                         project : { ":util" : "main:main" },
                         project : { ":xapi-core-parent:xapi-core-reflect" : "main" },
-                        project : ":xapi-inject",
-                        external : "net.wetheinter:gwt-user:2.8.0",
-                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        project : { ":inject" : "main:main" },
+                        project : { ":log" : "api" },
+                        project : { ":xapi-bridge-collect" : main },
                         external : "net.wti.core:xapi-fu:0.5.1",
                         external : "com.google.elemental2:elemental2-core:1.0.0-RC1",
                         external : "com.google.jsinterop:base:1.0.0-RC1",
+                        @transitive
                         external : "javax.inject:javax.inject:1",
+                        @transitive
                         external : "javax.inject:javax.inject:1:sources",
+                        @transitive
                         external : "javax.validation:validation-api:1.0.0.GA",
+                        @transitive
                         external : "javax.validation:validation-api:1.0.0.GA:sources"
                     }
                 /main>,
                 <test
                     requires = {
-                        external : "net.wetheinter:gwt-dev:2.8.0"
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        internal : "gwt:testTools",
+                        external : "net.wti.core:xapi-gen:0.5.1"
                     }
                 /test>,
                 <testTools
@@ -76,9 +91,19 @@
             modules = [
                 <main
                     requires = {
-                        project : { "util": "main:main" }
+                        project : { "util": "main:main" },
+                        @transitive("test")
+                        external : "junit:junit:4.13"
                     }
-                /main>
+                /main>,
+                <test
+                    requires = {
+                        external : "junit:junit:4.13",
+                        project : ":inject-main",
+                        internal : "main:testTools",
+                        project : ":util"
+                    }
+                /test>
             ]
         /jre>,
     ]

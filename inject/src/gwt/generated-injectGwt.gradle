@@ -1,0 +1,40 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+
+apply plugin: "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/inject/src/gwt/java")
+main.resources.srcDir("$rootDir/inject/src/gwt/resources")
+
+dependencies {
+  api project(path: ":base-gwt")
+  implementation project(path: ":log-main")
+  compileOnly "net.wetheinter:gwt-user:2.8.0"
+  compileOnly "net.wetheinter:gwt-dev:2.8.0"
+  api project(path: ":inject-main")
+  api project(path: ":inject-gwtApi")
+  api project(path: ":inject-gwtSpi")
+}
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :inject at file://$rootDir/inject/src/gwt/generated-injectGwt.gradle

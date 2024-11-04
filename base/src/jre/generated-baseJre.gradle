@@ -27,7 +27,8 @@ main.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/base/src/jre/java")
 
 dependencies {
-  api project(path: ":util")
+  implementation project(path: ":util")
+  testImplementation "junit:junit:4.13"
   api project(path: ":base-main")
   api project(path: ":base-jreApi")
   api project(path: ":base-jreSpi")

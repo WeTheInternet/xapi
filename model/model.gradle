@@ -14,7 +14,7 @@ plugins {
 xapiRequire.module('api').configure {
     req ->
         req.project('xapi-collect')
-        req.project 'xapi-inject'
+        req.project ':inject-main'
 }
 
 xapiRequire.main().configure {
@@ -37,7 +37,7 @@ xapiRequire.module('gwt', 'main').configure {
         req.project 'xapi-lang-dev', 'main'
         req.project 'xapi-core-parent:xapi-core-reflect', 'main'
         req.project 'xapi-collect', 'jre:main'
-        req.project 'xapi-inject', 'jre:main'
+        req.project ':inject-jre'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
 }
@@ -50,7 +50,7 @@ xapiRequire.module('gwt', 'test').configure {
         req.project 'xapi-model', 'jre:main'
         req.project 'xapi-io', 'gwt:main'
         req.project 'xapi-server-parent:xapi-server-api'
-        req.project Transitivity.runtime, 'xapi-inject', 'jre:main'
+        req.project Transitivity.runtime, ':inject-jre'
 
 }
 xapiSchema.whenReady {
@@ -74,8 +74,8 @@ xapiRequire.module('jre', 'main').configure {
         req.project ':base-jre'
         req.project 'xapi-model', 'main'
         req.project 'xapi-io', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-template'
-        req.project 'xapi-inject', 'jre:main'
+        req.project ':dev:template-main'
+        req.project ':inject-jre'
 }
 
 xapiRequire.module('jre', 'test').configure {

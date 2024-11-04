@@ -6,7 +6,7 @@ evaluationDependsOn ':xapi-core-parent'
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-collect', 'main'
-        req.project 'xapi-inject', 'jre', 'main'
+        req.project ':inject-jre'
         req.project ':util'
 }
 

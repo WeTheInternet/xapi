@@ -17,7 +17,7 @@ xapiRequire.module('test').configure {
         req.external 'info.cukes:cucumber-java:1.2.5'
         req.external 'info.cukes:cucumber-junit:1.2.5'
         req.external 'org.hamcrest:hamcrest-library:1.1'
-        req.project 'xapi-inject', 'jre:main'
+        req.project ':inject-jre'
         req.project 'xapi-collect', 'jre:main'
 }
 dependencies {

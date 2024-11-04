@@ -28,8 +28,8 @@ main.java.srcDir("$rootDir/base/src/main/java")
 main.resources.srcDir("$rootDir/base/src/main/resources")
 
 dependencies {
-  api "javax.inject:javax.inject:1"
-  api "javax.annotation:javax.annotation-api:1.2"
+  implementation "javax.inject:javax.inject:1"
+  implementation "javax.annotation:javax.annotation-api:1.2"
   api project(path: ":base-api")
   api project(path: ":base-spi")
 }

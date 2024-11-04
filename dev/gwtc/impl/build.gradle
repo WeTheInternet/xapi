@@ -18,7 +18,7 @@ repositories {
 }
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-inject', 'jre:main'
+        req.project ':inject-jre'
         req.external 'net.wetheinter:gwt-dev:2.8.0'
         req.external 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
         req.external 'net.wetheinter:gwt-user:2.8.0'

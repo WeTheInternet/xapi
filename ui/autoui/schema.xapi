@@ -12,7 +12,7 @@
                 /main>,
                 <test
                     requires = {
-                        project : { "xapi-inject" : "jre:main" },
+                        project : { ":inject" : "jre:main" },
                         project : { ":base" : "main:testTools" },
                         external : "junit:junit:4.12",
                     }

@@ -1,0 +1,20 @@
+<xapi-schema
+    inherit = false
+    multiplatform = false
+    platforms = [
+        <main
+            modules = [
+                <main
+                    requires = {
+                        external: "net.wti.core:xapi-gen:$version",
+                        project: base,
+                        project: { log: api },
+                        project: "xapi-core-parent:xapi-core-args",
+                        @transitive("test")
+                        external: "junit:junit:4.12"
+                    }
+                /main>
+            ]
+        /main>
+    ]
+/xapi-schema>

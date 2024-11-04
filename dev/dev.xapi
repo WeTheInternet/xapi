@@ -1,0 +1,8 @@
+<xapi-schema
+    inherit = false
+    platforms = [ main ]
+    modules = [ main ]
+    projects = [
+        template
+    ]
+/xapi-schema>

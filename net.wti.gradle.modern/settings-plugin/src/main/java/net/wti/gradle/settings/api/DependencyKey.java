@@ -61,5 +61,15 @@ public enum DependencyKey {
      * Normally store a {@link PlatformModule} value.
      */
     platformModule,
+    /**
+     * Use @transitive or @transitive(true) to ensure transitive (api) dependency,
+     * or use @transitive(false) to ensure non-transitive (compileOnly) dependency.
+     * Omitting @transitive nets a default scope of implementation.
+     */
+    transitive,
+    /**
+     * Use @test to denote that the given dependencies are test dependencies (useful for non-multi-module projects)
+     */
+    test,
 }
 

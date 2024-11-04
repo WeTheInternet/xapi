@@ -26,9 +26,9 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 
 dependencies {
-  api project(path: ":xapi-inject")
-  api project(path: ":base-testTools")
-  api "junit:junit:4.12"
+  implementation project(path: ":inject-jre")
+  implementation project(path: ":base-testTools")
+  implementation "junit:junit:4.12"
   api project(path: ":ui:autoui-sample")
   api project(path: ":ui:autoui-testTools")
 }

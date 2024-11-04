@@ -1280,10 +1280,26 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         e.accept(this, ctx);
         return list;
     }
+    public SizedIterable<String> extractNamesAndValues(Expression e, Ctx ctx) {
+        ListLike<String> list = X_Jdk.list();
+        extractNamesAndValues(list::add);
+        e.accept(this, ctx);
+        return list;
+    }
 
     public ComposableXapiVisitor<Ctx> extractNames(In1<String> onNameFound) {
         return withJsonArrayRecurse(In2.ignoreAll())
               .withNameOrString(onNameFound.ignore2());
+    }
+
+    public ComposableXapiVisitor<Ctx> extractNamesAndValues(In1<String> onNameFound) {
+        return withJsonArrayRecurse(In2.ignoreAll())
+            .withBooleanLiteralExpr(onNameFound.<BooleanLiteralExpr>map1(BooleanLiteralExpr::toSource).<Ctx>ignore2().supply1(false))
+            .withLongLiteralExpr(onNameFound.<LongLiteralExpr>map1(LongLiteralExpr::toSource).<Ctx>ignore2().supply1(false))
+            .withIntegerLiteralExpr(onNameFound.<IntegerLiteralExpr>map1(IntegerLiteralExpr::toSource).<Ctx>ignore2().supply1(false))
+            .withDoubleLiteralExpr(onNameFound.<DoubleLiteralExpr>map1(DoubleLiteralExpr::toSource).<Ctx>ignore2().supply1(false))
+            .withCharLiteralExpr(onNameFound.<CharLiteralExpr>map1(CharLiteralExpr::toSource).<Ctx>ignore2().supply1(false))
+            .withNameOrString(onNameFound.ignore2());
     }
 
     @Override

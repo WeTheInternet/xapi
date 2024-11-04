@@ -276,6 +276,7 @@ class CompileMe {
                 /main>,
                 <api
                     requires = {
+                        @transitive
                         project : { ":producer2" : "main" }
                     }
                 /api>,
@@ -345,6 +346,7 @@ class CompileMe {
         <producer
             modules = [
                 <$producerModule requires = {
+                    @transitive
                     project: { ":producer2" : main }
                 } /$producerModule>
             ]

@@ -28,14 +28,16 @@ main.java.srcDir("$rootDir/base/src/gwt/java")
 main.resources.srcDir("$rootDir/base/src/gwt/resources")
 
 dependencies {
-  api project(path: ":util")
-  api project(path: ":xapi-core-parent:xapi-core-reflect")
-  api project(path: ":xapi-inject")
-  api "net.wetheinter:gwt-user:2.8.0"
-  api "net.wetheinter:gwt-dev:2.8.0"
-  api "net.wti.core:xapi-fu:0.5.1"
-  api "com.google.elemental2:elemental2-core:1.0.0-RC1"
-  api "com.google.jsinterop:base:1.0.0-RC1"
+  implementation project(path: ":util")
+  implementation project(path: ":xapi-core-parent:xapi-core-reflect")
+  implementation project(path: ":inject-main")
+  implementation project(path: ":log-api")
+  implementation project(path: ":xapi-bridge-collect")
+  implementation "net.wetheinter:gwt-user:2.8.0"
+  implementation "net.wetheinter:gwt-dev:2.8.0"
+  implementation "net.wti.core:xapi-fu:0.5.1"
+  implementation "com.google.elemental2:elemental2-core:1.0.0-RC1"
+  implementation "com.google.jsinterop:base:1.0.0-RC1"
   api "javax.inject:javax.inject:1"
   api "javax.inject:javax.inject:1:sources"
   api "javax.validation:validation-api:1.0.0.GA"

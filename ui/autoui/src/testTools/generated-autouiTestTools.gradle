@@ -26,7 +26,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
-  api project(path: ":ui:autoui-sample")
+  implementation project(path: ":ui:autoui-sample")
   api project(path: ":ui:autoui-main")
 }
 // GenEnd XapiSettingsPlugin

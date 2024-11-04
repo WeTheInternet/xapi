@@ -26,6 +26,8 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
+  implementation "net.wetheinter:gwt-user:2.8.0"
+  implementation "net.wetheinter:gwt-dev:2.8.0"
   api project(path: ":base-api")
 }
 // GenEnd XapiSettingsPlugin

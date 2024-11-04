@@ -1,0 +1,30 @@
+<xapi-schema
+    inherit = false
+    platforms = [ <main
+        modules = [
+            <api
+                requires = {
+                    project: { ":xapi-bridge-collect" : main },
+                    @transitive
+                    project: { ":xapi-core-parent:xapi-core-args" : main },
+                    @transitive(false)
+                    external: "net.wetheinter:gwt-dev:2.8.0",
+                    @transitive(false)
+                    external: "javax.inject:javax.inject:1"
+                }
+            /api>,
+            <main
+                include = [ api ]
+            /main>,
+            <sample
+                force=true
+            /sample>,
+            <test
+                include = [ main ]
+                require = {
+                    external: "junit:junit:4.13"
+                }
+            /test>
+        ]
+    /main> ]
+/xapi-schema>

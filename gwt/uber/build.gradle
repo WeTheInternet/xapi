@@ -33,7 +33,7 @@ plugins.apply 'xapi-meta'
 xapiRequire.main().configure {
     req ->
         req.project ':util'
-        req.project 'xapi-inject', 'gwt:main'
+        req.project ':inject-gwt'
         req.project 'xapi-collect', 'gwt:main'
         req.project ':base-gwtTestTools'
         req.project 'xapi-gwt3', 'main'

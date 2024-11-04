@@ -5,7 +5,10 @@
         <main
             requires = {
                 project: ":xapi-collect",
+                @transitive
+                project: { ":log" : api },
                 project: ":xapi-core-parent:xapi-core-reflect",
+
                 project: { ":base" : api }
             }
         /main>

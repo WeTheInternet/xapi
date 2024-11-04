@@ -1,0 +1,77 @@
+<xapi-schema
+    platforms = [
+        <main
+            modules = [
+                <api
+                    requires = {
+                        @transitive
+                        external : "net.wti.core:xapi-fu:$version",
+                        @transitive
+                        project : { base : spi, base : api }
+                    }
+                /api>,
+                <spi
+                    requires = {
+                        external : "net.wti.core:xapi-fu:$version",
+                        project : { base: api },
+                        project : { ":xapi-bridge-collect": main }
+                    }
+                /spi>,
+                <main
+                    requires = {
+                        project : ":log",
+                        project : ":base",
+                        project : { ":xapi-bridge-collect" : main },
+                        @transitive
+                        external : "net.wti.core:xapi-gen:$version",
+                    }
+                /main>,
+                <test
+                    requires = {
+                        internal : testTools
+                    }
+                /test>
+            ]
+        /main>,
+        <gwt replace = "main" published = true
+            modules = [
+                <main
+                    requires = {
+                        @transitive
+                        project : ":base",
+                        project : { ":log" : "main" },
+                        @transitive(false)
+                        external : "net.wetheinter:gwt-user:2.8.0",
+                        @transitive(false)
+                        external : "net.wetheinter:gwt-dev:2.8.0"
+                    }
+                /main>,
+            ]
+        /gwt>,
+        <jre replace = "main" published = true
+            modules = [
+                <main
+                    requires = {
+                        project : { ":xapi-dev-parent:xapi-dev-scanner": "main" },
+                        @transitive("annotation_processor")
+                        internal : "main:main",
+                    }
+                /main>,
+                <test
+                    requires = {
+                        external : "junit:junit:4.13",
+                        project : "base-jreTestTools"
+                    }
+                /test>,
+                <sample force=true />,
+                <testTools
+                    requires = {
+                        project : { ":base" : "testTools" },
+                        @transitive("runtime_only")
+                        project : ":xapi-bridge-model",
+                    }
+                /testTools>
+            ]
+        /jre>,
+    ]
+/xapi-schema>

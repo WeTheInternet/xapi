@@ -9,6 +9,7 @@ import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.tools.InternalGradleCache;
 import net.wti.javaparser.JavaParser;
 import net.wti.javaparser.ParseException;
+import net.wti.javaparser.ast.HasAnnotationExprs;
 import net.wti.javaparser.ast.expr.*;
 import net.wti.javaparser.ast.visitor.ComposableXapiVisitor;
 import org.gradle.api.logging.Logger;
@@ -686,8 +687,42 @@ public interface XapiSchemaParser {
                 DependencyMap<CharSequence> localCopy = new DependencyMap<>(depMap);
                 localCopy.put(DependencyKey.platformModule, mod);
                 localCopy.put(DependencyKey.category, type);
-                SizedIterable<SchemaDependency> extracted = entry.out2().map(expr ->
-                        extractDependencies(localCopy, expr, project, mod)
+
+                SizedIterable<SchemaDependency> extracted = entry.out2().map(expr -> {
+                    Do undo = Do.NOTHING;
+                    if (expr instanceof HasAnnotationExprs) {
+                        for (AnnotationExpr annotation : ((HasAnnotationExprs) expr).getAnnotations()) {
+                            String annoName = annotation.getNameString();
+                            final DependencyKey key;
+                            try {
+                                key = DependencyKey.valueOf(annoName);
+                            } catch (IllegalArgumentException e) {
+                                throw new IllegalArgumentException("Invalid annotation " + annotation.toSource()
+                                        + " in project " + project.getPathGradle() + " - " + metadata.getSchemaLocation()
+                                        , e);
+                            }
+                            final CharSequence value = annotation.getMembers().map(
+                                    (m)->{
+                                        final Expression annoValue = m.getValue();
+                                        if (annoValue == null) {
+                                            return "true";
+                                        }
+                                        return annoValue.toSource();
+                                    }
+                            ).join("");
+                            final CharSequence was = localCopy.put(key, value.length() == 0 ? "true" : value);
+                            if (was == null) {
+                                undo = undo.doAfter(()-> localCopy.remove(key));
+                            } else {
+                                undo = undo.doAfter(()-> localCopy.put(key, was));
+                            }
+                        }
+                    }
+
+                    final SizedIterable<SchemaDependency> result = extractDependencies(localCopy, expr, project, mod);
+                    undo.done();
+                    return result;
+                }
                 ).flatten(In1Out1.identity()).cached();
                 Log.loggerFor(XapiSchemaParser.class, this)
                         .log(XapiSchemaParser.class, LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
@@ -875,6 +910,16 @@ public interface XapiSchemaParser {
                     if (classifier != UNKNOWN_VALUE) {
                         dep.setExtraGnv(classifier.toString());
                     }
+                    final CharSequence transitive = deps.get(DependencyKey.transitive);
+                    if (transitive == null) {
+                        dep.setTransitivity(Transitivity.impl);
+                    } else if ("true".equals(transitive.toString())) {
+                        dep.setTransitivity(Transitivity.api);
+                    } else if ("false".equals(transitive.toString())) {
+                        dep.setTransitivity(Transitivity.compile_only);
+                    } else {
+                        dep.setTransitivity(Transitivity.valueOf(transitive.toString().replace("\"", "")));
+                    }
                     dependencies.add(dep);
 
                 }), null);
@@ -888,7 +933,7 @@ public interface XapiSchemaParser {
         for (AnnotationExpr anno : annos) {
             for (MemberValuePair member : anno.getMembers()) {
                 for (String value : whenMissingFail(XapiSchemaParser.class)
-                        .extractNames(member.getValue(), deps)) {
+                        .extractNamesAndValues(member.getValue(), deps)) {
                     // despite the many loops above, this will, in practice, all be simple @Group("value") constructs.
                     final DependencyKey key;
                     try {

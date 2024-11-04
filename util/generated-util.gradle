@@ -28,9 +28,10 @@ main.java.srcDir("$rootDir/util/src/main/java")
 main.resources.srcDir("$rootDir/util/src/main/resources")
 
 dependencies {
-  api project(path: ":xapi-collect")
-  api project(path: ":xapi-core-parent:xapi-core-reflect")
-  api project(path: ":base-api")
+  implementation project(path: ":xapi-collect")
+  api project(path: ":log-api")
+  implementation project(path: ":xapi-core-parent:xapi-core-reflect")
+  implementation project(path: ":base-api")
 }
 
 

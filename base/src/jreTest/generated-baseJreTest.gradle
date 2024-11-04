@@ -27,6 +27,10 @@ main.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/base/src/jreTest/java")
 
 dependencies {
+  implementation project(path: ":inject-main")
+  implementation project(path: ":util")
+  implementation project(path: ":base-testTools")
+  implementation "junit:junit:4.13"
   api project(path: ":base-test")
   api project(path: ":base-jreSample")
   api project(path: ":base-jreTestTools")

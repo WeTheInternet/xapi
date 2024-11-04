@@ -454,7 +454,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     );
                                     break;
                                 case compile_only:
-                                    depOut.print("compileOnly");
                                     depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "compileOnly" : key + "CompileOnly"
@@ -464,6 +463,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "implementation" : key + "Implementation"
+                                    );
+                                    break;
+                                case test:
+                                    depOut.print(
+                                            project.isMultiplatform() || "main".equals(key) ?
+                                                    "testImplementation" : key + "TestImplementation"
                                     );
                                     break;
                                 case runtime:
@@ -476,6 +481,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "runtimeOnly" : key + "RuntimeOnly"
+                                    );
+                                    break;
+                                case annotation_processor:
+                                    depOut.print(
+                                            project.isMultiplatform() || "main".equals(key) ?
+                                                    "annotationProcessor" : key + "AnnotationProcessor"
                                     );
                                     break;
                                 default:
