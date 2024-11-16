@@ -220,10 +220,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 String modKey = project.getName() + "-" + key;
                 String projectName = project.isMultiplatform() ? gradlePrefix + "-" + key : gradlePrefix;
                 String moduleSourcePath = "src" + File.separator + key;
+                String moduleTestSourcePath = "src" + File.separator + key + "Test";
                 String gradleSourcePath = project.isMultiplatform() ? moduleSourcePath : "";
                 String buildscriptSrcPath = "src/gradle/" + key;
                 final File gradleSourceDir = new File(aggregatorRoot, gradleSourcePath);
                 final File moduleSourceDir = new File(aggregatorRoot, moduleSourcePath);
+                final File moduleTestSourceDir = new File(aggregatorRoot, moduleTestSourcePath);
                 final File buildscriptSrc = new File(aggregatorRoot, buildscriptSrcPath);
                 final String buildFileName = project.getName() + (project.isMultiplatform() ? GradleCoerce.toTitleCase(key) : "") + ".gradle";
                 map.whenResolved(() -> {
@@ -372,9 +374,13 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // To start, setup the sourceset!
                         String srcSetName = project.isMultiplatform() ? "test".equals(key) ? "test" : "main" : key;
                         LocalVariable main = out.addVariable(SourceSet.class, srcSetName, true);
+                        LocalVariable test = out.addVariable(SourceSet.class, "test", true);
                         main.setInitializerPattern("sourceSets.maybeCreate('$1')", srcSetName);
+                        test.setInitializerPattern("sourceSets.maybeCreate('$1')", "test");
                         main.invoke("java.setSrcDirs($2)", "[]");
                         main.invoke("resources.setSrcDirs($2)", "[]");
+                        test.invoke("java.setSrcDirs($2)", "[]");
+                        test.invoke("resources.setSrcDirs($2)", "[]");
 
                         // lets have a look at the types of source dirs to decide what sourcesets to create.
                         if (moduleSourceDir.isDirectory()) {
@@ -404,6 +410,27 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                         } else if (sourceDir.startsWith("java")) {
                                             // applies to java version equals $N
                                         }
+                                }
+                            }
+                        }
+                        if (moduleTestSourceDir.isDirectory()) {
+                            for (String sourceDir : moduleTestSourceDir.list()) {
+                                switch (sourceDir) {
+                                    case "java":
+                                    case "groovy":
+                                    case "kotlin":
+                                        test.access("java.srcDir(\"$2/$3\")",
+                                                moduleTestSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                sourceDir
+                                        );
+                                        break;
+                                    case "resources":
+                                        test.access("resources.srcDir(\"$2/resources\")",
+                                                moduleTestSourceDir.getPath().replace(rootDir, "$rootDir")
+                                        );
+                                        break;
+                                    default:
+                                        // perhaps warn about unused source directory? ...not really worth it.
                                 }
                             }
                         }

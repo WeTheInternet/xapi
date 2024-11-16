@@ -40,10 +40,6 @@
                 /main>
             ]
         /gwt>,
-        <jre
-            modules = [
-                main
-            ]
-        /jre>
+        <jre modules = [ main ] />
     ]
 /xapi-schema>

@@ -1,0 +1,28 @@
+<xapi-schema
+    inherit = false
+    platforms = [ main ]
+    modules = [
+        <api
+            description = "Xapi - Gwt Compiler Api"
+            requires = {
+                @transitive(compile_only)
+                external : "net.wti.gradle:xapi-gradle-api:$version",
+                project : { model : main, process : main, io : main, collect: main, inject : jre },
+                project : { ":ui:components" : main, ":dev:api" : main },
+                project : { ":dev:file" : main },
+                external : "net.wetheinter:gwt-user:2.8.0",
+                project : { ":dev:scanner": main },
+
+                @transitive(compile_only)
+                external : "junit:junit:4.12",
+                @transitive(compile_only)
+                external : "net.wetheinter:gwt-dev:2.8.0",
+                @transitive(compile_only)
+                external : "net.wetheinter:gwt-user:2.8.0",
+
+                @transitive(annotation_processor)
+                external : "net.wti.gradle:xapi-dev-mirror:$version",
+            }
+        /api>,
+    ]
+/xapi-schema>

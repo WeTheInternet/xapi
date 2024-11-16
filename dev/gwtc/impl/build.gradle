@@ -22,7 +22,11 @@ xapiRequire.main().configure {
         req.external 'net.wetheinter:gwt-dev:2.8.0'
         req.external 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
         req.external 'net.wetheinter:gwt-user:2.8.0'
-        req.project ':xapi-dev-gwtc:xapi-gwtc-api'
+        req.project ':gwtc-api'
+        req.project ':dev:api-main'
+        req.project ':model-main'
+        req.external "net.wti.core:xapi-fu:$version"
+        req.external "net.wti.core:xapi-lang-core:${->version}", "main"
         req.project ':xapi-dev-parent:xapi-dev-shell'
         req.project Transitivity.impl, ':base-gwtTestTools'
         req.external Transitivity.impl, 'junit:junit:4.12' // a bit yucky... we look for junit types in our main tooling
@@ -32,7 +36,7 @@ xapiRequire.module('gwt', 'test').configure {
     req ->
         req.project 'xapi-gwt', 'main'
         req.project ':base-gwtTestTools'
-        req.project 'xapi-dev-parent:xapi-dev-maven'
+        req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
 }
 
 //apply from: "$rootDir/gradle/gwt-test.gradle"

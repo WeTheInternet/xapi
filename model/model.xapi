@@ -43,7 +43,7 @@
                 <test
                     requires = {
                         project: base,
-                        project: { ":xapi-server-parent:xapi-server-api" : main },
+                        project: { server : api },
                         project: {model: "jre:main"},
                         project: {io: "jre:main"},
                         @transitive("runtime_only")

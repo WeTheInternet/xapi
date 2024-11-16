@@ -22,8 +22,13 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
+
+SourceSet test = sourceSets.maybeCreate('test');
+
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/base/src/jreTest/java")
 
 dependencies {

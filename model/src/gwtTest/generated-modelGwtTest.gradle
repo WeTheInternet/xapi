@@ -22,14 +22,19 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
+
+SourceSet test = sourceSets.maybeCreate('test');
+
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/model/src/gwtTest/java")
 main.resources.srcDir("$rootDir/model/src/gwtTest/resources")
 
 dependencies {
   implementation project(path: ":base-gwtTest")
-  implementation project(path: ":xapi-server-parent:xapi-server-api")
+  implementation project(path: ":server-api")
   implementation project(path: ":model-jre")
   implementation project(path: ":io-jre")
   runtimeOnly project(path: ":inject-jre")

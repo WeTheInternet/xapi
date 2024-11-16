@@ -22,10 +22,17 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
+
+SourceSet test = sourceSets.maybeCreate('test');
+
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/process/src/jre/java")
 main.resources.srcDir("$rootDir/process/src/jre/resources")
+test.java.srcDir("$rootDir/process/src/jreTest/java")
+test.resources.srcDir("$rootDir/process/src/jreTest/resources")
 
 dependencies {
   implementation project(path: ":inject-jre")

@@ -245,6 +245,9 @@ public interface XapiSchemaParser {
                 case "description":
                     meta.setDescription(attr.getStringExpression(false, true));
                     break;
+                case "path":
+                    meta.setDiskPath(attr.getStringExpression(false, true));
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
             }

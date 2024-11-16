@@ -11,11 +11,17 @@ apply from: "$rootDir/gradle/int-test.gradle"
 xapiRequire.main().configure {
     req ->
         req.external 'org.slf4j:slf4j-api:1.7.25'
-        req.project 'xapi-server-parent:xapi-server-api'
+        req.external "net.wti.core:xapi-lang-core:${->version}", "main"
+        req.project ':server:servlets-main'
         req.project ':dev:scanner-main'
         req.project ':dev:api-main'
         req.project ':model-jre'
+        req.project ':util-main'
+        req.project ':io-main'
+        req.project ':collect-main'
+        req.project ':dev:file-main'
         req.project ':inject-jre'
+        req.project ':core:scope-main'
         req.external 'org.eclipse.aether:aether-connector-basic:1.0.1.v20141111'
         req.external 'org.eclipse.aether:aether-transport-file:1.0.1.v20141111'
         req.external 'org.eclipse.aether:aether-transport-http:1.0.1.v20141111'

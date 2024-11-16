@@ -22,8 +22,13 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
+
+SourceSet test = sourceSets.maybeCreate('test');
+
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/io/src/gwtTest/java")
 main.resources.srcDir("$rootDir/io/src/gwtTest/resources")
 

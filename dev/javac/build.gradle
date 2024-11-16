@@ -19,7 +19,8 @@ dependencies {
         api "net.wti.core:xapi-lang-core:${->version}"
         api project(':core:scope-main')
         api project(':collect-main')
-        api project(':xapi-dev-parent:xapi-dev-file')
+        api project(':util-main')
+        api project(':dev:file-main')
         compileOnly 'net.wetheinter:gwt-dev:2.8.0'
         testImplementation 'net.wetheinter:gwt-dev:2.8.0'
         testImplementation 'net.wetheinter:gwt-user:2.8.0'

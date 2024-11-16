@@ -226,6 +226,8 @@ public interface SchemaParser {
                     addRequires(meta, PlatformModule.UNKNOWN, attr.getExpression());
                     break;
                 case "inherit":
+                case "description":
+                case "path":
                     break;
                 default:
                     throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");

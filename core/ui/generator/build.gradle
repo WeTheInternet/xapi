@@ -6,7 +6,8 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.project ':ui:components'
+        req.project ':xapi-lang-dev'
         req.project 'xapi-dev-parent:xapi-dev-javac'
         
 }

@@ -1,0 +1,31 @@
+import net.wti.gradle.schema.api.Transitivity
+
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+
+plugins {
+    id 'xapi-require'
+}
+
+xapiRequire.main().configure {
+    req ->
+        req.project ":dev:api-main"
+        req.project ":process-main"
+        req.project ":model-jre"
+        req.project ":io-main"
+        req.project ":gwtc-api"
+        req.external Transitivity.impl, "net.wetheinter:gwt-user:2.8.0"
+        req.external Transitivity.compile_only, "javax.servlet:javax.servlet-api:3.1-b02"
+}
+xapiRequire.module('test').configure {
+    req ->
+        req.project   ":base-testTools"
+        req.external  "org.eclipse.jetty:jetty-server:9.2.14.v20151106"
+        req.external  "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
+        req.project  ":dev:scanner-main"
+}
+
+description = 'XApi - Server server api'

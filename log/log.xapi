@@ -1,5 +1,6 @@
 <xapi-schema
     inherit = false
+    description = "Xapi - Logging Utilities"
     platforms = [ <main
         modules = [
             <api

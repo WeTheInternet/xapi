@@ -400,7 +400,7 @@ public class SchemaMap implements HasAllProjects {
                     .ifAbsentReturn(false);
             String parentPath = project.getAttribute("parentPath")
                     .mapIfPresent(attr -> attr.getStringExpression(false))
-                    .ifAbsentReturn("");
+                    .ifAbsentReturn(metadata.getDiskPath());
 
             // TODO: load this project if it's UiElement
 

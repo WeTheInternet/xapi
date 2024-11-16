@@ -24,6 +24,8 @@ SourceSet test = sourceSets.maybeCreate('test');
 
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
 test.java.srcDir("$rootDir/process/src/test/java")
 
 dependencies {

@@ -48,8 +48,10 @@
             "log",
             "io",
             "process",
-//            "reflect",
-//            "scope",
+
+            // these ones should simply be multi-module
+            "server",
+            "gwtc",
         ],
 
         // the projects below are effectively parents of multiple child projects.

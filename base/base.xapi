@@ -74,7 +74,7 @@
                 <testTools
                     requires = {
                         project : { ":xapi-elemental" : main },
-                        project : { ":xapi-server-parent:xapi-server-api" : main },
+                        project : { server : api },
                         @transitive
                         external : "junit:junit:4.12",
                         @transitive

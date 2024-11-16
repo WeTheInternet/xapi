@@ -6,7 +6,7 @@ xapiRequire.main().configure {
     req ->
         req.project ':util-main'
         req.project ':collect-main', 'main'
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api'
+        req.project ':ui:components'
         req.external 'javax.inject:javax.inject:1:sources'
 }
 

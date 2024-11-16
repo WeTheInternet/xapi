@@ -3,7 +3,16 @@
     platforms = [ main ]
     modules = [ main ]
     projects = [
-        <template />,
+        <template
+            requires = {
+                external: "net.wti.core:xapi-gen:$version",
+                project: base,
+                project: { log: api },
+                project: ":core:args",
+                @transitive(test)
+                external: "junit:junit:4.12"
+            }
+        /template>,
         <api
             requires = {
                 project : [ process, model, collect ],
@@ -24,6 +33,14 @@
                 project : ":core:reflect"
             }
         /bytecode>,
+        <file
+            description = "XApi - java.io.File utilities"
+            requires = {
+                project : [ io, inject, util ],
+                @transitive(test)
+                project : { base :  testTools },
+            }
+        /file>,
         <scanner
             requires = {
                 @transitive
@@ -32,6 +49,6 @@
                 @transitive
                 project : { ":dev:bytecode": main }
             }
-        /scanner>
+        /scanner>,
     ]
 /xapi-schema>

@@ -13,9 +13,10 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project ':io-main'
+        req.project ':collect-main'
         req.project ':process-jre'
-        req.project 'xapi-server-parent:xapi-server-api'
-        req.project 'xapi-dev-parent:xapi-dev-file'
+        req.project ':server:servlets-main'
+        req.project ':dev:file-main'
 }
 xapiRequire.module('test').configure {
     req ->

@@ -1,0 +1,29 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+repositories.mavenCentral()
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+test.java.srcDir("$rootDir/server/src/test/java")
+test.resources.srcDir("$rootDir/server/src/test/resources")
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :server at file://$rootDir/server/src/test/generated-serverTest.gradle

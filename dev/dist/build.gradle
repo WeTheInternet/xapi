@@ -7,10 +7,10 @@ xapiRequire.main().configure {
         req.project 'xapi-server-parent:xapi-server-vertx'
         req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
         req.project 'inject-jre'
-        req.project 'xapi-dev-parent:xapi-dev-file'
+        req.project ':dev:file-main'
         req.project 'xapi-dev-parent:xapi-dev-shell'
         req.project ':dev:scanner-main'
-        req.project 'xapi-dev-parent:xapi-dev-maven'
+        req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
         req.external "net.wti.core:xapi-gen:$version", 'main'
         req.project 'xapi-server-parent:xapi-server-gen'
 }

@@ -22,9 +22,16 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
+
+SourceSet test = sourceSets.maybeCreate('test');
+
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/io/src/gwt/java")
+test.java.srcDir("$rootDir/io/src/gwtTest/java")
+test.resources.srcDir("$rootDir/io/src/gwtTest/resources")
 
 dependencies {
   implementation project(path: ":collect-gwt")

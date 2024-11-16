@@ -1,9 +1,0 @@
-apply from: "$rootDir/util/generated-util.gradle"
-apply plugin: 'maven-publish'
-//gradle.projectsEvaluated {
-//    // need to make this not-required
-//    (project.publishing as PublishingExtension).publications.getByName('main').artifactId = 'util'
-//}
-dependencies {
-    testImplementation "junit:junit:4.13"
-}

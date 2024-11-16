@@ -14,12 +14,13 @@ xapiRequire.main.configure {
     req ->
         req.project ':process-jre'
         req.project ':inject-main'
-        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
-        req.project 'xapi-server-parent:xapi-server-api', 'main'
+        req.project ':io-main'
+        req.external "net.wti.core:xapi-lang-core:${->version}", "main"
+        req.project ':server:servlets-main'
         req.project 'xapi-dev-parent:xapi-dev-javac'
         req.project ':dev:api-main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'
+        req.project ':ui:components'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
         req.project Transitivity.compile_only, 'xapi-dev-parent:xapi-dev-javac'
         

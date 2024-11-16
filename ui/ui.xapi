@@ -33,8 +33,34 @@
                     @transitive
                     external : "javax.validation:validation-api:1.0.0.GA",
                 }
-            /api>
+            /api>,
         ],
     }
+    projects = [
+        <components
+            inherit = false
+            description = "XApi - Core UI Apis"
+            requires = {
+                @transitive
+                project : [ ":ui:api" ],
+                project : ":xapi-lang-dev",
+                project : [ ":dev:file", ":core:scope", io, util ],
+                @transitive
+                project : ":core:event",
+                @transitive
+                project : ":model",
+                project : ":dev:scanner",
+                external : "javax.validation:validation-api:1.0.0.GA",
+                @transitive(compile_only)
+                external : "net.wetheinter:jsinterop-annotations:2.8.0",
 
+                @transitive(test)
+                project : { model : jre },
+                @transitive(test)
+                project : { base : testTools },
+                @transitive(test)
+                external : [ "junit:junit:4.12", "org.assertj:assertj-core:3.2.0" ],
+            }
+        /components>
+    ]
 /xapi-schema>

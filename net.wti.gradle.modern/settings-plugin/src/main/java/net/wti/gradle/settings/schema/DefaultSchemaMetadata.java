@@ -124,7 +124,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
     private Boolean explicitMultiplatform;
     private boolean inherit;
-    private String description;
+    private String description, diskPath;
 
     public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile) {
         this.parent = parent;
@@ -409,5 +409,13 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
 
     public String getDescription() {
         return description;
+    }
+
+    public void setDiskPath(final String diskPath) {
+        this.diskPath = diskPath;
+    }
+
+    public String getDiskPath() {
+        return diskPath == null ? "" : diskPath;
     }
 }
