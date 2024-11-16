@@ -8,13 +8,14 @@ repositories {
 
 xapiRequire.main().configure {
     req ->
-        req.project ':collect'
+        req.project ':collect-main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
 }
 
 xapiRequire.module('sample').configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+        req.internal 'main'
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'sample'
 }
 
 xapiRequire.module('test').configure {

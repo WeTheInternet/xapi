@@ -149,7 +149,7 @@ public class DefaultProjectView implements ProjectView {
                     Logger log = project.getLogger();
                     log.quiet("forcibly evaluating project {}", project.getPath());
                     if (log.isEnabled(LogLevel.INFO)) {
-                        log.info("Evaluation occurred via debugging stack trace:", new Exception("project evaluation trace", lastTrace));
+                        log.info("Evaluation occurred via debugging stack trace:", new Exception("project evaluation trace " + project.getPath(), lastTrace));
                     }
                     ((ProjectInternal)project).evaluate();
                 }
@@ -363,7 +363,14 @@ public class DefaultProjectView implements ProjectView {
         if (!DefaultProjectView.isWtiGradle()) {
             return ProjectView.fromProject(migration.findProject(projectFinder, named));
         }
-        final ProjectInternal proj = migration.findProject(projectFinder, named);
+        final ProjectInternal proj;
+        try {
+            proj = migration.findProject(projectFinder, named);
+        } catch (Exception e) {
+            // should be fatal, but we're migrating and ignoring whatever we can
+            e.printStackTrace();
+            return null;
+        }
         if (proj == null) {
             if (":schema".equals(named) || ":xapi-schema".equals(named)) {
                 // TODO use a boolean parameter instead of ugly hardcoded "quieter failure" code here

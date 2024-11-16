@@ -32,13 +32,13 @@ plugins.apply 'xapi-meta'
 
 xapiRequire.main().configure {
     req ->
-        req.project ':util'
+        req.project ':util-main'
         req.project ':inject-gwt'
         req.project 'collect-gwt'
         req.project ':base-gwtTestTools'
         req.project 'xapi-gwt3', 'main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
-        req.project 'xapi-core-parent:xapi-core-reflect', 'main'
+        req.project ':core:reflect-main'
         req.project 'xapi-elemental', 'main'
         req.project ':model-gwt'
         req.project ':process-gwt'

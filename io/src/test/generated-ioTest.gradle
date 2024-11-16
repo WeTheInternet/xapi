@@ -28,6 +28,7 @@ test.java.srcDir("$rootDir/io/src/test/java")
 
 dependencies {
   implementation project(path: ":base-testTools")
+  implementation project(path: ":collect-main")
   implementation "org.json:json:20141113"
   api project(path: ":io-testTools")
 }

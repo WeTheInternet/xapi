@@ -20,23 +20,22 @@ String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
 apply plugin: javaPlugin
 repositories.mavenCentral()
 
-SourceSet main = sourceSets.maybeCreate('main');
+SourceSet gwt = sourceSets.maybeCreate('gwt');
 
-main.java.setSrcDirs([]);
-main.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/util/src/main/java")
-main.resources.srcDir("$rootDir/util/src/main/resources")
+gwt.java.setSrcDirs([]);
+gwt.resources.setSrcDirs([]);
 
 dependencies {
-  implementation project(path: ":collect-main")
-  api project(path: ":log-api")
-  implementation project(path: ":xapi-core-parent:xapi-core-reflect")
-  implementation project(path: ":base-api")
+  gwtImplementation project(path: ":collect-main")
+  gwtApi project(path: ":log-api")
+  gwtImplementation project(path: ":xapi-core-parent:xapi-core-reflect-gwt")
+  gwtImplementation project(path: ":base-api")
+  gwtApi project(path: ":util-main")
 }
 
 
 configurations {
-  mainOut
+  gwtOut
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :util at file://$rootDir/util/generated-util.gradle

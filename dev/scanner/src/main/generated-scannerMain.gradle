@@ -1,0 +1,38 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+
+apply plugin: "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+apply plugin: javaPlugin
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/scanner/src/main/java")
+main.resources.srcDir("$rootDir/dev/scanner/src/main/resources")
+
+dependencies {
+  api project(path: ":dev:api-main")
+  implementation project(path: ":util-main")
+  implementation project(path: ":collect-main")
+  implementation project(path: ":inject-main")
+  api project(path: ":dev:bytecode-main")
+}
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :dev:scanner at file://$rootDir/dev/scanner/src/main/generated-scannerMain.gradle

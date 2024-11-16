@@ -35,7 +35,7 @@ dependencies {
   api project(path: ":collect-gwt")
   api project(path: ":io-gwt")
   implementation project(path: ":xapi-lang-dev")
-  implementation project(path: ":xapi-core-parent:xapi-core-reflect")
+  implementation project(path: ":core:reflect-main")
   implementation "net.wetheinter:gwt-user:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
   implementation "net.wti.core:xapi-gen:$version"

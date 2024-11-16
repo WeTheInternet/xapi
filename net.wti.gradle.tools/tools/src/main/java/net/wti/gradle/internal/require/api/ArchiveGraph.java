@@ -513,7 +513,6 @@ public interface ArchiveGraph extends Named, GraphNode {
         // TODO: consider extra significance when modName or platName are empty (i.e. use a wider target like "all modules", "all platforms", etc.)
 
         targetPlatform.whenReady(ReadyState.BEFORE_FINISHED - 0x20, ready->{
-
             importLocal(into, DefaultUsageType.Api, only, lenient);
             importLocal(into, DefaultUsageType.Runtime, only, lenient);
 

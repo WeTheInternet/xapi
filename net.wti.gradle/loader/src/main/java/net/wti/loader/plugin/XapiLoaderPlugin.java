@@ -167,7 +167,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
                 logger.info("Including {} for project {}", gradlePath, project);
-                if (!project.isMultiplatform()) {
+                if (!project.isVirtual()) {
                     settings.include(gradlePath);
                     if (dir.isDirectory()) {
                         final ProjectDescriptor p = settings.project(gradlePath);
@@ -210,7 +210,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                             buildFileName = buildFileName + ".kts";
                         }
                         final File buildFile = new File(projDir, buildFileName);
-                        if (project.isMultiplatform()) {
+                        if (project.isVirtual()) {
                             view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, buildFile, key);
                             settings.include(projectName);
                             final ProjectDescriptor proj = settings.findProject(projectName);

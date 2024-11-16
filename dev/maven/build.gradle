@@ -12,8 +12,8 @@ xapiRequire.main().configure {
     req ->
         req.external 'org.slf4j:slf4j-api:1.7.25'
         req.project 'xapi-server-parent:xapi-server-api'
-        req.project 'xapi-dev-parent:xapi-dev-scanner'
-        req.project 'xapi-dev-parent:xapi-dev-api'
+        req.project ':dev:scanner-main'
+        req.project ':dev:api-main'
         req.project ':model-jre'
         req.project ':inject-jre'
         req.external 'org.eclipse.aether:aether-connector-basic:1.0.1.v20141111'

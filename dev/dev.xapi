@@ -3,6 +3,36 @@
     platforms = [ main ]
     modules = [ main ]
     projects = [
-        template
+        <template />,
+        <api
+            requires = {
+                project : { process: main },
+                project : { model: main },
+                project : { io: main },
+                project : ":xapi-core-parent:xapi-core-scope",
+                external : "net.wti.core:xapi-lang-core:$version"
+            }
+        /api>,
+        <bytecode
+            requires = {
+                @transitive
+                external : "net.wti.core:xapi-gen:$version",
+                @transitive
+                project : { base : "main:main" },
+                project : collect,
+                project : [ util, inject, { log : api } ],
+                @transitive
+                project : ":core:reflect"
+            }
+        /bytecode>,
+        <scanner
+            requires = {
+                @transitive
+                project : { ":dev:api": main },
+                project : [ util, collect, inject ],
+                @transitive
+                project : { ":dev:bytecode": main }
+            }
+        /scanner>
     ]
 /xapi-schema>

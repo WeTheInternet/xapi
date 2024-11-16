@@ -28,7 +28,8 @@ main.java.srcDir("$rootDir/inject/src/jre/java")
 main.resources.srcDir("$rootDir/inject/src/jre/resources")
 
 dependencies {
-  implementation project(path: ":xapi-dev-parent:xapi-dev-scanner")
+  implementation project(path: ":dev:scanner-main")
+  implementation project(path: ":util-main")
   annotationProcessor project(path: ":inject-main")
   api project(path: ":inject-main")
   api project(path: ":inject-jreApi")

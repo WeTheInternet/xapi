@@ -23,8 +23,8 @@
                 /main>,
                 <testTools
                     requires = {
-                        project : { ":inject" : "api" },
-                        project : { ":util" : "main:main" },
+                        @transitive
+                        project : [ { ":inject" : "api" } , { ":util" : "main:main" } ],
                         @transitive
                         external : "junit:junit:4.12"
                     }
@@ -47,7 +47,7 @@
                 <main
                     requires = {
                         project : { ":util" : "main:main" },
-                        project : { ":xapi-core-parent:xapi-core-reflect" : "main" },
+                        project : { ":core:reflect" : "main" },
                         project : { ":inject" : "main:main" },
                         project : { ":log" : "api" },
                         project : { ":collect" : api },
@@ -102,9 +102,9 @@
                 <test
                     requires = {
                         external : "junit:junit:4.13",
-                        project : ":inject-main",
+                        project : { inject : main },
                         internal : "main:testTools",
-                        project : { ":util" : main }
+                        project : { ":util" : "main:main" }
                     }
                 /test>
             ]

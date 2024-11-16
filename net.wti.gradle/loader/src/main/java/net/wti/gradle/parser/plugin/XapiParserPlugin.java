@@ -169,9 +169,10 @@ public class XapiParserPlugin implements Plugin<Project> {
             }
         });
 
-        if (":".equals(proj.getPath())) {
-            loadFromIndex(view, map, projectGraph);
-        }
+        // we're migrating, so legacy code slowly being killed off...
+//        if (":".equals(proj.getPath())) {
+//            loadFromIndex(view, map, projectGraph);
+//        }
     }
 
     /**

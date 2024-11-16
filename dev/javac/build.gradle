@@ -24,8 +24,8 @@ dependencies {
         testImplementation 'net.wetheinter:gwt-user:2.8.0'
         testImplementation 'net.wetheinter:gwt-elemental:2.8.0'
         testImplementation 'org.assertj:assertj-core-java8:1.0.0m1'
-        implementation project(':xapi-bridge-inject')
-        testImplementation project(':xapi-bridge-testTools')
+        implementation project(':io-jre'), project(':inject-jre')
+        testImplementation project(':base-testTools')
 }
 
 dependencies {

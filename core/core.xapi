@@ -1,0 +1,16 @@
+<xapi-schema
+    inherit = false
+    platforms = [ main ]
+    modules = [ main ]
+    projects = [
+        <reflect
+            requires = {
+                project : { base : main },
+                external : "net.wti.core:xapi-fu:$version",
+                external : "net.wti.core:xapi-gen:$version",
+                external : "javax.inject:javax.inject:1",
+                external : "junit:junit:4.12"
+            }
+        /reflect>
+    ]
+/xapi-schema>

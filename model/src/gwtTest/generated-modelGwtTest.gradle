@@ -33,6 +33,7 @@ dependencies {
   implementation project(path: ":model-jre")
   implementation project(path: ":io-jre")
   runtimeOnly project(path: ":inject-jre")
+  implementation project(path: ":model-jreTestTools")
   implementation "net.wetheinter:gwt-user:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
   implementation "junit:junit:4.13"

@@ -28,8 +28,8 @@ main.java.srcDir("$rootDir/base/src/testTools/java")
 main.resources.srcDir("$rootDir/base/src/testTools/resources")
 
 dependencies {
-  implementation project(path: ":inject-api")
-  implementation project(path: ":util")
+  api project(path: ":inject-api")
+  api project(path: ":util-main")
   api "junit:junit:4.12"
   api project(path: ":base-main")
 }

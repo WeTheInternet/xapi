@@ -8,6 +8,7 @@ import net.wti.gradle.settings.index.IndexingFailedException;
 import net.wti.gradle.settings.index.SchemaIndex;
 import net.wti.gradle.settings.index.SchemaIndexerImpl;
 import net.wti.gradle.settings.model.SchemaPreload;
+import net.wti.gradle.settings.plugin.XapiSettingsPlugin;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.tools.HasAllProjects;
 import net.wti.gradle.tools.InternalGradleCache;
@@ -406,10 +407,9 @@ public class SchemaMap implements HasAllProjects {
             final SchemaProject oldTail = tailProject;
 
             String viewPath = toViewPath(parentPath, name);
-            MinimalProjectView projectView = parser.getView().findView(viewPath);
-            if (projectView == null) {
-                throw new IllegalArgumentException("No view found named " + name);
-            }
+            // need to fake a project view using a mostly-delegate
+            final File fixedDir = new File(parser.getView().getProjectDir(), viewPath.replaceAll(":", "/"));
+            MinimalProjectView projectView = new SchemaProjectView(parser.getView(), fixedDir);
             if (oldTail.hasProject(name)) {
                 tailProject = oldTail.getProject(name);
                 if (multiplatform) {
@@ -556,8 +556,10 @@ public class SchemaMap implements HasAllProjects {
     }
 
     public boolean hasGradleProject(final String path) {
+        if (XapiSettingsPlugin.hasRememberedProject(view.getSettings(), path)) {
+            return true;
+        }
         for (SchemaProject value : projects.mappedValues()) {
-
             if (value.getPathGradle().equals(path)) {
                 return true;
             }

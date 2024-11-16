@@ -28,7 +28,7 @@ main.java.srcDir("$rootDir/io/src/main/java")
 
 dependencies {
   api project(path: ":base-main")
-  implementation project(path: ":util")
+  implementation project(path: ":util-main")
   implementation project(path: ":inject-main")
   implementation project(path: ":collect-main")
   api project(path: ":io-api")

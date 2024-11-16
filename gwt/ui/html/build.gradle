@@ -21,6 +21,14 @@ xapiRequire.main().configure {
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 }
 
+xapiRequire.module('main', 'test').configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-html', 'sample'
+}
+xapiRequire.module('main', 'sample').configure {
+    req ->
+        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-html', 'main'
+}
 xapiRequire.module('test').configure {
     req ->
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'sample'

@@ -9,7 +9,7 @@ xapiRequire.main().configure {
         req.project 'xapi-lang-dev', 'main'
         req.project ':io-main'
         req.project 'xapi-dev-parent:xapi-dev-javac'
-        req.project 'xapi-dev-parent:xapi-dev-scanner'
+        req.project ':dev:scanner-main'
 }
 
 xapiRequire.module('test').configure {

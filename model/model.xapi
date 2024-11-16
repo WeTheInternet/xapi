@@ -13,7 +13,8 @@
                         @transitive(false)
                         external : "net.wetheinter:jsinterop-annotations:2.8.0",
                         @transitive
-                        project : ":xapi-dev-parent:xapi-dev-bytecode"
+                        project : ":dev:bytecode",
+                        project : [ util, collect, inject, { log : api } ]
                     }
                 /main>
             ]
@@ -33,7 +34,7 @@
                         @transitive
                         project: [ base, collect, io ],
                         project: { "xapi-lang-dev" : main },
-                        project: { "xapi-core-parent:xapi-core-reflect" : main },
+                        project: { ":core:reflect" : main },
                         external: "net.wti.core:xapi-gen:$version"
 
                     }
@@ -58,15 +59,22 @@
             modules = [
                 <main
                     requires = {
-                        project: [ base, inject ],
-                        project: [ { model : main }, { io : main } ],
+                        project: [ base, inject, collect ],
+                        project: [ { model : main }, { io : main }, { util : main } ],
                         @transitive
                         project: { ":dev:template" : main }
 
                     }
                 /main>,
-                <testTools force=true />,
-                <test
+                <testTools
+                    requires = {
+                        @transitive
+                        project : { util : main },
+                        @transitive
+                        project : { collect : main }
+                    }
+                /testTools>,
+                <test include = jreTestTools
                     requires = {
                         external : "junit:junit:4.13"
                     }

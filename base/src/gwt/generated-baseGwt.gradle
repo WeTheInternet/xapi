@@ -28,8 +28,8 @@ main.java.srcDir("$rootDir/base/src/gwt/java")
 main.resources.srcDir("$rootDir/base/src/gwt/resources")
 
 dependencies {
-  implementation project(path: ":util")
-  implementation project(path: ":xapi-core-parent:xapi-core-reflect")
+  implementation project(path: ":util-main")
+  implementation project(path: ":core:reflect-main")
   implementation project(path: ":inject-main")
   implementation project(path: ":log-api")
   implementation project(path: ":collect-api")

@@ -28,7 +28,7 @@ main.java.srcDir("$rootDir/io/src/gwt/java")
 
 dependencies {
   implementation project(path: ":collect-gwt")
-  implementation project(path: ":util")
+  implementation project(path: ":util-main")
   implementation "net.wetheinter:jsinterop-annotations:2.8.0"
   implementation "net.wetheinter:gwt-user:2.8.0"
   api project(path: ":io-main")

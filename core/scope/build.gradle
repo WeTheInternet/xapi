@@ -7,7 +7,7 @@ buildscript{
 plugins {
     id 'xapi-require'
 }
-xapiRequire.main().project ':util'
+xapiRequire.main().project ':util-main'
 xapiRequire.main().project ':collect-main'
 xapiRequire.main().external "net.wti.core:xapi-fu:$version", "main"
 xapiRequire.module('test').external 'junit:junit:4.12'

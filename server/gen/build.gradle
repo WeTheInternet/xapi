@@ -13,21 +13,27 @@ plugins {
 xapiRequire.main.configure {
     req ->
         req.project ':process-jre'
+        req.project ':inject-main'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project 'xapi-server-parent:xapi-server-api', 'main'
         req.project 'xapi-dev-parent:xapi-dev-javac'
-        req.project 'xapi-dev-parent:xapi-dev-api', 'main'
+        req.project ':dev:api-main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
         req.project Transitivity.compile_only, 'xapi-dev-parent:xapi-dev-javac'
         
 }
+xapiRequire.module('sample').configure {
+    req ->
+        req.internal 'main'
+}
 xapiRequire.module('test').configure {
     req ->
+        req.internal 'sample'
         req.project ':collect-jre'
         req.project ':model-jre'
-        req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+        req.project ':dev:scanner-main'
         req.external 'javax.servlet:javax.servlet-api:3.1-b02'
         req.external 'org.eclipse.jetty:jetty-server:9.4.18.v20190429'
         req.external 'org.eclipse.jetty:jetty-servlet:9.4.18.v20190429'

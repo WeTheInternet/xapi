@@ -36,15 +36,11 @@
         // the projects below are single-module projects.
         standalone: [
 //            "lang",
-            <util
-                inherit = false
-                modules = [ main ]
-                platforms = [ main ]
-            /util>,
         ],
 
         // the projects below all have gwt, jre and other platforms
         multiplatform: [
+            "util",
             "base",
             "inject",
             "collect",
@@ -67,7 +63,11 @@
             <ui
                 multiplatform = true
                 inherit = false
-            /ui>
+            /ui>,
+            <core
+                multiplatform = true
+                inherit = false
+            /core>
         ]
 //        virtual: {
 //            ui: ["api", "autoui", "html"] // "components", "generator",

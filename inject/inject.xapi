@@ -13,8 +13,8 @@
                 <spi
                     requires = {
                         external : "net.wti.core:xapi-fu:$version",
-                        project : { base: api },
-                        project : { collect: api }
+                        project : { base : api },
+                        project : { collect : api }
                     }
                 /spi>,
                 <main
@@ -53,7 +53,7 @@
             modules = [
                 <main
                     requires = {
-                        project : { ":xapi-dev-parent:xapi-dev-scanner": "main" },
+                        project : { ":dev:scanner": main, util : main },
                         @transitive("annotation_processor")
                         internal : "main:main",
                     }

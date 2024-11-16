@@ -15,7 +15,7 @@ xapiRequire.main().configure {
         req.project 'xapi-core-parent:xapi-core-event', 'main'
         req.project ':model-main'
         req.project 'xapi-dev-parent:xapi-dev-file', 'main'
-        req.project 'xapi-dev-parent:xapi-dev-scanner', 'main'
+        req.project ':dev:scanner-main'
         req.external 'javax.validation:validation-api:1.0.0.GA'
         req.external Transitivity.compile_only, 'net.wetheinter:jsinterop-annotations:2.8.0'
 }

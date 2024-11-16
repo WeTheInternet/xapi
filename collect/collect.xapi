@@ -10,7 +10,7 @@
                         @transitive
                         external: "javax.inject:javax.inject:1",
                         @transitive
-                        project: { base: main }
+                        project: { base : main }
                     }
                 /api>,
                 <testTools force=true />,

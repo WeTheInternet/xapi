@@ -26,6 +26,8 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 
 dependencies {
+  api project(path: ":util-main")
+  api project(path: ":collect-main")
   api project(path: ":model-testTools")
   api project(path: ":model-jre")
 }

@@ -7,7 +7,7 @@ xapiRequire.main().configure {
     req ->
         req.project ':collect-main'
         req.project ':inject-jre'
-        req.project ':util'
+        req.project ':util-main'
 }
 
 dependencies {

@@ -12,7 +12,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-dev-parent:xapi-dev-api'
+        req.project ':dev:api-main'
         req.project ':process-main'
         req.project ':model-jre'
         req.project ':io-main'
@@ -25,7 +25,7 @@ xapiRequire.module('test').configure {
         req.project ':base-testTools'
         req.external 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
         req.external 'org.eclipse.jetty:jetty-servlet:9.2.14.v20151106'
-        req.project 'xapi-dev-parent:xapi-dev-scanner'
+        req.project ':dev:scanner-main'
 }
 
 description = 'XApi - Server server api'

@@ -25,32 +25,11 @@ def prop = {
 }
 
 def multiProject = [
-        // multiProject groups are where we choose to use multiple gradle projects
-        // to represent various logical chunks of a larger service.
-        // The key of the map is the directory/artifact name.
-        // The value is the list of sub-directories to create as "child modules".
-        // All multiProject children are created as normal projects all the time.
         'lang': ['dev', 'test'],
         'bridge': ['inject', 'testTools']
 ]
 def singleProject = [
-        // For singleProject mode, the key is the directory/artifact name.
-        // The value is an array of "realizable platforms"; where a "realized platform"
-        // is an implementation-target that has finalized, generated "staging resources"
-        // on the classpath and available to browse and debug.
-//        'inject': ['gwt', 'jre'],
-//        'collect': ['gwt', 'jre'],
-//        'model': ['gwt', 'jre'],
-//        'log': ['gwt', 'jre'],
-//        'io': ['gwt', 'jre'],
         'ui': ['gwt', 'jre'],
-//        'process': ['gwt', 'jre'],
-        // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc
-        // Specific projects can be realized via -Pxapi.${projName}.${platform}=true
-        // So, -Pxapi.inject.gwt=true would realize only a ':inject-gwt' project,
-        // where we use all gwt-staging sources and resources for classpaths.
-        // The child projects will, by default, be mounted in the build directory,
-        // as a clue to you that all your changes are going to get blown away.
 ]
 
 /* in order to overcome "parallelization by project" instead of "by task",
@@ -157,8 +136,6 @@ multiProject.forEach({
         }
 })
 
-String realizedPath = prop('xapi.realized.path') ?: 'build/realized/'
-
 singleProject.forEach({
     parent, children ->
         String name = base(parent)
@@ -175,7 +152,7 @@ singleProject.forEach({
         }
 })
 
-include(':xapi-core-parent:xapi-core-reflect')
+//include(':xapi-core-parent:xapi-core-reflect')
 include(':xapi-core-parent:xapi-core-scope')
 include(':xapi-core-parent:xapi-core-args')
 include(':xapi-core-parent:xapi-core-event')
@@ -201,12 +178,8 @@ include(':xapi-jre-parent:xapi-jre-ui-parent')
 include(':xapi-jre-parent:xapi-jre')
 include(':xapi-jre-parent')
 include(':xapi-dev-parent:xapi-dev-gen')
-include(':xapi-dev-parent:xapi-dev-api')
 include(':xapi-dev-parent:xapi-dev-source')
-include(':xapi-dev-parent:xapi-dev-bytecode')
-include(':xapi-dev-parent:xapi-dev-scanner')
 include(':xapi-dev-parent:xapi-dev-javac')
-//include(':xapi-dev-parent:xapi-dev-template')
 include(':xapi-dev-parent:xapi-dev-file')
 include(':xapi-dev-parent:xapi-dev-maven')
 include(':xapi-dev-parent:xapi-dist')
@@ -224,7 +197,7 @@ include(':xapi-maven-plugin')
 include(':xapi-samples:xapi-demo')
 include(':xapi-samples')
 
-project(':xapi-core-parent:xapi-core-reflect').projectDir = file('core/reflect')
+//project(':xapi-core-parent:xapi-core-reflect').projectDir = file('core/reflect')
 project(':xapi-core-parent:xapi-core-scope').projectDir = file('core/scope')
 project(':xapi-core-parent:xapi-core-args').projectDir = file('core/args')
 project(':xapi-core-parent:xapi-core-event').projectDir = file('core/event')
@@ -250,12 +223,8 @@ project(':xapi-jre-parent:xapi-jre-ui-parent').projectDir = file('jre/ui')
 project(':xapi-jre-parent:xapi-jre').projectDir = file('jre/uber')
 project(':xapi-jre-parent').projectDir = file('jre')
 project(':xapi-dev-parent:xapi-dev-gen').projectDir = file('dev/gen')
-project(':xapi-dev-parent:xapi-dev-api').projectDir = file('dev/api')
 project(':xapi-dev-parent:xapi-dev-source').projectDir = file('dev/source')
-project(':xapi-dev-parent:xapi-dev-bytecode').projectDir = file('dev/bytecode')
-project(':xapi-dev-parent:xapi-dev-scanner').projectDir = file('dev/scanner')
 project(':xapi-dev-parent:xapi-dev-javac').projectDir = file('dev/javac')
-//project(':xapi-dev-parent:xapi-dev-template').projectDir = file('dev/template')
 project(':xapi-dev-parent:xapi-dev-file').projectDir = file('dev/file')
 project(':xapi-dev-parent:xapi-dev-maven').projectDir = file('dev/maven')
 project(':xapi-dev-parent:xapi-dist').projectDir = file('dev/dist')

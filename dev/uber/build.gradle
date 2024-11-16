@@ -86,7 +86,7 @@ xapiRequire.main().configure {
         req.project ':process-jre'
         req.project 'xapi-dev-parent:xapi-dev-file'
         req.project 'xapi-dev-parent:xapi-dev-shell'
-        req.project 'xapi-dev-parent:xapi-dev-scanner'
+        req.project ':dev:scanner-main'
         req.project 'xapi-dev-gwtc:xapi-gwtc-api'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
         req.project 'xapi-dev-parent:xapi-dev-maven'

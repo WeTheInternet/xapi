@@ -13,5 +13,5 @@ xapiRequire.main().configure {
         req.external "net.wti.core:xapi-fu:$version", 'main'
         req.external "net.wti.core:xapi-lang-core:$version", 'main'
         req.project ':collect-main'
-        req.project 'xapi-core-parent:xapi-core-reflect', 'main'
+        req.project ':core:reflect-main'
 }

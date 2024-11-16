@@ -19,7 +19,8 @@
                 <testTools force=true />,
                 <test
                     requires = {
-                        project: { base: testTools },
+                        project: { base : testTools },
+                        project: { collect : main },
                         external: "org.json:json:20141113"
                     }
                 /test>
