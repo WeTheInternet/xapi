@@ -6,7 +6,7 @@
                 requires = {
                     project: { ":collect" : api },
                     @transitive
-                    project: { ":xapi-core-parent:xapi-core-args" : main },
+                    project: { ":core:args" : "main" },
                     @transitive(false)
                     external: "net.wetheinter:gwt-dev:2.8.0",
                     @transitive(false)

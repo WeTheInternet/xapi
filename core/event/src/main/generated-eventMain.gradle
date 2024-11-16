@@ -21,15 +21,14 @@ SourceSet main = sourceSets.maybeCreate('main');
 
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/dev/template/src/main/java")
-main.resources.srcDir("$rootDir/dev/template/src/main/resources")
+main.java.srcDir("$rootDir/core/event/src/main/java")
+main.resources.srcDir("$rootDir/core/event/src/main/resources")
 
 dependencies {
-  implementation project(path: ":base-main")
-  implementation project(path: ":log-api")
-  implementation project(path: ":core:args-main")
-  implementation "net.wti.core:xapi-gen:$version"
-  testImplementation "junit:junit:4.12"
+  implementation project(path: ":collect-main")
+  implementation project(path: ":util-main")
+  implementation project(path: ":inject-jre")
+  implementation "javax.validation:validation-api:1.0.0.GA"
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :dev:template at file://$rootDir/dev/template/src/main/generated-templateMain.gradle
+// Done generating buildfile for :core:event at file://$rootDir/core/event/src/main/generated-eventMain.gradle

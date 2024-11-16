@@ -242,6 +242,9 @@ public interface XapiSchemaParser {
                     boolean inherit = Boolean.parseBoolean(attr.getStringExpression(false, true));
                     meta.setInherit(inherit);
                     break;
+                case "description":
+                    meta.setDescription(attr.getStringExpression(false, true));
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
             }
@@ -510,7 +513,7 @@ public interface XapiSchemaParser {
                         type.getValueExpr().accept(
                                 ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(XapiSchemaParser.class)
                                         .withUiContainerTerminal(addProject)
-                                        .withNameOrString((name, meta2) -> {
+                                        .withNameOrStringOrType((name, meta2) -> {
                                             // we have a project to add...
                                             UiContainerExpr newProject = new UiContainerExpr(name);
                                             addProject.in(newProject, meta2);
@@ -853,7 +856,7 @@ public interface XapiSchemaParser {
                         }
                     }
                 })
-                .withNameOrString((name, parser) -> {
+                .withNameOrStringOrType((name, parser) -> {
                     DependencyMap<CharSequence> localCopy = new DependencyMap<>(deps);
                     localCopy.put(DependencyKey.name, name);
                     CharSequence typeStr = deps.get(DependencyKey.category);
@@ -933,7 +936,7 @@ public interface XapiSchemaParser {
         for (AnnotationExpr anno : annos) {
             for (MemberValuePair member : anno.getMembers()) {
                 for (String value : whenMissingFail(XapiSchemaParser.class)
-                        .extractNamesAndValues(member.getValue(), deps)) {
+                        .extractNamesAndValuesAndTypes(member.getValue(), deps)) {
                     // despite the many loops above, this will, in practice, all be simple @Group("value") constructs.
                     final DependencyKey key;
                     try {

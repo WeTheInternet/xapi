@@ -14,7 +14,7 @@ xapiRequire.main().configure {
     req ->
         req.project ':collect-main'
         req.project ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api', 'main'
-        req.project 'xapi-core-parent:xapi-core-event'
+        req.project ':core:event-main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
         req.project ':model-gwt'
         req.project ':inject-jre'

@@ -3,7 +3,24 @@
     platforms = [ main ]
     modules = [ main ]
     projects = [
+        <args
+            description = "Xapi - Argument Processors"
+            requires = {
+                external : "net.wti.core:xapi-fu:$version",
+                @transitive(test)
+                external : "junit:junit:4.12"
+            }
+        /args>,
+        <event
+            description = "Xapi - Event Handlers"
+            requires = {
+                project : [ collect, util ],
+                project : { inject : jre },
+                external : "javax.validation:validation-api:1.0.0.GA",
+            }
+        /event>,
         <reflect
+            description = "Xapi - Reflection Utilities"
             requires = {
                 project : { base : main },
                 external : "net.wti.core:xapi-fu:$version",
@@ -11,6 +28,15 @@
                 external : "javax.inject:javax.inject:1",
                 external : "junit:junit:4.12"
             }
-        /reflect>
+        /reflect>,
+        <scope
+            description = "Xapi - Scope API"
+            requires = {
+                project : [ ":util", ":collect" ],
+                external : "net.wti.core:xapi-fu:$version",
+                @transitive(test)
+                external : "junit:junit:4.12"
+            }
+        /scope>,
     ]
 /xapi-schema>

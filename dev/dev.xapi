@@ -6,10 +6,9 @@
         <template />,
         <api
             requires = {
-                project : { process: main },
-                project : { model: main },
+                project : [ process, model, collect ],
                 project : { io: main },
-                project : ":xapi-core-parent:xapi-core-scope",
+                project : ":core:scope",
                 external : "net.wti.core:xapi-lang-core:$version"
             }
         /api>,

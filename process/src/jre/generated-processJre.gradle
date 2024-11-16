@@ -29,6 +29,8 @@ main.resources.srcDir("$rootDir/process/src/jre/resources")
 
 dependencies {
   implementation project(path: ":inject-jre")
+  implementation project(path: ":collect-main")
+  implementation project(path: ":util-main")
   api project(path: ":process-main")
 }
 // GenEnd XapiSettingsPlugin

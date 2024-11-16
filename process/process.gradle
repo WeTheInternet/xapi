@@ -13,13 +13,13 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project ':io-main'
-        req.project 'xapi-core-parent:xapi-core-scope', 'main'
+        req.project ':core:scope-main'
 }
 
 xapiRequire.module('gwt', 'main').configure {
     req ->
         req.project ':inject-gwt'
-        req.project 'xapi-core-parent:xapi-core-scope'
+        req.project ':core:scope-main'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-user:2.8.0'
 }
 xapiRequire.module('gwt', 'test').configure {

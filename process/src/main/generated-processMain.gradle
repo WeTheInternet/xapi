@@ -28,7 +28,10 @@ main.java.srcDir("$rootDir/process/src/main/java")
 
 dependencies {
   implementation project(path: ":io-main")
-  api project(path: ":xapi-core-parent:xapi-core-scope")
+  implementation project(path: ":inject-main")
+  implementation project(path: ":collect-main")
+  api project(path: ":core:scope-main")
+  api project(path: ":util-main")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :process at file://$rootDir/process/src/main/generated-processMain.gradle

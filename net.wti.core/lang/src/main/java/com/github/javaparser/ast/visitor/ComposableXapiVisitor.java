@@ -664,6 +664,9 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return this;
     }
 
+    public ComposableXapiVisitor<Ctx> withNameOrStringOrType(In2<String, Ctx> callback) {
+        return withNameOrString(callback).withTypeExprTerminal(callback.map1(TypeExpr::toString));
+    }
     public ComposableXapiVisitor<Ctx> withNameOrString(In2<String, Ctx> callback) {
         return withNameTerminal((name, val) -> {
             String platName = name.getQualifiedName();
@@ -1047,6 +1050,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         doVisit(TypeExpr.class, n, arg, super::visit);
     }
 
+    public ComposableXapiVisitor<Ctx> withTypeExprTerminal(In2<TypeExpr, Ctx> callback) {
+        putCallback(TypeExpr.class, callback.supply1(false));
+        return this;
+    }
     public ComposableXapiVisitor<Ctx> withTypeExpr(In2Out1<TypeExpr, Ctx, Boolean> callback) {
         putCallback(TypeExpr.class, callback);
         return this;
@@ -1280,6 +1287,12 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         e.accept(this, ctx);
         return list;
     }
+    public SizedIterable<String> extractNamesAndValuesAndTypes(Expression e, Ctx ctx) {
+        ListLike<String> list = X_Jdk.list();
+        extractNamesAndValuesAndTypes(list::add);
+        e.accept(this, ctx);
+        return list;
+    }
     public SizedIterable<String> extractNamesAndValues(Expression e, Ctx ctx) {
         ListLike<String> list = X_Jdk.list();
         extractNamesAndValues(list::add);
@@ -1292,6 +1305,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
               .withNameOrString(onNameFound.ignore2());
     }
 
+    public ComposableXapiVisitor<Ctx> extractNamesAndValuesAndTypes(In1<String> onNameFound) {
+        return extractNamesAndValues(onNameFound)
+                .withTypeExprTerminal(onNameFound.<TypeExpr>map1(TypeExpr::toSource).<Ctx>ignore2());
+    }
     public ComposableXapiVisitor<Ctx> extractNamesAndValues(In1<String> onNameFound) {
         return withJsonArrayRecurse(In2.ignoreAll())
             .withBooleanLiteralExpr(onNameFound.<BooleanLiteralExpr>map1(BooleanLiteralExpr::toSource).<Ctx>ignore2().supply1(false))

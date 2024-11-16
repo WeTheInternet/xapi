@@ -29,7 +29,7 @@ main.resources.srcDir("$rootDir/log/src/api/resources")
 
 dependencies {
   implementation project(path: ":collect-api")
-  api project(path: ":xapi-core-parent:xapi-core-args")
+  api project(path: ":core:args-main")
   compileOnly "net.wetheinter:gwt-dev:2.8.0"
   compileOnly "javax.inject:javax.inject:1"
 }

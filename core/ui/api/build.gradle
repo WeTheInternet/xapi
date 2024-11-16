@@ -11,8 +11,8 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-lang-dev', 'main'
-        req.project 'xapi-core-parent:xapi-core-scope', 'main'
-        req.project 'xapi-core-parent:xapi-core-event', 'main'
+        req.project ':core:scope-main'
+        req.project ':core:event-main'
         req.project ':model-main'
         req.project 'xapi-dev-parent:xapi-dev-file', 'main'
         req.project ':dev:scanner-main'

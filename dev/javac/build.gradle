@@ -17,7 +17,8 @@ import org.gradle.internal.jvm.Jvm
 dependencies {
         api "net.wti.core:xapi-fu:${->version}"
         api "net.wti.core:xapi-lang-core:${->version}"
-        api project(':xapi-core-parent:xapi-core-scope')
+        api project(':core:scope-main')
+        api project(':collect-main')
         api project(':xapi-dev-parent:xapi-dev-file')
         compileOnly 'net.wetheinter:gwt-dev:2.8.0'
         testImplementation 'net.wetheinter:gwt-dev:2.8.0'

@@ -4,9 +4,9 @@
             modules = [
                 <main
                     requires = {
-                        project: io,
+                        project: [ io, inject, collect ],
                         @transitive
-                        project: ":xapi-core-parent:xapi-core-scope",
+                        project: [ ":core:scope", ":util" ],
                     }
                 /main>
             ]
@@ -32,9 +32,17 @@
             modules = [
                 <main
                     requires = {
-                        project : inject
+                        project : [ inject ],
+                        project : { collect : main },
+                        project : { util : main },
                     }
                 /main>,
+                <test
+                    requires = {
+                        project : { util : main },
+                        project : { collect : main },
+                    }
+                /test>,
                 <testTools
                     requires = {
                         @transitive

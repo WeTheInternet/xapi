@@ -27,8 +27,9 @@ main.resources.srcDir("$rootDir/dev/api/src/main/resources")
 dependencies {
   implementation project(path: ":process-main")
   implementation project(path: ":model-main")
+  implementation project(path: ":collect-main")
   implementation project(path: ":io-main")
-  implementation project(path: ":xapi-core-parent:xapi-core-scope")
+  implementation project(path: ":core:scope-main")
   implementation "net.wti.core:xapi-lang-core:$version"
 }
 // GenEnd XapiSettingsPlugin

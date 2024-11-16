@@ -124,6 +124,7 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     private MultiList<PlatformModule, Expression> depsProject, depsInternal, depsExternal;
     private Boolean explicitMultiplatform;
     private boolean inherit;
+    private String description;
 
     public DefaultSchemaMetadata(DefaultSchemaMetadata parent, File schemaFile) {
         this.parent = parent;
@@ -400,5 +401,13 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
 
     public boolean isInherit() {
         return inherit;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

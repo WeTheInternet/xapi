@@ -28,6 +28,8 @@ main.java.srcDir("$rootDir/process/src/jreTest/java")
 main.resources.srcDir("$rootDir/process/src/jreTest/resources")
 
 dependencies {
+  implementation project(path: ":util-main")
+  implementation project(path: ":collect-main")
   api project(path: ":process-test")
   api project(path: ":process-jreTestTools")
 }
