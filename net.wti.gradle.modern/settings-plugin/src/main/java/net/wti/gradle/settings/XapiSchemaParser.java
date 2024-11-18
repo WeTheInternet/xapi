@@ -974,8 +974,12 @@ public interface XapiSchemaParser {
     }
 
     default void loadModules(SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser) {
-        final ListLike<UiContainerExpr> modules = metadata.getModules();
+        ListLike<UiContainerExpr> modules = metadata.getModules();
         if (modules == null) {
+            modules = X_Jdk.list();
+            // should make the default configurable, but ...not today
+            modules.add(new UiContainerExpr("main"));
+            metadata.setModules(modules);
             return;
         }
         final ListLike<SchemaModule> added = X_Jdk.listArray();
@@ -1199,6 +1203,7 @@ public interface XapiSchemaParser {
             platforms = X_Jdk.list();
             // should make the default configurable, but ...not today
             platforms.add(new UiContainerExpr("main"));
+            metadata.setPlatforms(platforms);
         }
         final ListLike<SchemaPlatform> added = X_Jdk.listArray();
         final Logger LOG = Logging.getLogger(XapiSchemaParser.class);
