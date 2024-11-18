@@ -1837,7 +1837,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         }
     }
 
-    private boolean inArray, inCss;
+    private boolean inArray, inCss, compress;
 
     @Override
     public void visit(JsonContainerExpr n, Object arg) {
@@ -1850,21 +1850,29 @@ public class DumpVisitor implements VoidVisitor<Object> {
         final List<JsonPairExpr> pairs = n.getPairs();
         final boolean was = inArray, multi = pairs.size() > 1;
         inArray = n.isArray();
-        if (multi) {
+        if (!compress && multi) {
             printer.indent();
         }
         for (int i = 0; i < pairs.size(); i++) {
             if (i > 0) {
-                printer.print(", ");
+                printer.print(",");
             }
-            if (multi) {
-                printer.println();
+            if (!compress) {
+                if (multi) {
+                    printer.println();
+                } else {
+                    printer.print(" ");
+                }
             }
             pairs.get(i).accept(this, arg);
         }
-        if (multi) {
-            printer.outdent();
-            printer.println();
+        if (!compress) {
+            if (multi) {
+                printer.outdent();
+                printer.println();
+            } else {
+                printer.print(" ");
+            }
         }
         inArray = was;
 
@@ -1882,7 +1890,11 @@ public class DumpVisitor implements VoidVisitor<Object> {
             n.getValueExpr().accept(this, arg);
         } else {
             n.getKeyExpr().accept(this, arg);
-            printer.print(" : ");
+            if (compress) {
+                printer.print(":");
+            } else {
+                printer.print(" : ");
+            }
             n.getValueExpr().accept(this, arg);
         }
     }
@@ -2034,4 +2046,12 @@ public class DumpVisitor implements VoidVisitor<Object> {
         }
     }
 
+    public boolean isCompress() {
+        return compress;
+    }
+
+    public DumpVisitor setCompress(final boolean compress) {
+        this.compress = compress;
+        return this;
+    }
 }

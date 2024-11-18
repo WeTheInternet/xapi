@@ -174,6 +174,42 @@ public class ASTParserTokenManager implements ASTParserConstants {
     }
     return false;
   }
+
+  boolean isCommaCloseJson(Token token) {
+    char c;
+    if (token.next != null) {
+      if (",".equals(token.next.image)) {
+        if (token.next.next != null) {
+          switch(token.next.next.image) {
+            case "}":
+            case "]":
+              return true;
+            default:
+              return false;
+          }
+        }
+        c = peekNext();
+        return c == '}' || c == ']';
+      }
+      return false;
+    }
+    int backup = 0;
+    try {
+      backup += eatWhitespaceAndComments();
+      c = input_stream.readChar();
+      backup ++;
+      if (c == ',') {
+        backup += eatWhitespaceAndComments();
+        c = input_stream.readChar();
+        backup ++;
+        return c == '}' || c == ']';
+      }
+    } catch (IOException e) {
+    } finally {
+        input_stream.backup(backup);
+    }
+    return false;
+  }
   boolean isMemberBody(Token token) {
     if (token.next != null) {
       return token.next.image.matches("public|private|protected");

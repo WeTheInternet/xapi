@@ -255,6 +255,13 @@ public abstract class Node implements Serializable, Cloneable {
         return visitor.getSource();
     }
 
+    public final String toSourceCompressed() {
+        final TransformVisitor visitor = new TransformVisitor();
+        visitor.setCompress(true);
+        accept(visitor, null);
+        return visitor.getSource();
+    }
+
     public final String toSource(Transformer templateTransformer) {
         final TransformVisitor visitor = new TransformVisitor(templateTransformer);
         accept(visitor, null);

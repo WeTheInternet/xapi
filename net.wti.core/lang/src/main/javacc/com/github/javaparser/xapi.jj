@@ -366,6 +366,42 @@ TOKEN_MGR_DECLS : {
     }
     return false;
   }
+
+  boolean isCommaCloseJson(Token token) {
+    char c;
+    if (token.next != null) {
+      if (",".equals(token.next.image)) {
+        if (token.next.next != null) {
+          switch(token.next.next.image) {
+            case "}":
+            case "]":
+              return true;
+            default:
+              return false;
+          }
+        }
+        c = peekNext();
+        return c == '}' || c == ']';
+      }
+      return false;
+    }
+    int backup = 0;
+    try {
+      backup += eatWhitespaceAndComments();
+      c = input_stream.readChar();
+      backup ++;
+      if (c == ',') {
+        backup += eatWhitespaceAndComments();
+        c = input_stream.readChar();
+        backup ++;
+        return c == '}' || c == ']';
+      }
+    } catch (IOException e) {
+    } finally {
+        input_stream.backup(backup);
+    }
+    return false;
+  }
   boolean isMemberBody(Token token) {
     if (token.next != null) {
       return token.next.image.matches("public|private|protected");
@@ -3715,6 +3751,8 @@ JsonContainerExpr JsonContainer():
     // First, an item [optional]
     [ pair = JsonPair() { items.add(pair); } ]
     [
+      ( LOOKAHEAD( { token_source.isCommaCloseJson(token)} ) "," )
+      |
       // Next, optionally, N `, name:expr()`s
       (
         LOOKAHEAD( { token_source.isCommaNotTrailing(token) } )
@@ -3809,14 +3847,30 @@ JsonPairExpr JsonPair():
           column = annotation.getBeginColumn();
         }
       } )*
-      ( name = Expression() {
-        if (line == null) {
-          line = name.getBeginLine();
-          column = name.getBeginColumn();
+      (
+        name = SimpleName() {
+            if (line == null) {
+              line = name.getBeginLine();
+              column = name.getBeginColumn();
+            }
+        } |
+        name = Literal() {
+            if (line == null) {
+              line = name.getBeginLine();
+              column = name.getBeginColumn();
+            }
+        } |
+        name = Expression() {
+            if (line == null) {
+              line = name.getBeginLine();
+              column = name.getBeginColumn();
+            }
         }
-      } )
+      )
       ":"
-       value = UiValue()
+       (
+            value = SimpleName() | value = Literal() | value = UiValue()
+       )
       )
   )
   {

@@ -1194,9 +1194,11 @@ public interface XapiSchemaParser {
     }
 
     default void loadPlatforms(SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser, final String explicitPlatform) {
-        final ListLike<UiContainerExpr> platforms = metadata.getPlatforms();
+        ListLike<UiContainerExpr> platforms = metadata.getPlatforms();
         if (platforms == null) {
-            return;
+            platforms = X_Jdk.list();
+            // should make the default configurable, but ...not today
+            platforms.add(new UiContainerExpr("main"));
         }
         final ListLike<SchemaPlatform> added = X_Jdk.listArray();
         final Logger LOG = Logging.getLogger(XapiSchemaParser.class);
