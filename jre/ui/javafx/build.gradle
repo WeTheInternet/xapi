@@ -13,7 +13,7 @@ xapiRequire.main().configure {
     req ->
         req.project ':collect-jre'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components', 'main'
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator', 'main'
+        req.project ':ui:generator'
         req.project 'io-jre'
         req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
 }

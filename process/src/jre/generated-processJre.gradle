@@ -39,6 +39,7 @@ dependencies {
   implementation project(path: ":collect-main")
   implementation project(path: ":util-main")
   testImplementation project(path: ":collect-main")
+  testImplementation project(path: ":base-testTools")
   api project(path: ":process-main")
 }
 // GenEnd XapiSettingsPlugin

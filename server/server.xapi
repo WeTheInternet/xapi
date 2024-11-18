@@ -26,5 +26,53 @@
                 project : { ":dev:scanner": main }
             }
         /servlets>,
+        <gen
+            description = "Xapi - Server generator"
+            modules = [
+                main,
+                <sample include = main /sample>,
+            ]
+            requires = {
+                project : {
+                    inject : main,
+                    process : jre,
+                    io : main,
+                    ":server:servlets" : main,
+                    ":dev:api" : main,
+                },
+                project : [
+                    ":ui:generator",
+                    ":ui:components",
+                ],
+                external : [
+                    "net.wti.core:xapi-lang-core:$version",
+                    "net.wetheinter:gwt-user:2.8.0",
+                ],
+                @transitive(compile_only)
+                project : ":xapi-dev-parent:xapi-dev-javac",
+
+                @transitive(test)
+                internal : "sample",
+                @transitive(test)
+                project : {
+                    ":dev:scanner" : main,
+                },
+                @transitive(test)
+                project : [
+                    ":collect-jre",
+                    ":model-jre",
+                    "xapi-dev-parent:xapi-dev-javac",
+                ],
+                @transitive(test)
+                external : [
+                    "javax.servlet:javax.servlet-api:3.1-b02",
+                    "org.eclipse.jetty:jetty-server:9.4.18.v20190429",
+                    "org.eclipse.jetty:jetty-servlet:9.4.18.v20190429",
+                    "junit:junit:4.12",
+                    "info.cukes:cucumber-java:1.2.5",
+                    "info.cukes:cucumber-junit:1.2.5",
+                ],
+            }
+        /gen>,
     ]
 /xapi-schema>

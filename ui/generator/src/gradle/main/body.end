@@ -1,0 +1,7 @@
+dependencies {
+    File tools = org.gradle.internal.jvm.Jvm.current().toolsJar
+    if (tools) {
+        compileOnly files(tools)
+        testImplementation files(tools)
+    }
+}

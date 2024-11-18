@@ -4,6 +4,7 @@ import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
 import org.gradle.api.Action;
 import org.gradle.api.Describable;
+import org.gradle.api.GradleException;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
@@ -236,6 +237,7 @@ public class ProjectDescriptorView implements ProjectViewInternal {
         if (result == null) {
             ProjectDescriptor subproj = settings.findProject(path);
             if (subproj == null) {
+                new GradleException("Including project " + path + " from findView").printStackTrace();
                 settings.include(path);
                 subproj = settings.findProject(path);
                 if (subproj == null) {

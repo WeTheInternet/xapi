@@ -31,7 +31,6 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 
 dependencies {
-  api project(path: ":base-testTools")
   api project(path: ":process-testTools")
   api project(path: ":process-jre")
 }

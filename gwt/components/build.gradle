@@ -21,7 +21,7 @@ xapiRequire.main().configure {
         req.project 'xapi-gwt3'
         req.project 'xapi-elemental'
         req.project ':io-jre'
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator'
+        req.project ':ui:generator'
         req.project ':ui:components'
         req.external 'net.wetheinter:gwt-user:2.8.0'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'

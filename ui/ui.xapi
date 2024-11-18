@@ -34,6 +34,27 @@
                     external : "javax.validation:validation-api:1.0.0.GA",
                 }
             /api>,
+            <generator
+                inherit = false
+                description = "Xapi - Core UI Generator"
+                requires = {
+                    project : [
+                        ":ui:components",
+                        "xapi-dev-parent:xapi-dev-javac",
+                    ],
+                    @transitive
+                    project : ":xapi-lang-dev",
+                    @transitive(test)
+                    external : [
+                        "junit:junit:4.12", "org.assertj:assertj-core:3.2.0"
+                    ],
+                    @transitive(test)
+                    project : [
+                        ":inject-jre",
+                        ":base-testTools",
+                    ],
+                }
+            /generator>
         ],
     }
     projects = [
@@ -43,6 +64,7 @@
             requires = {
                 @transitive
                 project : [ ":ui:api" ],
+                @transitive
                 project : ":xapi-lang-dev",
                 project : [ ":dev:file", ":core:scope", io, util ],
                 @transitive

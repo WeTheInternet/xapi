@@ -13,18 +13,14 @@
                         project: { base : main }
                     }
                 /api>,
-                <testTools force=true />,
                 <main
                     requires = {
                         @transitive
-                        project : inject
+                        project : inject,
+                        @transitive(test)
+                        external: "junit:junit:4.13",
                     }
                 /main>,
-                <test
-                    requires = {
-                        external: "junit:junit:4.13"
-                    }
-                /test>
             ]
         /main>,
         <gwt

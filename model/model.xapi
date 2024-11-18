@@ -35,22 +35,23 @@
                         project: [ base, collect, io ],
                         project: { "xapi-lang-dev" : main },
                         project: { ":core:reflect" : main },
-                        external: "net.wti.core:xapi-gen:$version"
-
-                    }
-                    requires = @transitive(test) {
-                        project: base,
-                        project: { server : api },
-                        project: {model: "jre:main"},
-                        project: {io: "jre:main"},
-                        @transitive("runtime_only")
-                        project: {inject: "jre:main"},
-                        external: "junit:junit:4.13",
-                        external: "net.sourceforge.htmlunit:htmlunit:2.19",
-                        external: "net.wti.core:xapi-gen:$version"
+                        external: "net.wti.core:xapi-gen:$version",
+                        @transitive(test)
+                        project: {
+                            server : api,
+                            base : testTools,
+                            model : "jre:main",
+                            io: "jre:main",
+                            inject: "jre:main",
+                        },
+                        @transitive(test)
+                        external: [
+                            "junit:junit:4.13",
+                            "net.sourceforge.htmlunit:htmlunit:2.19",
+                            "net.wti.core:xapi-gen:$version",
+                        ],
                     }
                 /main>,
-                <testTools force=true />,
             ]
         /gwt>,
         <jre

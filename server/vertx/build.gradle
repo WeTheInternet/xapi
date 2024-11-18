@@ -11,7 +11,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project 'xapi-server-parent:xapi-server-gen', 'main'
+        req.project ':server:gen-main'
         req.project ':server:servlets-main'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
         req.project ':process-jre'
@@ -25,9 +25,9 @@ xapiRequire.main().configure {
 }
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-server-parent:xapi-server-gen', 'main:sample'
+        req.project ':server:gen-sample'
         req.project ':dev:scanner-main'
-        req.project 'xapi-server-parent:xapi-server-gen', 'main'
+        req.project ':server:gen-main'
         req.project 'xapi-dev-parent:xapi-dev-javac'
         req.external 'info.cukes:cucumber-java:1.2.5'
         req.external 'info.cukes:cucumber-junit:1.2.5'

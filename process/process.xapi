@@ -36,15 +36,12 @@
                         project : { collect : main },
                         project : { util : main },
                         @transitive(test)
-                        project : { collect : main },
+                        project : {
+                            collect : main,
+                            base : testTools,
+                        }
                     }
                 /main>,
-                <testTools
-                    requires = {
-                        @transitive
-                        project : { base : testTools }
-                    }
-                /testTools>
             ]
         /jre>
     ]

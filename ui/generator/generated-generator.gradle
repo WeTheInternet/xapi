@@ -29,23 +29,15 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/components/src/main/java")
-main.resources.srcDir("$rootDir/ui/components/src/main/resources")
+main.java.srcDir("$rootDir/ui/generator/src/main/java")
+main.resources.srcDir("$rootDir/ui/generator/src/main/resources")
 
 dependencies {
-  api project(path: ":ui:api")
+  implementation project(path: ":ui:components")
+  implementation project(path: ":xapi-dev-parent:xapi-dev-javac")
   api project(path: ":xapi-lang-dev")
-  implementation project(path: ":dev:file-main")
-  implementation project(path: ":core:scope-main")
-  implementation project(path: ":io-main")
-  implementation project(path: ":util-main")
-  api project(path: ":core:event-main")
-  api project(path: ":model-main")
-  implementation project(path: ":dev:scanner-main")
-  testImplementation project(path: ":model-jre")
+  testImplementation project(path: ":inject-jre")
   testImplementation project(path: ":base-testTools")
-  implementation "javax.validation:validation-api:1.0.0.GA"
-  compileOnly "net.wetheinter:jsinterop-annotations:2.8.0"
   testImplementation "junit:junit:4.12"
   testImplementation "org.assertj:assertj-core:3.2.0"
 }
@@ -55,4 +47,12 @@ configurations {
   mainOut
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :ui:components at file://$rootDir/ui/components/generated-components.gradle
+// GenInclude body.end from file:///opt/xapi/ui/generator/src/gradle/main/body.end
+dependencies {
+    File tools = org.gradle.internal.jvm.Jvm.current().toolsJar
+    if (tools) {
+        compileOnly files(tools)
+        testImplementation files(tools)
+    }
+}
+// Done generating buildfile for :ui:generator at file://$rootDir/ui/generator/generated-generator.gradle

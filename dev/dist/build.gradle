@@ -12,7 +12,7 @@ xapiRequire.main().configure {
         req.project ':dev:scanner-main'
         req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
         req.external "net.wti.core:xapi-gen:$version", 'main'
-        req.project 'xapi-server-parent:xapi-server-gen'
+        req.project ':server:gen-main'
 }
 
 xapiRequire.module('test').configure {

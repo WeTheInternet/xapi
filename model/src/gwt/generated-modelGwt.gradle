@@ -43,9 +43,17 @@ dependencies {
   api project(path: ":io-gwt")
   implementation project(path: ":xapi-lang-dev")
   implementation project(path: ":core:reflect-main")
+  testImplementation project(path: ":server-api")
+  testImplementation project(path: ":base-testTools")
+  testImplementation project(path: ":model-jre")
+  testImplementation project(path: ":io-jre")
+  testImplementation project(path: ":inject-jre")
   implementation "net.wetheinter:gwt-user:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
   implementation "net.wti.core:xapi-gen:$version"
+  testImplementation "junit:junit:4.13"
+  testImplementation "net.sourceforge.htmlunit:htmlunit:2.19"
+  testImplementation "net.wti.core:xapi-gen:$version"
   api project(path: ":model-main")
   api project(path: ":model-gwtApi")
   api project(path: ":model-gwtSpi")
