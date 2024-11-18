@@ -28,7 +28,7 @@
         <main include = [ api, spi ] />,
         // <sample include = "main" published = true />,
         <testTools include = "main" published = true />,
-        <test include = [ testTools ] />,
+
     ]
 
     projects = {

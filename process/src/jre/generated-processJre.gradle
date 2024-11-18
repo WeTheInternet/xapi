@@ -38,6 +38,7 @@ dependencies {
   implementation project(path: ":inject-jre")
   implementation project(path: ":collect-main")
   implementation project(path: ":util-main")
+  testImplementation project(path: ":collect-main")
   api project(path: ":process-main")
 }
 // GenEnd XapiSettingsPlugin

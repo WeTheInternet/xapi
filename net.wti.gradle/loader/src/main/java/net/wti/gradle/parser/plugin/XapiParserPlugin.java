@@ -303,6 +303,9 @@ public class XapiParserPlugin implements Plugin<Project> {
                 final SchemaIndex index = indexProvider.out1();
                 final SchemaIndexReader reader = index.getReader();
                 final SchemaPlatform plat = schemaProject.getPlatform(platform.getName());
+                if ("test".equals(module.getName())) {
+                    continue;
+                }
                 final SchemaModule mod = schemaProject.getModule(module.getName());
 
                 if (reader.hasEntries(view, schemaProject.getPathIndex(), plat, mod)) {

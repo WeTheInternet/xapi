@@ -25,13 +25,10 @@
                         project : { collect: api},
                         @transitive
                         external : "net.wti.core:xapi-gen:$version",
+                        @transitive(test)
+                        internal : testTools,
                     }
                 /main>,
-                <test
-                    requires = {
-                        internal : testTools
-                    }
-                /test>
             ]
         /main>,
         <gwt replace = "main" published = true
@@ -56,14 +53,12 @@
                         project : { ":dev:scanner": main, util : main },
                         @transitive("annotation_processor")
                         internal : "main:main",
+                        @transitive(test)
+                        external : "junit:junit:4.13",
+                        @transitive(test)
+                        project : { base : jreTestTools }
                     }
                 /main>,
-                <test
-                    requires = {
-                        external : "junit:junit:4.13",
-                        project : "base-jreTestTools"
-                    }
-                /test>,
                 <testTools
                     requires = {
                         project : { ":base" : "testTools" },

@@ -34,6 +34,9 @@ test.java.srcDir("$rootDir/base/src/jreTest/java")
 
 dependencies {
   implementation project(path: ":util-main")
+  testImplementation project(path: ":inject-main")
+  testImplementation project(path: ":util-main")
+  testImplementation project(path: ":base-testTools")
   testImplementation "junit:junit:4.13"
   api project(path: ":base-main")
   api project(path: ":base-jreApi")

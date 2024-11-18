@@ -33,6 +33,7 @@ main.java.srcDir("$rootDir/base/src/main/java")
 main.resources.srcDir("$rootDir/base/src/main/resources")
 
 dependencies {
+  testImplementation project(path: ":base-testTools")
   implementation "javax.inject:javax.inject:1"
   implementation "javax.annotation:javax.annotation-api:1.2"
   api project(path: ":base-api")

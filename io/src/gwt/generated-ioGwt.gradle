@@ -36,8 +36,16 @@ test.resources.srcDir("$rootDir/io/src/gwtTest/resources")
 dependencies {
   implementation project(path: ":collect-gwt")
   implementation project(path: ":util-main")
+  testImplementation project(path: ":util-main")
+  testImplementation project(path: ":inject-main")
+  testImplementation project(path: ":collect-main")
   implementation "net.wetheinter:jsinterop-annotations:2.8.0"
   implementation "net.wetheinter:gwt-user:2.8.0"
+  testImplementation "net.sourceforge.htmlunit:htmlunit:2.19"
+  testImplementation "junit:junit:4.13"
+  testImplementation "net.wetheinter:gwt-user:2.8.0"
+  testImplementation "net.wetheinter:gwt-codeserver:2.8.0"
+  testImplementation "net.wetheinter:gwt-dev:2.8.0"
   api project(path: ":io-main")
   api project(path: ":io-gwtApi")
 }

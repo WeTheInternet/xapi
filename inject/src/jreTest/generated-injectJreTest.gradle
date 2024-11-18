@@ -33,10 +33,7 @@ main.java.srcDir("$rootDir/inject/src/jreTest/java")
 main.resources.srcDir("$rootDir/inject/src/jreTest/resources")
 
 dependencies {
-  implementation project(path: ":base-jreTestTools")
-  implementation "junit:junit:4.13"
   api project(path: ":inject-test")
-  api project(path: ":inject-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :inject at file://$rootDir/inject/src/jreTest/generated-injectJreTest.gradle

@@ -36,6 +36,7 @@ dependencies {
   implementation project(path: ":log-main")
   api project(path: ":base-main")
   implementation project(path: ":collect-api")
+  testImplementation project(path: ":inject-testTools")
   api "net.wti.core:xapi-gen:$version"
   api project(path: ":inject-api")
   api project(path: ":inject-spi")

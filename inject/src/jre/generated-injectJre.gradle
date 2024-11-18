@@ -37,7 +37,9 @@ test.resources.srcDir("$rootDir/inject/src/jreTest/resources")
 dependencies {
   implementation project(path: ":dev:scanner-main")
   implementation project(path: ":util-main")
+  testImplementation project(path: ":base-jreTestTools")
   annotationProcessor project(path: ":inject-main")
+  testImplementation "junit:junit:4.13"
   api project(path: ":inject-main")
   api project(path: ":inject-jreApi")
   api project(path: ":inject-jreSpi")

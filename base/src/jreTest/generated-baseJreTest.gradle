@@ -37,7 +37,6 @@ dependencies {
   implementation project(path: ":base-testTools")
   implementation "junit:junit:4.13"
   api project(path: ":base-test")
-  api project(path: ":base-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :base at file://$rootDir/base/src/jreTest/generated-baseJreTest.gradle

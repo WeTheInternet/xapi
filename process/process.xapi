@@ -35,14 +35,10 @@
                         project : [ inject ],
                         project : { collect : main },
                         project : { util : main },
-                    }
-                /main>,
-                <test
-                    requires = {
-                        project : { util : main },
+                        @transitive(test)
                         project : { collect : main },
                     }
-                /test>,
+                /main>,
                 <testTools
                     requires = {
                         @transitive

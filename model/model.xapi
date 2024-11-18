@@ -38,10 +38,7 @@
                         external: "net.wti.core:xapi-gen:$version"
 
                     }
-                /main>,
-                <testTools force=true />,
-                <test
-                    requires = {
+                    requires = @transitive(test) {
                         project: base,
                         project: { server : api },
                         project: {model: "jre:main"},
@@ -52,7 +49,8 @@
                         external: "net.sourceforge.htmlunit:htmlunit:2.19",
                         external: "net.wti.core:xapi-gen:$version"
                     }
-                /test>
+                /main>,
+                <testTools force=true />,
             ]
         /gwt>,
         <jre
@@ -62,7 +60,9 @@
                         project: [ base, inject, collect ],
                         project: [ { model : main }, { io : main }, { util : main } ],
                         @transitive
-                        project: { ":dev:template" : main }
+                        project: { ":dev:template" : main },
+                        @transitive(test)
+                        external : "junit:junit:4.13",
 
                     }
                 /main>,
@@ -74,11 +74,6 @@
                         project : { collect : main }
                     }
                 /testTools>,
-                <test include = jreTestTools
-                    requires = {
-                        external : "junit:junit:4.13"
-                    }
-                /test>
             ]
         /jre>
     ]

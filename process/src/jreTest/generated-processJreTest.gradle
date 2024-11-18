@@ -36,7 +36,6 @@ dependencies {
   implementation project(path: ":util-main")
   implementation project(path: ":collect-main")
   api project(path: ":process-test")
-  api project(path: ":process-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/process/src/gradle/jreTest/body.end

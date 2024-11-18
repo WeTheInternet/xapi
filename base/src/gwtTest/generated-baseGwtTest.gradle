@@ -33,13 +33,7 @@ main.java.srcDir("$rootDir/base/src/gwtTest/java")
 main.resources.srcDir("$rootDir/base/src/gwtTest/resources")
 
 dependencies {
-  implementation project(path: ":base-gwtTestTools")
-  implementation "net.wetheinter:gwt-user:2.8.0"
-  implementation "net.wetheinter:gwt-dev:2.8.0"
-  implementation "net.wetheinter:gwt-dev:2.8.0"
-  implementation "net.wti.core:xapi-gen:0.5.1"
   api project(path: ":base-test")
-  api project(path: ":base-gwtTestTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :base at file://$rootDir/base/src/gwtTest/generated-baseGwtTest.gradle

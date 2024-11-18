@@ -40,6 +40,7 @@ dependencies {
   implementation project(path: ":io-main")
   implementation project(path: ":util-main")
   api project(path: ":dev:template-main")
+  testImplementation "junit:junit:4.13"
   api project(path: ":model-main")
   api project(path: ":model-jreApi")
   api project(path: ":model-jreSpi")

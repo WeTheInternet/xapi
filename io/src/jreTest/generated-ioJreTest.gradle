@@ -33,7 +33,6 @@ main.java.srcDir("$rootDir/io/src/jreTest/java")
 
 dependencies {
   api project(path: ":io-test")
-  api project(path: ":io-jreTestTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :io at file://$rootDir/io/src/jreTest/generated-ioJreTest.gradle

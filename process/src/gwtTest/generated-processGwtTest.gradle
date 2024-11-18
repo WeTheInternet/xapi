@@ -33,7 +33,6 @@ main.java.srcDir("$rootDir/process/src/gwtTest/java")
 
 dependencies {
   api project(path: ":process-test")
-  api project(path: ":process-gwtTestTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :process at file://$rootDir/process/src/gwtTest/generated-processGwtTest.gradle
