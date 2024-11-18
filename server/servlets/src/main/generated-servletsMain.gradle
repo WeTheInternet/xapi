@@ -39,7 +39,7 @@ dependencies {
   implementation project(path: ":util-main")
   implementation project(path: ":collect-main")
   implementation project(path: ":model-jre")
-  implementation project(path: ":ui:components")
+  implementation project(path: ":ui:service")
   api project(path: ":gwtc-api")
   testImplementation project(path: ":base-testTools")
   testImplementation project(path: ":dev:scanner-main")

@@ -29,8 +29,8 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/components/src/main/java")
-main.resources.srcDir("$rootDir/ui/components/src/main/resources")
+main.java.srcDir("$rootDir/ui/service/src/main/java")
+main.resources.srcDir("$rootDir/ui/service/src/main/resources")
 
 dependencies {
   api project(path: ":ui:api")
@@ -55,4 +55,4 @@ configurations {
   mainOut
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :ui:components at file://$rootDir/ui/components/generated-components.gradle
+// Done generating buildfile for :ui:service at file://$rootDir/ui/service/generated-service.gradle

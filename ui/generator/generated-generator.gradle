@@ -33,7 +33,7 @@ main.java.srcDir("$rootDir/ui/generator/src/main/java")
 main.resources.srcDir("$rootDir/ui/generator/src/main/resources")
 
 dependencies {
-  implementation project(path: ":ui:components")
+  implementation project(path: ":ui:service")
   implementation project(path: ":xapi-dev-parent:xapi-dev-javac")
   api project(path: ":xapi-lang-dev")
   testImplementation project(path: ":inject-jre")

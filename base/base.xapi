@@ -74,8 +74,6 @@
                         @transitive
                         project : { ":xapi-elemental" : main },
                         @transitive
-                        project : { server : api },
-                        @transitive
                         external : "junit:junit:4.12",
                         @transitive
                         external : "junit:junit:4.12:sources",

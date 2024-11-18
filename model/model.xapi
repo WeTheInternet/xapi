@@ -38,7 +38,6 @@
                         external: "net.wti.core:xapi-gen:$version",
                         @transitive(test)
                         project: {
-                            server : api,
                             base : testTools,
                             model : "jre:main",
                             io: "jre:main",

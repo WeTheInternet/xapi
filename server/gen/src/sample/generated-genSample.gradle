@@ -38,7 +38,7 @@ dependencies {
   implementation project(path: ":server:servlets-main")
   implementation project(path: ":dev:api-main")
   implementation project(path: ":ui:generator")
-  implementation project(path: ":ui:components")
+  implementation project(path: ":ui:service")
   compileOnly project(path: ":xapi-dev-parent:xapi-dev-javac")
   testImplementation project(path: ":dev:scanner-main")
   testImplementation project(path: ":collect-jre")

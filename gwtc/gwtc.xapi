@@ -8,7 +8,7 @@
                 @transitive(compile_only)
                 external : "net.wti.gradle:xapi-gradle-api:$version",
                 project : { model : main, process : main, io : main, collect: main, inject : jre },
-                project : { ":ui:components" : main, ":dev:api" : main },
+                project : { ":ui:service" : main, ":dev:api" : main },
                 project : { ":dev:file" : main },
                 external : "net.wetheinter:gwt-user:2.8.0",
                 project : { ":dev:scanner": main },

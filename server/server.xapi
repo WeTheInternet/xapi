@@ -8,7 +8,7 @@
             requires = {
                 project : { ":dev:api" : main, process: main, io: main, util: main, collect: main },
                 project : { model : jre },
-                project : ":ui:components",
+                project : ":ui:service",
                 external : "net.wti.core:xapi-lang-core:$version",
                 @transitive
                 project : { gwtc : api },
@@ -42,7 +42,7 @@
                 },
                 project : [
                     ":ui:generator",
-                    ":ui:components",
+                    ":ui:service",
                 ],
                 external : [
                     "net.wti.core:xapi-lang-core:$version",

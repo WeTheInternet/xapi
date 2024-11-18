@@ -13,7 +13,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project ':collect-main'
-        req.project ':ui:components'
+        req.project ':ui:service'
         req.project ':core:event-main'
         req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
         req.project ':model-gwt'

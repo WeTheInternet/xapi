@@ -43,7 +43,6 @@ dependencies {
   api project(path: ":io-gwt")
   implementation project(path: ":xapi-lang-dev")
   implementation project(path: ":core:reflect-main")
-  testImplementation project(path: ":server-api")
   testImplementation project(path: ":base-testTools")
   testImplementation project(path: ":model-jre")
   testImplementation project(path: ":io-jre")

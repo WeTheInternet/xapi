@@ -4,7 +4,7 @@ plugins {
 
 xapiRequire.main().configure {
     req ->
-        req.project ':ui:components'
+        req.project ':ui:service'
 }
 xapiRequire.module('test').configure {
     req ->

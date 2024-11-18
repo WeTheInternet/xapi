@@ -4,7 +4,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project ':base-gwt'
-        req.project ':ui:components'
+        req.project ':ui:service'
         req.project ':collect-main'
         req.project ':util-main'
         req.project ":xapi-gwt-ui-parent:xapi-gwt-ui-api"
