@@ -17,16 +17,102 @@
     projects = {
         // the projects below all have gwt, jre and other platforms
         multiplatform: [
+            <service
+                description = "XApi - UI service layer"
+                platforms = [
+                    <main
+                        modules = [
+                            <main
+                                requires = {
+                                    @transitive
+                                    project : [ ":ui:api" ],
+                                    @transitive
+                                    project : ":xapi-lang-dev",
+                                    project : [ ":dev:file", ":core:scope", io, util ],
+                                    @transitive
+                                    project : ":core:event",
+                                    @transitive
+                                    project : ":model",
+                                    project : ":dev:scanner",
+                                    external : "javax.validation:validation-api:1.0.0.GA",
+                                    @transitive(compile_only)
+                                    external : "net.wetheinter:jsinterop-annotations:2.8.0",
+
+                                    @transitive(test)
+                                    project : { model : jre },
+                                    @transitive(test)
+                                    project : { base : testTools },
+                                    @transitive(test)
+                                    external : [ "junit:junit:4.12", "org.assertj:assertj-core:3.2.0" ],
+                                }
+                            /main>
+                        ]
+                    /main>,
+                    <gwt
+                        replaces = main
+                        modules = [
+                            <main
+                                requires = {
+                                    project : {
+                                        //":ui:service" : main,
+                                        collect : main
+                                    },
+                                    @transitive(compile_only)
+                                    external : "net.wetheinter:gwt-user:2.8.0"
+                                }
+                            /main>
+                        ]
+                    /gwt>
+                ]
+            /service>,
             <autoui
                 inherit = true
-
-                modules = [
+                platforms = [
                     <main
-                        requires = {
-                            project : [ util, collect, ":ui:service" ],
-                            external : "javax.inject:javax.inject:1:sources",
-                        }
+                        modules = [
+                            <main
+                                requires = {
+                                    project : [ util, collect, ":ui:service" ],
+                                    external : "javax.inject:javax.inject:1:sources",
+                                }
+                            /main>,
+                        ]
                     /main>,
+                    <gwt
+                        modules = [
+                            <main
+                                requires = {
+                                    project : {
+                                        ":collect" : main,
+                                        ":ui:service" : main,
+                                        ":util" : main,
+                                        ":core:event" : main,
+                                        ":ui:autoui" : main,
+                                        ":ui:html" : main,
+                                        ":model" : gwt,
+                                        ":inject" : jre,
+                                    },
+                                    @transitive(compile_only)
+                                    external : [
+                                        "net.wetheinter:gwt-dev:2.8.0",
+                                        "net.wetheinter:gwt-user:2.8.0",
+                                    ],
+                                    @transitive(test)
+                                    project : {
+                                        ":ui:autoui" : sample,
+                                        base : gwtTestTools,
+                                    },
+                                    @transitive(test)
+                                    external : [
+                                        "net.wetheinter:gwt-dev:2.8.0",
+                                        "net.wetheinter:gwt-user:2.8.0",
+                                        "net.wetheinter:gwt-codeserver:2.8.0",
+                                        "net.sourceforge.htmlunit:htmlunit:2.19",
+                                    ]
+                                }
+                            /main>
+                        ]
+                    /gwt>
                 ]
             /autoui>,
             <html
@@ -54,7 +140,42 @@
                                     project : ":ui:autoui"
                             } /sample>
                         ]
-                    /main>
+                    /main>,
+                    <gwt
+                        modules = [
+                            <main
+                                requires = {
+                                    @transitive
+                                    project : {
+                                        ":ui:autoui" : gwt,
+                                        ":ui:service" : gwt,
+                                    },
+                                    project : {
+                                        ":ui:html" : main,
+                                        inject : jre,
+                                        util : main,
+                                    },
+                                    external : "net.wetheinter:gwt-elemental:2.8.0",
+                                    @transitive(compile_only)
+                                    external : [
+                                        "net.wetheinter:gwt-dev:2.8.0",
+                                        "net.wetheinter:gwt-codeserver:2.8.0",
+                                        "net.wetheinter:gwt-user:2.8.0",
+                                    ],
+                                    @transitive(test)
+                                    project : {
+                                        ":ui:autoui" : sample,
+                                        base : testTools,
+                                    },
+                                    external : [
+                                        "net.sourceforge.htmlunit:htmlunit:2.19",
+                                        "net.wetheinter:gwt-dev:2.8.0",
+                                        "net.wetheinter:gwt-codeserver:2.8.0",
+                                    ],
+                                }
+                            /main>
+                        ]
+                    /gwt>
                 ]
             /html>,
         ],
@@ -72,6 +193,21 @@
                     }
                 /main>
             /api>,
+            <components
+                inherit = false
+                description = "Xapi - UI component types"
+                requires = {
+                    project : ":ui:service",
+
+                    @transitive(test)
+                    project : {
+                        inject : jre,
+                        base : testTools,
+                    },
+                    @transitive(test)
+                    external : "junit:junit:4.12",
+                }
+            /components>,
             <generator
                 inherit = false
                 description = "Xapi - Core UI Generator"
@@ -93,32 +229,6 @@
                     ],
                 }
             /generator>,
-            <service
-                inherit = false
-                description = "XApi - Core UI Apis"
-                requires = {
-                    @transitive
-                    project : [ ":ui:api" ],
-                    @transitive
-                    project : ":xapi-lang-dev",
-                    project : [ ":dev:file", ":core:scope", io, util ],
-                    @transitive
-                    project : ":core:event",
-                    @transitive
-                    project : ":model",
-                    project : ":dev:scanner",
-                    external : "javax.validation:validation-api:1.0.0.GA",
-                    @transitive(compile_only)
-                    external : "net.wetheinter:jsinterop-annotations:2.8.0",
-
-                    @transitive(test)
-                    project : { model : jre },
-                    @transitive(test)
-                    project : { base : testTools },
-                    @transitive(test)
-                    external : [ "junit:junit:4.12", "org.assertj:assertj-core:3.2.0" ],
-                }
-            /service>,
         ],
     }
 /xapi-schema>

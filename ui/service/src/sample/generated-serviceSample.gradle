@@ -1,6 +1,9 @@
 import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
+
+apply plugin: "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -26,14 +29,9 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/autoui/src/main/java")
-main.resources.srcDir("$rootDir/ui/autoui/src/main/resources")
 
 dependencies {
-  implementation project(path: ":util-main")
-  implementation project(path: ":collect-main")
-  implementation project(path: ":ui:service-main")
-  implementation "javax.inject:javax.inject:1:sources"
+  api project(path: ":ui:service-main")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :ui:autoui at file://$rootDir/ui/autoui/src/main/generated-autouiMain.gradle
+// Done generating buildfile for :ui:service at file://$rootDir/ui/service/src/sample/generated-serviceSample.gradle

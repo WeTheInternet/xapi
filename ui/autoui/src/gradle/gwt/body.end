@@ -1,0 +1,13 @@
+tasks.withType(Test).configureEach {
+    Test t ->
+        if (gradle.gradleVersion.startsWith("5")) {
+            t.logging.level = LogLevel.INFO
+        } else {
+            t.logging.levelInternal = LogLevel.INFO
+        }
+        t.forkEvery = 1
+        t.maxHeapSize = "2G"
+        t.timeout = Duration.ofMinutes(10)
+        // t.systemProperty("gwt.args", "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
+        t.systemProperty("gwt.args", "-logLevel DEBUG -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-gwtTest ")
+}

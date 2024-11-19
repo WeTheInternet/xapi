@@ -40,7 +40,7 @@ dependencies {
   api project(path: ":dev:api-main")
   api project(path: ":server:servlets")
   api project(path: ":ui:generator")
-  api project(path: ":ui:service")
+  api project(path: ":ui:service-main")
   compileOnly project(path: ":xapi-dev-parent:xapi-dev-javac")
   testImplementation project(path: ":dev:scanner-main")
   testImplementation project(path: ":collect-jre")

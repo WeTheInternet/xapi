@@ -35,7 +35,7 @@ dependencies {
   implementation project(path: ":io-main")
   implementation project(path: ":collect-main")
   implementation project(path: ":inject-jre")
-  implementation project(path: ":ui:service")
+  implementation project(path: ":ui:service-main")
   implementation project(path: ":dev:api-main")
   implementation project(path: ":dev:file-main")
   implementation project(path: ":dev:scanner-main")

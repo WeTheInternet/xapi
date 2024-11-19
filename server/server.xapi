@@ -45,7 +45,7 @@
                                 ":dev:api",
                                 ":server:servlets",
                                 ":ui:generator",
-                                ":ui:service",
+                                { ":ui:service" : main },
                             ],
                             external : [
                                 "net.wti.core:xapi-lang-core:$version",

@@ -32,7 +32,7 @@ main.resources.srcDir("$rootDir/ui/html/src/main/resources")
 dependencies {
   implementation project(path: ":collect-main")
   implementation project(path: ":ui:autoui-main")
-  implementation project(path: ":ui:service")
+  implementation project(path: ":ui:service-main")
   implementation project(path: ":util-main")
   testImplementation project(path: ":inject-jre")
   testImplementation project(path: ":base-testTools")

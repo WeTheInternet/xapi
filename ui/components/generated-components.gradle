@@ -1,9 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
-
-apply plugin: "java-library"
-// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -29,17 +26,14 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/ui/generator/src/main/java")
-main.resources.srcDir("$rootDir/ui/generator/src/main/resources")
+main.java.srcDir("$rootDir/ui/components/src/main/java")
+main.resources.srcDir("$rootDir/ui/components/src/main/resources")
 
 dependencies {
   implementation project(path: ":ui:service-main")
-  implementation project(path: ":xapi-dev-parent:xapi-dev-javac")
-  api project(path: ":xapi-lang-dev")
   testImplementation project(path: ":inject-jre")
   testImplementation project(path: ":base-testTools")
   testImplementation "junit:junit:4.12"
-  testImplementation "org.assertj:assertj-core:3.2.0"
 }
 
 
@@ -47,12 +41,4 @@ configurations {
   mainOut
 }
 // GenEnd XapiSettingsPlugin
-// GenInclude body.end from file:///opt/xapi/ui/generator/src/gradle/main/body.end
-dependencies {
-    File tools = org.gradle.internal.jvm.Jvm.current().toolsJar
-    if (tools) {
-        compileOnly files(tools)
-        testImplementation files(tools)
-    }
-}
-// Done generating buildfile for :ui:generator at file://$rootDir/ui/generator/generated-generator.gradle
+// Done generating buildfile for :ui:components at file://$rootDir/ui/components/generated-components.gradle

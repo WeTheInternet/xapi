@@ -98,7 +98,6 @@ xapiRequire.main().configure {
 xapiRequire.module('test').configure {
     req ->
         req.project ':base-testTools'
-
 }
 
 description = 'XApi - Dev uber jar'

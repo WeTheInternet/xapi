@@ -18,7 +18,7 @@ xapiRequire.main().configure {
         req.project ':model-main'
         req.project ':process-main'
         req.project Transitivity.impl, ':inject-jre'
-        req.project ':ui:service'
+        req.project ':ui:service-main'
         req.project ':io-main'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'
         req.external Transitivity.compile_only, 'junit:junit:4.12'

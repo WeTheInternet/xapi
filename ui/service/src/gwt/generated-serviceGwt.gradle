@@ -29,24 +29,15 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/ui/service/src/gwt/java")
+main.resources.srcDir("$rootDir/ui/service/src/gwt/resources")
+test.java.srcDir("$rootDir/ui/service/src/gwtTest/java")
+test.resources.srcDir("$rootDir/ui/service/src/gwtTest/resources")
 
 dependencies {
-  implementation project(path: ":model-main")
-  implementation project(path: ":process-main")
-  implementation project(path: ":io-main")
   implementation project(path: ":collect-main")
-  implementation project(path: ":inject-jre")
-  implementation project(path: ":ui:service-main")
-  implementation project(path: ":dev:api-main")
-  implementation project(path: ":dev:file-main")
-  implementation project(path: ":dev:scanner-main")
-  compileOnly "net.wti.gradle:xapi-gradle-api:$version"
-  implementation "net.wetheinter:gwt-user:2.8.0"
-  compileOnly "junit:junit:4.12"
-  compileOnly "net.wetheinter:gwt-dev:2.8.0"
   compileOnly "net.wetheinter:gwt-user:2.8.0"
-  annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
-  api project(path: ":gwtc-api")
+  api project(path: ":ui:service-main")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtApi/generated-gwtcGwtApi.gradle
+// Done generating buildfile for :ui:service at file://$rootDir/ui/service/src/gwt/generated-serviceGwt.gradle

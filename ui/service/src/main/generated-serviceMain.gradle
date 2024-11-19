@@ -29,30 +29,25 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/server/servlets/src/main/java")
-main.resources.srcDir("$rootDir/server/servlets/src/main/resources")
+main.java.srcDir("$rootDir/ui/service/src/main/java")
+main.resources.srcDir("$rootDir/ui/service/src/main/resources")
 
 dependencies {
-  implementation project(path: ":dev:api-main")
-  implementation project(path: ":process-main")
+  api project(path: ":ui:api")
+  api project(path: ":xapi-lang-dev")
+  implementation project(path: ":dev:file-main")
+  implementation project(path: ":core:scope-main")
   implementation project(path: ":io-main")
   implementation project(path: ":util-main")
-  implementation project(path: ":collect-main")
-  implementation project(path: ":model-jre")
-  implementation project(path: ":ui:service-main")
-  api project(path: ":gwtc-api")
+  api project(path: ":core:event-main")
+  api project(path: ":model-main")
+  implementation project(path: ":dev:scanner-main")
+  testImplementation project(path: ":model-jre")
   testImplementation project(path: ":base-testTools")
-  testImplementation project(path: ":dev:scanner-main")
-  implementation "net.wti.core:xapi-lang-core:$version"
-  implementation "net.wetheinter:gwt-user:2.8.0"
-  compileOnly "javax.servlet:javax.servlet-api:3.1-b02"
-  testImplementation "org.eclipse.jetty:jetty-server:9.2.14.v20151106"
-  testImplementation "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
-}
-
-
-configurations {
-  mainOut
+  implementation "javax.validation:validation-api:1.0.0.GA"
+  compileOnly "net.wetheinter:jsinterop-annotations:2.8.0"
+  testImplementation "junit:junit:4.12"
+  testImplementation "org.assertj:assertj-core:3.2.0"
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :server:servlets at file://$rootDir/server/servlets/generated-servlets.gradle
+// Done generating buildfile for :ui:service at file://$rootDir/ui/service/src/main/generated-serviceMain.gradle

@@ -29,8 +29,26 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/ui/html/src/gwt/java")
+main.resources.srcDir("$rootDir/ui/html/src/gwt/resources")
+test.java.srcDir("$rootDir/ui/html/src/gwtTest/java")
+test.resources.srcDir("$rootDir/ui/html/src/gwtTest/resources")
 
 dependencies {
+  api project(path: ":ui:autoui-gwt")
+  api project(path: ":ui:service-gwt")
+  implementation project(path: ":ui:html-main")
+  implementation project(path: ":inject-jre")
+  implementation project(path: ":util-main")
+  testImplementation project(path: ":ui:autoui-sample")
+  testImplementation project(path: ":base-testTools")
+  implementation "net.wetheinter:gwt-elemental:2.8.0"
+  compileOnly "net.wetheinter:gwt-dev:2.8.0"
+  compileOnly "net.wetheinter:gwt-codeserver:2.8.0"
+  compileOnly "net.wetheinter:gwt-user:2.8.0"
+  implementation "net.sourceforge.htmlunit:htmlunit:2.19"
+  implementation "net.wetheinter:gwt-dev:2.8.0"
+  implementation "net.wetheinter:gwt-codeserver:2.8.0"
   api project(path: ":ui:html-main")
 }
 // GenEnd XapiSettingsPlugin
