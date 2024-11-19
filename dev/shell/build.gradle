@@ -15,7 +15,7 @@ xapiRequire.main().configure {
         req.project ':io-main'
         req.project ':collect-main'
         req.project ':process-jre'
-        req.project ':server:servlets-main'
+        req.project ':server:servlets'
         req.project ':dev:file-main'
 }
 xapiRequire.module('test').configure {

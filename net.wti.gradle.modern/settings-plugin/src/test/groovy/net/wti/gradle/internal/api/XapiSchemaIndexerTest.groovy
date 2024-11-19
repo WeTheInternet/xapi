@@ -204,6 +204,77 @@ class CompileMe {
         expect:
         result.task(':consumer-spi:compileJava').outcome == TaskOutcome.SUCCESS
     }
+
+    def "Nested multi-module projects correctly create non-main modules"() {
+        given:
+        customSchema = """
+<xapi-schema
+    platforms = [
+        main, gwt
+    ]
+    modules = [
+        main,
+        <sample include = [ main ] /sample>,
+    ]
+    projects = {
+        multiplatform : [
+            <consumer
+                modules = [
+                    <spi requires = {
+                        platform : {
+                            main : {
+                                project: { ":ui:producer" : "sample" }
+                            }
+                        }
+                    } /spi>
+                ]
+            /consumer>
+        ],
+        virtual : [
+            <ui
+                multiplatform = true
+                inherit = false
+                projects = [
+                    <producer
+                        modules = [
+                            main,
+                            <sample
+                                includes = main
+                                published = true
+                                requires = { external : "junit:junit:4.13" }
+                            /sample>,
+                        ]
+                    /producer>
+                ]
+            /ui>,
+        ]
+    }
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+        withProject(':consumer') {
+            TestProject proj ->
+                proj.sourceFile("spi", "com.test", "CompileMe") << """
+package com.test;
+import com.test.producer.Producer;
+class CompileMe extends Producer { }
+"""
+        }
+        withProject(':ui:producer') {
+            TestProject proj ->
+                proj.sourceFile("com.test.producer", "Producer") << """
+package com.test.producer;
+public class Producer {}
+"""
+        }
+        // no code for producer module...
+        BuildResult result = runSucceed(":consumer-spi:compileJava", "-i")
+        expect:
+        result.task(':consumer-spi:compileJava').outcome == TaskOutcome.SUCCESS
+    }
     def "A single module dependency is targeted correctly from a main module"() {
         given:
         setupConsumerWithTest('main', 'main')

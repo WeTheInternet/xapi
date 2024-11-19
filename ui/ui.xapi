@@ -1,38 +1,76 @@
 <xapi-schema
-    inherit = false
+    inherit = true
     multiplatform = true
     virtual = true
-    platforms = [
-        <main />,
-        <jre replace = "main" published = true/>,
-        <gwt replace = main published = true/>,
-    ]
 
     modules = [
         <api />,
         <spi />,
         <main include = [ api, spi ] />,
         <testTools include = "main" published = true />,
-        <test include = [ testTools ] />,
+        <sample
+            include = "main"
+            force = true
+            published = true />,
     ]
 
     projects = {
         // the projects below all have gwt, jre and other platforms
         multiplatform: [
-            "autoui",
-            "html",
+            <autoui
+                inherit = true
+
+                modules = [
+                    <main
+                        requires = {
+                            project : [ util, collect, ":ui:service" ],
+                            external : "javax.inject:javax.inject:1:sources",
+                        }
+                    /main>,
+                ]
+            /autoui>,
+            <html
+                inherit = true
+                description = "Xapi - Core html utils"
+                platforms = [
+                    <main
+                        modules = [
+                            <main
+                                requires = {
+                                    project : [ collect, ":ui:autoui", ":ui:service", util ],
+                                    @transitive(compile_only)
+                                    external : "net.wetheinter:gwt-user:2.8.0",
+
+                                    @transitive(test)
+                                    project : {
+                                        inject : jre,
+                                        base : testTools,
+                                    },
+                                    @transitive(test)
+                                    external : "junit:junit:4.12",
+                                }
+                            /main>,
+                            <sample requires = {
+                                    project : ":ui:autoui"
+                            } /sample>
+                        ]
+                    /main>
+                ]
+            /html>,
         ],
 
         // the projects below are single-module projects.
         standalone: [
             <api
                 inherit = false
-                requires = {
-                    @transitive
-                    project : { base : api },
-                    @transitive
-                    external : "javax.validation:validation-api:1.0.0.GA",
-                }
+                modules = <main
+                    requires = {
+                        @transitive
+                        project : { base : api },
+                        @transitive
+                        external : "javax.validation:validation-api:1.0.0.GA",
+                    }
+                /main>
             /api>,
             <generator
                 inherit = false

@@ -8,16 +8,16 @@
                         project : { ":util" : "main:main" },
                         project : { ":collect" : "main:main" },
                         external : "javax.inject:javax.inject:1:sources", // really? sources? sounds like a leftover gwt hack
-                    }
-                /main>,
-                <test
-                    requires = {
-                        project : { ":inject" : "jre:main" },
-                        project : { ":base" : "main:testTools" },
+
+                        @transitive(test)
+                        project : {
+                            inject : "jre:main",
+                            base : "main:testTools",
+                        },
+                        @transitive(test)
                         external : "junit:junit:4.12",
                     }
-                /test>,
-                <testTools force=true /testTools>,
+                /main>,
             ]
         /main>
     ]

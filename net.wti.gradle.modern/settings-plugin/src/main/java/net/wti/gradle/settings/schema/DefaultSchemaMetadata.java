@@ -274,7 +274,10 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
         return schemaFile != null && schemaFile.isFile() ?
                 schemaFile.getAbsoluteFile().getParentFile() :
                 schemaFile != null && schemaFile.isDirectory() ?
-                        schemaFile : new File(".").getAbsoluteFile();
+                        schemaFile :
+                        parent == null ?
+                        new File(".").getAbsoluteFile() :
+                new File(parent.getSchemaDir(), getName());
     }
 
     public boolean isExplicit() {

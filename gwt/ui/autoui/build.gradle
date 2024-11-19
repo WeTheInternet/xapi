@@ -14,8 +14,10 @@ xapiRequire.main().configure {
     req ->
         req.project ':collect-main'
         req.project ':ui:service'
+        req.project ':util-main'
         req.project ':core:event-main'
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+        req.project ':ui:autoui-main'
+        req.project ':ui:html-main'
         req.project ':model-gwt'
         req.project ':inject-jre'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
@@ -24,11 +26,11 @@ xapiRequire.main().configure {
 
 xapiRequire.module('main', 'test').configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'sample'
+        req.project ':ui:autoui-sample'
 }
 xapiRequire.module('gwt', 'test').configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'sample'
+        req.project ':ui:autoui-sample'
         req.project ':base-gwtTestTools'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'
         req.external Transitivity.impl, 'net.wetheinter:gwt-user:2.8.0'

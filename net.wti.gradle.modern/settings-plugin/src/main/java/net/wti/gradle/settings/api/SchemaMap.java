@@ -165,7 +165,7 @@ public class SchemaMap implements HasAllProjects {
         resolver = Lazy.withSpy(()->{
             Log.loggerFor(SchemaMap.class, view)
                             .log(Log.LogLevel.INFO, view.getClass().getSimpleName() + " is ready for project " + view.getProjectDir());
-            loadMetadata(getRootProject(), parser, root);
+            loadMetadata(rootProject, parser, root);
             callbacks.flushCallbacks(this);
 
             // Commenting out this attempt to handle SchemaMap from child builds in memory here somehow...
@@ -309,6 +309,9 @@ public class SchemaMap implements HasAllProjects {
     }
 
     public void loadMetadata(SchemaProject project, XapiSchemaParser parser, DefaultSchemaMetadata metadata) {
+        if (metadata.isMultiPlatform() && project.isInherit()) {
+            project.setMultiplatform(true);
+        }
         allMetadata.add(metadata);
         if (metadata == rootSchema) {
             // The first one in!
@@ -404,14 +407,14 @@ public class SchemaMap implements HasAllProjects {
 
             // TODO: load this project if it's UiElement
 
-            final SchemaProject oldTail = tailProject;
+            final SchemaProject parentProject = tailProject;
 
             String viewPath = toViewPath(parentPath, name);
             // need to fake a project view using a mostly-delegate
             final File fixedDir = new File(parser.getView().getProjectDir(), viewPath.replaceAll(":", "/"));
             MinimalProjectView projectView = new SchemaProjectView(parser.getView(), fixedDir);
-            if (oldTail.hasProject(name)) {
-                tailProject = oldTail.getProject(name);
+            if (parentProject.hasProject(name)) {
+                tailProject = parentProject.getProject(name);
                 if (multiplatform) {
                     tailProject.setMultiplatform(true);
                 }
@@ -419,12 +422,12 @@ public class SchemaMap implements HasAllProjects {
                     tailProject.setVirtual(true);
                 }
             } else {
-                tailProject = new SchemaProject(oldTail, projectView, name, multiplatform, virtual, inherit);
+                tailProject = new SchemaProject(parentProject, projectView, name, multiplatform, virtual, inherit);
                 tailProject.setParentGradlePath(parentPath);
             }
             this.projects.put(tailProject.getPathGradle(), tailProject);
-            insertChild(oldTail, parser, metadata, project, tailProject, explicitPlatform);
-            tailProject = oldTail;
+            insertChild(parentProject, parser, metadata, project, tailProject, explicitPlatform);
+            tailProject = parentProject;
         }
     }
 
@@ -478,17 +481,22 @@ public class SchemaMap implements HasAllProjects {
         }
         loadMetadata(child, parser, parsedChild);
         if (parsedChild.isInherit()) {
-            for (SchemaModule module : into.getAllModules()) {
-                child.addModule(module);
-            }
-            for (SchemaPlatform platform : into.getAllPlatforms()) {
-                child.addPlatform(platform);
+            if (parsedChild.isMultiPlatform()) {
+                for (SchemaModule module : into.getAllModules()) {
+                    child.addModule(module);
+                }
+                for (SchemaPlatform platform : into.getAllPlatforms()) {
+                    child.addPlatform(platform);
+                }
+            } else {
+                child.addModule(into.getDefaultModule());
+                child.addPlatform(into.getDefaultPlatform());
             }
         } else {
             child.addModule(into.getDefaultModule());
             child.addPlatform(into.getDefaultPlatform());
         }
-//        loadProjectElement(child, parsedChild, project, parser);
+//        parser.addProjects(child, parsedChild, project, parser);
 
     }
     private final MapLike<SchemaProject, DefaultSchemaMetadata> projectToMeta = X_Jdk.mapIdentity();

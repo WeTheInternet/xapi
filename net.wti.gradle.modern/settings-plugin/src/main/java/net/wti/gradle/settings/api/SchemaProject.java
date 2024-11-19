@@ -9,6 +9,7 @@ import org.gradle.api.internal.DefaultNamedDomainObjectSet;
 import org.gradle.internal.reflect.Instantiator;
 import xapi.fu.In1;
 import xapi.fu.In2;
+import xapi.fu.Out1;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
 import xapi.fu.data.MultiList;
@@ -38,6 +39,8 @@ public class SchemaProject implements Named, HasPath {
     private boolean loaded;
     private String parentGradlePath;
     private boolean force;
+    private Out1<SchemaPlatform> defaultPlatform;
+    private Out1<SchemaModule> defaultModule;
 
     public SchemaProject(
             MinimalProjectView view,
@@ -62,6 +65,12 @@ public class SchemaProject implements Named, HasPath {
         modules = new DefaultNamedDomainObjectSet<>(SchemaModule.class, instantiator, decorator);
         platforms = new DefaultNamedDomainObjectSet<>(SchemaPlatform.class, instantiator, decorator);
         dependencies = X_Jdk.multiListOrderedInsertion();
+        defaultPlatform = parent == null
+            ? ()-> { throw new IllegalStateException("Project " + getPathGradle() + " did not have any platform set!"); }
+            : parent::getDefaultPlatform;
+        defaultModule = parent == null
+            ? ()-> { throw new IllegalStateException("Project " + getPathGradle() + " did not have any module set!"); }
+            : parent::getDefaultModule;
     }
 
     public String getName() {
@@ -99,7 +108,11 @@ public class SchemaProject implements Named, HasPath {
             modules.add((result = module));
         }
         for (SchemaProject child : children.mappedValues()) {
-            child.addModule(module);
+            if (child.isMultiplatform()) {
+                child.addModule(module);
+            } else if (module.getName().equals(child.getDefaultModuleName())) {
+                child.addModule(module);
+            }
         }
         return result;
     }
@@ -379,15 +392,30 @@ public class SchemaProject implements Named, HasPath {
     }
 
     public SchemaModule getDefaultModule() {
-        return modules.getByName("main");
+        if (modules.isEmpty()) {
+            modules.add(defaultModule.out1());
+        }
+        return modules.getByName(getDefaultModuleName());
+    }
+
+    public String getDefaultModuleName() {
+        return "main";
     }
 
     public SchemaPlatform getDefaultPlatform() {
-        return platforms.getByName("main");
+        if (platforms.isEmpty()) {
+            platforms.add(defaultPlatform.out1());
+        }
+        return platforms.getByName(getDefaultPlatformName());
+    }
+
+    public String getDefaultPlatformName() {
+        return "main";
     }
 
     public boolean hasModule(final String includes) {
         return modules.getNames().contains(includes);
     }
+
 }
 

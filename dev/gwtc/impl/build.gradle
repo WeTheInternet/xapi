@@ -36,7 +36,7 @@ xapiRequire.module('gwt', 'test').configure {
     req ->
         req.project 'xapi-gwt', 'main'
         req.project ':base-gwtTestTools'
-        req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
+        req.project ':dev:maven-main'
 }
 
 //apply from: "$rootDir/gradle/gwt-test.gradle"

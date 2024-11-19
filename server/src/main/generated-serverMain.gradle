@@ -26,7 +26,5 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/server/src/main/java")
-main.resources.srcDir("$rootDir/server/src/main/resources")
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :server at file://$rootDir/server/src/main/generated-serverMain.gradle

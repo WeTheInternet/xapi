@@ -181,22 +181,29 @@ public class XapiRequirePlugin implements Plugin<Project> {
         if ("true".equals(self.getExtensions().findByName("xapiModern"))) {
             return;
         }
-        final ProjectGraph incProject = self.getBuildGraph().getProject(projId);
-        incProject.whenReady(ReadyState.BEFORE_READY , other->{
+        final ProjectGraph incProject;
+        try {
+            incProject = self.getBuildGraph().getProject(projId);
+            incProject.whenReady(ReadyState.BEFORE_READY , other->{
 
-            final String projName = incProject.getName();
-            final String coord = GradleCoerce.unwrapStringNonNull(reg.getFrom());
-            String[] coords = coord.split(":");
-            assert coords.length <3 : "xapi-coordinate paths cannot have more than two:segments. You sent " + coord;
+                final String projName = incProject.getName();
+                final String coord = GradleCoerce.unwrapStringNonNull(reg.getFrom());
+                String[] coords = coord.split(":");
+                assert coords.length <3 : "xapi-coordinate paths cannot have more than two:segments. You sent " + coord;
 
-            self.getLogger().quiet("Including project {} into arch {} with coordinates {}", projName, arch.getPath(), coord);
-            // If there is 1 or fewer requested coordinates, the platform is default platform ("main")...
-            String platName = coords.length < 2 ? reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform() : coords[0];
-            // If there are 0 coordinates, the module is default module ("main"), otherwise, module is the last item
-            String modName = coords.length == 0 ? reg.getArchive() == null ? arch.getName() : arch.getDefaultModule() : coords[coords.length-1];
+                self.getLogger().quiet("Including project {} into arch {} with coordinates {}", projName, arch.getPath(), coord);
+                // If there is 1 or fewer requested coordinates, the platform is default platform ("main")...
+                String platName = coords.length < 2 ? reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform() : coords[0];
+                // If there are 0 coordinates, the module is default module ("main"), otherwise, module is the last item
+                String modName = coords.length == 0 ? reg.getArchive() == null ? arch.getName() : arch.getDefaultModule() : coords[coords.length-1];
 
-            arch.importProject(projName, platName, modName, transitivity, lenient);
-        });
+                arch.importProject(projName, platName, modName, transitivity, lenient);
+            });
+        } catch (IllegalStateException failed) {
+            if (!"true".equals(self.findProperty("ignoreLegacy"))) {
+                throw failed;
+            }
+        }
     }
 
     private void includeInternal(

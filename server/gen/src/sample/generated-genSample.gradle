@@ -32,27 +32,7 @@ test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/server/gen/src/sample/java")
 
 dependencies {
-  implementation project(path: ":inject-main")
   implementation project(path: ":process-jre")
-  implementation project(path: ":io-main")
-  implementation project(path: ":server:servlets-main")
-  implementation project(path: ":dev:api-main")
-  implementation project(path: ":ui:generator")
-  implementation project(path: ":ui:service")
-  compileOnly project(path: ":xapi-dev-parent:xapi-dev-javac")
-  testImplementation project(path: ":dev:scanner-main")
-  testImplementation project(path: ":collect-jre")
-  testImplementation project(path: ":model-jre")
-  testImplementation project(path: ":xapi-dev-parent:xapi-dev-javac")
-  testImplementation project(path: ":server:gen-sample")
-  implementation "net.wti.core:xapi-lang-core:$version"
-  implementation "net.wetheinter:gwt-user:2.8.0"
-  testImplementation "javax.servlet:javax.servlet-api:3.1-b02"
-  testImplementation "org.eclipse.jetty:jetty-server:9.4.18.v20190429"
-  testImplementation "org.eclipse.jetty:jetty-servlet:9.4.18.v20190429"
-  testImplementation "junit:junit:4.12"
-  testImplementation "info.cukes:cucumber-java:1.2.5"
-  testImplementation "info.cukes:cucumber-junit:1.2.5"
   implementation project(path: ":server:gen-main")
   api project(path: ":server:gen-main")
 }

@@ -7,7 +7,7 @@
     defaultRepoUrl = mavenCentral()
 
     schemaLocation = "schema/schema.gradle"
-
+    multiplatform = true
     platforms = [
         <main />,
         // purposely using two different forms of references to main,

@@ -29,6 +29,7 @@ import xapi.dev.source.ClosureBuffer;
 import xapi.dev.source.LocalVariable;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
+import xapi.fu.data.SetLike;
 import xapi.fu.java.X_Jdk;
 import xapi.string.X_String;
 
@@ -215,9 +216,18 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             final File aggregatorRoot = project.getView().getProjectDir();
             final String segment = project.getSubPath();
             final String gradlePrefix = gradlePath;
+            final SetLike<String> liveNames = X_Jdk.setLinked();
             project.forAllPlatformsAndModules((plat, mod) -> {
+                if (!project.isMultiplatform()) {
+                    if (!plat.getName().equals(project.getDefaultPlatformName())) {
+                        return;
+                    }
+                    if (!mod.getName().equals(project.getDefaultModuleName())) {
+                        return;
+                    }
+                }
                 String key = QualifiedModule.unparse(plat.getName(), mod.getName());
-                String modKey = project.getName() + "-" + key;
+                String modKey = project.getName() + (project.isMultiplatform() ? "-" + key : "");
                 String projectName = project.isMultiplatform() ? gradlePrefix + "-" + key : gradlePrefix;
                 String moduleSourcePath = "src" + File.separator + key;
                 String moduleTestSourcePath = "src" + File.separator + key + "Test";
@@ -229,6 +239,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 final File buildscriptSrc = new File(aggregatorRoot, buildscriptSrcPath);
                 final String buildFileName = project.getName() + (project.isMultiplatform() ? GradleCoerce.toTitleCase(key) : "") + ".gradle";
                 map.whenResolved(() -> {
+
+                    IndexNodePool pool = map.getNodePool();
                     boolean isLive = index.hasEntries(view, project.getPathIndex(), plat, mod);
                     if (!isLive) {
                         if (logger.isTraceEnabled()) {
@@ -236,12 +248,17 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         }
                     } else { // isLive == true
                         logger.quiet("Live: {}@{}-{}", project.getPathIndex(), plat, mod);
+                        final File userBuildFile = new File(gradleSourceDir, buildFileName);
+                        final PlatformModule myPlatMod = pool.getPlatformModule(plat.getName(), mod.getName());
+                        liveNames.add(userBuildFile.getPath() + " - " + projectName + "/" + moduleSourcePath
+                            + " - " + pool.getNode(pool.getIdentity(view, gradlePath, myPlatMod)));
                         if (++liveCnt[0] > 1) {
                             if (!project.isMultiplatform()) {
                                 if (liveCnt[0] == 2) {
                                     // might be main and test?
                                 }
-                                throw new IllegalStateException("A project (" + project.getPathGradle() + ") with more than one live module must be multiplatform=true (cannot be standalone)");
+                                throw new IllegalStateException("A project (" + project.getPathGradle() + ") with more than one live module must be multiplatform=true (cannot be standalone). " +
+                                        "\nknown projects:\n" + liveNames.join(",\n"));
                             }
                         }
                         // to be able to avoid creating gradle projects we don't _need_,
@@ -249,7 +266,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // user may freely create and check in their own projects, and we'll happily hook them up,
                         // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
 
-                        final File userBuildFile = new File(gradleSourceDir, buildFileName);
                         final File generatedFile = new File(gradleSourceDir, "generated-" + buildFileName);
 
                         final String inclusion = "apply from: " +
@@ -437,7 +453,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         Lazy<ClosureBuffer> dependencies = Lazy.deferred1(()->
                                 out.startClosure("dependencies")
                         );
-                        IndexNodePool pool = map.getNodePool();
                         for (SchemaDependency dependency : project.getDependenciesOf(plat, mod)) {
                             view.getLogger().info("Processing dependency {}:{}:{} -> {}", project, plat, mod, dependency);
 

@@ -448,10 +448,20 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 throw new IllegalStateException("Unable to create index project directory " + projectDir);
             }
             for (SchemaPlatform platform : project.getAllPlatforms()) {
+                if (!project.isMultiplatform()) {
+                    if (!platform.getName().equals(project.getDefaultPlatformName())) {
+                        continue;
+                    }
+                }
                 String groupResolved = properties.resolvePattern(platform.getPublishPattern(), index, project.getPublishedName(), platform.getName(), "");
 
                 // modules should probably come from the platform, not the project...
                 for (SchemaModule module : project.getAllModules()) {
+                    if (!project.isMultiplatform()) {
+                        if (!module.getName().equals(project.getDefaultModuleName())) {
+                            continue;
+                        }
+                    }
                     if (!platform.isPublished() || !module.isPublished()) {
                         // TODO: write out a non-published, "private module" file, so we can accurately say "your coordinates exist, but the target is private"
                         //   instead of "coordinates not found".

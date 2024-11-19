@@ -2,77 +2,89 @@
     inherit = false
     platforms = [ main ]
     modules = [ main ]
-    projects = [
-        <servlets
-            description = "Xapi - Server API"
-            requires = {
-                project : { ":dev:api" : main, process: main, io: main, util: main, collect: main },
-                project : { model : jre },
-                project : ":ui:service",
-                external : "net.wti.core:xapi-lang-core:$version",
-                @transitive
-                project : { gwtc : api },
-                external : "net.wetheinter:gwt-user:2.8.0",
-                @transitive(compile_only)
-                external : "javax.servlet:javax.servlet-api:3.1-b02",
-                @transitive(test)
-                project : { base : testTools },
-                @transitive(test)
-                external : [
-                    "org.eclipse.jetty:jetty-server:9.2.14.v20151106",
-                    "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
-                ],
-                @transitive(test)
-                project : { ":dev:scanner": main }
-            }
-        /servlets>,
-        <gen
-            description = "Xapi - Server generator"
-            modules = [
-                main,
-                <sample include = main /sample>,
-            ]
-            requires = {
-                project : {
-                    inject : main,
-                    process : jre,
-                    io : main,
-                    ":server:servlets" : main,
-                    ":dev:api" : main,
-                },
-                project : [
-                    ":ui:generator",
-                    ":ui:service",
-                ],
-                external : [
-                    "net.wti.core:xapi-lang-core:$version",
-                    "net.wetheinter:gwt-user:2.8.0",
-                ],
-                @transitive(compile_only)
-                project : ":xapi-dev-parent:xapi-dev-javac",
+    projects = {
+        standalone : [
+            <servlets
+                description = "Xapi - Server API"
+                requires = {
+                    project : { ":dev:api" : main, process: main, io: main, util: main, collect: main },
+                    project : { model : jre },
+                    project : ":ui:service",
+                    external : "net.wti.core:xapi-lang-core:$version",
+                    @transitive
+                    project : { gwtc : api },
+                    external : "net.wetheinter:gwt-user:2.8.0",
+                    @transitive(compile_only)
+                    external : "javax.servlet:javax.servlet-api:3.1-b02",
+                    @transitive(test)
+                    project : { base : testTools },
+                    @transitive(test)
+                    external : [
+                        "org.eclipse.jetty:jetty-server:9.2.14.v20151106",
+                        "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
+                    ],
+                    @transitive(test)
+                    project : { ":dev:scanner": main }
+                }
+            /servlets>,
+        ],
+        multiplatform : [
+            <gen
+                description = "Xapi - Server generator"
+                modules = [
+                    <main
+                        requires = {
+                            project : {
+                                inject : main,
+                                process : jre,
+                                io : main,
+                            },
+                            @transitive
+                            project : [
+                                ":core:scope",
+                                ":dev:api",
+                                ":server:servlets",
+                                ":ui:generator",
+                                ":ui:service",
+                            ],
+                            external : [
+                                "net.wti.core:xapi-lang-core:$version",
+                                "net.wetheinter:gwt-user:2.8.0",
+                            ],
+                            @transitive(compile_only)
+                            project : ":xapi-dev-parent:xapi-dev-javac",
 
-                @transitive(test)
-                internal : "sample",
-                @transitive(test)
-                project : {
-                    ":dev:scanner" : main,
-                },
-                @transitive(test)
-                project : [
-                    ":collect-jre",
-                    ":model-jre",
-                    "xapi-dev-parent:xapi-dev-javac",
-                ],
-                @transitive(test)
-                external : [
-                    "javax.servlet:javax.servlet-api:3.1-b02",
-                    "org.eclipse.jetty:jetty-server:9.4.18.v20190429",
-                    "org.eclipse.jetty:jetty-servlet:9.4.18.v20190429",
-                    "junit:junit:4.12",
-                    "info.cukes:cucumber-java:1.2.5",
-                    "info.cukes:cucumber-junit:1.2.5",
-                ],
-            }
-        /gen>,
-    ]
+                            @transitive(test)
+                            internal : "sample",
+                            @transitive(test)
+                            project : {
+                                ":dev:scanner" : main,
+                            },
+                            @transitive(test)
+                            project : [
+                                ":collect-jre",
+                                ":model-jre",
+                                "xapi-dev-parent:xapi-dev-javac",
+                            ],
+                            @transitive(test)
+                            external : [
+                                "javax.servlet:javax.servlet-api:3.1-b02",
+                                "org.eclipse.jetty:jetty-server:9.4.18.v20190429",
+                                "org.eclipse.jetty:jetty-servlet:9.4.18.v20190429",
+                                "junit:junit:4.12",
+                                "info.cukes:cucumber-java:1.2.5",
+                                "info.cukes:cucumber-junit:1.2.5",
+                            ],
+                        }
+                    /main>,
+                    <sample
+                        include = main
+                        requires = {
+                            project : { process : jre }
+                        }
+                    /sample>,
+                ]
+            /gen>,
+        ]
+    }
 /xapi-schema>

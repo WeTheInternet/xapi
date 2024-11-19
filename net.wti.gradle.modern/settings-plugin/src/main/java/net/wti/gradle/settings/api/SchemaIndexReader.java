@@ -3,8 +3,8 @@ package net.wti.gradle.settings.api;
 import net.wti.gradle.api.BuildCoordinates;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.index.IndexNodePool;
-import xapi.fu.Lazy;
 import xapi.fu.data.MapLike;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
 
 import javax.annotation.Nonnull;
@@ -12,7 +12,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Collections.unmodifiableList;
 import static net.wti.gradle.settings.api.QualifiedModule.mangleProjectPath;
@@ -30,6 +29,9 @@ import static net.wti.gradle.tools.GradleFiles.readFile;
  */
 public class SchemaIndexReader implements SchemaDirs {
 
+    private enum SearchDir {
+        in, out, both
+    }
     private final CharSequence version;
     private final IndexNodePool nodes;
     private SchemaPatternResolver properties;
@@ -47,9 +49,20 @@ public class SchemaIndexReader implements SchemaDirs {
             }
             for (File file : allFiles) {
                 switch(file.getName()) {
+                    case "gradle":
+                        final File[] subFiles = file.listFiles();
+                        if (subFiles == null) {
+                            continue;
+                        }
+                        if (subFiles.length > 1) {
+                            return false;
+                        }
+                        if ("main".equals(subFiles[0].getName())) {
+                            continue;
+                        }
                     case "main":
                     case "test":
-                        break;
+                        continue;
                     default:
                         return true;
                 }
@@ -157,10 +170,13 @@ public class SchemaIndexReader implements SchemaDirs {
         // without explicit dependencies, we need to check for a liveness level > 2
         String projectPath = mangleProjectPath(projectName);
         final String platMod = PlatformModule.unparse(platform.getName(), module.getName());
-        return checkLive(projectPath, platMod);
+        if (checkLive(projectPath, platMod, SearchDir.both)) {
+            return true;
+        }
+        return false;
     }
 
-    public boolean checkLive(final String projectPath, final String platMod) {
+    public boolean checkLive(final String projectPath, final String platMod, final SearchDir searchDir) {
         final String key = projectPath + "@" + platMod;
         return livenessCheck.computeIfAbsent(key, ()-> {
             File pathDir = new File(indexDir, "path");
@@ -194,7 +210,13 @@ public class SchemaIndexReader implements SchemaDirs {
                 if (outs == null) {
                     return false;
                 }
-                return checkIfDirHasLiveness(outs) && checkIfDirHasLiveness(ins);
+
+                if (searchDir == SearchDir.in || checkIfDirHasLiveness(outs, SearchDir.out)) { // should be out-only
+                    if (searchDir == SearchDir.out || checkIfDirHasLiveness(ins, SearchDir.in)) {
+                        return true;
+                    }
+                }
+                return false;
             } else {
                 // 2 or greater: definitely live
                 return true;
@@ -202,7 +224,7 @@ public class SchemaIndexReader implements SchemaDirs {
         });
     }
 
-    private boolean checkIfDirHasLiveness(final File[] ins) {
+    private boolean checkIfDirHasLiveness(final File[] ins, final SearchDir searchDir) {
         for (File projIn : ins) {
             final File[] platModIn = projIn.listFiles();
             if (platModIn == null) {
@@ -215,7 +237,7 @@ public class SchemaIndexReader implements SchemaDirs {
                     // if the target of this link is live, then so are we.
                     final String targetPlatmod = platModDir.getName();
                     final String targetProject = projIn.getName();
-                    if (checkLive(targetProject, targetPlatmod)) {
+                    if (checkLive(targetProject, targetPlatmod, searchDir)) {
                         return true;
                     }
                 }

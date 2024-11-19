@@ -684,6 +684,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return withNameOrString(callback.ignore2());
     }
 
+    public ComposableXapiVisitor<Ctx> nameOrStringOrType(In1<String> callback) {
+        return withNameOrStringOrType(callback.ignore2());
+    }
+
     @Override
     public void visit(NormalAnnotationExpr n, Ctx arg) {
         doVisit(NormalAnnotationExpr.class, n, arg, super::visit);
@@ -1287,6 +1291,12 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         e.accept(this, ctx);
         return list;
     }
+    public SizedIterable<String> extractNamesAndTypes(Expression e, Ctx ctx) {
+        ListLike<String> list = X_Jdk.list();
+        extractNamesAndTypes(list::add);
+        e.accept(this, ctx);
+        return list;
+    }
     public SizedIterable<String> extractNamesAndValuesAndTypes(Expression e, Ctx ctx) {
         ListLike<String> list = X_Jdk.list();
         extractNamesAndValuesAndTypes(list::add);
@@ -1303,6 +1313,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
     public ComposableXapiVisitor<Ctx> extractNames(In1<String> onNameFound) {
         return withJsonArrayRecurse(In2.ignoreAll())
               .withNameOrString(onNameFound.ignore2());
+    }
+
+    public ComposableXapiVisitor<Ctx> extractNamesAndTypes(In1<String> onNameFound) {
+        return withJsonArrayRecurse(In2.ignoreAll())
+              .withNameOrStringOrType(onNameFound.ignore2());
     }
 
     public ComposableXapiVisitor<Ctx> extractNamesAndValuesAndTypes(In1<String> onNameFound) {

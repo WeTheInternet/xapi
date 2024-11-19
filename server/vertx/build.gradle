@@ -12,12 +12,12 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project ':server:gen-main'
-        req.project ':server:servlets-main'
+        req.project ':server:servlets'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
         req.project ':process-jre'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project ':ui:service'
-        req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
+        req.project ':dev:maven-main'
         req.project 'xapi-dev-parent:xapi-dev-javac'
         req.external 'io.vertx:vertx-web:3.5.3'
         req.external 'io.vertx:vertx-hazelcast:3.5.3'

@@ -1,7 +1,7 @@
 import net.wti.gradle.schema.api.Transitivity
 
 plugins { id 'xapi-require' }
-evaluationDependsOn ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui'
+evaluationDependsOn ':ui:autoui-main'
 
 repositories {
     jcenter()
@@ -31,7 +31,7 @@ xapiRequire.module('main', 'sample').configure {
 }
 xapiRequire.module('test').configure {
     req ->
-        req.project 'xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', 'sample'
+        req.project ':ui:autoui-sample'
         req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
         req.project ':base-testTools'
         req.external Transitivity.runtime, 'net.wetheinter:gwt-dev:2.8.0'

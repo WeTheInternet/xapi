@@ -89,7 +89,7 @@ xapiRequire.main().configure {
         req.project ':dev:scanner-main'
         req.project ':gwtc-api'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
-        req.project 'xapi-dev-parent:xapi-dev-maven', 'main'
+        req.project ':dev:maven-main'
         req.project ':server:gen-main'
         req.external 'javax.inject:javax.inject:1:sources'
 

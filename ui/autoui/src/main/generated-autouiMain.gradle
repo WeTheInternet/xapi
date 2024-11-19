@@ -26,11 +26,16 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/ui/autoui/src/main/java")
+main.resources.srcDir("$rootDir/ui/autoui/src/main/resources")
 
 dependencies {
   implementation project(path: ":util-main")
   implementation project(path: ":collect-main")
+  testImplementation project(path: ":inject-jre")
+  testImplementation project(path: ":base-testTools")
   implementation "javax.inject:javax.inject:1:sources"
+  testImplementation "junit:junit:4.12"
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui:autoui at file://$rootDir/ui/autoui/src/main/generated-autouiMain.gradle

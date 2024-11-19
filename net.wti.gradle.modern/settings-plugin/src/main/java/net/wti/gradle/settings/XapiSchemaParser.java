@@ -30,10 +30,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static net.wti.gradle.settings.api.QualifiedModule.UNKNOWN_VALUE;
 import static net.wti.gradle.tools.InternalGradleCache.buildOnce;
@@ -148,7 +145,7 @@ public interface XapiSchemaParser {
                     }
                     return false;
                 })
-                .withUiAttrTerminal(readProjectAttributes(metadata, schema, explicitPlatform))
+                .withUiAttrTerminal(readProjectAttributes(metadata, explicitPlatform))
                 .visit(schema, metadata);
         // we should consider flushing a work queue here.
 
@@ -161,25 +158,28 @@ public interface XapiSchemaParser {
             final DefaultSchemaMetadata metadata,
             UiContainerExpr schema,
             final String explicitPlatform) {
+
+        Pointer<DefaultSchemaMetadata> targetMetadata = Pointer.pointerTo(metadata);
         ComposableXapiVisitor.<DefaultSchemaMetadata>whenMissingFail(XapiSchemaParser.class)
                 .withUiContainerRecurse(In2.ignoreAll())
                 .withNameTerminal((ctr, meta)-> {
                     // the only name we visit is the <opening-element attrName=not-visited /opening-element>
                     metadata.setName(ctr.getName());
                 })
-                .withUiAttrTerminal(readProjectAttributes(metadata, schema, explicitPlatform))
+                .withUiAttrTerminal(readProjectAttributes(targetMetadata.out1(), explicitPlatform))
                 .visit(schema, metadata);
         schema.addExtra("xapi-schema-meta", metadata);
         return metadata;
     }
 
-    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes(final DefaultSchemaMetadata metadata, final UiContainerExpr projEl, final String explicitPlatform) {
+    default In2<UiAttrExpr, DefaultSchemaMetadata> readProjectAttributes(final DefaultSchemaMetadata metadata, final String explicitPlatform) {
         return (attr, meta)->{
             switch (attr.getNameString()) {
                 case "multiplatform":
                     metadata.setExplicitMultiplatform("true".equals(attr.getStringExpression(false)));
-                case "parentPath":
                 case "virtual":
+                    verifySimpleValue(meta, attr.getExpression());
+                case "parentPath":
                     // ignored, only apply to xapi-schema. Should likely be a static set checked in `default:`
                     break;
                 case "shortenPaths":
@@ -252,6 +252,15 @@ public interface XapiSchemaParser {
                     throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");
             }
         };
+    }
+
+    default void verifySimpleValue(final DefaultSchemaMetadata meta, Expression expression) {
+        try {
+            ComposableXapiVisitor.whenMissingFail(XapiSchemaParser.class)
+                    .withNameOrStringOrType(In2.ignoreAll());
+        } catch (IllegalStateException e) {
+            throw new IllegalArgumentException("Invalid xapi schema " + meta.getPath() + " file " + meta.getSchemaFile().getAbsolutePath(), e);
+        }
     }
 
     default void addRequires(final DefaultSchemaMetadata meta, final PlatformModule platMod, Expression expression) {
@@ -697,30 +706,33 @@ public interface XapiSchemaParser {
                 SizedIterable<SchemaDependency> extracted = entry.out2().map(expr -> {
                     Do undo = Do.NOTHING;
                     if (expr instanceof HasAnnotationExprs) {
-                        for (AnnotationExpr annotation : ((HasAnnotationExprs) expr).getAnnotations()) {
-                            String annoName = annotation.getNameString();
-                            final DependencyKey key;
-                            try {
-                                key = DependencyKey.valueOf(annoName);
-                            } catch (IllegalArgumentException e) {
-                                throw new IllegalArgumentException("Invalid annotation " + annotation.toSource()
-                                        + " in project " + project.getPathGradle() + " - " + metadata.getSchemaLocation()
-                                        , e);
-                            }
-                            final CharSequence value = annotation.getMembers().map(
-                                    (m)->{
-                                        final Expression annoValue = m.getValue();
-                                        if (annoValue == null) {
-                                            return "true";
+                        final Iterable<? extends AnnotationExpr> annos = ((HasAnnotationExprs) expr).getAnnotations();
+                        if (annos != null) {
+                            for (AnnotationExpr annotation : annos) {
+                                String annoName = annotation.getNameString();
+                                final DependencyKey key;
+                                try {
+                                    key = DependencyKey.valueOf(annoName);
+                                } catch (IllegalArgumentException e) {
+                                    throw new IllegalArgumentException("Invalid annotation " + annotation.toSource()
+                                            + " in project " + project.getPathGradle() + " - " + metadata.getSchemaLocation()
+                                            , e);
+                                }
+                                final CharSequence value = annotation.getMembers().map(
+                                        (m)->{
+                                            final Expression annoValue = m.getValue();
+                                            if (annoValue == null) {
+                                                return "true";
+                                            }
+                                            return annoValue.toSource();
                                         }
-                                        return annoValue.toSource();
-                                    }
-                            ).join("");
-                            final CharSequence was = localCopy.put(key, value.length() == 0 ? "true" : value);
-                            if (was == null) {
-                                undo = undo.doAfter(()-> localCopy.remove(key));
-                            } else {
-                                undo = undo.doAfter(()-> localCopy.put(key, was));
+                                ).join("");
+                                final CharSequence was = localCopy.put(key, value.length() == 0 ? "true" : value);
+                                if (was == null) {
+                                    undo = undo.doAfter(()-> localCopy.remove(key));
+                                } else {
+                                    undo = undo.doAfter(()-> localCopy.put(key, was));
+                                }
                             }
                         }
                     }
@@ -985,6 +997,11 @@ public interface XapiSchemaParser {
         final ListLike<SchemaModule> added = X_Jdk.listArray();
         for (UiContainerExpr module : modules) {
             String name = module.getName();
+            if (!project.isMultiplatform()) {
+                if (!project.getDefaultModuleName().equals(name)) {
+                    continue;
+                }
+            }
             boolean published = module.getAttribute("published")
                     .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn("main".equals(name)); // TODO: have a previously-configured "default publishing" list of module names
@@ -1044,7 +1061,7 @@ public interface XapiSchemaParser {
                                         final Maybe<UiAttrExpr> forPlatform = module.getAttribute("forPlatform");
                                         if (forPlatform.isPresent()) {
                                             final ComposableXapiVisitor<Object> vis = whenMissingFail(XapiSchemaParser.class);
-                                            vis.nameOrString(platName -> {
+                                            vis.nameOrStringOrType(platName -> {
                                                 PlatformModule specificPlatform = platMod[0].edit(platName, null);
                                                 insertDependencyRaw(metadata, pair, specificPlatform);
                                             });
@@ -1117,7 +1134,7 @@ public interface XapiSchemaParser {
                 final In1<UiAttrExpr> insertInclude =
                         includeAttr -> {
                             includeAttr.getExpression().accept(
-                                    whenMissingFail(XapiSchemaParser.class).extractNames(includeName -> {
+                                    whenMissingFail(XapiSchemaParser.class).extractNamesAndTypes(includeName -> {
                                         if (result.getInclude().addIfMissing(includeName)) {
                                             final UiAttrExpr attrCopy = (UiAttrExpr) includeAttr.clone();
                                             attrCopy.setExpression(StringLiteralExpr.stringLiteral(includeName));
@@ -1209,6 +1226,11 @@ public interface XapiSchemaParser {
         final Logger LOG = Logging.getLogger(XapiSchemaParser.class);
         for (UiContainerExpr platform : platforms) {
             String name = platform.getName();
+            if (!project.isMultiplatform()) {
+                if (!project.getDefaultPlatformName().equals(name)) {
+                    continue;
+                }
+            }
             boolean published = platform.getAttribute("published")
                     .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn("main".equals(name));

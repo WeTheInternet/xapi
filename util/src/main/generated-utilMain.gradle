@@ -37,6 +37,7 @@ dependencies {
   api project(path: ":log-api")
   implementation project(path: ":core:reflect-main")
   implementation project(path: ":base-api")
+  api "net.wti.core:xapi-fu:$version"
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :util at file://$rootDir/util/src/main/generated-utilMain.gradle

@@ -50,5 +50,45 @@
                 project : { ":dev:bytecode": main }
             }
         /scanner>,
+        <maven
+            description = "Xapi - Pom scanner and portable maven api"
+            requires = {
+                @transitive
+                external : [
+                    "org.apache.maven:maven-core:3.2.5",
+                ],
+                @transitive
+                project : [
+                    ":dev:bytecode",
+                    ":dev:scanner",
+                    model,
+                    { log : api },
+                ],
+                external : [
+                    "org.slf4j:slf4j-api:1.7.25",
+                    "net.wti.core:xapi-lang-core:${version}",
+                    "org.eclipse.aether:aether-connector-basic:1.0.1.v20141111",
+                    "org.eclipse.aether:aether-transport-file:1.0.1.v20141111",
+                    "org.eclipse.aether:aether-transport-http:1.0.1.v20141111",
+                    "org.eclipse.aether:aether-impl:1.0.1.v20141111",
+                ],
+                project : [
+                    ":server:servlets",
+                    ":dev:api",
+                    ":util",
+                    ":io",
+                    ":collect",
+                    ":dev:file",
+                    ":core:scope",
+                    ":model-jre",
+                    { inject : jre },
+                ],
+                @transitive(test)
+                project : {
+                    base : testTools,
+                    io : jre,
+                },
+            }
+        /maven>
     ]
 /xapi-schema>
