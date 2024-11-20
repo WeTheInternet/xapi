@@ -2,6 +2,7 @@ import net.wti.gradle.internal.api.ProjectView
 import net.wti.gradle.internal.require.api.ArchiveGraph
 import net.wti.gradle.schema.api.Transitivity
 import net.wti.gradle.schema.api.XapiSchema
+import org.gradle.api.internal.tasks.TaskDependencyInternal
 
 buildscript {
     repositories {
@@ -21,6 +22,7 @@ buildscript {
 plugins {
     id 'xapi-require'
 }
+evaluationDependsOn ":gwt-gwtElemental"
 plugins.apply 'xapi-meta'
 //plugins.apply 'com.github.johnrengelman.shadow'
 //setProperty('xapi.main.component', 'shadow') // hm, just ... make a plain jar here, and edit the publication.
@@ -36,10 +38,10 @@ xapiRequire.main().configure {
         req.project ':inject-gwt'
         req.project 'collect-gwt'
         req.project ':base-gwtTestTools'
-        req.project 'xapi-gwt3', 'main'
+        req.project ':gwt-gwtElemental2'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
         req.project ':core:reflect-main'
-        req.project 'xapi-elemental', 'main'
+        req.project ':gwt-gwtElemental'
         req.project ':model-gwt'
         req.project ':process-gwt'
         req.project ':io-gwt'
@@ -64,6 +66,7 @@ description = 'XApi - Gwt uber jar'
 
 XapiSchema s = xapiSchema as XapiSchema
 s.whenReady {
+
     tasks.named 'jar', Jar, {
         Jar j ->
 //        j.archiveClassifier.set('default')
@@ -73,10 +76,17 @@ s.whenReady {
             ProjectView view = xapiRequire.view
             ArchiveGraph m = s.mainPlatform.getMainModule().findGraph(view.projectGraph)
             Configuration conf = m.config("RuntimeClasspath")//.configExportedRuntime()
+            conf.allDependencies.each {
+                if (it instanceof ProjectDependency) {
+                    j.dependsOn ":$it.dependencyProject.path:jar"
+                } else if (it instanceof SelfResolvingDependency) {
+                    j.dependsOn it.buildDependencies
+                }
+            }
             j.dependsOn(conf)
-            j.from(conf.files.collect({
+            j.from(project.providers.provider({ conf.files.collect({
                 it.file && it.name.endsWith(".jar") ? view.zipTree(it) : it
-            }))
+            })}))
             // now, also elide from poms...
             // ...and do pre-injection / source / class modifications... :-)
         }

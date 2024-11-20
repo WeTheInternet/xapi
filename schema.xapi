@@ -51,7 +51,15 @@
 
             // these ones should simply be multi-module
             "server",
-            "gwtc",
+            <gwtc
+                inherit = false
+                multiplatform = true
+            /gwtc>,
+            // create a single GWT "project" with many one-off modules
+            <gwt
+                inherit = false
+                multiplatform = true
+            /gwt>,
         ],
 
         // the projects below are effectively parents of multiple child projects.

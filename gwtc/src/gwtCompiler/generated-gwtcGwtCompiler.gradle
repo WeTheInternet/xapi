@@ -31,7 +31,7 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 
 dependencies {
-  api project(path: ":gwtc-api")
+  api project(path: ":gwtc-compiler")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtApi/generated-gwtcGwtApi.gradle
+// Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtCompiler/generated-gwtcGwtCompiler.gradle

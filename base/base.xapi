@@ -72,7 +72,11 @@
                 <testTools
                     requires = {
                         @transitive
-                        project : { ":xapi-elemental" : main },
+                        project : {
+                            gwt : gwtElemental,
+                            collect : gwt,
+                            ":ui:html" : gwt,
+                        },
                         @transitive
                         external : "junit:junit:4.12",
                         @transitive

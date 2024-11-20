@@ -33,7 +33,7 @@ xapi-io = { module = "net.wetheinter:xapi-io", version.ref = "xapi" }
 xapi-io-gwt = { module = "net.wetheinter:xapi-io-gwt", version.ref = "xapi" }
 xapi-io-jre = { module = "net.wetheinter:xapi-io-jre", version.ref = "xapi" }
 xapi-core-event = { module = "net.wetheinter:xapi-core-event", version.ref = "xapi" }
-xapi-elemental = { module = "net.wetheinter:xapi-gwt3", version.ref = "xapi" }
+xapi-elemental = { module = "net.wetheinter:xapi-gwt-elemental2", version.ref = "xapi" }
 elemental = { module = "com.google.elemental2:elemental2-dom", version.ref = "elemental" }
 xapi-model = { module = "net.wetheinter:xapi-model", version.ref = "xapi" }
 xapi-model-api = { module = "net.wetheinter:xapi-model-api", version.ref = "xapi" }

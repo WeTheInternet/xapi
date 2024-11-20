@@ -13,6 +13,7 @@ xapiRequire.main().configure {
     req ->
         req.project ':server:gen-main'
         req.project ':server:servlets'
+        req.project ':gwtc-compiler'
         req.project 'xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl', 'gwt:main'
         req.project ':process-jre'
         req.external "net.wti.core:xapi-lang-core:${->version}", 'main'

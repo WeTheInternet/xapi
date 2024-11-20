@@ -1,0 +1,81 @@
+<xapi-schema
+    inherit = false
+    multiplatform = true
+    // TODO: wire in defaultPlatform so we don't get a ":gwt-gwt*" project prefix (treat gwt as main)
+    // defaultPlatform = "gwt"
+    platforms = [
+        // main,
+        <gwt
+            // replaces = main
+            modules = [
+                <elemental
+                    description = "Xapi - GWT Elemental implementation"
+                    requires = {
+                        @transitive
+                        project : {
+                            base : gwt,
+                            "ui:html" : gwt,
+                        },
+                        project : {
+                            io : main,
+                            "xapi-dev-parent:xapi-dev-javac" : main,
+                        },
+                        @transitive
+                        external : [
+                            "net.wetheinter:gwt-elemental:2.8.0",
+                        ],
+                        external : [
+                            "com.google.elemental2:elemental2-dom:1.0.0-RC1",
+                            "net.wetheinter:gwt-user:2.8.0",
+                        ],
+                        @transitive(compile_only)
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        @transitive(test)
+                        external : [
+                            "junit:junit:4.12",
+                            "info.cukes:cucumber-java:1.2.5",
+                            "info.cukes:cucumber-junit:1.2.5",
+                            "org.hamcrest:hamcrest-library:1.1",
+                        ],
+                    }
+                /elemental>,
+                <elemental2
+                    requires = {
+                        @transitive
+                        project : {
+                            base : gwt,
+                            ":ui:service" : gwt,
+                        },
+                        project : {
+                            collect : main,
+                            util : main,
+                        },
+                        @transitive
+                        external : [
+                            "com.google.elemental2:elemental2-dom:1.0.0-RC1",
+                            "com.google.elemental2:elemental2-promise:1.0.0-RC1",
+                            "com.google.jsinterop:base:1.0.0-RC1",
+                        ],
+                        @transitive(compile_only)
+                        external : [
+                            "net.wetheinter:gwt-dev:2.8.0",
+                            "net.wetheinter:gwt-user:2.8.0",
+                        ],
+
+                        @transitive(test)
+                        external : [
+                            "junit:junit:4.13",
+                            "info.cukes:cucumber-java:1.2.5",
+                            "info.cukes:cucumber-junit:1.2.5",
+                            "org.hamcrest:hamcrest-library:1.1",
+                        ],
+                        project : {
+                            inject : jre,
+                            collect : jre,
+                        },
+                    }
+                /elemental2>
+            ]
+        /gwt>
+    ]
+/xapi-schema>

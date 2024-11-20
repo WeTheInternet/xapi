@@ -26,19 +26,5 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-
-dependencies {
-  implementation project(path: ":model-main")
-  implementation project(path: ":process-main")
-  implementation project(path: ":io-main")
-  implementation project(path: ":inject-jre")
-  implementation project(path: ":ui:components")
-  compileOnly "net.wti.gradle:xapi-gradle-api:$version"
-  implementation "net.wetheinter:gwt-user:2.8.0"
-  compileOnly "junit:junit:4.12"
-  compileOnly "net.wetheinter:gwt-dev:2.8.0"
-  compileOnly "net.wetheinter:gwt-user:2.8.0"
-  annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
-}
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :gwtc:api at file://$rootDir/gwtc/api/src/main/generated-apiMain.gradle
+// Done generating buildfile for :gwt at file://$rootDir/gwt/src/elemental/generated-gwtElemental.gradle

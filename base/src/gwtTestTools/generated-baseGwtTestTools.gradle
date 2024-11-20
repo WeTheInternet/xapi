@@ -33,7 +33,9 @@ main.java.srcDir("$rootDir/base/src/gwtTestTools/java")
 main.resources.srcDir("$rootDir/base/src/gwtTestTools/resources")
 
 dependencies {
-  api project(path: ":xapi-elemental")
+  api project(path: ":gwt-gwtElemental")
+  api project(path: ":collect-gwt")
+  api project(path: ":ui:html-gwt")
   implementation "net.wetheinter:gwt-user:2.8.0"
   implementation "net.wetheinter:gwt-dev:2.8.0"
   api "junit:junit:4.12"

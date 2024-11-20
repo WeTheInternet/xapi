@@ -4,11 +4,11 @@ import java.time.Duration
 
 buildscript({
     dependencies {
-        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:0.5.1"
     }
 })
 plugins {
-    id 'xapi-require'
+    id "xapi-require"
 }
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
@@ -18,30 +18,34 @@ repositories {
 }
 xapiRequire.main().configure {
     req ->
-        req.project ':inject-jre'
-        req.external 'net.wetheinter:gwt-dev:2.8.0'
-        req.external 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
-        req.external 'net.wetheinter:gwt-user:2.8.0'
-        req.project ':gwtc-api'
-        req.project ':dev:api-main'
-        req.project ':model-main'
+        req.project ":inject-jre"
+        req.external "net.wetheinter:gwt-dev:2.8.0"
+        req.external "org.eclipse.jetty:jetty-server:9.2.14.v20151106"
+        req.external "net.wetheinter:gwt-user:2.8.0"
+        req.project ":gwtc-api"
+        req.project ":dev:api-main"
+        req.project ":model-main"
         req.external "net.wti.core:xapi-fu:$version"
         req.external "net.wti.core:xapi-lang-core:${->version}", "main"
-        req.project ':xapi-dev-parent:xapi-dev-shell'
-        req.project Transitivity.impl, ':base-gwtTestTools'
-        req.external Transitivity.impl, 'junit:junit:4.12' // a bit yucky... we look for junit types in our main tooling
+        req.project ":xapi-dev-parent:xapi-dev-shell"
+        req.project Transitivity.impl, ":base-gwtTestTools"
+        req.external Transitivity.impl, "junit:junit:4.12" // a bit yucky... we look for junit types in our main tooling
 }
 
-xapiRequire.module('gwt', 'test').configure {
+xapiRequire.module("gwt", "main").configure {
     req ->
-        req.project 'xapi-gwt', 'main'
-        req.project ':base-gwtTestTools'
-        req.project ':dev:maven-main'
+        req.project ":gwtc-compiler"
+}
+xapiRequire.module("gwt", "test").configure {
+    req ->
+        req.project "xapi-gwt", "main"
+        req.project ":base-gwtTestTools"
+        req.project ":dev:maven-main"
 }
 
 //apply from: "$rootDir/gradle/gwt-test.gradle"
 
-description = 'XApi - Gwt Compiler Implementation'
+description = "XApi - Gwt Compiler Implementation"
 
 tasks.withType(Test) {
     if (gradle.gradleVersion.startsWith("5")) {
@@ -50,10 +54,10 @@ tasks.withType(Test) {
         logging.levelInternal = LogLevel.INFO
     }
     forkEvery = 1
-    maxHeapSize = '2G'
+    maxHeapSize = "2G"
     timeout = Duration.ofMinutes(10)
-//    systemProperty('gwt.args', "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
-    systemProperty('gwt.args', "-logLevel INFO -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-test ")
+//    systemProperty("gwt.args", "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
+    systemProperty("gwt.args", "-logLevel INFO -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-test ")
 }
 import net.wti.gradle.test.task.TestIsolator
 tasks.create("testIsolator", TestIsolator).addAll()

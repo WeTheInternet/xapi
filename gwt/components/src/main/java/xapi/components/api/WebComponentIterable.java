@@ -12,7 +12,7 @@ import elemental.dom.Element;
  * It is, in essence, simply performing an unsafe cast for you.
  * <p>
  * Recommend usage is to use element.querySelector("my-web-component-name") to get a NodeList of elements,
- * transformed into an Iterable<Element> via ElementIterable in the xapi-elemental module.  From there,
+ * transformed into an Iterable<Element> via ElementIterable in the gwt-elemental module.  From there,
  * you can use this wrapper to transform your elements into web components.
  *
  * @author James X. Nelson (james@wetheinter.net, @james)

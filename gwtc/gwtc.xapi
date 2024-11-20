@@ -1,28 +1,59 @@
 <xapi-schema
     inherit = false
-    platforms = [ main ]
+    platforms = [
+        <main
+            modules = [
+                <api
+                    description = "Xapi - Gwt Compiler Api"
+                    requires = {
+                        @transitive(compile_only)
+                        external : "net.wti.gradle:xapi-gradle-api:$version",
+                        project : { model : main, process : main, io : main, collect: main, inject : jre },
+                        project : { ":ui:service" : main, ":dev:api" : main },
+                        project : { ":dev:file" : main },
+                        external : "net.wetheinter:gwt-user:2.8.0",
+                        project : { ":dev:scanner": main },
+
+                        @transitive(compile_only)
+                        external : "junit:junit:4.12",
+                        @transitive(compile_only)
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        @transitive(compile_only)
+                        external : "net.wetheinter:gwt-user:2.8.0",
+
+                        @transitive(annotation_processor)
+                        external : "net.wti.gradle:xapi-dev-mirror:$version",
+                    }
+                /api>,
+                <compiler
+                    requires = {
+                        internal : api,
+                        project : {
+                            inject : jre,
+                            "dev:api" : main,
+                            model : main,
+                            ":xapi-dev-parent:xapi-dev-shell" : main,
+                        },
+                        @transitive(compile_only)
+                        project : { base : gwtTestTools },
+                        @transitive(compile_only)
+                        external : "junit:junit:4.13", // a bit yucky... we look for junit types in our main tooling
+
+                        external : [
+                            "net.wetheinter:gwt-dev:2.8.0",
+                            "org.eclipse.jetty:jetty-server:9.2.14.v20151106",
+                            "net.wetheinter:gwt-user:2.8.0",
+                            "net.wti.core:xapi-fu:$version",
+                            "net.wti.core:xapi-lang-core:${version}"
+                        ],
+                    }
+                /compiler>
+            ]
+        /main>,
+        <gwt
+            replaces=main
+        /gwt>
+    ]
     modules = [
-        <api
-            description = "Xapi - Gwt Compiler Api"
-            requires = {
-                @transitive(compile_only)
-                external : "net.wti.gradle:xapi-gradle-api:$version",
-                project : { model : main, process : main, io : main, collect: main, inject : jre },
-                project : { ":ui:service" : main, ":dev:api" : main },
-                project : { ":dev:file" : main },
-                external : "net.wetheinter:gwt-user:2.8.0",
-                project : { ":dev:scanner": main },
-
-                @transitive(compile_only)
-                external : "junit:junit:4.12",
-                @transitive(compile_only)
-                external : "net.wetheinter:gwt-dev:2.8.0",
-                @transitive(compile_only)
-                external : "net.wetheinter:gwt-user:2.8.0",
-
-                @transitive(annotation_processor)
-                external : "net.wti.gradle:xapi-dev-mirror:$version",
-            }
-        /api>,
     ]
 /xapi-schema>

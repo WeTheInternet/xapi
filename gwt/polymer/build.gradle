@@ -11,7 +11,7 @@ plugins {
 xapiRequire.main().configure {
     req ->
         req.project 'xapi-components', 'main'
-        req.project 'xapi-elemental'
+        req.project ':gwt-gwtElemental'
         req.external 'net.wetheinter:gwt-elemental:2.8.0'
         req.external 'net.wetheinter:gwt-user:2.8.0'
         req.external Transitivity.compile_only, 'net.wetheinter:gwt-dev:2.8.0'
