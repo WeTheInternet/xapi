@@ -1,0 +1,28 @@
+<xapi
+module="xapi-gwt"
+type="main"
+sources=["/opt/xapi/gwt/uber/src/main/java"]
+
+resources=["/opt/xapi/gwt/uber/src/main/resources"]
+
+outputs=["/opt/xapi/gwt/uber/build/resources/main"]
+
+generated=[]
+
+includes={  jreTestTools: ":xapi-gwt/jre/testTools",
+  spi: ":xapi-gwt/main/spi",
+  jreTest: ":xapi-gwt/jre/test",
+  jreSpi: ":xapi-gwt/jre/spi",
+  testTools: ":xapi-gwt/main/testTools",
+  gwtTest: ":xapi-gwt/gwt/test",
+  gwtSpi: ":xapi-gwt/gwt/spi",
+  jre: ":xapi-gwt/jre/main",
+  gwt: ":xapi-gwt/gwt/main",
+  main: ":xapi-gwt/main/main",
+  test: ":xapi-gwt/main/test",
+  gwtTestTools: ":xapi-gwt/gwt/testTools",
+  api: ":xapi-gwt/main/api",
+  gwtApi: ":xapi-gwt/gwt/api",
+  jreApi: ":xapi-gwt/jre/api"
+}
+/>

@@ -2,7 +2,7 @@ import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
 
-apply plugin: "java-library"
+plugins.apply "java-library"
 // GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenInclude body.start from file:///opt/xapi/dev/maven/src/gradle/main/body.start
 apply from: "$rootDir/gradle/xapi-env.gradle"
@@ -20,7 +20,7 @@ if (repo) {
   }
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
-apply plugin: javaPlugin
+plugins.apply javaPlugin
 repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');

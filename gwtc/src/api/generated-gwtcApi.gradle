@@ -14,7 +14,7 @@ if (repo) {
   }
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
-apply plugin: javaPlugin
+plugins.apply javaPlugin
 repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
@@ -44,6 +44,7 @@ dependencies {
   compileOnly "junit:junit:4.12"
   compileOnly "net.wetheinter:gwt-dev:2.8.0"
   compileOnly "net.wetheinter:gwt-user:2.8.0"
+  compileOnly "net.wti.gradle:xapi-dev-mirror:$version"
   annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
 }
 // GenEnd XapiSettingsPlugin

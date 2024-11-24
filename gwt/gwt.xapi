@@ -74,7 +74,41 @@
                             collect : jre,
                         },
                     }
-                /elemental2>
+                /elemental2>,
+                <uber
+                    description = "Xapi - GWT uber jar"
+                    requires = {
+                        @transitive
+                        project : {
+                            util : main,
+                            inject : gwt,
+                            collect : gwt,
+                            base : gwtTestTools,
+                            gwt : gwtElemental2,
+                            gwt : gwtElemental,
+                            model : gwt,
+                            process : gwt,
+                            io : gwt,
+                            gwtc : api,
+                            ":core:reflect" : main,
+                        },
+                        @transitive
+                        external : [
+                            "net.wti.core:xapi-lang-core:${version}",
+                            "javax.inject:javax.inject:1:sources",
+                        ],
+                        @transitive(test)
+                        project : { collect : jre },
+                        @transitive(test)
+                        external : [
+                            "net.wetheinter:gwt-codeserver:2.8.0",
+                            "net.wetheinter:gwt-user:2.8.0",
+                            "net.sourceforge.htmlunit:htmlunit:2.19",
+                            "junit:junit:4.13",
+                            "junit:junit:4.13:sources",
+                        ],
+                    }
+                /uber>,
             ]
         /gwt>
     ]

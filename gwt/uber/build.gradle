@@ -7,25 +7,25 @@ import org.gradle.api.internal.tasks.TaskDependencyInternal
 buildscript {
     repositories {
         maven {
-            name = 'xapiLocal'
+            name = "xapiLocal"
             url = new URI("file://$rootDir/repo".toString())
             //noinspection UnstableApiUsage
             metadataSources({ m -> m.gradleMetadata() })
         }
     }
     dependencies {
-//        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+//        classpath "com.github.jengelman.gradle.plugins:shadow:4.0.4"
         classpath "net.wti.gradle:xapi-gradle-meta:$version"
         classpath "net.wti.gradle.tools:xapi-gradle-tools:$version"
     }
 }
 plugins {
-    id 'xapi-require'
+    id "xapi-require"
 }
 evaluationDependsOn ":gwt-gwtElemental"
-plugins.apply 'xapi-meta'
-//plugins.apply 'com.github.johnrengelman.shadow'
-//setProperty('xapi.main.component', 'shadow') // hm, just ... make a plain jar here, and edit the publication.
+plugins.apply "xapi-meta"
+//plugins.apply "com.github.johnrengelman.shadow"
+//setProperty("xapi.main.component", "shadow") // hm, just ... make a plain jar here, and edit the publication.
 //
 //
 //tasks.shadowJar.configure {
@@ -34,42 +34,42 @@ plugins.apply 'xapi-meta'
 
 xapiRequire.main().configure {
     req ->
-        req.project ':util-main'
-        req.project ':inject-gwt'
-        req.project 'collect-gwt'
-        req.project ':base-gwtTestTools'
-        req.project ':gwt-gwtElemental2'
-        req.external "net.wti.core:xapi-lang-core:${->version}", 'main'
-        req.project ':core:reflect-main'
-        req.project ':gwt-gwtElemental'
-        req.project ':model-gwt'
-        req.project ':process-gwt'
-        req.project ':io-gwt'
-        req.project ':gwtc-api'
+        req.project ":util-main"
+        req.project ":inject-gwt"
+        req.project "collect-gwt"
+        req.project ":base-gwtTestTools"
+        req.project ":gwt-gwtElemental2"
+        req.external "net.wti.core:xapi-lang-core:${->version}", "main"
+        req.project ":core:reflect-main"
+        req.project ":gwt-gwtElemental"
+        req.project ":model-gwt"
+        req.project ":process-gwt"
+        req.project ":io-gwt"
+        req.project ":gwtc-api"
 }
 
-xapiRequire.module('gwt', 'test').configure {
+xapiRequire.module("gwt", "test").configure {
     req ->
-        req.project ':collect-jre'
-        req.external 'net.wetheinter:gwt-codeserver:2.8.0'
-        req.external 'net.wetheinter:gwt-user:2.8.0'
-        req.external 'net.sourceforge.htmlunit:htmlunit:2.19'
-        req.external 'junit:junit:4.12'
-        req.external Transitivity.runtime, 'junit:junit:4.12:sources'
+        req.project ":collect-jre"
+        req.external "net.wetheinter:gwt-codeserver:2.8.0"
+        req.external "net.wetheinter:gwt-user:2.8.0"
+        req.external "net.sourceforge.htmlunit:htmlunit:2.19"
+        req.external "junit:junit:4.12"
+        req.external Transitivity.runtime, "junit:junit:4.12:sources"
 }
 
 dependencies {
-    implementation 'javax.inject:javax.inject:1:sources'
+    implementation "javax.inject:javax.inject:1:sources"
 }
 
-description = 'XApi - Gwt uber jar'
+description = "XApi - Gwt uber jar"
 
 XapiSchema s = xapiSchema as XapiSchema
 s.whenReady {
 
-    tasks.named 'jar', Jar, {
+    tasks.named "jar", Jar, {
         Jar j ->
-//        j.archiveClassifier.set('default')
+//        j.archiveClassifier.set("default")
         j.zip64 = true
         j.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         j.whenSelected {

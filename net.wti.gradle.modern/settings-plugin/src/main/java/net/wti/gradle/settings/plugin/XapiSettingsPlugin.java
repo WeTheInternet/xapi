@@ -384,7 +384,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                             .println("url = repo");
 
                         out.println("String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'");
-                        out.println("apply plugin: javaPlugin");
+                        out.println("plugins.apply javaPlugin");
                         // TODO: pull this from schema.xapi
                         out.println("repositories.mavenCentral()");
                         // To start, setup the sourceset!

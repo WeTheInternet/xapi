@@ -554,6 +554,7 @@ public abstract class GwtcJob implements Destroyable {
                     sourcePath.addItems(File::new, cpItems.split("[:;]"));
                 } else {
                     X_Log.error(GwtcJob.class, "Malformed META-INF/xapi did not contain paths.xapi or gwt/classpath files:", dir);
+                    X_Log.error(GwtcJob.class, "See <xapi repo>/gwt/src/gwtUber/todo/TODO.md for details on re-enabling the creation of paths.xapi", dir);
                 }
                 return;
             }

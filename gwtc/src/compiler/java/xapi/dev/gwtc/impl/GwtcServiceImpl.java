@@ -320,7 +320,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         urls.add(downloadDependency(dep));
       }
       if (needsXapiGwtcImpl) {
-        final MvnDependency dep = getDependency("xapi-gwtc-impl-gwt");
+        final MvnDependency dep = getDependency("xapi-gwtc-compiler-gwt");
         urls.add(downloadDependency(dep));
       } else {
         if (needsXapiGwtcApi) {
@@ -362,7 +362,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   protected ClassLoader superLoader(GwtManifest manifest) {
     if (manifest.isUseCurrentJvm()) {
       if (manifest.isIsolateClassLoader()) {
-          // TODO perhaps instead create a minimal super-loader that contains gwt-dev, gwt-user, (xapi-gwt || xapi-gwtc-api & xapi-gwtc-impl)
+          // TODO perhaps instead create a minimal super-loader that contains gwt-dev, gwt-user, (xapi-gwt || xapi-gwtc-api & xapi-gwtc-compiler)
           return ClassLoader.getSystemClassLoader();
       } else {
           X_Log.trace(GwtcServiceImpl.class, "Using context classloader for gwt compile", manifest);

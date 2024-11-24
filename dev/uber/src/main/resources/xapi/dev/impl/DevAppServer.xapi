@@ -2,7 +2,7 @@
   name = "DevAppServer"
   classpaths = {
     xapiLang : [
-      $maven("net.wetheinter:xapi-gwt:0.5.1-SNAPSHOT")
+      $maven("net.wetheinter:xapi-gwt-uber:0.5.1-SNAPSHOT")
     ]
   }
   gwt = [

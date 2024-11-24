@@ -1,0 +1,14 @@
+buildscript {
+    repositories {
+        maven {
+            name = "xapiLocal"
+            url = new URI("file://$rootDir/repo".toString())
+            //noinspection UnstableApiUsage
+            metadataSources({ m -> m.gradleMetadata() })
+        }
+    }
+    dependencies {
+    //    classpath "com.github.jengelman.gradle.plugins:shadow:4.0.4"
+    //   classpath "net.wti.gradle:xapi-gradle-meta:$version"
+    }
+}

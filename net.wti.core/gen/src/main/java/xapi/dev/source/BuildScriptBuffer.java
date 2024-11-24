@@ -91,7 +91,7 @@ public class BuildScriptBuffer extends GradleBuffer {
                 out.outdent();
             } else {
                 out.println()
-                   .append("apply plugin: \"").append(pluginId).append("\"")
+                   .append("plugins.apply \"").append(pluginId).append("\"")
                    .println();
             }
             return true;

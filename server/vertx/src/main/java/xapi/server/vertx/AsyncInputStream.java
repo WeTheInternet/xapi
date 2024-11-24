@@ -9,7 +9,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
-import org.apache.commons.io.IOUtils;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 
@@ -193,7 +192,7 @@ public class AsyncInputStream implements ReadStream<Buffer> {
                         if (bytes == null || bytes.length == 0) {
                             // null or 0 means we reach the end of the stream, invoke the close handler.
                             state = STATUS_CLOSED;
-                            IOUtils.closeQuietly(in);
+                            closeQuietly();
                             context.runOnContext(event -> {
                                 if (closeHandler != null) {
                                     closeHandler.handle(null);
@@ -211,7 +210,7 @@ public class AsyncInputStream implements ReadStream<Buffer> {
                     } catch (final Exception e) {
                         // Error detected, invokes the failure handler.
                         state = STATUS_CLOSED;
-                        IOUtils.closeQuietly(in);
+                        closeQuietly();
                         if (failureHandler == null) {
                             throw e;
                         } else {
@@ -226,6 +225,10 @@ public class AsyncInputStream implements ReadStream<Buffer> {
                     }
                 });
         }
+    }
+
+    private void closeQuietly() {
+        try { in.close(); } catch (IOException ignored) {}
     }
 
     /**
@@ -328,7 +331,7 @@ public class AsyncInputStream implements ReadStream<Buffer> {
             return buffer;
         } catch (IOException e) {
             // Close the stream, and propagate the exception.
-            IOUtils.closeQuietly(in);
+            closeQuietly();
             throw e;
         }
     }

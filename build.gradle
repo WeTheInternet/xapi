@@ -7,7 +7,6 @@ afterEvaluate {
     plugins.apply 'xapi-schema'
 }
 
-
 import net.wti.gradle.internal.api.ProjectView
 import net.wti.gradle.system.spi.GradleServiceFinder
 import org.gradle.internal.jvm.Jvm

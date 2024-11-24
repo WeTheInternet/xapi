@@ -30,6 +30,7 @@ import xapi.string.X_String;
 import xapi.util.X_Util;
 
 import java.io.*;
+import java.net.URLClassLoader;
 import java.util.*;
 
 // TODO: move this type into somewhere with extremely severely limited classpath.
@@ -377,7 +378,11 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
    * @return
    */
   protected ClassLoader targetClassloader() {
-    return Thread.currentThread().getContextClassLoader();
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    if (cl.getClass().getName().contains("gradle")) {
+      cl = RuntimeInjector.class.getClassLoader();
+    }
+    return cl;
   }
 
   private final double init = System.nanoTime();

@@ -2,7 +2,7 @@ import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
 
-apply plugin: "java-library"
+plugins.apply "java-library"
 // GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
@@ -17,7 +17,7 @@ if (repo) {
   }
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
-apply plugin: javaPlugin
+plugins.apply javaPlugin
 repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
@@ -29,9 +29,32 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/gwtc/src/gwtCompiler/java")
+test.java.srcDir("$rootDir/gwtc/src/gwtCompilerTest/java")
+test.resources.srcDir("$rootDir/gwtc/src/gwtCompilerTest/resources")
 
 dependencies {
+  testImplementation project(path: ":gwt-gwtUber")
+  testImplementation project(path: ":inject-jre")
+  testImplementation project(path: ":base-gwtTestTools")
+  testImplementation project(path: ":dev:maven-main")
+  testImplementation project(path: ":gwtc-gwtTestTools")
   api project(path: ":gwtc-compiler")
 }
 // GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/gwtc/src/gradle/gwtCompiler/body.end
+tasks.withType(Test) {
+    if (gradle.gradleVersion.startsWith("5")) {
+        logging.level = LogLevel.INFO
+    } else {
+        logging.levelInternal = LogLevel.INFO
+    }
+    forkEvery = 1
+    maxHeapSize = "2G"
+    timeout = Duration.ofMinutes(10)
+//    systemProperty("gwt.args", "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
+    systemProperty("gwt.args", "-logLevel INFO -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-test ")
+}
+import net.wti.gradle.test.task.TestIsolator
+tasks.create("testIsolator", TestIsolator).addAll()
 // Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtCompiler/generated-gwtcGwtCompiler.gradle

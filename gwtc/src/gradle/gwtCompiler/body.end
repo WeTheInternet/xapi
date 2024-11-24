@@ -1,0 +1,14 @@
+tasks.withType(Test) {
+    if (gradle.gradleVersion.startsWith("5")) {
+        logging.level = LogLevel.INFO
+    } else {
+        logging.levelInternal = LogLevel.INFO
+    }
+    forkEvery = 1
+    maxHeapSize = "2G"
+    timeout = Duration.ofMinutes(10)
+//    systemProperty("gwt.args", "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
+    systemProperty("gwt.args", "-logLevel INFO -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-test ")
+}
+import net.wti.gradle.test.task.TestIsolator
+tasks.create("testIsolator", TestIsolator).addAll()

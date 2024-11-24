@@ -1,0 +1,30 @@
+configurations {
+    allDeps.extendsFrom runtimeClasspath
+}
+
+tasks.named "jar", Jar, {
+    Jar j ->
+//    j.archiveClassifier.set("default")
+    j.zip64 = true
+    j.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    Configuration conf = configurations.allDeps
+
+    conf.allDependencies.each {
+        if (it instanceof ProjectDependency) {
+            j.dependsOn ":$it.dependencyProject.path:jar"
+        } else if (it instanceof SelfResolvingDependency) {
+            j.dependsOn it.buildDependencies
+        }
+    }
+
+    j.dependsOn(conf)
+    j.from(project.providers.provider({ conf.files.collect({
+        it.file && it.name.endsWith(".jar") ? project.zipTree(it) : it
+    })}))
+}
+tasks.withType(Test).configureEach {
+    Test t ->
+        t.forkEvery(1)
+        t.maxParallelForks(3)
+        t.maxHeapSize("4G")
+}

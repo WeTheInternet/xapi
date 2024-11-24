@@ -93,6 +93,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
             Set<TypeElement> types = new LinkedHashSet<>();
             Set<UiPhase> phases = new LinkedHashSet<>();
             annotations.forEach(anno->{
+//                messages.printMessage(Kind.NOTE, anno.toString());
                 final Set<? extends Element> annotated = roundEnv.getElementsAnnotatedWith(anno);
                 annotated.forEach(ele->{
                     UiPhase phase = ele.getAnnotation(UiPhase.class);

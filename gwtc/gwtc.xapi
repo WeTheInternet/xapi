@@ -21,6 +21,8 @@
                         @transitive(compile_only)
                         external : "net.wetheinter:gwt-user:2.8.0",
 
+                        @transitive(compile_only)
+                        external : "net.wti.gradle:xapi-dev-mirror:$version",
                         @transitive(annotation_processor)
                         external : "net.wti.gradle:xapi-dev-mirror:$version",
                     }
@@ -36,9 +38,9 @@
                         },
                         @transitive(compile_only)
                         project : { base : gwtTestTools },
-                        @transitive(compile_only)
-                        external : "junit:junit:4.13", // a bit yucky... we look for junit types in our main tooling
 
+                        @transitive(compile_only)
+                        external : "junit:junit:4.13", // 12345678901234567890123456789012345678
                         external : [
                             "net.wetheinter:gwt-dev:2.8.0",
                             "org.eclipse.jetty:jetty-server:9.2.14.v20151106",
@@ -51,9 +53,61 @@
             ]
         /main>,
         <gwt
+            description = "Xapi - GWT client to run xapi-gwt-compiler"
             replaces=main
+            modules = [
+                <testTools
+                    requires = {
+                        @transitive
+                        project : { ":gwtc-compiler" : main },
+                        @transitive
+                        external : [
+                            "net.wetheinter:gwt-user:2.8.0",
+                            "net.wetheinter:gwt-dev:2.8.0",
+                        ],
+                    }
+                /testTools>,
+                <compiler
+                    requires = {
+                        @transitive(test)
+                        internal : gwtTestTools,
+                        @transitive(test)
+                        project : {
+                            gwt : gwtUber,
+                            inject : jre,
+                            base : gwtTestTools,
+                            ":dev:maven" : main,
+                        }
+                    }
+                /compiler>,
+                <sample
+                    requires = {
+                        @transitive(test)
+                        internal : gwtTestTools,
+                        project : {
+                            gwtc : api,
+                            inject : main,
+                            ":dev:maven" : main,
+                        },
+                        @transitive(compile_only)
+                        project : {
+                            ":xapi-dev-parent:xapi-dev-javac" : main,
+                            base : api,
+                        },
+                        @transitive(annotation_processor)
+                        project : {
+                            ":ui:generator" : gwt,
+                            "inject" : "jre",
+                            base : api,
+                            ":xapi-dev-parent:xapi-dev-javac" : main,
+                        },
+                        external: [
+                            "net.wetheinter:gwt-user:2.8.0",
+                        ],
+
+                    }
+                /sample>
+            ]
         /gwt>
-    ]
-    modules = [
     ]
 /xapi-schema>
