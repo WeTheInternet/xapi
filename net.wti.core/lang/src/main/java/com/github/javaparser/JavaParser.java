@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -362,6 +363,7 @@ public final class JavaParser {
         if (X_String.isEmptyTrimmed(uiContainer)) {
             return null;
         }
+        PathDebugger.debugPath(path);
         StringReader sr = new StringReader(uiContainer);
         try {
             final UiContainerExpr e = new ASTParser(sr).RootUiContainer();
@@ -378,11 +380,19 @@ public final class JavaParser {
             throw e;
         }
     }
+
+    private static interface PathDebugger {
+        static void debugPath(String path) {
+            Log.defaultLogger().log(JavaParser.class, LogLevel.INFO, "Parsing file", path);
+        }
+    }
+
     public static UiContainerExpr parseUiContainerMergeMany(final String path, final InputStream uiContainer, LogLevel level) throws ParseException {
         final String src = SourcesHelper.streamToString(uiContainer);
         if (X_String.isEmptyTrimmed(src)) {
             return null;
         }
+        PathDebugger.debugPath(path);
         UiContainerExpr result = null;
         StringReader stringReader = new StringReader(src);
         final ASTParser parser = new ASTParser(stringReader);
@@ -430,6 +440,7 @@ public final class JavaParser {
         if (X_String.isEmptyTrimmed(src)) {
             return null;
         }
+        PathDebugger.debugPath(path);
         StringReader sr = new StringReader(src);
         try {
             return parseUiContainer(path, new ASTParser(sr), level);
@@ -438,6 +449,7 @@ public final class JavaParser {
         }
     }
     private static UiContainerExpr parseUiContainer(final String path, final ASTParser parser, LogLevel level) throws ParseException {
+        PathDebugger.debugPath(path);
         try {
             final UiContainerExpr e = parser.RootUiContainer();
             e.addExtra("location", path);

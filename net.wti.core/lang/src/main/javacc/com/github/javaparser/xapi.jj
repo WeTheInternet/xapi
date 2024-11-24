@@ -194,6 +194,9 @@ final class ASTParser {
             // Because we ignore whitespace, to do this correctly, we store the bufPos of each token
             // such that we can just rewind to
             int putBack = token_source.input_stream.bufpos - (((GTToken)token).bufPos + token.image.length());
+            // this likely suffers from the same bug that looksLikeCssSelector() had.
+            // if this happens when the tokens were generated at the 4096 character boundary of the input source buffer,
+            // then we need to adjust the buffer position. Will need to use the debugger to get this right
             token_source.backup(putBack);
             token.next = null;
           }
@@ -226,7 +229,14 @@ TOKEN_MGR_DECLS : {
     return was;
   }
 
-  void backup(int n) { input_stream.backup(n); }
+  int backup(int n) {
+    boolean needFix = input_stream.bufpos - n < 0;
+    input_stream.backup(n);
+    if (needFix) {
+      return input_stream.bufsize;
+    }
+    return 0;
+  }
 
   char peekNext() {
     return peekNext(true);
@@ -616,13 +626,13 @@ TOKEN_MGR_DECLS : {
   }
 
   boolean looksLikeCssSelector(Token token) {
-    int backup = 0;
+    int backup = 0, fixAmt = 0;
     if (token.next != null) {
       // reverse the stream however far it is ahead,
       Token remove = token.next;
       while (remove != null) {
         backup -= remove.image.length();
-        input_stream.backup(remove.image.length());
+        fixAmt += backup(remove.image.length());
         remove = remove.next;
       }
     }
@@ -665,7 +675,10 @@ TOKEN_MGR_DECLS : {
     } catch (IOException ignore) {
       // Hit EOF while peeking...
     } finally {
-      input_stream.backup(backup);
+      backup(backup);
+      if (input_stream.bufpos - fixAmt >= 0) {
+          input_stream.bufpos -= fixAmt;
+      }
     }
   return false;
   }

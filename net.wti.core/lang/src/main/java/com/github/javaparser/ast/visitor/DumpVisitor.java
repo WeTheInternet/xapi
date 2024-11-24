@@ -951,17 +951,25 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
 //        printer.indent();
         n.getName().accept(this, arg);
-        printer.print(" = ");
+        printer.print(compress ? "=" : " = ");
         if (n.getAnnotations() != null && !n.getAnnotations().isEmpty()) {
-            printer.println();
+            newline();
             for (AnnotationExpr annotationExpr : n.getAnnotations()) {
                 annotationExpr.accept(this, arg);
-                printer.println();
+                newline();
             }
-            printer.println();
+            newline();
         }
         n.getExpression().accept(this, arg);
 //        printer.outdent();
+    }
+
+    private void newline() {
+        if (compress) {
+            printer.print(" ");
+        } else {
+            printer.println();
+        }
     }
 
     @Override
@@ -975,16 +983,26 @@ public class DumpVisitor implements VoidVisitor<Object> {
         }
         printer.print("<");
         n.getNameExpr().accept(this, arg);
-        printer.indent();
+        if (!compress) {
+            printer.indent();
+        }
         final List<UiAttrExpr> attrs = n.getAttributes();
         for (UiAttrExpr attr : attrs) {
-            printer.println();
+            if (compress) {
+                printer.print(" ");
+            } else {
+                printer.println();
+            }
             attr.accept(this, arg);
         }
-        printer.outdent();
+        if (!compress) {
+            printer.outdent();
+        }
         if (n.getBody() == null) {
             if (n.shouldRenderClose()) {
-                printer.println();
+                if (!compress) {
+                    printer.println();
+                }
                 printer.print("/").print(n.getName()).print(">");
             } else {
                 printer.print("/>");

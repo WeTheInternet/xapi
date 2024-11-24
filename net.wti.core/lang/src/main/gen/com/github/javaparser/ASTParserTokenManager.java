@@ -34,7 +34,14 @@ public class ASTParserTokenManager implements ASTParserConstants {
     return was;
   }
 
-  void backup(int n) { input_stream.backup(n); }
+  int backup(int n) {
+    boolean needFix = input_stream.bufpos - n < 0;
+    input_stream.backup(n);
+    if (needFix) {
+      return input_stream.bufsize;
+    }
+    return 0;
+  }
 
   char peekNext() {
     return peekNext(true);
@@ -424,13 +431,13 @@ public class ASTParserTokenManager implements ASTParserConstants {
   }
 
   boolean looksLikeCssSelector(Token token) {
-    int backup = 0;
+    int backup = 0, fixAmt = 0;
     if (token.next != null) {
       // reverse the stream however far it is ahead,
       Token remove = token.next;
       while (remove != null) {
         backup -= remove.image.length();
-        input_stream.backup(remove.image.length());
+        fixAmt += backup(remove.image.length());
         remove = remove.next;
       }
     }
@@ -473,7 +480,10 @@ public class ASTParserTokenManager implements ASTParserConstants {
     } catch (IOException ignore) {
       // Hit EOF while peeking...
     } finally {
-      input_stream.backup(backup);
+      backup(backup);
+      if (input_stream.bufpos - fixAmt >= 0) {
+          input_stream.bufpos -= fixAmt;
+      }
     }
   return false;
   }

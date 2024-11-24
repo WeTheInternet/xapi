@@ -147,6 +147,9 @@ final class ASTParser implements ASTParserConstants {
             // Because we ignore whitespace, to do this correctly, we store the bufPos of each token
             // such that we can just rewind to
             int putBack = token_source.input_stream.bufpos - (((GTToken)token).bufPos + token.image.length());
+            // this likely suffers from the same bug that looksLikeCssSelector() had.
+            // if this happens when the tokens were generated at the 4096 character boundary of the input source buffer,
+            // then we need to adjust the buffer position. Will need to use the debugger to get this right
             token_source.backup(putBack);
             token.next = null;
           }
@@ -7661,32 +7664,6 @@ int line = modifier.beginLine;
     finally { jj_save(64, xla); }
   }
 
-  private boolean jj_3R_137()
- {
-    if (jj_scan_token(LPAREN)) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_201()) { jj_scanpos = xsp; break; }
-    }
-    xsp = jj_scanpos;
-    if (jj_3_28()) {
-    jj_scanpos = xsp;
-    if (jj_3R_202()) return true;
-    }
-    return false;
-  }
-
-  private boolean jj_3R_510()
- {
-    if (jj_scan_token(WHILE)) return true;
-    if (jj_scan_token(LPAREN)) return true;
-    if (jj_3R_130()) return true;
-    if (jj_scan_token(RPAREN)) return true;
-    if (jj_3R_477()) return true;
-    return false;
-  }
-
   private boolean jj_3_27()
  {
     Token xsp;
@@ -13037,6 +13014,32 @@ int line = modifier.beginLine;
   private boolean jj_3R_201()
  {
     if (jj_3R_170()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_137()
+ {
+    if (jj_scan_token(LPAREN)) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_201()) { jj_scanpos = xsp; break; }
+    }
+    xsp = jj_scanpos;
+    if (jj_3_28()) {
+    jj_scanpos = xsp;
+    if (jj_3R_202()) return true;
+    }
+    return false;
+  }
+
+  private boolean jj_3R_510()
+ {
+    if (jj_scan_token(WHILE)) return true;
+    if (jj_scan_token(LPAREN)) return true;
+    if (jj_3R_130()) return true;
+    if (jj_scan_token(RPAREN)) return true;
+    if (jj_3R_477()) return true;
     return false;
   }
 
