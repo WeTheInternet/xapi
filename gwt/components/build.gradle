@@ -42,7 +42,7 @@ xapiRequire.module('test').configure {
 }
 xapiSchema.whenReady {
     dependencies {
-        transitive project(':xapi-dev-parent:xapi-dev-javac')
+        transitive project(':dev:javac-jdk8')
     }
 }
 description = 'XApi - Web Component Implementation'
@@ -53,4 +53,4 @@ gradle.projectsEvaluated {
     }
 }
 
-// tasks.test.dependsOn ':xapi-dev-parent:xapi-dev:xapiPublish'
+// tasks.test.dependsOn ':dev:uber:xapiPublish'

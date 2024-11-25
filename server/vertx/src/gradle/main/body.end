@@ -1,0 +1,4 @@
+tasks.named('test', Test).configure {
+    Test t ->
+        t.maxHeapSize = "1G"
+}

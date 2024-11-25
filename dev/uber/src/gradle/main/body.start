@@ -1,0 +1,10 @@
+//plugins.apply "com.github.johnrengelman.shadow"
+//if (gradle.gradleVersion.startsWith("5")) {
+//    plugins.apply "com.github.johnrengelman.shadow"
+//} else {
+//    plugins.apply "java-library"
+//    plugins.apply "com.gradleup.shadow"
+//}
+
+setProperty("xapi.main.component", "shadow")
+apply from: "$rootDir/gradle/xapi-env.gradle"

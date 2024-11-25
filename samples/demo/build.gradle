@@ -12,11 +12,17 @@ repositories {
 xapiRequire.main().configure {
     req ->
         req.project ':base-main'
-        req.project 'xapi-dev-parent:xapi-dev'
+        req.project ':dev:uber'
+        req.project ':server:vertx'
+        req.project ':dev:api-main'
         req.project ':gwt-gwtElemental2'
         req.project 'xapi-components', 'main'
         req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
         req.external 'junit:junit:4.13'
+}
+xapiRequire.module('test').configure {
+    req ->
+        req.project ':dev:scanner-main'
 }
 
 dependencies {

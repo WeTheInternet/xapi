@@ -14,7 +14,7 @@ if (repo) {
   }
 }
 String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
-apply plugin: javaPlugin
+plugins.apply javaPlugin
 repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
@@ -26,5 +26,22 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/shell/src/main/java")
+main.resources.srcDir("$rootDir/dev/shell/src/main/resources")
+
+dependencies {
+  implementation project(path: ":io-main")
+  implementation project(path: ":collect-main")
+  implementation project(path: ":process-jre")
+  implementation project(path: ":server:servlets")
+  implementation project(path: ":dev:file-main")
+  testImplementation project(path: ":base-testTools")
+  testImplementation project(path: ":inject-jre")
+}
+
+
+configurations {
+  mainOut
+}
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :server at file://$rootDir/server/src/main/generated-serverMain.gradle
+// Done generating buildfile for :dev:shell at file://$rootDir/dev/shell/generated-shell.gradle

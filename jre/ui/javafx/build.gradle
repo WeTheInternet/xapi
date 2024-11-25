@@ -16,7 +16,7 @@ xapiRequire.main().configure {
         req.project ':ui:generator'
         req.project ':ui:service-main'
         req.project 'io-jre'
-        req.project 'xapi-dev-parent:xapi-dev-javac', 'main'
+        req.project ':dev:javac-main' // should be javac-jdk17
 }
 xapiSchema.whenReady {
     dependencies {

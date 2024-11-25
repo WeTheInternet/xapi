@@ -1,0 +1,49 @@
+tasks.withType(Test).configureEach {
+    Test t ->
+        t.maxHeapSize("4G")
+        t.forkEvery(1)
+        t.maxParallelForks(4)
+}
+
+tasks.named('jar', Jar).configure {
+    Jar j ->
+        j.archiveClassifier.set "default"
+}
+
+tasks.named("shadowJar", ShadowJar).configure {
+    ShadowJar jar ->
+        jar.archiveClassifier.set(null)
+        jar.zip64=true
+        jar.minimize {
+            DependencyFilter filter ->
+                filter.exclude {
+                    ResolvedDependency res ->
+                        if (res.moduleGroup =~ "(" +
+                                "org.assert|" +
+                                "junit|" +
+                                "org.junit|" +
+                                "org.hamcrest|" +
+                                "javax.enterprise|" +
+                                "javax.servlet|" +
+                                "commons-coded|" +
+                                "com.google.guava" +
+                                ").*") {
+                            return false
+                        }
+                        switch(res.moduleName) {
+                            case "gwt-dev":
+                            case "gwt-user":
+                            case "elemental":
+                                return false
+                        }
+//                        println ""
+//                        println res.name
+//                        println res.moduleName
+                        return true
+                }
+        }
+}
+artifacts {
+    archives shadowJar
+}
+assemble.dependsOn(shadowJar)

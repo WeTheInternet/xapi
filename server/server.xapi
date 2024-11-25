@@ -27,6 +27,42 @@
                     project : { ":dev:scanner": main }
                 }
             /servlets>,
+            <vertx
+                description = "Xapi - Vert.x server implementation"
+                requires = {
+                    project : [
+                        ":server:gen",
+                        ":server:servlets",
+                        ":gwtc-compiler",
+                        ":gwtc-gwtCompiler",
+                        io,
+                        {
+                            process : jre,
+                        },
+                        ":ui:service",
+                        ":dev:maven",
+                        ":dev:javac",
+                    ],
+                    external : [
+                        "net.wti.core:xapi-lang-core:${version}",
+                        "io.vertx:vertx-web:3.5.3",
+                        "io.vertx:vertx-hazelcast:3.5.3",
+                        "io.vertx:vertx-auth-oauth2:3.5.3",
+                    ],
+                    @transitive(test)
+                    project : [
+                        ":server:gen-sample",
+                        ":dev:scanner",
+                        ":server:gen",
+                        ":dev:javac",
+                    ],
+                    @transitive(test)
+                    external : [
+                        "info.cukes:cucumber-java:1.2.5",
+                        "info.cukes:cucumber-junit:1.2.5",
+                    ],
+                }
+            /vertx>
         ],
         multiplatform : [
             <gen
@@ -52,7 +88,7 @@
                                 "net.wetheinter:gwt-user:2.8.0",
                             ],
                             @transitive(compile_only)
-                            project : ":xapi-dev-parent:xapi-dev-javac",
+                            project : ":dev:javac",
 
                             @transitive(test)
                             internal : "sample",
@@ -64,7 +100,7 @@
                             project : [
                                 ":collect-jre",
                                 ":model-jre",
-                                "xapi-dev-parent:xapi-dev-javac",
+                                ":dev:javac",
                             ],
                             @transitive(test)
                             external : [

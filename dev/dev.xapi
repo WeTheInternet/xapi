@@ -2,6 +2,113 @@
     inherit = false
     platforms = [ main ]
     modules = [ main ]
+    projects = {
+        standalone : [
+            <file
+                description = "Xapi - java.io.File utilities"
+                requires = {
+                    project : [ io, inject, util, ],
+                    @transitive(test)
+                    project : { base : testTools },
+                }
+            /file>,
+            <gen
+                description = "Xapi - API Code Generator"
+                requires = {
+                    external : "net.wti.core:xapi-lang-core:${->version}",
+                    project : [
+                        { inject : jre },
+                        ":xapi-lang-dev",
+                        io,
+                        ":dev:javac",
+                        "dev:scanner"
+                    ],
+                    @transitive
+                    external : [
+                        "net.wti.core:xapi-fu:$version",
+                        "net.wti.core:xapi-lang-core:$version",
+                    ],
+                    @transitive(test)
+                    external : [
+                        "junit:junit:4.12",
+                        "org.assertj:assertj-core-java8:1.0.0m1",
+                    ],
+                }
+            /gen>,
+            <shell
+                description = "Xapi - Command line interface."
+                requires = {
+                    project : [
+                        io,
+                        collect,
+                        { process : jre },
+                        ":server:servlets",
+                        ":dev:file",
+                    ],
+                    @transitive(test)
+                    project : {
+                        base : testTools,
+                        inject : jre,
+                    },
+                }
+            /shell>,
+            <dist
+                description = "Xapi - Distribution generator"
+                requires = {
+                    project : [
+                        ":server:vertx",
+                        "xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx",
+                        ":dev:file",
+                        ":dev:template",
+                        ":dev:shell",
+                        ":dev:scanner",
+                        ":dev:maven",
+                        ":server:gen",
+                        { inject : jre },
+                    ],
+                    external : [
+                        "net.wti.core:xapi-gen:$version",
+                    ],
+                    @transitive(test)
+                    project : {
+                        base : testTools,
+                    },
+                }
+            /dist>,
+            <uber
+                description = "Xapi - Dev uber jar"
+                requires = {
+                    external : [
+                        "net.wti.core:xapi-gen:$version",
+                        "javax.inject:javax.inject:1:sources",
+                    ],
+                    project : [
+                        ":server:vertx",
+                        "xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx",
+                        {
+                            inject : jre,
+                            process : jre,
+                            gwtc : api,
+                            gwtc : gwtCompiler,
+                        },
+                        ":dev:file",
+                        ":dev:shell",
+                        ":dev:scanner",
+                        ":dev:maven",
+                        ":server:gen",
+                    ],
+                    @transitive(test)
+                    project : { base : testTools },
+                }
+            /uber>,
+        ],
+        multiplatform : [
+            <javac
+                inherit = false
+                multiplatform = true
+            />
+        ],
+    }
     projects = [
         <template
             requires = {

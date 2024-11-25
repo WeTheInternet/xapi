@@ -1,0 +1,10 @@
+import org.gradle.internal.jvm.Jvm
+
+Jvm jvm = Jvm.current()
+File tools = jvm.toolsJar
+if (tools) {
+    dependencies {
+        compileOnly files(tools)
+        testImplementation files(tools)
+    }
+}

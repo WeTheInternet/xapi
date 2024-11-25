@@ -35,12 +35,12 @@ dependencies {
   implementation project(path: ":gwtc-api")
   implementation project(path: ":inject-main")
   implementation project(path: ":dev:maven-main")
-  compileOnly project(path: ":xapi-dev-parent:xapi-dev-javac")
+  compileOnly project(path: ":dev:javac-main")
   compileOnly project(path: ":base-api")
   annotationProcessor project(path: ":ui:generator")
   annotationProcessor project(path: ":inject-jre")
   annotationProcessor project(path: ":base-api")
-  annotationProcessor project(path: ":xapi-dev-parent:xapi-dev-javac")
+  annotationProcessor project(path: ":dev:javac-main")
   testImplementation project(path: ":gwtc-gwtTestTools")
   implementation "net.wetheinter:gwt-user:2.8.0"
 }

@@ -38,7 +38,7 @@ dependencies {
   api project(path: ":base-gwt")
   api project(path: ":ui:html-gwt")
   implementation project(path: ":io-main")
-  implementation project(path: ":xapi-dev-parent:xapi-dev-javac")
+  implementation project(path: ":dev:javac-main")
   api "net.wetheinter:gwt-elemental:2.8.0"
   implementation "com.google.elemental2:elemental2-dom:1.0.0-RC1"
   implementation "net.wetheinter:gwt-user:2.8.0"

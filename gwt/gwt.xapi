@@ -18,7 +18,7 @@
                         },
                         project : {
                             io : main,
-                            "xapi-dev-parent:xapi-dev-javac" : main,
+                            ":dev:javac" : main,
                         },
                         @transitive
                         external : [

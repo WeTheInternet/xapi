@@ -1,0 +1,17 @@
+import org.gradle.internal.jvm.Jvm
+
+Jvm jvm = Jvm.current()
+if (jvm.javaVersion.isJava8()) {
+    File tools = jvm.toolsJar
+    if (tools) {
+        dependencies {
+            compileOnly files(tools)
+            testImplementation files(tools)
+        }
+    }
+}
+
+tasks.named('test', Test).configure {
+    Test t ->
+        t.maxHeapSize = "2G"
+}

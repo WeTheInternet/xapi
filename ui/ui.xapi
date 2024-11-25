@@ -214,7 +214,7 @@
                 requires = {
                     project : [
                         ":ui:service",
-                        "xapi-dev-parent:xapi-dev-javac",
+                        ":dev:javac",
                     ],
                     @transitive
                     project : ":xapi-lang-dev",

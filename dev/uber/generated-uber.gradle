@@ -1,0 +1,138 @@
+import org.gradle.api.tasks.SourceSet;
+
+// GenInclude buildscript from file:///opt/xapi/dev/uber/src/gradle/main/buildscript
+import com.github.jengelman.gradle.plugins.shadow.internal.DependencyFilter
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        //mavenLocal()
+        //maven {
+        //    name "plugins"
+        //    url "https://plugins.gradle.org/m2"
+        //}
+    }
+    dependencies {
+        if (gradle.gradleVersion.startsWith("5")) {
+            classpath "com.github.jengelman.gradle.plugins:shadow:5.2.0"
+        } else {
+            // this is a hacked version where we allow any gradle version and build in java 8
+            classpath "com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:8.3.5-SNAPSHOT"
+        }
+    }
+}
+ext.xapiModern = 'true'
+// GenInclude body.start from file:///opt/xapi/dev/uber/src/gradle/main/body.start
+//plugins.apply "com.github.johnrengelman.shadow"
+//if (gradle.gradleVersion.startsWith("5")) {
+//    plugins.apply "com.github.johnrengelman.shadow"
+//} else {
+//    plugins.apply "java-library"
+//    plugins.apply "com.gradleup.shadow"
+//}
+
+setProperty("xapi.main.component", "shadow")
+apply from: "$rootDir/gradle/xapi-env.gradle"
+
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+plugins.apply javaPlugin
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/uber/src/main/java")
+main.resources.srcDir("$rootDir/dev/uber/src/main/resources")
+
+dependencies {
+  implementation project(path: ":server:vertx")
+  implementation project(path: ":xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx")
+  implementation project(path: ":inject-jre")
+  implementation project(path: ":process-jre")
+  implementation project(path: ":gwtc-api")
+  implementation project(path: ":gwtc-gwtCompiler")
+  implementation project(path: ":dev:file-main")
+  implementation project(path: ":dev:shell")
+  implementation project(path: ":dev:scanner-main")
+  implementation project(path: ":dev:maven-main")
+  implementation project(path: ":server:gen-main")
+  testImplementation project(path: ":base-testTools")
+  implementation "net.wti.core:xapi-gen:$version"
+  implementation "javax.inject:javax.inject:1:sources"
+}
+
+
+configurations {
+  mainOut
+}
+// GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/dev/uber/src/gradle/main/body.end
+tasks.withType(Test).configureEach {
+    Test t ->
+        t.maxHeapSize("4G")
+        t.forkEvery(1)
+        t.maxParallelForks(4)
+}
+
+tasks.named('jar', Jar).configure {
+    Jar j ->
+        j.archiveClassifier.set "default"
+}
+
+tasks.named("shadowJar", ShadowJar).configure {
+    ShadowJar jar ->
+        jar.archiveClassifier.set(null)
+        jar.zip64=true
+        jar.minimize {
+            DependencyFilter filter ->
+                filter.exclude {
+                    ResolvedDependency res ->
+                        if (res.moduleGroup =~ "(" +
+                                "org.assert|" +
+                                "junit|" +
+                                "org.junit|" +
+                                "org.hamcrest|" +
+                                "javax.enterprise|" +
+                                "javax.servlet|" +
+                                "commons-coded|" +
+                                "com.google.guava" +
+                                ").*") {
+                            return false
+                        }
+                        switch(res.moduleName) {
+                            case "gwt-dev":
+                            case "gwt-user":
+                            case "elemental":
+                                return false
+                        }
+//                        println ""
+//                        println res.name
+//                        println res.moduleName
+                        return true
+                }
+        }
+}
+artifacts {
+    archives shadowJar
+}
+assemble.dependsOn(shadowJar)
+// Done generating buildfile for :dev:uber at file://$rootDir/dev/uber/generated-uber.gradle

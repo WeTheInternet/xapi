@@ -41,11 +41,11 @@ dependencies {
   api project(path: ":server:servlets")
   api project(path: ":ui:generator")
   api project(path: ":ui:service-main")
-  compileOnly project(path: ":xapi-dev-parent:xapi-dev-javac")
+  compileOnly project(path: ":dev:javac-main")
   testImplementation project(path: ":dev:scanner-main")
   testImplementation project(path: ":collect-jre")
   testImplementation project(path: ":model-jre")
-  testImplementation project(path: ":xapi-dev-parent:xapi-dev-javac")
+  testImplementation project(path: ":dev:javac-main")
   testImplementation project(path: ":server:gen-sample")
   implementation "net.wti.core:xapi-lang-core:$version"
   implementation "net.wetheinter:gwt-user:2.8.0"

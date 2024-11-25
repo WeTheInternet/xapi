@@ -389,7 +389,7 @@ public class CompilerSettings implements Rethrowable {
     public String getProcessorPath() {
         if (processorPath == null) {
             try {
-                final File f = new File(root, "target/xapi-dev-javac-" + X_Namespace.XAPI_VERSION + ".jar");
+                final File f = new File(root, "src/main/build/libs/xapi-dev-javac-" + X_Namespace.XAPI_VERSION + ".jar");
                 if (f.exists()) {
                     processorPath = f.getCanonicalPath();
                 }

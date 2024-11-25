@@ -18,17 +18,8 @@ if (gradle.getParent() == null || gradle.getParent().getParent() == null) {
     String compName = gradle.getParent().getParent().getStartParameter().getCurrentDir().getName()
     group = "$compName-xapi-buildSrc"
 }
-if (System.getProperty('idea.version')) {
-    // modern... intellij is dumb and won't use custom version of gradle correctly
-    setProperty('xapiModern', 'true')
-} else {
-    // legacy
-    apply plugin: 'xapi-require'
-    xapiSchema {
-        platforms { main }
-        archives { main }
-    }
-}
+
+setProperty('xapiModern', 'true')
 
 String v = version
 

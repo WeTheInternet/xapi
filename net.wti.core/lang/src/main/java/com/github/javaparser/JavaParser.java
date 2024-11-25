@@ -392,7 +392,6 @@ public final class JavaParser {
         if (X_String.isEmptyTrimmed(src)) {
             return null;
         }
-        PathDebugger.debugPath(path);
         UiContainerExpr result = null;
         StringReader stringReader = new StringReader(src);
         final ASTParser parser = new ASTParser(stringReader);
@@ -410,6 +409,7 @@ public final class JavaParser {
                 result = merge(result, newElement);
             } while (parser.jj_input_stream.available > 0);
         } catch (IOException ignored) {
+            PathDebugger.debugPath(path);
         } finally {
             stringReader.close();
         }

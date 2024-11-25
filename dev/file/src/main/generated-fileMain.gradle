@@ -34,6 +34,14 @@ dependencies {
   implementation project(path: ":inject-main")
   implementation project(path: ":util-main")
   testImplementation project(path: ":base-testTools")
+  implementation project(path: ":io-main")
+  implementation project(path: ":inject-main")
+  implementation project(path: ":util-main")
+  testImplementation project(path: ":base-testTools")
+  implementation project(path: ":io-main")
+  implementation project(path: ":inject-main")
+  implementation project(path: ":util-main")
+  testImplementation project(path: ":base-testTools")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :dev:file at file://$rootDir/dev/file/src/main/generated-fileMain.gradle

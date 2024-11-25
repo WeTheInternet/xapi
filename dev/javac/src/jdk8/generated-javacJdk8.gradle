@@ -29,13 +29,21 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/javac/src/jdk8/java")
 
 dependencies {
-  api project(path: ":gwtc-compiler")
-  api "junit:junit:4.13"
-  api "net.wetheinter:gwt-user:2.8.0"
-  api "net.wetheinter:gwt-dev:2.8.0"
-  api project(path: ":gwtc-testTools")
+  api project(path: ":dev:javac-main")
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtTestTools/generated-gwtcGwtTestTools.gradle
+// GenInclude body.end from file:///opt/xapi/dev/javac/src/gradle/jdk8/body.end
+import org.gradle.internal.jvm.Jvm
+
+Jvm jvm = Jvm.current()
+File tools = jvm.toolsJar
+if (tools) {
+    dependencies {
+        compileOnly files(tools)
+        testImplementation files(tools)
+    }
+}
+// Done generating buildfile for :dev:javac at file://$rootDir/dev/javac/src/jdk8/generated-javacJdk8.gradle

@@ -1,0 +1,48 @@
+<xapi-schema
+    description = "Xapi - Java compiler plugins (jdk8 and jdk17 targeted)"
+    inherit = false
+    modules = [ main ]
+    platforms = [
+        <main
+            modules = [
+                <main
+                    requires = {
+                        @transitive
+                        external : [
+                            "net.wti.core:xapi-fu:${version}",
+                            "net.wti.core:xapi-lang-core:${version}",
+                        ],
+                        @transitive
+                        project : [
+                            ":core:scope",
+                            ":collect",
+                            ":util",
+                            ":dev:file",
+                            {
+                                io : api,
+                                inject : api,
+                            },
+                        ],
+                        project : {
+                            // implementation scope
+                            io : jre, inject : jre
+                        },
+                        @transitive(compile_only)
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        @transitive(test)
+                        external : [
+                            "net.wetheinter:gwt-dev:2.8.0",
+                            "net.wetheinter:gwt-user:2.8.0",
+                            "net.wetheinter:gwt-elemental:2.8.0",
+                            "org.assertj:assertj-core-java8:1.0.0m1",
+                        ],
+                        @transitive(test)
+                        project : { base : testTools },
+                    }
+                /main>
+            ]
+        /main>,
+        <jdk8 replaces=main />,
+        <jdk17 replaces=main />,
+    ]
+/xapi-schema>

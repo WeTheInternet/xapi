@@ -30,11 +30,20 @@
                 <compiler
                     requires = {
                         internal : api,
+                        @transitive
+                        project : {
+                            io : api,
+                            base : main,
+                            log : api,
+                        },
                         project : {
                             inject : jre,
+                            process : jre,
+                            io : jre,
                             "dev:api" : main,
                             model : main,
-                            ":xapi-dev-parent:xapi-dev-shell" : main,
+                            ":dev:shell" : main,
+                            ":dev:file" : main,
                         },
                         @transitive(compile_only)
                         project : { base : gwtTestTools },
@@ -58,6 +67,8 @@
             modules = [
                 <testTools
                     requires = {
+                        @transitive
+                        external : "junit:junit:4.13",
                         @transitive
                         project : { ":gwtc-compiler" : main },
                         @transitive
@@ -91,7 +102,7 @@
                         },
                         @transitive(compile_only)
                         project : {
-                            ":xapi-dev-parent:xapi-dev-javac" : main,
+                            ":dev:javac" : main,
                             base : api,
                         },
                         @transitive(annotation_processor)
@@ -99,7 +110,7 @@
                             ":ui:generator" : gwt,
                             "inject" : "jre",
                             base : api,
-                            ":xapi-dev-parent:xapi-dev-javac" : main,
+                            ":dev:javac" : main,
                         },
                         external: [
                             "net.wetheinter:gwt-user:2.8.0",

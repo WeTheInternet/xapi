@@ -17,6 +17,7 @@
                 /spi>,
                 <main
                     requires = {
+                        internal : api,
                         external : "javax.inject:javax.inject:1",
                         external : "javax.annotation:javax.annotation-api:1.2",
                         @transitive(test)
