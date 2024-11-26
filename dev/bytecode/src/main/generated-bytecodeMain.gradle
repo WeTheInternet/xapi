@@ -31,6 +31,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/bytecode/src/main/java")
 main.resources.srcDir("$rootDir/dev/bytecode/src/main/resources")
+test.java.srcDir("$rootDir/dev/bytecode/src/test/java")
+test.resources.srcDir("$rootDir/dev/bytecode/src/test/resources")
 
 dependencies {
   api project(path: ":base-main")
@@ -39,6 +41,7 @@ dependencies {
   implementation project(path: ":inject-main")
   implementation project(path: ":log-api")
   api project(path: ":core:reflect-main")
+  testImplementation project(path: ":base-testTools")
   api "net.wti.core:xapi-gen:$version"
 }
 // GenEnd XapiSettingsPlugin

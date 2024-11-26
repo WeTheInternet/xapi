@@ -1,7 +1,3 @@
-plugins {
-    id "com.github.johnrengelman.shadow" version "5.2.0"
-}
-
 // This buildscript was generated as a place for you to manually configure your subproject as you wish.
 //
 // You can safely delete this file, and a new one will be generated for you in its place

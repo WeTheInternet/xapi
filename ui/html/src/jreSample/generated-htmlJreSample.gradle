@@ -32,7 +32,6 @@ test.resources.setSrcDirs([]);
 
 dependencies {
   api project(path: ":ui:html-sample")
-  api project(path: ":ui:html-jre")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui:html at file://$rootDir/ui/html/src/jreSample/generated-htmlJreSample.gradle

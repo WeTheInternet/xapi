@@ -9,13 +9,15 @@ tasks.named('jar', Jar).configure {
     Jar j ->
         j.archiveClassifier.set "default"
 }
+//import com.github.jengelman.gradle.plugins.shadow.internal.DependencyFilter
+//import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-tasks.named("shadowJar", ShadowJar).configure {
-    ShadowJar jar ->
+tasks.named("shadowJar").configure {
+    jar ->
         jar.archiveClassifier.set(null)
         jar.zip64=true
         jar.minimize {
-            DependencyFilter filter ->
+            filter ->
                 filter.exclude {
                     ResolvedDependency res ->
                         if (res.moduleGroup =~ "(" +

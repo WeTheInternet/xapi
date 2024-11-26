@@ -12,7 +12,9 @@
                         @transitive
                         external : "net.wti.core:xapi-fu:$version",
                         project: ":core:reflect",
-                        project: { ":base" : api }
+                        project: { ":base" : api },
+                        @transitive(test)
+                        internal : testTools,
                     }
                 /main>,
                 <testTools

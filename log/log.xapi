@@ -11,18 +11,16 @@
                     @transitive(false)
                     external: "net.wetheinter:gwt-dev:2.8.0",
                     @transitive(false)
-                    external: "javax.inject:javax.inject:1"
+                    external: "javax.inject:javax.inject:1",
                 }
             /api>,
             <main
-                include = [ api ]
-            /main>,
-            <test
-                include = [ main ]
-                require = {
-                    external: "junit:junit:4.13"
+                include = api
+                requires = {
+                    @transitive(test)
+                    external: "junit:junit:4.13",
                 }
-            /test>
+            /main>,
         ]
     /main> ]
 /xapi-schema>

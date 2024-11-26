@@ -191,7 +191,7 @@ public class XapiRequirePlugin implements Plugin<Project> {
                 String[] coords = coord.split(":");
                 assert coords.length <3 : "xapi-coordinate paths cannot have more than two:segments. You sent " + coord;
 
-                self.getLogger().quiet("Including project {} into arch {} with coordinates {}", projName, arch.getPath(), coord);
+                self.getLogger().info("Including project {} into arch {} with coordinates {}", projName, arch.getPath(), coord);
                 // If there is 1 or fewer requested coordinates, the platform is default platform ("main")...
                 String platName = coords.length < 2 ? reg.getPlatform() == null ? arch.platform().getName() : arch.getDefaultPlatform() : coords[0];
                 // If there are 0 coordinates, the module is default module ("main"), otherwise, module is the last item

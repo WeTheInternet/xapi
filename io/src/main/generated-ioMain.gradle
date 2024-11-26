@@ -30,6 +30,7 @@ main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/io/src/main/java")
+test.java.srcDir("$rootDir/io/src/test/java")
 
 dependencies {
   api project(path: ":base-main")

@@ -28,11 +28,15 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/ui/autoui/src/main/java")
 main.resources.srcDir("$rootDir/ui/autoui/src/main/resources")
+test.java.srcDir("$rootDir/ui/autoui/src/test/java")
+test.resources.srcDir("$rootDir/ui/autoui/src/test/resources")
 
 dependencies {
   implementation project(path: ":util-main")
   implementation project(path: ":collect-main")
   implementation project(path: ":ui:service-main")
+  testImplementation project(path: ":base-testTools")
+  testImplementation project(path: ":ui:autoui-sample")
   implementation "javax.inject:javax.inject:1:sources"
 }
 // GenEnd XapiSettingsPlugin

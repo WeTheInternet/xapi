@@ -28,5 +28,7 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/src/main/java")
 main.resources.srcDir("$rootDir/dev/src/main/resources")
+test.java.srcDir("$rootDir/dev/src/test/java")
+test.resources.srcDir("$rootDir/dev/src/test/resources")
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :dev at file://$rootDir/dev/src/main/generated-devMain.gradle

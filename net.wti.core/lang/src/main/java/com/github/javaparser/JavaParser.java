@@ -383,7 +383,7 @@ public final class JavaParser {
 
     private static interface PathDebugger {
         static void debugPath(String path) {
-            Log.defaultLogger().log(JavaParser.class, LogLevel.INFO, "Parsing file", path);
+            Log.defaultLogger().log(JavaParser.class, LogLevel.TRACE, "Parsing file", path);
         }
     }
 
@@ -409,7 +409,6 @@ public final class JavaParser {
                 result = merge(result, newElement);
             } while (parser.jj_input_stream.available > 0);
         } catch (IOException ignored) {
-            PathDebugger.debugPath(path);
         } finally {
             stringReader.close();
         }

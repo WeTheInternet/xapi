@@ -7,7 +7,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 buildscript {
     repositories {
         gradlePluginPortal()
-        //mavenLocal()
+        mavenLocal()
         //maven {
         //    name "plugins"
         //    url "https://plugins.gradle.org/m2"
@@ -18,7 +18,7 @@ buildscript {
             classpath "com.github.jengelman.gradle.plugins:shadow:5.2.0"
         } else {
             // this is a hacked version where we allow any gradle version and build in java 8
-            classpath "com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:8.3.5-SNAPSHOT"
+            classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.5"
         }
     }
 }
@@ -31,9 +31,12 @@ plugins.apply "java-library"
 //if (gradle.gradleVersion.startsWith("5")) {
 //    plugins.apply "com.github.johnrengelman.shadow"
 //} else {
-//    plugins.apply "java-library"
-//    plugins.apply "com.gradleup.shadow"
 //}
+
+plugins.apply "java-library"
+plugins.apply "maven-publish"
+//plugins.apply "com.gradleup.shadow"
+plugins.apply com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
 
 setProperty("xapi.main.component", "shadow")
 apply from: "$rootDir/gradle/xapi-env.gradle"
@@ -65,6 +68,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/uber/src/main/java")
 main.resources.srcDir("$rootDir/dev/uber/src/main/resources")
+test.java.srcDir("$rootDir/dev/uber/src/test/java")
+test.resources.srcDir("$rootDir/dev/uber/src/test/resources")
 
 dependencies {
   api project(path: ":dev:javac-main")
@@ -80,6 +85,7 @@ dependencies {
   api project(path: ":dev:maven-main")
   api project(path: ":server:gen-main")
   testImplementation project(path: ":base-testTools")
+  testImplementation project(path: ":io-jre")
   implementation "net.wti.core:xapi-gen:$version"
   implementation "javax.inject:javax.inject:1:sources"
 }
@@ -101,13 +107,15 @@ tasks.named('jar', Jar).configure {
     Jar j ->
         j.archiveClassifier.set "default"
 }
+//import com.github.jengelman.gradle.plugins.shadow.internal.DependencyFilter
+//import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-tasks.named("shadowJar", ShadowJar).configure {
-    ShadowJar jar ->
+tasks.named("shadowJar").configure {
+    jar ->
         jar.archiveClassifier.set(null)
         jar.zip64=true
         jar.minimize {
-            DependencyFilter filter ->
+            filter ->
                 filter.exclude {
                     ResolvedDependency res ->
                         if (res.moduleGroup =~ "(" +

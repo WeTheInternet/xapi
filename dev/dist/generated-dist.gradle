@@ -31,6 +31,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/dist/src/main/java")
 main.resources.srcDir("$rootDir/dev/dist/src/main/resources")
+test.java.srcDir("$rootDir/dev/dist/src/test/java")
+test.resources.srcDir("$rootDir/dev/dist/src/test/resources")
 
 dependencies {
   api project(path: ":dev:scanner-main")

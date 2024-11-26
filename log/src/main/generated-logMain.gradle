@@ -30,8 +30,11 @@ main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/log/src/main/java")
+test.java.srcDir("$rootDir/log/src/test/java")
+test.resources.srcDir("$rootDir/log/src/test/resources")
 
 dependencies {
+  testImplementation "junit:junit:4.13"
   api project(path: ":log-api")
 }
 // GenEnd XapiSettingsPlugin

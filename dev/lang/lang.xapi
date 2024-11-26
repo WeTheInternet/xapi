@@ -27,7 +27,7 @@
                             collect : main,
                             ":core:reflect" : main,
                         },
-                        @transitive(runtime)
+                        @transitive(runtime_only)
                         project : { collect : jre },
                         external : [
                             "net.wti.core:xapi-fu:${version}",

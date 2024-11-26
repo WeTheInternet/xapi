@@ -28,6 +28,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/file/src/main/java")
 main.resources.srcDir("$rootDir/dev/file/src/main/resources")
+test.java.srcDir("$rootDir/dev/file/src/test/java")
+test.resources.srcDir("$rootDir/dev/file/src/test/resources")
 
 dependencies {
   implementation project(path: ":io-main")

@@ -28,6 +28,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/server/vertx/src/main/java")
 main.resources.srcDir("$rootDir/server/vertx/src/main/resources")
+test.java.srcDir("$rootDir/server/vertx/src/test/java")
+test.resources.srcDir("$rootDir/server/vertx/src/test/resources")
 
 dependencies {
   implementation project(path: ":server:gen-main")

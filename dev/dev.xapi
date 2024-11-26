@@ -123,7 +123,10 @@
                         ":server:gen",
                     ],
                     @transitive(test)
-                    project : { base : testTools },
+                    project : {
+                        base : testTools,
+                        io : jre,
+                    },
                 }
             /uber>,
         ],
@@ -166,7 +169,9 @@
                 project : collect,
                 project : [ util, inject, { log : api } ],
                 @transitive
-                project : ":core:reflect"
+                project : ":core:reflect",
+                @transitive(test)
+                project : { base : testTools },
             }
         /bytecode>,
         <file

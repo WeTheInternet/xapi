@@ -8,10 +8,6 @@
         <spi />,
         <main include = [ api, spi ] />,
         <testTools include = "main" published = true />,
-        <sample
-            include = "main"
-            force = true
-            published = true />,
     ]
 
     projects = {
@@ -156,8 +152,13 @@
                                 requires = {
                                     project : [ util, collect, ":ui:service" ],
                                     external : "javax.inject:javax.inject:1:sources",
+                                    @transitive(test)
+                                    project : { base : testTools },
+                                    @transitive(test)
+                                    internal : sample,
                                 }
                             /main>,
+                            <sample includes = main />,
                         ]
                     /main>,
                     <gwt
@@ -174,6 +175,7 @@
                                         ":model" : gwt,
                                         ":inject" : jre,
                                     },
+                                    external : "javax.annotation:javax.annotation-api:1.3.2",
                                     @transitive(compile_only)
                                     external : [
                                         "net.wetheinter:gwt-dev:2.8.0",
@@ -206,6 +208,8 @@
                             <main
                                 requires = {
                                     project : [ collect, ":ui:autoui", ":ui:service", util ],
+                                    @transitive
+                                    project : { base : api },
                                     @transitive(compile_only)
                                     external : "net.wetheinter:gwt-user:2.8.0",
 
@@ -215,11 +219,15 @@
                                         base : testTools,
                                     },
                                     @transitive(test)
-                                    external : "junit:junit:4.12",
+                                    external : [
+                                        "junit:junit:4.12",
+                                        "net.wetheinter:gwt-user:2.8.0",
+                                    ],
                                 }
                             /main>,
                             <sample requires = {
-                                    project : ":ui:autoui"
+                                internal : main,
+                                project : ":ui:autoui",
                             } /sample>
                         ]
                     /main>,
@@ -249,10 +257,12 @@
                                         ":ui:autoui" : sample,
                                         base : testTools,
                                     },
+                                    @transitive(test)
                                     external : [
                                         "net.sourceforge.htmlunit:htmlunit:2.19",
                                         "net.wetheinter:gwt-dev:2.8.0",
                                         "net.wetheinter:gwt-codeserver:2.8.0",
+                                        "net.wetheinter:gwt-user:2.8.0",
                                     ],
                                 }
                             /main>

@@ -2,8 +2,8 @@ SourceSet java9 = sourceSets.maybeCreate("java9")
 
 if (JavaVersion.current().isJava9Compatible()) {
     java9.java.srcDir("src/main/java9")
-    dependencies.add(java9.compileOnlyConfigurationName, project.files(java.runtimeClasspath))
-    dependencies.add(java9.compileOnlyConfigurationName, project.files(java.compileClasspath))
+    dependencies.add(java9.compileOnlyConfigurationName, project.files(configurations.runtimeClasspath))
+    dependencies.add(java9.compileOnlyConfigurationName, project.files(configurations.compileClasspath))
     gradle.projectsEvaluated {
         tasks.named('jar', Jar).configure({ jar ->
             jar.manifest.attributes['Multi-Release'] = 'true'

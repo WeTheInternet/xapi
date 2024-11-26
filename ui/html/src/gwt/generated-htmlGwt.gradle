@@ -46,9 +46,10 @@ dependencies {
   compileOnly "net.wetheinter:gwt-dev:2.8.0"
   compileOnly "net.wetheinter:gwt-codeserver:2.8.0"
   compileOnly "net.wetheinter:gwt-user:2.8.0"
-  implementation "net.sourceforge.htmlunit:htmlunit:2.19"
-  implementation "net.wetheinter:gwt-dev:2.8.0"
-  implementation "net.wetheinter:gwt-codeserver:2.8.0"
+  testImplementation "net.sourceforge.htmlunit:htmlunit:2.19"
+  testImplementation "net.wetheinter:gwt-dev:2.8.0"
+  testImplementation "net.wetheinter:gwt-codeserver:2.8.0"
+  testImplementation "net.wetheinter:gwt-user:2.8.0"
   api project(path: ":ui:html-main")
 }
 // GenEnd XapiSettingsPlugin

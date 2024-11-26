@@ -31,12 +31,14 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/util/src/main/java")
 main.resources.srcDir("$rootDir/util/src/main/resources")
+test.java.srcDir("$rootDir/util/src/test/java")
 
 dependencies {
   implementation project(path: ":collect-main")
   api project(path: ":log-api")
   implementation project(path: ":core:reflect-main")
   implementation project(path: ":base-api")
+  testImplementation project(path: ":util-testTools")
   api "net.wti.core:xapi-fu:$version"
 }
 // GenEnd XapiSettingsPlugin

@@ -28,6 +28,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/core/event/src/main/java")
 main.resources.srcDir("$rootDir/core/event/src/main/resources")
+test.java.srcDir("$rootDir/core/event/src/test/java")
+test.resources.srcDir("$rootDir/core/event/src/test/resources")
 
 dependencies {
   implementation project(path: ":collect-main")

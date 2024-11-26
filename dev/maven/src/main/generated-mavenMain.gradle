@@ -44,6 +44,9 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/maven/src/main/java")
 main.resources.srcDir("$rootDir/dev/maven/src/main/resources")
+test.java.srcDir("$rootDir/dev/maven/src/test/java")
+test.resources.srcDir("$rootDir/dev/maven/src/test/resources")
+test.java.srcDir("$rootDir/dev/maven/src/test/groovy")
 
 dependencies {
   api project(path: ":dev:bytecode-main")

@@ -19,7 +19,7 @@
                     requires = {
                         internal : api,
                         external : "javax.inject:javax.inject:1",
-                        external : "javax.annotation:javax.annotation-api:1.2",
+                        external : "javax.annotation:javax.annotation-api:1.3.2",
                         @transitive(test)
                         internal: testTools
                     }
@@ -29,7 +29,7 @@
                         @transitive
                         project : [ { ":inject" : "api" } , { ":util" : "main:main" } ],
                         @transitive
-                        external : "junit:junit:4.12"
+                        external : "junit:junit:4.13"
                     }
                 /testTools>,
             ]

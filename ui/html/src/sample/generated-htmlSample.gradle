@@ -1,9 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
-
-plugins.apply "java-library"
-// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -33,7 +30,7 @@ main.java.srcDir("$rootDir/ui/html/src/sample/java")
 
 dependencies {
   implementation project(path: ":ui:autoui-sample")
-  api project(path: ":ui:html-main")
+  implementation project(path: ":ui:html-main")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui:html at file://$rootDir/ui/html/src/sample/generated-htmlSample.gradle

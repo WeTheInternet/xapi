@@ -3,13 +3,7 @@ plugins {
     id 'idea'
 }
 
-afterEvaluate {
-    plugins.apply 'xapi-schema'
-}
-
-import net.wti.gradle.internal.api.ProjectView
 import net.wti.gradle.system.spi.GradleServiceFinder
-import org.gradle.internal.jvm.Jvm
 
 group = 'net.wetheinter'
 
@@ -17,7 +11,7 @@ apply from: "$rootDir/gradle/xapi-env.gradle"
 
 version = findProperty('xapiVersion')
 
-tasks.create 'publishRequired', { req ->
+tasks.register 'publishRequired', { req ->
     allprojects {
         def pub = tasks.findByName('xapiPublish')
         if (pub) {
@@ -53,18 +47,7 @@ gradle.beforeProject {
             p.group = 'net.wetheinter'
         }
         p.version = findProperty('xapiVersion')
-        final boolean isModern = p.findProperty('xapiModern') == 'true' ||
-                (
-                        p.file('gradle.properties').exists() &&
-                        p.file('gradle.properties').text.contains("xapiModern=true")
-                )
-        if (isModern) {
-            p.logger.info("Modern project: {}", p.path)
-        } else {
-            p.logger.quiet("Legacy project: {}", p.path)
-            p.plugins.apply 'idea'
-            p.plugins.apply 'xapi-schema'
-        }
+
         p.repositories {
             maven {
                 name = 'xapiExternal'
@@ -111,36 +94,16 @@ gradle.beforeProject {
                         test.logger.info "Could not find $compileForTest in $project.path"
                     }
             }
-
-            if (path != ':schema' && !isModern) {
-
-                plugins.apply 'xapi-schema'
-                plugins.apply 'maven-publish'
-                plugins.apply 'xapi-publish'
-
-
-                tasks.create 'testJar', Jar, {
-                    Jar jar ->
-                        jar.archiveClassifier.set 'test'
-                        jar.from sourceSets.test.output
-                }
-//        Gwt.maybeInstall(p)
-                File tools = Jvm.current().toolsJar
-                if (tools) {
-                    p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
-                            p.files(tools)
-                    p.dependencies.add JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME,
-                            p.files(tools)
-                }
-//                artifacts {
-//                    testRuntime testJar
-//                }
-            }
         return
     }
 }
 
-GradleServiceFinder.getService(project).configureWrapper(project)
+//GradleServiceFinder.getService(project).configureWrapper(project)
+
+wrapper {
+    gradleVersion = "8.9"
+    distributionType = 'ALL'
+}
 
 idea {
     module {

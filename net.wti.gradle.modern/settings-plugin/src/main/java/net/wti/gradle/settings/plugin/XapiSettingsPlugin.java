@@ -193,10 +193,10 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
                 if (project.isMultiplatform()) {
-                    logger.quiet("Skipping multiplatorm root {} for project {}; virtual? {}", gradlePath, project, project.isVirtual());
+                    logger.info("Skipping multiplatorm root {} for project {}; virtual? {}", gradlePath, project, project.isVirtual());
                 } else {
 //                    gradlePath += "-main";
-                    logger.quiet("Including {} for project {}; multiplatform? {} virtual? {}", gradlePath, project, project.isMultiplatform(), project.isVirtual());
+                    logger.info("Including {} for project {}; multiplatform? {} virtual? {}", gradlePath, project, project.isMultiplatform(), project.isVirtual());
                     rememberProject(settings, gradlePath);
                     settings.include(gradlePath);
                     if (dir.isDirectory()) {
@@ -230,7 +230,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 String modKey = project.getName() + (project.isMultiplatform() ? "-" + key : "");
                 String projectName = project.isMultiplatform() ? gradlePrefix + "-" + key : gradlePrefix;
                 String moduleSourcePath = "src" + File.separator + key;
-                String moduleTestSourcePath = "src" + File.separator + key + "Test";
+                String moduleTestSourcePath = "src" + File.separator + (project.isMultiplatform() && !"main".equals(key) ? key + "Test" : "test");
                 String gradleSourcePath = project.isMultiplatform() ? moduleSourcePath : "";
                 String buildscriptSrcPath = "src/gradle/" + key;
                 final File gradleSourceDir = new File(aggregatorRoot, gradleSourcePath);
@@ -247,7 +247,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             logger.trace("Not live: {}@{}-{}", project.getPathIndex(), plat, mod);
                         }
                     } else { // isLive == true
-                        logger.quiet("Live: {}@{}-{}", project.getPathIndex(), plat, mod);
+                        logger.info("Live: {}@{}-{}", project.getPathIndex(), plat, mod);
                         final File userBuildFile = new File(gradleSourceDir, buildFileName);
                         final PlatformModule myPlatMod = pool.getPlatformModule(plat.getName(), mod.getName());
                         liveNames.add(userBuildFile.getPath() + " - " + projectName + "/" + moduleSourcePath
@@ -305,12 +305,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
 
                         if (project.isMultiplatform()) {
-                            view.getLogger().quiet("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
+                            view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
                             if (dryRun(view)) {
                                 view.getLogger().quiet("Dry run exiting early; skipping project creation for {} with build file {} for {}:{}", project.getPath(), userBuildFile.getAbsolutePath(), plat, mod);
                             } else {
 //                                if (project.isVirtual()) {
-                                view.getLogger().quiet("Adding multi-platform root {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
+                                view.getLogger().info("Adding multi-platform root {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
                                 rememberProject(settings, projectName);
                                 settings.include(projectName);
                                 final ProjectDescriptor proj = settings.findProject(projectName);
@@ -322,7 +322,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             }
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
-                            view.getLogger().quiet("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
+                            view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
                         }
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
@@ -692,7 +692,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 //            gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
             gradleProject.getGradle().projectsEvaluated(g->{
                 gradleProject.apply(o-> {
-                    gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
+                    gradleProject.getLogger().info("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
 //                    o.plugin(XapiParserPlugin.class);
                 });
             });
@@ -733,7 +733,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
             project.forAllPlatformsAndModules((plat, mod) -> {
                 if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-                    gradleProject.getLogger().quiet("Found multiplatform combination {}-{} for {} with gradle path {}",
+                    gradleProject.getLogger().info("Found multiplatform combination {}-{} for {} with gradle path {}",
                             plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
                     String suffix = PlatformModule.unparse(plat.getName(), mod.getName());
                     String path = project.getPathGradle() + "-" + suffix;
@@ -742,7 +742,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         logger.quiet("Making modern: " + path + " - " + gradleProject.getPath());
                         ext.add("xapiModern", "true");
                     } else {
-                        logger.quiet("Already modern: " + path);
+                        logger.info("Already modern: " + path);
                     }
                 }
             });
@@ -767,7 +767,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         path = path + ".kts";
                     }
                     final String finalPath = path;
-                    gradleProject.getLogger().quiet("{} is sourcing generated path {}", gradleProject.getPath(), finalPath);
+                    gradleProject.getLogger().info("{} is sourcing generated path {}", gradleProject.getPath(), finalPath);
 //                    gradleProject.apply(o-> {
 //                        o.from(finalPath);
 //                    });

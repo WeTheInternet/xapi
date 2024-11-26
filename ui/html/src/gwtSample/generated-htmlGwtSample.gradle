@@ -32,7 +32,6 @@ test.resources.setSrcDirs([]);
 
 dependencies {
   api project(path: ":ui:html-sample")
-  api project(path: ":ui:html-gwt")
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :ui:html at file://$rootDir/ui/html/src/gwtSample/generated-htmlGwtSample.gradle

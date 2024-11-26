@@ -31,6 +31,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/ui/generator/src/main/java")
 main.resources.srcDir("$rootDir/ui/generator/src/main/resources")
+test.java.srcDir("$rootDir/ui/generator/src/test/java")
+test.resources.srcDir("$rootDir/ui/generator/src/test/resources")
 
 dependencies {
   api project(path: ":ui:service-main")

@@ -31,6 +31,7 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 
 dependencies {
+  implementation project(path: ":ui:autoui-main")
   api project(path: ":ui:autoui-sample")
   api project(path: ":ui:autoui-gwt")
 }

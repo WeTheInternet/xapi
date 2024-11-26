@@ -28,6 +28,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/core/args/src/main/java")
 main.resources.srcDir("$rootDir/core/args/src/main/resources")
+test.java.srcDir("$rootDir/core/args/src/test/java")
+test.resources.srcDir("$rootDir/core/args/src/test/resources")
 
 dependencies {
   implementation "net.wti.core:xapi-fu:$version"

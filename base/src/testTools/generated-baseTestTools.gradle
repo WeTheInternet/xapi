@@ -35,7 +35,7 @@ main.resources.srcDir("$rootDir/base/src/testTools/resources")
 dependencies {
   api project(path: ":inject-api")
   api project(path: ":util-main")
-  api "junit:junit:4.12"
+  api "junit:junit:4.13"
   api project(path: ":base-main")
 }
 // GenEnd XapiSettingsPlugin
