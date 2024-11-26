@@ -51,7 +51,7 @@
                 <main
                     requires = {
                         project : { ":dev:scanner": main, util : main },
-                        @transitive("annotation_processor")
+                        @transitive(annotation_processor)
                         internal : "main:main",
                         @transitive(test)
                         external : "junit:junit:4.13",

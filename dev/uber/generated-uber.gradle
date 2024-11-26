@@ -23,6 +23,9 @@ buildscript {
     }
 }
 ext.xapiModern = 'true'
+
+plugins.apply "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenInclude body.start from file:///opt/xapi/dev/uber/src/gradle/main/body.start
 //plugins.apply "com.github.johnrengelman.shadow"
 //if (gradle.gradleVersion.startsWith("5")) {
@@ -64,17 +67,18 @@ main.java.srcDir("$rootDir/dev/uber/src/main/java")
 main.resources.srcDir("$rootDir/dev/uber/src/main/resources")
 
 dependencies {
-  implementation project(path: ":server:vertx")
-  implementation project(path: ":xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx")
-  implementation project(path: ":inject-jre")
-  implementation project(path: ":process-jre")
-  implementation project(path: ":gwtc-api")
-  implementation project(path: ":gwtc-gwtCompiler")
-  implementation project(path: ":dev:file-main")
-  implementation project(path: ":dev:shell")
-  implementation project(path: ":dev:scanner-main")
-  implementation project(path: ":dev:maven-main")
-  implementation project(path: ":server:gen-main")
+  api project(path: ":dev:javac-main")
+  api project(path: ":server:vertx")
+  api project(path: ":ui:javafx")
+  api project(path: ":inject-jre")
+  api project(path: ":process-jre")
+  api project(path: ":gwtc-api")
+  api project(path: ":gwtc-gwtCompiler")
+  api project(path: ":dev:file-main")
+  api project(path: ":dev:shell")
+  api project(path: ":dev:scanner-main")
+  api project(path: ":dev:maven-main")
+  api project(path: ":server:gen-main")
   testImplementation project(path: ":base-testTools")
   implementation "net.wti.core:xapi-gen:$version"
   implementation "javax.inject:javax.inject:1:sources"

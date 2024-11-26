@@ -102,15 +102,20 @@
                         },
                         @transitive(compile_only)
                         project : {
-                            ":dev:javac" : main,
-                            base : api,
+                            ":dev:javac" : jdk8,
+                            ":dev:scanner" : main,
+                            base : main,
+                            inject : jre,
+                            collect : jre,
                         },
                         @transitive(annotation_processor)
                         project : {
-                            ":ui:generator" : gwt,
+                            ":ui:generator" : main,
                             "inject" : "jre",
-                            base : api,
-                            ":dev:javac" : main,
+                            collect : jre,
+                            base : main,
+                            ":dev:scanner" : main,
+                            ":dev:javac" : jdk8,
                         },
                         external: [
                             "net.wetheinter:gwt-user:2.8.0",

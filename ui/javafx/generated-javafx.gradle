@@ -1,9 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
-
-plugins.apply "java-library"
-// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -29,12 +26,25 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/ui/javafx/src/main/java")
+main.resources.srcDir("$rootDir/ui/javafx/src/main/resources")
 
 dependencies {
-  api project(path: ":gwtc-compiler")
-  api "junit:junit:4.13"
-  api "net.wetheinter:gwt-user:2.8.0"
-  api "net.wetheinter:gwt-dev:2.8.0"
+  implementation project(path: ":collect-jre")
+  implementation project(path: ":io-jre")
+  implementation project(path: ":ui:generator")
+  implementation project(path: ":ui:components")
+  implementation project(path: ":ui:service-main")
+  implementation project(path: ":dev:javac-main")
+}
+
+
+configurations {
+  mainOut
 }
 // GenEnd XapiSettingsPlugin
-// Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtTestTools/generated-gwtcGwtTestTools.gradle
+// GenInclude body.end from file:///opt/xapi/ui/javafx/src/gradle/main/body.end
+dependencies {
+    api files("$rootDir/ui/javafx/lib/jfxrt.jar")
+}
+// Done generating buildfile for :ui:javafx at file://$rootDir/ui/javafx/generated-javafx.gradle

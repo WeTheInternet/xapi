@@ -105,7 +105,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       }
       try {
         if (classpath.getProtocol().equals("jar")) {
-          scan(((JarURLConnection)classpath.openConnection()).getJarFile());
+          final JarURLConnection conn = ((JarURLConnection) classpath.openConnection());
+          final JarFile theJarFile = conn.getJarFile();
+          scan(theJarFile);
           return;
         }
         assert classpath.getProtocol().equals("file") : "ScanRunner only handles url and file protocols";

@@ -35,14 +35,30 @@ dependencies {
   implementation project(path: ":gwtc-api")
   implementation project(path: ":inject-main")
   implementation project(path: ":dev:maven-main")
-  compileOnly project(path: ":dev:javac-main")
-  compileOnly project(path: ":base-api")
+  compileOnly project(path: ":dev:javac-jdk8")
+  compileOnly project(path: ":dev:scanner-main")
+  compileOnly project(path: ":base-main")
+  compileOnly project(path: ":inject-jre")
+  compileOnly project(path: ":collect-jre")
   annotationProcessor project(path: ":ui:generator")
   annotationProcessor project(path: ":inject-jre")
-  annotationProcessor project(path: ":base-api")
-  annotationProcessor project(path: ":dev:javac-main")
+  annotationProcessor project(path: ":collect-jre")
+  annotationProcessor project(path: ":base-main")
+  annotationProcessor project(path: ":dev:scanner-main")
+  annotationProcessor project(path: ":dev:javac-jdk8")
   testImplementation project(path: ":gwtc-gwtTestTools")
   implementation "net.wetheinter:gwt-user:2.8.0"
 }
 // GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/gwtc/src/gradle/gwtSample/body.end
+tasks.named('compileJava').configure {
+    Task t ->
+        t.dependsOn ":dev:javac-jdk8:jar",
+                    ":dev:javac-main:jar",
+                    ":dev:scanner-main:jar",
+                    ":base-main:jar",
+                    ":inject-jre:jar",
+                    ":xapi-lang-dev:jar",
+                    ":ui:generator:jar"
+}
 // Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtSample/generated-gwtcGwtSample.gradle

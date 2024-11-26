@@ -55,14 +55,18 @@
             <dist
                 description = "Xapi - Distribution generator"
                 requires = {
+                    @transitive
+                    project : [
+                        ":dev:scanner",
+                    ],
                     project : [
                         ":server:vertx",
-                        "xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx",
+                        ":ui:javafx",
                         ":dev:file",
                         ":dev:template",
                         ":dev:shell",
-                        ":dev:scanner",
                         ":dev:maven",
+                        ":dev:javac",
                         ":server:gen",
                         { inject : jre },
                     ],
@@ -82,9 +86,11 @@
                         "net.wti.core:xapi-gen:$version",
                         "javax.inject:javax.inject:1:sources",
                     ],
+                    @transitive
                     project : [
+                        ":dev:javac",
                         ":server:vertx",
-                        "xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx",
+                        ":ui:javafx",
                         {
                             inject : jre,
                             process : jre,

@@ -15,7 +15,7 @@ xapiRequire.main().configure {
         req.project ':collect-jre'
         req.project ':io-jre'
         req.project ':dev:scanner-main'
-        req.project 'xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx'
+        req.project ':ui:javafx'
 }
 xapiRequire.module('test').configure {
     req ->

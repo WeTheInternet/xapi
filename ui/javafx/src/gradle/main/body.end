@@ -1,0 +1,3 @@
+dependencies {
+    api files("$rootDir/ui/javafx/lib/jfxrt.jar")
+}

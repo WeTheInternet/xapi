@@ -1,6 +1,9 @@
 import org.gradle.api.tasks.SourceSet;
 
 ext.xapiModern = 'true'
+
+plugins.apply "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenStart XapiSettingsPlugin
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -30,13 +33,14 @@ main.java.srcDir("$rootDir/dev/dist/src/main/java")
 main.resources.srcDir("$rootDir/dev/dist/src/main/resources")
 
 dependencies {
+  api project(path: ":dev:scanner-main")
   implementation project(path: ":server:vertx")
-  implementation project(path: ":xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx")
+  implementation project(path: ":ui:javafx")
   implementation project(path: ":dev:file-main")
   implementation project(path: ":dev:template-main")
   implementation project(path: ":dev:shell")
-  implementation project(path: ":dev:scanner-main")
   implementation project(path: ":dev:maven-main")
+  implementation project(path: ":dev:javac-main")
   implementation project(path: ":server:gen-main")
   implementation project(path: ":inject-jre")
   testImplementation project(path: ":base-testTools")

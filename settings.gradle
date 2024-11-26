@@ -153,8 +153,6 @@ singleProject.forEach({
 
 include(':xapi-components')
 include(':xapi-polymer')
-include(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
-include(':xapi-jre-parent:xapi-jre-ui-parent')
 include(':xapi-jre-parent:xapi-jre')
 include(':xapi-jre-parent')
 include(':xapi-maven-plugin')
@@ -163,8 +161,6 @@ include(':xapi-samples')
 
 project(':xapi-components').projectDir = file('gwt/components')
 project(':xapi-polymer').projectDir = file('gwt/polymer')
-project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx').projectDir = file('jre/ui/javafx')
-project(':xapi-jre-parent:xapi-jre-ui-parent').projectDir = file('jre/ui')
 project(':xapi-jre-parent:xapi-jre').projectDir = file('jre/uber')
 project(':xapi-jre-parent').projectDir = file('jre')
 project(':xapi-maven-plugin').projectDir = file('maven')

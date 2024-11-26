@@ -30,6 +30,7 @@ main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/javac/src/jdk8/java")
+main.resources.srcDir("$rootDir/dev/javac/src/jdk8/resources")
 
 dependencies {
   api project(path: ":dev:javac-main")

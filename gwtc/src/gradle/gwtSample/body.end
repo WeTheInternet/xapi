@@ -1,10 +1,8 @@
-apply from: "$rootDir/gradle/xapi-env.gradle"
-apply from: "$rootDir/gradle/int-test.gradle"
-
 tasks.named('compileJava').configure {
     Task t ->
         t.dependsOn ":dev:javac-jdk8:jar",
                     ":dev:javac-main:jar",
+                    ":dev:scanner-main:jar",
                     ":base-main:jar",
                     ":inject-jre:jar",
                     ":xapi-lang-dev:jar",
