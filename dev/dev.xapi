@@ -18,7 +18,7 @@
                     external : "net.wti.core:xapi-lang-core:${->version}",
                     project : [
                         { inject : jre },
-                        ":xapi-lang-dev",
+                        ":dev:lang",
                         io,
                         ":dev:javac",
                         "dev:scanner"
@@ -52,6 +52,25 @@
                     },
                 }
             /shell>,
+            <maven-plugin
+                description = "Xapi - Ancient maven plugin"
+                requires = {
+                    project : {
+                        collect : jre,
+                        util : main,
+                        ":dev:maven" : main,
+                    },
+                    external : [
+                        "org.apache.maven:maven-plugin-api:3.2.5",
+                        "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
+                        "net.wetheinter:gwt-codeserver:2.8.0",
+                        "net.wetheinter:gwt-dev:2.8.0",
+                        "net.wetheinter:gwt-user:2.8.0",
+                    ],
+                    @transitive(test)
+                    external : "junit:junit:4.12",
+                }
+            /maven-plugin>,
             <dist
                 description = "Xapi - Distribution generator"
                 requires = {
@@ -112,7 +131,11 @@
             <javac
                 inherit = false
                 multiplatform = true
-            />
+            />,
+            <lang
+                inherit = false
+                multiplatform = true
+            /lang>
         ],
     }
     projects = [

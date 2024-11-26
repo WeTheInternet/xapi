@@ -1,0 +1,13 @@
+repositories {
+    maven {
+        name = "wtiLocal"
+        url = "$rootDir.parent/wti/repo"
+    }
+}
+
+dependencies {
+    implementation ("de.mocra.cy:wti-shared:0.5.1-SNAPSHOT") {
+        exclude group: "net.wetheinter"
+    }
+}
+main.java.srcDir("$rootDir/samples/demo/src/main/gen")

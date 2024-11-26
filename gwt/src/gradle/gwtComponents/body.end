@@ -1,0 +1,2 @@
+main.java.srcDir("$rootDir/gwt/src/gwtComponents/gen")
+test.java.srcDir("$rootDir/gwt/src/getComponentsTest/gen")

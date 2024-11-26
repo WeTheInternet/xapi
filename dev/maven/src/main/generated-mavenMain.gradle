@@ -14,7 +14,7 @@ tasks.named('compileJava').configure {
                     ":dev:javac-main:jar",
                     ":base-main:jar",
                     ":inject-jre:jar",
-                    ":xapi-lang-dev:jar",
+                    ":dev:lang-main:jar",
                     ":ui:generator:jar"
 }
 // GenStart XapiSettingsPlugin

@@ -33,7 +33,7 @@
                         project: [ {base : jre}, {collect: jre}, {inject: jre} ],
                         @transitive
                         project: [ base, collect, io ],
-                        project: { "xapi-lang-dev" : main },
+                        project: { ":dev:lang" : main },
                         project: { ":core:reflect" : main },
                         external: "net.wti.core:xapi-gen:$version",
                         @transitive(test)

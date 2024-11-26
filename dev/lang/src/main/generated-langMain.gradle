@@ -1,0 +1,43 @@
+import org.gradle.api.tasks.SourceSet;
+
+ext.xapiModern = 'true'
+
+plugins.apply "java-library"
+// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+// GenStart XapiSettingsPlugin
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+  repositories {
+    maven {
+      name = 'xapiLocal'
+      url = repo
+    }
+  }
+}
+String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'
+plugins.apply javaPlugin
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/lang/src/main/java")
+main.resources.srcDir("$rootDir/dev/lang/src/main/resources")
+
+dependencies {
+  implementation project(path: ":collect-main")
+  implementation project(path: ":core:reflect-main")
+  testImplementation project(path: ":dev:lang-testTools")
+  api "net.wti.core:xapi-fu:$version"
+  api "net.wti.core:xapi-lang-core:$version"
+}
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :dev:lang at file://$rootDir/dev/lang/src/main/generated-langMain.gradle

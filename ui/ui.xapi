@@ -57,7 +57,7 @@
                             project : [
                                 ":ui:service",
                                 ":dev:javac",
-                                ":xapi-lang-dev",
+                                ":dev:lang",
                                 ":base",
                             ],
                             @transitive(test)
@@ -106,12 +106,15 @@
                                     @transitive
                                     project : [ ":ui:api" ],
                                     @transitive
-                                    project : ":xapi-lang-dev",
+                                    project : ":dev:lang",
                                     project : [ ":dev:file", ":core:scope", io, util ],
                                     @transitive
-                                    project : ":core:event",
-                                    @transitive
-                                    project : ":model",
+                                    project : [
+                                        ":core:event",
+                                        ":model",
+                                        ":collect",
+                                        ":inject",
+                                    ],
                                     project : ":dev:scanner",
                                     external : "javax.validation:validation-api:1.0.0.GA",
                                     @transitive(compile_only)

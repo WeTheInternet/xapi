@@ -34,7 +34,7 @@ main.resources.srcDir("$rootDir/dev/gen/src/main/resources")
 
 dependencies {
   implementation project(path: ":inject-jre")
-  implementation project(path: ":xapi-lang-dev")
+  implementation project(path: ":dev:lang-main")
   implementation project(path: ":io-main")
   implementation project(path: ":dev:javac-main")
   implementation project(path: ":dev:scanner-main")

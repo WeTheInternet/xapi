@@ -60,6 +60,14 @@
                 inherit = false
                 multiplatform = true
             /gwt>,
+            <jre
+                inherit = false
+                multiplatform = true
+            /jre>,
+            <samples
+                inherit = false
+                multiplatform = true
+            /samples>
         ],
 
         // the projects below are effectively parents of multiple child projects.

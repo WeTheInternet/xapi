@@ -1,0 +1,33 @@
+<xapi-schema
+    inherit = false
+    platforms = main
+    modules = main
+    projects = {
+        standalone : [
+            <uber
+                description = "Xapi - JRE uber jar"
+                platforms = <main
+                    modules = <main
+                        requires = {
+                            @transitive
+                            project : {
+                                base : jre,
+                                process : jre,
+                                collect : jre,
+                                model : jre,
+                                io : jre,
+                                ":dev:scanner" : main,
+                                ":ui:javafx" : main,
+                            },
+                            @transitive(test)
+                            project : {
+                                base : testTools,
+                                model : jre,
+                            },
+                        }
+                    /main>
+                /main>
+            /uber>
+        ]
+    }
+/xapi-schema>

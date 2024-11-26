@@ -58,7 +58,7 @@ tasks.named('compileJava').configure {
                     ":dev:scanner-main:jar",
                     ":base-main:jar",
                     ":inject-jre:jar",
-                    ":xapi-lang-dev:jar",
+                    ":dev:lang-main:jar",
                     ":ui:generator:jar"
 }
 // Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtSample/generated-gwtcGwtSample.gradle

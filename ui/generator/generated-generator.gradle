@@ -35,7 +35,7 @@ main.resources.srcDir("$rootDir/ui/generator/src/main/resources")
 dependencies {
   api project(path: ":ui:service-main")
   api project(path: ":dev:javac-main")
-  api project(path: ":xapi-lang-dev")
+  api project(path: ":dev:lang-main")
   api project(path: ":base-main")
   testImplementation project(path: ":inject-jre")
   testImplementation project(path: ":base-testTools")

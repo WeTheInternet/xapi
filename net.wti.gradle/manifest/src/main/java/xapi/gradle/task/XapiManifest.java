@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
  * Stub implementations can reference the resources at /META-INF/xapi/settings.xapi,
  * while platform specific implementations will load /META-INF/xapi/$platform/settings.xapi.
  *
- * <pre>
+ * <pre><code>
       This is some prototype psuedocode to guide us, for an imaginary setup w/ main, api, dev/main and dev/api:
 {@code <xapi}
 module = "xapi-lang"
@@ -111,7 +111,7 @@ archives = {
   }
 {@code />}
 
- * </pre>
+ </code></pre>
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/12/18 @ 2:56 AM.
  */

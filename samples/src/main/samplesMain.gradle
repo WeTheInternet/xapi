@@ -1,0 +1,8 @@
+// This buildscript was generated as a place for you to manually configure your subproject as you wish.
+//
+// You can safely delete this file, and a new one will be generated for you in its place
+//
+// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
+apply from: "$rootDir/samples/src/main/generated-samplesMain.gradle"
+//
+// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.

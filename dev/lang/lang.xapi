@@ -1,0 +1,42 @@
+<xapi-schema
+    inherit = false
+    modules = [ main, testTools, ]
+    platforms = [
+        <main
+            modules = [
+                <main
+                    description = "Xapi - Tools for generating code with javac"
+                    requires = {
+                        @transitive
+                        external : [
+                            "net.wti.core:xapi-fu:$version",
+                            "net.wti.core:xapi-lang-core:$version",
+                        ],
+                        project : [
+                            collect,
+                            ":core:reflect",
+                        ],
+                        @transitive(test)
+                        internal : testTools
+                    }
+                /main>,
+                <testTools
+                    description = "Xapi - Tools for testing xapi-dev-lang code"
+                    requires = {
+                        project : {
+                            collect : main,
+                            ":core:reflect" : main,
+                        },
+                        @transitive(runtime)
+                        project : { collect : jre },
+                        external : [
+                            "net.wti.core:xapi-fu:${version}",
+                            "net.wti.core:xapi-lang-core:${version}",
+                            "org.spockframework:spock-core:1.2-groovy-2.5",
+                        ],
+                    }
+                /testTools>
+            ]
+        /main>
+    ]
+/xapi-schema>

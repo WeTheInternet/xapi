@@ -360,6 +360,12 @@ public interface XapiSchemaParser {
             }
         } else if (expression instanceof UiContainerExpr) {
             expression.accept(visitor, null);
+        } else if (expression instanceof NameExpr || expression instanceof LiteralExpr){
+            expression.accept(whenMissingFail(XapiSchemaParser.class)
+                    .nameOrString(name -> {
+                        final UiContainerExpr expr = new UiContainerExpr(name);
+                        meta.addPlatform(expr);
+                    }), null);
         } else {
             throw new InvalidSettingsException("Invalid platforms expression " + expression.getClass() +" :\n" + expression.toSource());
         }
@@ -473,6 +479,12 @@ public interface XapiSchemaParser {
             }
         } else if (expression instanceof UiContainerExpr) {
             expression.accept(visitor, null);
+        } else if (expression instanceof NameExpr || expression instanceof LiteralExpr){
+            expression.accept(whenMissingFail(XapiSchemaParser.class)
+                    .nameOrString(name -> {
+                        final UiContainerExpr expr = new UiContainerExpr(name);
+                        meta.addModule(name, expr);
+                    }), null);
         } else {
             throw new InvalidSettingsException("Invalid modules expression " + expression.getClass() +" :\n" + expression.toSource());
         }

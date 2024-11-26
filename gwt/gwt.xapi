@@ -75,6 +75,64 @@
                         },
                     }
                 /elemental2>,
+                <components
+                    description = "Xapi - Web component implementation"
+                    requires = {
+                        @transitive
+                        project : {
+                            gwt : gwtElemental,
+                        },
+                        @transitive
+                        external : [
+                            "net.wetheinter:gwt-user:2.8.0",
+                        ],
+                        project : {
+                            ":dev:javac" : jdk8,
+                            gwt : gwtElemental2,
+                            io : jre,
+                            ":ui:generator" : main,
+                            ":ui:service" : main,
+                        },
+                        external : [
+                            "net.wti.core:xapi-lang-core:${version}",
+                        ],
+                        @transitive(compile_only)
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        @transitive(test)
+                        project : {
+                            process : jre,
+                            gwtc : api,
+                            gwtc : compiler,
+                            gwtc : gwtCompiler,
+                            inject : jre,
+                        },
+                        @transitive(test)
+                        external : [
+                            "junit:junit:4.12",
+                            "info.cukes:cucumber-java:1.2.5",
+                            "info.cukes:cucumber-junit:1.2.5",
+                            "org.assertj:assertj-core:3.2.0",
+                            "net.wetheinter:gwt-dev:2.8.0",
+                        ]
+                    }
+                /components>,
+                <polymer
+                    description = "Xapi - Ancient Polymer web component wrappers"
+                    requires = {
+                        project : {
+                            gwt : gwtComponents,
+                            gwt : gwtElemental,
+                        },
+                        external : [
+                            "net.wetheinter:gwt-elemental:2.8.0",
+                            "net.wetheinter:gwt-user:2.8.0",
+                        ],
+                        @transitive(compile_only)
+                        external : "net.wetheinter:gwt-dev:2.8.0",
+                        @transitive(test)
+                        external : "junit:junit:4.13",
+                    }
+                /polymer>,
                 <uber
                     description = "Xapi - GWT uber jar"
                     requires = {

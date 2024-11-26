@@ -1,0 +1,27 @@
+<xapi-schema
+    inherit = false
+    platforms = main
+    modules = main
+    projects = {
+        standalone : [
+            <demo
+                description = "Xapi - GWTCon 2017 Demo"
+                requires = {
+                    project : {
+                        base : main,
+                        "dev:uber" : main,
+                        "server:vertx" : main,
+                        "dev:api" : main,
+                        gwt : gwtElemental2,
+                        gwt : gwtComponents,
+                        "ui:javafx" : main,
+                        io : jre,
+                    },
+                    external : "junit:junit:4.13",
+                    @transitive(test)
+                    project : { ":dev:scanner" : main },
+                }
+            /demo>
+        ]
+    }
+/xapi-schema>

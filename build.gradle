@@ -61,7 +61,7 @@ gradle.beforeProject {
         if (isModern) {
             p.logger.info("Modern project: {}", p.path)
         } else {
-            p.logger.info("Legacy project: {}", p.path)
+            p.logger.quiet("Legacy project: {}", p.path)
             p.plugins.apply 'idea'
             p.plugins.apply 'xapi-schema'
         }
