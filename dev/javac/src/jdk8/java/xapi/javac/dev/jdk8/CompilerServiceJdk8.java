@@ -1,4 +1,4 @@
-package xapi.javac.dev.impl;
+package xapi.javac.dev.jdk8;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.PackageDeclaration;
@@ -15,7 +15,6 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Name;
-import org.apache.commons.io.Charsets;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
@@ -45,9 +44,11 @@ import javax.tools.JavaCompiler.CompilationTask;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -59,7 +60,7 @@ import static xapi.fu.In2.ignoreFirst;
  *         Created on 4/3/16.
  */
 @SingletonDefault(implFor = CompilerService.class)
-public class CompilerServiceImpl implements CompilerService, Rethrowable {
+public class CompilerServiceJdk8 implements CompilerService, Rethrowable {
 
   private JavacService service;
 
@@ -80,7 +81,20 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
   public Out2<Integer, URL> compileFiles(CompilerSettings settings, String ... files) {
     files =  javaFilesIn(files)
                  .toArray(String[]::new);
-    int result = com.sun.tools.javac.Main.compile(settings.toArguments(files), new PrintWriter(System.out));
+    final String[] args = settings.toArguments(files);
+    final PrintWriter writer = new PrintWriter(System.out);
+
+    final Object res;
+    try {
+        final Class<?> cls = CompilerServiceJdk8.class.getClassLoader().loadClass("com.sun.tools.javac.Main");
+        final Method method = cls.getMethod("compile", String[].class, PrintWriter.class);
+        res = method.invoke(null, args, writer);
+    } catch (Exception e) {
+      X_Log.error(CompilerServiceJdk8.class, "Failed to run com.sun.tools.javac.Main.compile with args", args, e);
+      throw rethrow(e);
+//      return Out2.out2Immutable(-1, null);
+    }
+    int result = (Integer)res;
     File f = new File(settings.getOutputDirectory());
     try {
       return Out2.out2Immutable(result, f.toURI().toURL());
@@ -93,7 +107,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
     final javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     final Writer out = new PrintWriter(System.out);
     final DiagnosticListener<? super JavaFileObject> diagnostics = s-> {
-      X_Log.info(CompilerServiceImpl.class,
+      X_Log.info(CompilerServiceJdk8.class,
           s,
           s.getCode(),
           s.getKind(),
@@ -106,7 +120,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
       );
     };
     final Locale locale = Locale.ENGLISH;
-    final Charset charset = Charsets.UTF_8;
+    final Charset charset = StandardCharsets.UTF_8;
     final JavaFileManager filer = compiler.getStandardFileManager(diagnostics, locale, charset);
     final List<String> options = new ArrayList<>();
     final List<String> classes = new ArrayList<>();
@@ -218,7 +232,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
       tasks.add(getTaskListener(task));
       JavacProcessingEnvironment env = JavacProcessingEnvironment.instance(ctx);
       try (
-          JavacFileManager jfm = new JavacFileManager(ctx, false, Charset.forName("UTF-8"))
+          JavacFileManager jfm = new JavacFileManager(ctx, false, StandardCharsets.UTF_8)
       ) {
         List<JavaFileObject> missingFiles = new ArrayList<>();
         missing.forEach(pcu -> {
@@ -238,7 +252,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
                 if (javaFile == null) {
                   javaFile = jfm.getJavaFileForInput(StandardLocation.CLASS_PATH, relativeName, JavaFileObject.Kind.SOURCE);
                   if (javaFile == null) {
-                    X_Log.warn(getClass(), "Unable to find file ", relativeName, " to recompile...");
+                    X_Log.warn(CompilerServiceJdk8.class, "Unable to find file ", relativeName, " to recompile...");
                   }
                 }
               }
@@ -253,6 +267,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
             //            pcu.finish();
           }
         });
+
         JavaCompiler compiler = JavaCompiler.instance(ctx);
         final com.sun.tools.javac.util.List<JavaFileObject> javaFiles = com.sun.tools.javac.util.List.from(missingFiles.toArray(new JavaFileObject[missingFiles.size()]));
         compiler.compile(javaFiles);

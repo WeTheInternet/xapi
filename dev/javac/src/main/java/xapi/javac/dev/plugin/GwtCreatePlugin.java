@@ -167,7 +167,7 @@ public class GwtCreatePlugin implements Plugin {
             // load the original source file (in UTF-8)
             results.forEach(gwt -> {
               ExpressionTree source = gwt.getInvocation();
-              JCTree ast = (JCTree)source;
+              JCTree ast = (JCTree) source;
               DiagnosticPosition pos = ast.pos();
               int start = pos.getStartPosition();
               int end = pos.getEndPosition(compilationUnit.endPositions);

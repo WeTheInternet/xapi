@@ -10,7 +10,6 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Attribute.Compound;
-import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.List;
@@ -216,7 +215,7 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
             final List<Compound> attrs = ((VarSymbol) field).getRawAttributes();
             Pointer<ExecutableElement> initializer = Pointer.pointer();
             ClassSymbol t = (ClassSymbol) type;
-            final Scope members = (((ClassSymbol) type).members());
+//            final Scope members = (((ClassSymbol) type).members());
               final TreePath path = trees.getPath(type);
               if (path != null)
               path.forEach(tree->{

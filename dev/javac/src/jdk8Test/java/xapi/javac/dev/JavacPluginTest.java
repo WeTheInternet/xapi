@@ -67,6 +67,7 @@ public class JavacPluginTest {
   private CompilerSettings testSettings(CompilerService compiler) {
     return compiler.defaultSettings()
         .setTest(true)
+        .setUseRuntimeClasspath(true)
         .setClearGenerateDirectory(true);
   }
 }

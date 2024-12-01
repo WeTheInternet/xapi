@@ -139,11 +139,11 @@ public interface CompilerService {
   }
 
   default String getMainAnnotationOutput() {
-    return "target/generated-sources/annotations";
+    return "build/generated/sources/xapi/main/java";
   }
 
   default String getTestAnnotationOutput() {
-    return "target/generated-test-sources/test-annotations";
+    return "build/generated/sources/xapi/test/java";
   }
 
 }

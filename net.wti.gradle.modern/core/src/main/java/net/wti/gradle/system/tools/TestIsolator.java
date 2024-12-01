@@ -16,8 +16,8 @@ import java.util.Set;
  */
 public class TestIsolator extends DefaultTask {
 
-    public static final String EXT_ROOT_ISOLATOR = "xapiRootIsolator";
-    private final TestIsolator rootIsolator;
+    public static final String TASK_NAME_ROOT_ISOLATOR = "xapiRootIsolator";
+    private final String rootIsolatorPath;
     private final Set<String> isolatedTests;
 
     public TestIsolator() {
@@ -25,12 +25,12 @@ public class TestIsolator extends DefaultTask {
         final Project root = project.getRootProject();
         isolatedTests = new HashSet<>();
         if (project == root) {
-            rootIsolator = this;
+            rootIsolatorPath = getPath();
             initializeRootTask(this);
         } else {
-            rootIsolator = root.getTasks().maybeCreate(EXT_ROOT_ISOLATOR, TestIsolator.class);
+            rootIsolatorPath = root.getTasks().maybeCreate(TASK_NAME_ROOT_ISOLATOR, TestIsolator.class).getPath();
             // All other isolator tasks depend on the root task, which depends on all other not-isolated Test tasks.
-            dependsOn(rootIsolator);
+            dependsOn(rootIsolatorPath);
         }
     }
 
@@ -62,7 +62,8 @@ public class TestIsolator extends DefaultTask {
     }
 
     public void addTest(Test t) {
-        rootIsolator.isolatedTests.add(t.getPath());
+        getProject().getRootProject().getTasks().maybeCreate(TASK_NAME_ROOT_ISOLATOR, TestIsolator.class)
+                .isolatedTests.add(t.getPath());
         // The test depends on this isolator, which itself depends on the root isolator which mustRunAfter:
         // "all Test tasks which are not isolated".
         t.dependsOn(this);

@@ -63,12 +63,12 @@ public class CompilerSettings implements Rethrowable {
         int ind = sources.indexOf("src/main/java");
         if (ind != -1) {
             sources += File.pathSeparator + sources.replace("src/main/java", "src/main/resources")
-                    + File.pathSeparator + sources.replace("src/main/java", "target/generated-sources/annotations");
+                    + File.pathSeparator + sources.replace("src/main/java", "build/generated/sources/xapi/main/java");
         } else {
             ind = sources.indexOf("src/test/java");
             if (ind != -1) {
                 sources += File.pathSeparator + sources.replace("src/test/java", "src/test/resources")
-                    + File.pathSeparator + sources.replace("src/test/java", "target/generated-test-sources/test");
+                    + File.pathSeparator + sources.replace("src/test/java", "build/generated/sources/xapi/test/java");
             }
         }
         args.add(sources);
@@ -107,6 +107,7 @@ public class CompilerSettings implements Rethrowable {
         }
 
         final Set<String> path = getClasspath();
+        X_Log.debug(CompilerSettings.class, "Javac Classpath:", path);
         if (path != null && !path.isEmpty()) {
             args.add("-cp");
             args.add(X_String.join(File.pathSeparator, path));
@@ -301,7 +302,7 @@ public class CompilerSettings implements Rethrowable {
 
     public String getOutputDirectory() {
         if (outputDirectory == null) {
-            final File classesDir = new File(getRoot(), "target/" + (test ? "test-" : "") + "classes");
+            final File classesDir = new File(getRoot(), "build/classes/java/" + (test ? "test" : "main"));
             try {
                 if (!classesDir.exists()) {
                     classesDir.mkdirs();
@@ -327,7 +328,7 @@ public class CompilerSettings implements Rethrowable {
         this.test = test;
         if (test && generateDirectory == null) {
             try {
-                final File f = new File(getRoot(), "target/generated-test-sources/test");
+                final File f = new File(getRoot(), "build/generated/sources/xapi/java/test");
                 if (!f.exists()) {
                     f.mkdirs();
                 }
@@ -341,7 +342,20 @@ public class CompilerSettings implements Rethrowable {
 
     public String getSourceDirectory() {
         if (sourceDirectory == null) {
-            final File resourcesDir = new File(getRoot(), "src/" + (test ? "test" : "main") + "/resources");
+            final String root = getRoot();
+            final String baseDir;
+            if (root.contains("src")) {
+                if (isTest()) {
+                    baseDir = root.endsWith("main") ? root.replace("/main", "/test") : root + "Test";
+                } else {
+                    baseDir = root;
+                }
+            } else {
+                baseDir = root;
+            }
+            // this is... pretty lame. we should be looking in /java not /resources
+            final File resourcesDir = new File(baseDir,
+                    root.contains("src/") ? "resources" : "src/" + (test ? "test" : "main") + "/resources");
             try {
                 sourceDirectory = resourcesDir.getCanonicalPath();
                 if (!resourcesDir.exists()) {

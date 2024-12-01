@@ -35,9 +35,8 @@ public class RootProjectView extends ProjectDescriptorView {
             afterSettings = In1.IGNORED;
         }
         final RootProjectView self = this;
-        settings.getGradle().addBuildListener(new BuildAdapter() {
-            @Override
-            public void settingsEvaluated(final Settings settings) {
+        settings.getGradle().settingsEvaluated(ready -> {
+
 
                 // before we call into universally accessible whenSettingsReady, clean out beforeSettings.
                 In1<RootProjectView> copyBefore, copyAfter;
@@ -63,7 +62,6 @@ public class RootProjectView extends ProjectDescriptorView {
                     copyBefore.in(self);
                     copyAfter.in(self);
                 }
-            }
         });
     }
 

@@ -1,12 +1,27 @@
 import org.gradle.internal.jvm.Jvm
 
+
 Jvm jvm = Jvm.current()
-if (jvm.javaVersion.isJava8()) {
-    File tools = jvm.toolsJar
-    if (tools) {
-        dependencies {
-            compileOnly files(tools)
-            testImplementation files(tools)
+File tools = jvm.toolsJar
+if (!tools?.exists()) {
+    tools = new File(javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(8)
+    }.get().getMetadata().installationPath.asFile, "lib/tools.jar")
+}
+
+if (tools) {
+    dependencies {
+        compileOnly files(tools)
+        testImplementation files(tools)
+        if (System.getProperty('idea.version')) {
+            implementation files(tools)
         }
+    }
+}
+
+idea {
+    project {
+        jdkName = "1.8"
+        languageLevel = "1.8"
     }
 }

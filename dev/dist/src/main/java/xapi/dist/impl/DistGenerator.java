@@ -124,13 +124,14 @@ public class DistGenerator {
             if (code == 0) {
                 // huzzah!  Lets sanity test our newly compiled files.
                 final URL[] urls = {result.out2()};
-                URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
-                for (String e : entryClasses) {
-                    String[] bits = e.split("java/xapi");
-                    try {
-                        cl.loadClass("xapi" + bits[bits.length-1].replace('/', '.').replace(".java", ""));
-                    } catch (ClassNotFoundException ex) {
-                        X_Log.error(DistGenerator.class, "Unable to load class", e, ex);
+                try (URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader())) {
+                    for (String e : entryClasses) {
+                        String[] bits = e.split("java/xapi");
+                        try {
+                            cl.loadClass("xapi" + bits[bits.length-1].replace('/', '.').replace(".java", ""));
+                        } catch (ClassNotFoundException ex) {
+                            X_Log.error(DistGenerator.class, "Unable to load class", e, ex);
+                        }
                     }
                 }
             } else {

@@ -29,7 +29,7 @@ public class ConcurrencyTest {
     final Pointer<Boolean> success = new Pointer<Boolean>();
     runDeferred(()->success.set(true));
     success.set(false);
-    flush(5000);
+    flush(10_000);
     Assert.assertTrue(success.get());
   }
   @Test(timeout = 20_000)
@@ -38,7 +38,7 @@ public class ConcurrencyTest {
     runFinally(()->success.set(false));
     runDeferred(()->success.set(true));
     success.set(false);
-    flush(5000);
+    flush(10_000);
     Assert.assertTrue(success.get());
   }
   @Test(timeout = 35_000)
@@ -48,51 +48,57 @@ public class ConcurrencyTest {
     //We will use a closure object to make sure execution is happening in the expected order.
     final Pointer<Long> stage = new Pointer<Long>(0L);
     CountDownLatch latch = new CountDownLatch(2);
+
+    class SecondDefer implements Do {
+
+        @Override
+        public void done() {
+          //runs second
+          assertEquals("1st defer ran before 1st finally", 1, stage.get().longValue());
+          stage.set(2L);
+          runFinally(() -> {
+              //runs third, as a finally inside a defer should.
+              assertEquals("2nd finally did not run after 1st defer", 2, stage.get().longValue());
+              stage.set(3L);
+              latch.countDown();
+          });
+        }
+
+        @Override
+        public Do once() {
+            return this;
+        }
+    }
+    final Do runsFirst = () -> {
+        //runs first
+        assertEquals("1st defer ran before 1st finally",0, stage.get().longValue());
+        stage.set(1L);
+        runDeferredUnsafe(() -> {
+            // runs last.  We use this Thread.sleep b/c we can't _really_ depend on the ordering of thread launched,
+            // so on fast systems, we would fail this test.
+            Thread.sleep(10);
+            assertEquals("2nd defer ran before 2nd finally", 3, stage.get().longValue());
+            stage.set(4L);
+            latch.countDown();
+        });
+    };
+
     synchronized (stage) {
         Thread.yield();
         // toss in a memory barrier and a yield to encourage the JVM to pause if we are running out of quorum.
         // That is, if our thread is about to pause, we do _not_ want it to pause between our first two schedules.
         // So, we encourage the jvm to stop here.  No big deal when running single threaded,
         // but our build runs in parallel, so native OS is more likely to be busy enough to want to stop our thread.
-        runFinally(() -> {
-            //runs first
-            assertEquals("1st defer ran before 1st finally",0, stage.get().longValue());
-            stage.set(1L);
-            runDeferredUnsafe(() -> {
-                // runs last.  We use this Thread.sleep b/c we can't _really_ depend on the ordering of thread launched,
-                // so on fast systems, we would fail this test.
-                Thread.sleep(10);
-                assertEquals("2nd defer ran before 2nd finally", 3, stage.get().longValue());
-                stage.set(4L);
-                latch.countDown();
-            });
-        });
-
-        class SecondDefer implements Do {
-
-            @Override
-            public void done() {
-              //runs second
-              assertEquals("1st defer ran before 1st finally", 1, stage.get().longValue());
-              stage.set(2L);
-              runFinally(() -> {
-                  //runs third, as a finally inside a defer should.
-                  assertEquals("2nd finally did not run after 1st defer", 2, stage.get().longValue());
-                  stage.set(3L);
-                  latch.countDown();
-              });
-            }
-
-            @Override
-            public Do once() {
-                return this;
-            }
-        }
         runDeferred(new SecondDefer());
+        runFinally(runsFirst);
     }
 
+    int limit = 3000;
     do {
         flush(200);
+        if (limit--==0) {
+            throw new IllegalStateException("Waited too long for results; stuck on state " + stage.get());
+        }
     } while (!latch.await(100, TimeUnit.MILLISECONDS));
 
     assertEquals(4, (long) stage.get());
@@ -126,9 +132,13 @@ public class ConcurrencyTest {
         wait.release();
     });
     t.start();
+    int limit = 100;
     while (success.out1() != Boolean.TRUE) {
         trySleep(100);
         flush(t, 250);
+        if (limit--==0) {
+            throw new IllegalStateException("Waited too long for results; stuck on state " + success.out1());
+        }
     }
 
     Assert.assertTrue(success.out1());

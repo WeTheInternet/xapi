@@ -28,6 +28,6 @@ gradle.beforeProject {
 }
 
 wrapper {
-    gradleVersion = "8.8"
+    gradleVersion = "8.11.1"
     distributionType = "ALL"
 }

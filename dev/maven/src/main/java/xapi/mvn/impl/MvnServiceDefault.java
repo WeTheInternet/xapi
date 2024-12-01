@@ -1116,13 +1116,24 @@ public class MvnServiceDefault implements MvnService {
 
   @Override
   public List<RemoteRepository> remoteRepos() {
-    return Arrays.asList(new RemoteRepository
-      .Builder("maven-central", "default", "http://repo1.maven.org/maven2/")
-      .build()
+    return Collections.singletonList(new RemoteRepository
+            .Builder("default-repo", "default", getDefaultRepoUrl())
+            .build()
     );
   }
 
-  private final ResourceMap loaded = new ResourceMap();
+    protected String getDefaultRepoUrl() {
+        final String url = getProperty(X_Namespace.PROPERTY_MAVEN_REPO, "https://repo1.maven.org/maven2/");
+        if (url.contains("://")) {
+            return url;
+        }
+        if (new File(url).exists()) {
+            return "file://" + url;
+        }
+        throw new IllegalArgumentException("Invalid maven repo url does not contain :// " + url);
+    }
+
+    private final ResourceMap loaded = new ResourceMap();
 
   @Override
   public Iterable<Model> findPoms(final ClassLoader loader) {

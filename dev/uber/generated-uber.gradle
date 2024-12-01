@@ -18,7 +18,7 @@ buildscript {
             classpath "com.github.jengelman.gradle.plugins:shadow:5.2.0"
         } else {
             // this is a hacked version where we allow any gradle version and build in java 8
-            classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.5"
+            classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.1"
         }
     }
 }
@@ -27,15 +27,10 @@ ext.xapiModern = 'true'
 plugins.apply "java-library"
 // GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 // GenInclude body.start from file:///opt/xapi/dev/uber/src/gradle/main/body.start
-//plugins.apply "com.github.johnrengelman.shadow"
-//if (gradle.gradleVersion.startsWith("5")) {
-//    plugins.apply "com.github.johnrengelman.shadow"
-//} else {
-//}
-
 plugins.apply "java-library"
 plugins.apply "maven-publish"
 //plugins.apply "com.gradleup.shadow"
+
 plugins.apply com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
 
 setProperty("xapi.main.component", "shadow")

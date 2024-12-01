@@ -31,8 +31,6 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/dev/javac/src/main/java")
 main.resources.srcDir("$rootDir/dev/javac/src/main/resources")
-test.java.srcDir("$rootDir/dev/javac/src/test/java")
-test.resources.srcDir("$rootDir/dev/javac/src/test/resources")
 
 dependencies {
   api project(path: ":core:scope-main")
@@ -43,27 +41,38 @@ dependencies {
   api project(path: ":inject-api")
   implementation project(path: ":io-jre")
   implementation project(path: ":inject-jre")
-  testImplementation project(path: ":base-testTools")
   api "net.wti.core:xapi-fu:${version}"
   api "net.wti.core:xapi-lang-core:${version}"
   compileOnly "net.wetheinter:gwt-dev:2.8.0"
-  testImplementation "net.wetheinter:gwt-dev:2.8.0"
-  testImplementation "net.wetheinter:gwt-user:2.8.0"
-  testImplementation "net.wetheinter:gwt-elemental:2.8.0"
-  testImplementation "org.assertj:assertj-core-java8:1.0.0m1"
 }
 // GenEnd XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/dev/javac/src/gradle/main/body.end
 import org.gradle.internal.jvm.Jvm
 
+
 Jvm jvm = Jvm.current()
-if (jvm.javaVersion.isJava8()) {
-    File tools = jvm.toolsJar
-    if (tools) {
-        dependencies {
-            compileOnly files(tools)
-            testImplementation files(tools)
+File tools = jvm.toolsJar
+if (!tools?.exists()) {
+    tools = new File(javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(8)
+    }.get().getMetadata().installationPath.asFile, "lib/tools.jar")
+}
+
+if (tools) {
+    dependencies {
+        compileOnly files(tools)
+        testImplementation files(tools)
+        if (System.getProperty('idea.version')) {
+            implementation files(tools)
         }
     }
 }
+
+idea {
+    project {
+        jdkName = "1.8"
+        languageLevel = "1.8"
+    }
+}
+
 // Done generating buildfile for :dev:javac at file://$rootDir/dev/javac/src/main/generated-javacMain.gradle

@@ -29,20 +29,31 @@
                         },
                         @transitive(compile_only)
                         external : "net.wetheinter:gwt-dev:2.8.0",
-                        @transitive(test)
-                        external : [
-                            "net.wetheinter:gwt-dev:2.8.0",
-                            "net.wetheinter:gwt-user:2.8.0",
-                            "net.wetheinter:gwt-elemental:2.8.0",
-                            "org.assertj:assertj-core-java8:1.0.0m1",
-                        ],
-                        @transitive(test)
-                        project : { base : testTools },
                     }
                 /main>
             ]
         /main>,
-        <jdk8 replaces=main />,
+        <jdk8 replaces=main
+            modules = <main
+                requires = {
+                    project : {
+                        // implementation scope
+                        io : jre, inject : jre
+                    },
+                    @transitive(test)
+                    external : [
+                        "net.wetheinter:gwt-dev:2.8.0",
+                        "net.wetheinter:gwt-user:2.8.0",
+                        "net.wetheinter:gwt-elemental:2.8.0",
+                        "org.assertj:assertj-core-java8:1.0.0m1",
+                    ],
+                    @transitive(test)
+                    internal : jdk8,
+                    @transitive(test)
+                    project : { base : testTools },
+                }
+            /main>
+        />,
         <jdk17 replaces=main />,
     ]
 /xapi-schema>

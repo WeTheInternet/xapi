@@ -7,7 +7,7 @@ if (installRebuild == null) {
     logger.error 'You must apply xapi-env.gradle before rebuild-tools.gradle'
 } else {
     Task core = installRebuild.apply('net.wti.core')
-    Task tools = installRebuild.apply('net.wti.gradle')
+    Task tools = installRebuild.apply('net.wti.gradle.modern')
     if (tools && core) {
         tools.mustRunAfter(core)
     }
