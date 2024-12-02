@@ -26,6 +26,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
 dependencies {
   implementation project(path: ":collect-main")

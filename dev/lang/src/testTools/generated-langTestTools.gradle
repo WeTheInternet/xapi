@@ -30,6 +30,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/dev/lang/src/testTools/groovy")
 main.java.srcDir("$rootDir/dev/lang/src/testTools/java")
 main.resources.srcDir("$rootDir/dev/lang/src/testTools/resources")

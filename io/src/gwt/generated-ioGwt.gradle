@@ -29,6 +29,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/io/src/gwt/java")
 test.java.srcDir("$rootDir/io/src/gwtTest/java")
 test.resources.srcDir("$rootDir/io/src/gwtTest/resources")

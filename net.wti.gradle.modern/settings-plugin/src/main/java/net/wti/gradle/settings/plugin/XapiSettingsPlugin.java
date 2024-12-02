@@ -154,38 +154,43 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
         view.getLogger().info("All projects ({}):\n{}", map.getAllProjects().size(),
                 map.getAllProjects().map(s->s.getPathGradle() + "@" + s.getPublishedName()).join("\n"));
-        settings.getGradle().beforeProject(p->{
-            if (!":".equals(p.getPath()) && map.hasGradleProject(p.getPath())) {
-                p.getLogger().info("Setting project to modern mode {}", p.getPath());
-                if (null == p.getExtensions().findByName("xapiModern")) {
-                    p.getExtensions().add("xapiModern", "true");
-                }
-            }
-
-
-            final Maybe<SchemaProject> match = map.getAllProjects()
-                    .firstMatch(m -> {
-                        return m.getPathGradle().equals(p.getPath());
-                    });
-            if (match.isPresent()) {
-                // This is a gradle project who matches one of our schema-backed project declarations.
-                // Lets setup some support utilities
-
-                setupProject(view, p, match.get(), properties, index, map);
-            }
-        });
-        settings.getGradle().afterProject(p->{
-            final Maybe<SchemaProject> match = map.getAllProjects()
-                    .firstMatch(m -> m.getPathGradle().equals(p.getPath()));
-            if (match.isPresent()) {
-                // This is a gradle project who matches one of our schema-backed project declarations.
-                // Lets setup some support utilities
-
-                finalizeProject(p, match.get(), properties, index, map);
-            } else {
-                // warn about a missing project?
-            }
-        });
+//
+//        // All the mess below is "plugin-scoped initialization", and amounts to ~nothing important.
+//        // It should all probably just be deleted, and replaced w/ user-visible codegen.
+//        settings.getGradle().beforeProject(p->{
+//            if (!":".equals(p.getPath()) && map.hasGradleProject(p.getPath())) {
+//                p.getLogger().info("Setting project to modern mode {}", p.getPath());
+//                if (null == p.getExtensions().findByName("xapiModern")) {
+//                    p.getExtensions().add("xapiModern", "true");
+//                }
+//            }
+//
+//
+//            final Maybe<SchemaProject> match = map.getAllProjects()
+//                    .firstMatch(m -> {
+//                        return m.getPathGradle().equals(p.getPath());
+//                    });
+//            if (match.isPresent()) {
+//                // This is a gradle project who matches one of our schema-backed project declarations.
+//                // Lets setup some support utilities
+//
+//                setupProject(view, p, match.get(), properties, index, map);
+//            }
+//        });
+//        settings.getGradle().afterProject(p->{
+//            final Maybe<SchemaProject> match = map.getAllProjects()
+//                    .firstMatch(m -> m.getPathGradle().equals(p.getPath()));
+//            if (match.isPresent()) {
+//                // This is a gradle project who matches one of our schema-backed project declarations.
+//                // Lets setup some support utilities
+//
+//                p.getLogger().trace("Matched project {}", p.getBuildTreePath());
+//                finalizeProject(p, match.get(), properties, index, map);
+//            } else {
+//                // warn about a missing project
+//                p.getLogger().trace("Unmatched project {}", p.getBuildTreePath());
+//            }
+//        });
 
         map.getCallbacks().perProject(project -> {
             logger.info("Processing xapi schema for project {}", project);
@@ -193,7 +198,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             if (project != map.getRootProject()) {
                 File dir = new File(settings.getSettingsDir(), project.getSubPath());
                 if (project.isMultiplatform()) {
-                    logger.info("Skipping multiplatorm root {} for project {}; virtual? {}", gradlePath, project, project.isVirtual());
+                    logger.info("Skipping multi-platform root {} for project {}; virtual? {}", gradlePath, project, project.isVirtual());
                 } else {
 //                    gradlePath += "-main";
                     logger.info("Including {} for project {}; multiplatform? {} virtual? {}", gradlePath, project, project.isMultiplatform(), project.isVirtual());
@@ -282,6 +287,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 logger.info("Replacing empty build script {} with default content", userBuildFile);
                             } else if (buildFileContents.contains(inclusion)) {
                                 // this signals later code not to overwrite the file. User has changes.
+                                if (!buildFileContents.equals(defaultSource)) {
+                                    logger.quiet("HEREOY: {}\n--\n{}\n++\n{}", inclusion, defaultSource, buildFileContents);
+                                }
                                 defaultSource = "";
                                 // need to mark this node as "has explicit buildscript"... much sooner than now!
                                 // if (buildFileContents.equals(defaultSource)) { //...
@@ -306,20 +314,16 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         if (project.isMultiplatform()) {
                             view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
-                            if (dryRun(view)) {
-                                view.getLogger().quiet("Dry run exiting early; skipping project creation for {} with build file {} for {}:{}", project.getPath(), userBuildFile.getAbsolutePath(), plat, mod);
-                            } else {
-//                                if (project.isVirtual()) {
-                                view.getLogger().info("Adding multi-platform root {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
-                                rememberProject(settings, projectName);
-                                settings.include(projectName);
-                                final ProjectDescriptor proj = settings.findProject(projectName);
-                                proj.setProjectDir(gradleSourceDir);
-                                proj.setBuildFileName(buildFileName);
-                                proj.setName(modKey);
-                                view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}", projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
-//                                }
-                            }
+//                            if (project.isVirtual()) {
+                            view.getLogger().info("Adding multi-platform root {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
+                            rememberProject(settings, projectName);
+                            settings.include(projectName);
+                            final ProjectDescriptor proj = settings.findProject(projectName);
+                            proj.setProjectDir(gradleSourceDir);
+                            proj.setBuildFileName(buildFileName);
+                            proj.setName(modKey);
+                            view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}", projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
+//                            }
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
                             view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
@@ -383,8 +387,10 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                             .println("name = 'xapiLocal'")
                                             .println("url = repo");
 
-                        out.println("String javaPlugin = findProperty('xapi.java.plugin') ?: 'java-library'");
-                        out.println("plugins.apply javaPlugin");
+                        out.println("plugins.apply 'java-library'");
+                        // Need to make the java version configurable...
+                        out.println("java.toolchain.languageVersion = JavaLanguageVersion.of(8)");
+
                         // TODO: pull this from schema.xapi
                         out.println("repositories.mavenCentral()");
                         // To start, setup the sourceset!
@@ -397,6 +403,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         main.invoke("resources.setSrcDirs($2)", "[]");
                         test.invoke("java.setSrcDirs($2)", "[]");
                         test.invoke("resources.setSrcDirs($2)", "[]");
+
 
                         // lets have a look at the types of source dirs to decide what sourcesets to create.
                         if (moduleSourceDir.isDirectory()) {
@@ -655,12 +662,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 .print(project.getPathGradle())
                                 .print(" at file://")
                                 .println(generatedFile.getPath().replace(settings.getSettingsDir().getPath(), "$rootDir"));
-                        if (dryRun(view)) {
-                            view.getLogger().info("Skipping write of generated build file due to dry run status");
-                        } else {
-                            // all done writing generated project
-                            GradleFiles.writeFile(generatedFile, out.toSource());
-                        }
+                        // all done writing generated project
+                        GradleFiles.writeFile(generatedFile, out.toSource());
                     }
                 });
             });
@@ -689,7 +692,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
     private void finalizeProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
         if (!project.isMultiplatform()) {
-//            gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
+            gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
             gradleProject.getGradle().projectsEvaluated(g->{
                 gradleProject.apply(o-> {
                     gradleProject.getLogger().info("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
@@ -752,12 +755,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             project.forAllPlatformsAndModules((plat, mod) -> {
 
                 if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-                    // for now, lets apply our generated gradle source...
-                    // if this gets too yucky, we can just replace it w/ direct (but hidden) "act on Project" object code
-                    if (dryRun(view)) {
-                        gradleProject.getLogger().quiet("Found index entry for {} with index path {}", project.getPathGradle(), project.getPathIndex());
-                        return;
-                    }
+                    // apply our generated gradle source...
                     String key = QualifiedModule.unparse(plat.getName(), mod.getName());
                     String path = gradleProject.getProjectDir().getAbsolutePath() +
 //                            File.separator + "mods" + File.separator + key + File.separator +
@@ -776,12 +774,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         }
     }
 
-    private boolean dryRun(MinimalProjectView view) {
-        return
-                false;
-//                !"false".equals(System.getProperty("xapiDryRun")) &&
-//                !"false".equals(view.findProperty("xapiDryRun"));
-    }
     private boolean maybeRead(final File dir, final String file, final In2<String, File> callback) {
         File target = new File(dir, file);
         if (target.isFile()) {

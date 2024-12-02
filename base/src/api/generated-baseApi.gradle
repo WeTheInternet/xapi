@@ -29,11 +29,13 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/base/src/api/java")
 
 dependencies {
-  api "net.wti.core:xapi-anno:0.5.1"
-  api "net.wti.core:xapi-fu:0.5.1"
+  api "net.wti.core:xapi-anno:$version"
+  api "net.wti.core:xapi-fu:$version"
+  annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
 }
 // GenEnd XapiSettingsPlugin
 // Done generating buildfile for :base at file://$rootDir/base/src/api/generated-baseApi.gradle

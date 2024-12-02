@@ -47,6 +47,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/gwt/src/gwtUber/java")
 main.resources.srcDir("$rootDir/gwt/src/gwtUber/resources")
 test.java.srcDir("$rootDir/gwt/src/gwtUberTest/java")

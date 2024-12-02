@@ -29,6 +29,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/gwtc/src/gwtCompiler/java")
 test.java.srcDir("$rootDir/gwtc/src/gwtCompilerTest/java")
 test.resources.srcDir("$rootDir/gwtc/src/gwtCompilerTest/resources")

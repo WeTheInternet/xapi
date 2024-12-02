@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
 }
-repositories.jcenter()
+repositories.mavenCentral()
 
 dependencies {
     testImplementation 'junit:junit:4.13.1'

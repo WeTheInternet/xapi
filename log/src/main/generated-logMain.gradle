@@ -29,6 +29,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/log/src/main/java")
 test.java.srcDir("$rootDir/log/src/test/java")
 test.resources.srcDir("$rootDir/log/src/test/resources")

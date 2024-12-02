@@ -5,9 +5,11 @@
                 <api
                     requires = {
                         @transitive
-                        external : "net.wti.core:xapi-anno:0.5.1",
+                        external : "net.wti.core:xapi-anno:$version",
                         @transitive
-                        external : "net.wti.core:xapi-fu:0.5.1",
+                        external : "net.wti.core:xapi-fu:$version",
+                        @transitive(annotation_processor)
+                        external : "net.wti.gradle:xapi-dev-mirror:$version",
                     }
                 /api>,
                 <spi

@@ -29,6 +29,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.resources.srcDir("$rootDir/base/src/jreTestTools/resources")
 
 dependencies {

@@ -6,7 +6,7 @@ plugins {
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 compileJavacc.outputDirectory = file('src/main/gen')

@@ -5,7 +5,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         // only needed for gradle versions < 5.5... should be resolved w/ different versions of released plugin
@@ -16,7 +16,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
 }
-repositories { jcenter() }
+repositories { mavenCentral() }
 
 
 

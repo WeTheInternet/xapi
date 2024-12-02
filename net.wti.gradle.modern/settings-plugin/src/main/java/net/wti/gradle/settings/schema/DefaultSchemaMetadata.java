@@ -24,7 +24,7 @@ import static xapi.gradle.fu.LazyString.lazyToString;
  * <pre>
  * <xapi-schema
  *
- *     defaultRepoUrl = jcenter()
+ *     defaultRepoUrl = mavenCentral()
  *
  *     schemaLocation = "schema/schema.gradle"
  *

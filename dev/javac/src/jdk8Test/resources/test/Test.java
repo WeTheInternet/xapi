@@ -75,4 +75,8 @@ public class Test {
     this.world = world;
     return "hello: " + world;
   }
+
+  public String toString() {
+    return "Test Instance " + System.identityHashCode(this) + " : {" + ( this.test == this ? "self" : this.test + "}" );
+  }
 }

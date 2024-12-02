@@ -29,6 +29,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 main.java.srcDir("$rootDir/dev/javac/src/jdk8/java")
 main.resources.srcDir("$rootDir/dev/javac/src/jdk8/resources")
 test.java.srcDir("$rootDir/dev/javac/src/jdk8Test/java")
@@ -48,12 +49,6 @@ dependencies {
 // GenEnd XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/dev/javac/src/gradle/jdk8/body.end
 import org.gradle.internal.jvm.Jvm
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
 
 Jvm jvm = Jvm.current()
 File tools = jvm.toolsJar
@@ -79,9 +74,6 @@ idea {
     }
 }
 tasks.withType(Test).configureEach {
-    doFirst {
-        println System.getProperty("java.version") + "!!!!!!!!!"
-    }
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(8)
     }

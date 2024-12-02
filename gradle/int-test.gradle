@@ -1,4 +1,4 @@
-repositories.jcenter()
+repositories.mavenCentral()
 
 String configuration = findProperty('xapiTestConfiguration') ?: 'testImplementation'
 project.dependencies.add(configuration, project.dependencies.module('org.spockframework:spock-core:1.2-groovy-2.5'))

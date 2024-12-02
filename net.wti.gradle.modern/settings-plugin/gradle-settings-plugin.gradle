@@ -9,9 +9,6 @@ This handles the basics of publishing and path manifest production.'''
 
 repositories.mavenCentral()
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
-
 // we need to force intellij to not be stupid by hiding where we get the shadow jar from.
 def makeShadow = tasks.register('makeShadow', Sync)
 makeShadow.configure {

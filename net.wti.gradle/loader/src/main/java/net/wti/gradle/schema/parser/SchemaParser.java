@@ -339,7 +339,7 @@ public interface SchemaParser {
     default void addRepositories(DefaultSchemaMetadata meta, Expression expression) {
         /*
     repositories = [
-        jcenter(),
+        mavenCentral(),
         { maven: { name: "blah", url: "blah" } },
     ]
         */

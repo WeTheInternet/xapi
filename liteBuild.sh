@@ -9,7 +9,7 @@ skip_tools=n
 
 remove_shadow="-x shadowJar"
 shadow=${shadow:-$remove_shadow}
-main_args="-Dxapi.composite=true -Pxapi.changing=true --parallel --build-cache -Pxapi.debug=false $shadow"
+main_args="-Dxapi.composite=false -Pxapi.changing=false --parallel --build-cache -Pxapi.debug=false $shadow"
 
 while (( arg_len > 0 )); do
   arg_ind=$(( 1 + $# - arg_len ))

@@ -13,6 +13,11 @@ gradle.beforeProject {
     Project p ->
     p.apply from: "$p.rootDir.parentFile/gradle/xapi-env.gradle"
     p.apply from: "$p.rootDir.parentFile/gradle/xapi-modern.gradle"
+    p.java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(8))
+        }
+    }
 }
 
 

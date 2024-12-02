@@ -6,6 +6,3 @@
 apply from: "$rootDir/base/src/api/generated-baseApi.gradle"
 //
 // Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
-dependencies {
-    annotationProcessor("net.wti.gradle:xapi-dev-mirror:$version")
-}

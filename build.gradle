@@ -26,6 +26,7 @@ File indexRoot = new File(rootDir, 'build/xindex')
 
 gradle.beforeProject {
     Project p ->
+        p.java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))
         if (p.group != 'net.wetheinter') {
             p.logger.info "gradle.beforeProject group was: $p.group"
             p.group = 'net.wetheinter'
@@ -63,8 +64,6 @@ gradle.beforeProject {
             mavenCentral()
         }
         p.with {
-            sourceCompatibility = '1.8'
-            targetCompatibility = '1.8'
 
 
             tasks.withType(JavaCompile) {

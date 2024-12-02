@@ -2,7 +2,7 @@ plugins.apply('java-library')
 
 plugins.apply('maven-publish')
 
-sourceCompatibility = '1.8'
+//sourceCompatibility = '1.8'
 
 String xapiHome = getProperty('xapi.home') // you must apply xapi-env.gradle before applying xapi-modern.gradle
 
@@ -17,7 +17,7 @@ tasks.findByName(BasePlugin.ASSEMBLE_TASK_NAME).finalizedBy(
         PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME
 )
 // We're creating this here, manually, so we can get picked up when someone runs
-// ./gradlew xapiPublish or `gw pX` if you have gw alias for ./gradlew-finder (google "gradle gw gist")
+// ./gradlew xapiPublish or `gw xP` if you have gw alias for ./gradlew-finder (google "gradle gw gist")
 // Note that this behavior is similar to xapi-publish plugin, which we cannot (easily) use as we are defining it here.
 // We _could_ do some trickier to build in buildSrc and publish in main gradle scripts, but this is only ~50 lines of reimplementation,
 // versus weird build-setup-hackery.
@@ -77,16 +77,16 @@ ext.publications.create("main", MavenPublication, {
         }
 })
 
-configurations.apiElements.attributes {
-    AttributeContainer attrs ->
-        attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
-        attrs.attribute(ATTR_PLATFORM_TYPE, "main")
-}
-configurations.runtimeElements.attributes {
-    AttributeContainer attrs ->
-        attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
-        attrs.attribute(ATTR_PLATFORM_TYPE, "main")
-}
+//configurations.apiElements.attributes {
+//    AttributeContainer attrs ->
+//        attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
+//        attrs.attribute(ATTR_PLATFORM_TYPE, "main")
+//}
+//configurations.runtimeElements.attributes {
+//    AttributeContainer attrs ->
+//        attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
+//        attrs.attribute(ATTR_PLATFORM_TYPE, "main")
+//}
 
 if (!findProperty('xapi.repo.mvn')) {
     project.extensions.add("xapi.mvn.repo", "$rootDir/repo");

@@ -1,11 +1,5 @@
 import org.gradle.internal.jvm.Jvm
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
 Jvm jvm = Jvm.current()
 File tools = jvm.toolsJar
 if (!tools?.exists()) {

@@ -16,6 +16,8 @@ import java.net.URLClassLoader;
 
 import com.google.gwt.core.server.ServerGwtBridge;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class JavacPluginTest {
 
   private static File root;
@@ -56,7 +58,7 @@ public class JavacPluginTest {
       runIn.join();
       Object test = value.out1();
       System.out.println(test);
-  //    assertThat(test).isNotNull();
+      assertThat(test).isNotNull();
     } finally {
       // cleanup after ourselves.  set a break point here to inspect files before they are deleted.
       settings.resetGenerateDirectory();

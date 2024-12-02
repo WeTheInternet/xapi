@@ -6,7 +6,7 @@ plugins {
 
 description = '''Xapi Gradle Deprecated: Older tools from the days of configure-during-project-evaluation.'''
 
-repositories.jcenter()
+repositories.mavenCentral()
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
