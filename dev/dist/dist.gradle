@@ -3,10 +3,10 @@ import org.gradle.api.tasks.SourceSet;
 plugins {
     // GenInclude plugin from file:///opt/xapi/dev/dist/src/gradle/main/plugins
     id('xapi-tools-jar')
-    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+    id	"java-library"// GenInclude net.wti.gradle.settings.plugin.XapiSettingsPlugin adding java-library b/c api dependencies used
 }
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -51,12 +51,8 @@ dependencies {
     testImplementation project(path: ":base-testTools")
     implementation "net.wti.core:xapi-gen:$version"
 }
-
-
-configurations {
-    mainOut
-}
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-dev-dist
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/dev/dist/src/gradle/main/body.end
 tasks.named('test', Test).configure {
     Test t ->

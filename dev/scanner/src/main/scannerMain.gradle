@@ -1,9 +1,9 @@
 import org.gradle.api.tasks.SourceSet;
 
 plugins {
-    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+    id	"java-library"// GenInclude net.wti.gradle.settings.plugin.XapiSettingsPlugin adding java-library b/c api dependencies used
 }
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -42,5 +42,6 @@ dependencies {
     api project(path: ":dev:bytecode-main")
 }
 
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-dev-scanner
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // Done generating buildfile for :dev:scanner at file://$rootDir/dev/scanner/src/main/scannerMain.gradle

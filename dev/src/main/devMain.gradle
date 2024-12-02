@@ -1,6 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -30,5 +30,6 @@ main.java.srcDir("$rootDir/dev/src/main/java")
 main.resources.srcDir("$rootDir/dev/src/main/resources")
 test.java.srcDir("$rootDir/dev/src/test/java")
 test.resources.srcDir("$rootDir/dev/src/test/resources")
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-dev
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // Done generating buildfile for :dev at file://$rootDir/dev/src/main/devMain.gradle

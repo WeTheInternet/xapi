@@ -78,6 +78,10 @@ public class SchemaProject implements Named, HasPath {
     }
 
     public String getPublishedName() {
+        final SchemaProject maybeParent = getParent();
+        if (maybeParent != null && maybeParent != maybeParent.getRoot()) {
+            return maybeParent.getPublishedName() + "-" + name;
+        }
         return name; // for now just return name; we'll wire this up properly when we bother to make it configurable
     }
 

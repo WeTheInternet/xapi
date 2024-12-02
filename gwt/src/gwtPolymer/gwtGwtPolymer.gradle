@@ -1,6 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -37,5 +37,6 @@ dependencies {
     compileOnly "net.wetheinter:gwt-dev:2.8.0"
     testImplementation "junit:junit:4.13"
 }
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-gwt-polymer-gwt
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // Done generating buildfile for :gwt at file://$rootDir/gwt/src/gwtPolymer/gwtGwtPolymer.gradle

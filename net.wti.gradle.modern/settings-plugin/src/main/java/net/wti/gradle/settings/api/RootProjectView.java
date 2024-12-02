@@ -2,14 +2,19 @@ package net.wti.gradle.settings.api;
 
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
-import org.gradle.BuildAdapter;
+import org.gradle.api.GradleException;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.invocation.Gradle;
 import xapi.fu.In1;
+import xapi.fu.Lazy;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.util.Properties;
 
 import static net.wti.gradle.tools.InternalGradleCache.buildOnce;
 
@@ -24,6 +29,7 @@ public class RootProjectView extends ProjectDescriptorView {
     public static final String EXT_NAME = "_xapiRootProject";
     private static final String EXTENSION_NAME = "_xapiRoot";
     private In1<RootProjectView> beforeSettings, afterSettings;
+    private final Lazy<Properties> rootGradleProps;
 
     public RootProjectView(final Settings settings, final ProjectDescriptor descriptor) {
         super(settings, descriptor);
@@ -62,6 +68,18 @@ public class RootProjectView extends ProjectDescriptorView {
                     copyBefore.in(self);
                     copyAfter.in(self);
                 }
+        });
+        rootGradleProps = Lazy.deferred1(()->{
+            Properties prop = new Properties();
+            final File rootFile = new File(settings.getRootDir(), "gradle.properties");
+            if (rootFile.exists()) {
+                try {
+                    prop.load(Files.newInputStream(rootFile.toPath()));
+                } catch (IOException e) {
+                    throw new GradleException("Unable to read props file " + rootFile.getPath(), e);
+                }
+            }
+            return prop;
         });
     }
 
@@ -116,5 +134,14 @@ public class RootProjectView extends ProjectDescriptorView {
             afterSettings = afterSettings.useAfterMe(cb);
         }
         return this;
+    }
+
+    @Override
+    public Object findProperty(final String key) {
+        Object superFind = super.findProperty(key);
+        if (superFind != null) {
+            return superFind;
+        }
+        return rootGradleProps.out1().get(key);
     }
 }

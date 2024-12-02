@@ -1,9 +1,9 @@
 import org.gradle.api.tasks.SourceSet;
 
 plugins {
-    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+    id	"java-library"// GenInclude net.wti.gradle.settings.plugin.XapiSettingsPlugin adding java-library b/c api dependencies used
 }
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -34,5 +34,6 @@ dependencies {
     api project(path: ":inject-api")
 }
 
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-inject-api-gwt
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // Done generating buildfile for :inject at file://$rootDir/inject/src/gwtApi/injectGwtApi.gradle

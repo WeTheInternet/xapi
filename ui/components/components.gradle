@@ -1,6 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -37,10 +37,6 @@ dependencies {
     testImplementation project(path: ":base-testTools")
     testImplementation "junit:junit:4.12"
 }
-
-
-configurations {
-    mainOut
-}
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-ui-components
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // Done generating buildfile for :ui:components at file://$rootDir/ui/components/components.gradle

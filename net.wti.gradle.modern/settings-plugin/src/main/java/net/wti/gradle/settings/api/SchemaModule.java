@@ -18,7 +18,7 @@ public class SchemaModule implements Named {
     private boolean force;
 
     public SchemaModule(String name, SetLike<String> include, boolean published, boolean test, final boolean force) {
-        this(name, "main".equals(name) ? "$name" : "$module-$name", include, published, test, force);
+        this(name, "main".equals(name) ? "$name-$platform" : "$module-$name-$platform", include, published, test, force);
     }
 
     public SchemaModule(String name, String publishPattern, SetLike<String> include, boolean published, boolean test, final boolean force) {

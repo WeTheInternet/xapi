@@ -263,8 +263,8 @@ public class X_Namespace {
    *
    * Default is: if platform == main, group=
    */
-  public static String PROPERTY_PUBLISH_GROUP_PATTERN = "xapiPublishGroupPattern";
-  public static String PROPERTY_PUBLISH_NAME_PATTERN = "xapiPublishNamePattern";
+  public static String PROPERTY_PUBLISH_GROUP_PATTERN = "xapi.publish.group.pattern";
+  public static String PROPERTY_PUBLISH_NAME_PATTERN = "xapi.publish.module.pattern";
 
   public static String PROPERTY_SCHEMA_PROPERTIES_INJECT = "xinject.net.wti.gradle.schema.spi.SchemaProperties";
 

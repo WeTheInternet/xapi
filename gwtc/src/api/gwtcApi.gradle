@@ -1,6 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -47,7 +47,8 @@ dependencies {
     compileOnly "net.wti.gradle:xapi-dev-mirror:$version"
     annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
 }
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-gwtc-api
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/gwtc/src/gradle/api/body.end
 apply from: "$rootDir/gradle/processor.gradle"
 tasks.withType(JavaCompile).configureEach {

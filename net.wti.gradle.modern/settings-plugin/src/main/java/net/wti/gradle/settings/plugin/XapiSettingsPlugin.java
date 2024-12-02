@@ -362,7 +362,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             maybeAdd.io("body", getBody);
                         }
 
-                        out.println("// GenStart " + getClass().getSimpleName());
+                        out.println("// GenStart " + getClass().getName());
                         out.println("ext.xapiModern = 'true'");
                         if (X_String.isNotEmpty(maybeInclude)) {
                             out.printlns(maybeInclude);
@@ -494,7 +494,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 case api:
                                     if (out.addPlugin("java-library")) {
                                         out.getPlugins().print("// GenInclude ")
-                                                .print(getClass().getSimpleName())
+                                                .print(getClass().getName())
                                                 .println(" adding java-library b/c api dependencies used");
                                     }
                                     depOut.print(
@@ -637,13 +637,17 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             } // end switch(dep.getType())
                         } // end for (dep :
 
-                        if (!project.isMultiplatform()) {
-                            out.println()
-                                    .startClosure("configurations")
-                                    .println(key + "Out");
-                            // TODO: actually hook this up in the generated code
-                        }
-                        out.println("// GenEnd " + getClass().getSimpleName());
+                        // now, lets add some publishing!
+                        String pubName = project.getPublishedName();
+                        String gid = fullIndex.getGroupIdNotNull();
+                        String grp = map.getGroup();
+                        String groupNameResolved = properties.resolvePattern(plat.getPublishPattern(), fullIndex, pubName, plat.getName(), "");;
+                        String modNameResolved = properties.resolvePattern(mod.getPublishPattern(), fullIndex, pubName, plat.getName(), mod.getName());
+
+                        out.println("// Setup publishing to coordinates(" +
+                                grp + "): " + groupNameResolved + ":" + modNameResolved);
+
+                        out.println("// GenEnd " + getClass().getName());
 
                         maybeAdd.io("body.end", getBody);
                         out.print("// Done generating buildfile for ")
@@ -667,89 +671,89 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         return InternalGradleCache.buildOnce(settings, "_xapiProjects", missing-> X_Jdk.listArrayConcurrent()).containsEquality(gradlePath);
     }
 
-    private void finalizeProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
-        if (!project.isMultiplatform()) {
-            gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
-            gradleProject.getGradle().projectsEvaluated(g->{
-                gradleProject.apply(o-> {
-                    gradleProject.getLogger().info("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
-//                    o.plugin(XapiParserPlugin.class);
-                });
-            });
-        }
-    }
-
-    private void setupProject(final RootProjectView view, final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
-        if (!project.isMultiplatform()) {
-            // a multi-platform project will make the parent module an aggregator for client modules.
-            // single-platform project will leave the main build.gradle file as the "main" module, and uses java-library plugin.
-            gradleProject.apply(o-> {
-                o.plugin(JavaLibraryPlugin.class);
-            });
-        }
-//        final ProjectView view = ProjectView.fromProject(gradleProject);
-//        view.getLogger().quiet("Setting up schema for project {}", view.getPath());
-
-        ListLike<SchemaDependency> externals = X_Jdk.list();
-//        project.getDependencies().forEachPair((mod, dep) -> {
-//            switch (dep.getType()) {
-//                case external:
-//                    externals.add(dep);
-//                    break;
-//            }
-//        });
-        if (externals.isNotEmpty()) {
-//            view.getTasks().register("resolveExternals", ResolveExternalsTask.class);
-//            TaskSpy.spy(view, "resolveExternals", ResolveExternalsTask.class, resolve->{
-//                // make all classpaths / configuration resolution depend on resolveExternals.
+//    private void finalizeProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
+//        if (!project.isMultiplatform()) {
+//            gradleProject.getLogger().quiet("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
+//            gradleProject.getGradle().projectsEvaluated(g->{
+//                gradleProject.apply(o-> {
+//                    gradleProject.getLogger().info("Finalizing {}. Configurations: {}", gradleProject.getPath(), gradleProject.getConfigurations().getNames());
+////                    o.plugin(XapiParserPlugin.class);
+//                });
 //            });
-            gradleProject.getLogger().quiet("Found externals {} for project {} with index path {}", externals, project.getPathGradle(), project.getPathIndex());
-        }
-        BuildCoordinates coordinates = RootProjectView.rootView(gradleProject.getGradle());
-        if (project.isMultiplatform()) {
-            // If we are multi-platform, then we have sub-projects for each of our modules.
-            // These subprojects will not match the SchemaProject, nor will they need to:
-            // these subprojects contain generated dependency / general wiring;
-            // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
-            project.forAllPlatformsAndModules((plat, mod) -> {
-                if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-                    gradleProject.getLogger().info("Found multiplatform combination {}-{} for {} with gradle path {}",
-                            plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
-                    String suffix = PlatformModule.unparse(plat.getName(), mod.getName());
-                    String path = project.getPathGradle() + "-" + suffix;
-                    final ExtensionContainer ext = gradleProject.findProject(path).getExtensions();
-                    if (ext.findByName("xapiModern") == null) {
-                        logger.quiet("Making modern: " + path + " - " + gradleProject.getPath());
-                        ext.add("xapiModern", "true");
-                    } else {
-                        logger.info("Already modern: " + path);
-                    }
-                }
-            });
-
-        } else {
-            // A non-multi-platform project needs to have a bit more "hidden surgery".
-            project.forAllPlatformsAndModules((plat, mod) -> {
-
-                if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
-                    // apply our generated gradle source...
-                    String key = QualifiedModule.unparse(plat.getName(), mod.getName());
-                    String path = gradleProject.getProjectDir().getAbsolutePath() +
-//                            File.separator + "mods" + File.separator + key + File.separator +
-                            (project.isMultiplatform() ? File.separator + "src" + File.separator + key : "") +
-                            File.separator + project.getName() + (project.isMultiplatform() ? X_String.toTitleCase(key) : "") + ".gradle";
-                    if (new File(path + ".kts").exists()) {
-                        path = path + ".kts";
-                    }
-                    final String finalPath = path;
-                    gradleProject.getLogger().info("{} is sourcing generated path {}", gradleProject.getPath(), finalPath);
-//                    gradleProject.apply(o-> {
-//                        o.from(finalPath);
-//                    });
-                }
-            });
-        }
-    }
+//        }
+//    }
+//
+//    private void setupProject(final RootProjectView view, final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {
+//        if (!project.isMultiplatform()) {
+//            // a multi-platform project will make the parent module an aggregator for client modules.
+//            // single-platform project will leave the main build.gradle file as the "main" module, and uses java-library plugin.
+//            gradleProject.apply(o-> {
+//                o.plugin(JavaLibraryPlugin.class);
+//            });
+//        }
+////        final ProjectView view = ProjectView.fromProject(gradleProject);
+////        view.getLogger().quiet("Setting up schema for project {}", view.getPath());
+//
+//        ListLike<SchemaDependency> externals = X_Jdk.list();
+////        project.getDependencies().forEachPair((mod, dep) -> {
+////            switch (dep.getType()) {
+////                case external:
+////                    externals.add(dep);
+////                    break;
+////            }
+////        });
+//        if (externals.isNotEmpty()) {
+////            view.getTasks().register("resolveExternals", ResolveExternalsTask.class);
+////            TaskSpy.spy(view, "resolveExternals", ResolveExternalsTask.class, resolve->{
+////                // make all classpaths / configuration resolution depend on resolveExternals.
+////            });
+//            gradleProject.getLogger().quiet("Found externals {} for project {} with index path {}", externals, project.getPathGradle(), project.getPathIndex());
+//        }
+//        BuildCoordinates coordinates = RootProjectView.rootView(gradleProject.getGradle());
+//        if (project.isMultiplatform()) {
+//            // If we are multi-platform, then we have sub-projects for each of our modules.
+//            // These subprojects will not match the SchemaProject, nor will they need to:
+//            // these subprojects contain generated dependency / general wiring;
+//            // any API-sugar we sprinkle on top goes into the multiplatform aggregator (the parent of all modules)
+//            project.forAllPlatformsAndModules((plat, mod) -> {
+//                if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
+//                    gradleProject.getLogger().info("Found multiplatform combination {}-{} for {} with gradle path {}",
+//                            plat.getName(), mod.getName(), project.getPathGradle(), gradleProject.getPath());
+//                    String suffix = PlatformModule.unparse(plat.getName(), mod.getName());
+//                    String path = project.getPathGradle() + "-" + suffix;
+//                    final ExtensionContainer ext = gradleProject.findProject(path).getExtensions();
+//                    if (ext.findByName("xapiModern") == null) {
+//                        logger.quiet("Making modern: " + path + " - " + gradleProject.getPath());
+//                        ext.add("xapiModern", "true");
+//                    } else {
+//                        logger.info("Already modern: " + path);
+//                    }
+//                }
+//            });
+//
+//        } else {
+//            // A non-multi-platform project needs to have a bit more "hidden surgery".
+//            project.forAllPlatformsAndModules((plat, mod) -> {
+//
+//                if (index.hasEntries(coordinates, project.getPathIndex(), plat, mod)) {
+//                    // apply our generated gradle source...
+//                    String key = QualifiedModule.unparse(plat.getName(), mod.getName());
+//                    String path = gradleProject.getProjectDir().getAbsolutePath() +
+////                            File.separator + "mods" + File.separator + key + File.separator +
+//                            (project.isMultiplatform() ? File.separator + "src" + File.separator + key : "") +
+//                            File.separator + project.getName() + (project.isMultiplatform() ? X_String.toTitleCase(key) : "") + ".gradle";
+//                    if (new File(path + ".kts").exists()) {
+//                        path = path + ".kts";
+//                    }
+//                    final String finalPath = path;
+//                    gradleProject.getLogger().info("{} is sourcing generated path {}", gradleProject.getPath(), finalPath);
+////                    gradleProject.apply(o-> {
+////                        o.from(finalPath);
+////                    });
+//                }
+//            });
+//        }
+//    }
 
     private boolean maybeRead(final File dir, final String file, final In2<String, File> callback) {
         File target = new File(dir, file);

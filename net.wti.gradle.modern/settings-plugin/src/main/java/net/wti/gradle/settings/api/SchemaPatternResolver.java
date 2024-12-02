@@ -16,14 +16,17 @@ public interface SchemaPatternResolver {
         return resolvePattern(pattern, index.getBuildName(), projectName, index.getGroupIdNotNull(), index.getVersion().toString(), platform, module);
     }
     default String resolvePattern(String pattern, String buildName, String projectName, String groupId, String version, String platform, String module) {
-        return pattern
+        String value = pattern
                 .replaceAll("[$]build", firstNotEmpty(buildName, ":"))
                 .replaceAll("[$]name", projectName)
                 .replaceAll("[$]group", groupId)
                 .replaceAll("[$]version", version)
                 .replaceAll("[$]platform", platform)
-                .replaceAll("[$]module", module)
-                ;
+                .replaceAll("[$]module", module);
+        while (value.contains("-main")) {
+            value = value.replaceAll("-main", "");
+        }
+        return value;
     }
 
 }

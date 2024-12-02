@@ -3,10 +3,10 @@ import org.gradle.api.tasks.SourceSet;
 plugins {
     // GenInclude plugin from file:///opt/xapi/dev/javac/src/gradle/main/plugins
     id('xapi-tools-jar')
-    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+    id	"java-library"// GenInclude net.wti.gradle.settings.plugin.XapiSettingsPlugin adding java-library b/c api dependencies used
 }
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -48,5 +48,6 @@ dependencies {
     api "net.wti.core:xapi-lang-core:${version}"
     compileOnly "net.wetheinter:gwt-dev:2.8.0"
 }
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-dev-javac
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // Done generating buildfile for :dev:javac at file://$rootDir/dev/javac/src/main/javacMain.gradle

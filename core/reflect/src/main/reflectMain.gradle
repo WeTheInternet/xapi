@@ -1,6 +1,6 @@
 import org.gradle.api.tasks.SourceSet;
 
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -38,7 +38,8 @@ dependencies {
     implementation "javax.inject:javax.inject:1"
     implementation "junit:junit:4.12"
 }
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-core-reflect
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/core/reflect/src/gradle/main/body.end
 SourceSet java9 = sourceSets.maybeCreate("java9")
 

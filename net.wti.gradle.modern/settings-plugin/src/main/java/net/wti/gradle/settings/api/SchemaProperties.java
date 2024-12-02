@@ -69,7 +69,8 @@ public interface SchemaProperties extends SchemaPatternResolver {
     default String getPublishGroupPattern(MinimalProjectView view, final String platformName) {
         final String configured = getProperty(view, X_Namespace.PROPERTY_PUBLISH_GROUP_PATTERN);
         if (X_String.isEmptyTrimmed(configured)) {
-            return "main".equals(platformName) ? "$group" : "$group.$platform";
+//            return "main".equals(platformName) ? "$group" : "$group.$platform";
+            return "$group";
         }
         return configured;
     }
@@ -77,7 +78,7 @@ public interface SchemaProperties extends SchemaPatternResolver {
     default String getPublishNamePattern(MinimalProjectView view, final String moduleName) {
         final String configured = getProperty(view, X_Namespace.PROPERTY_PUBLISH_NAME_PATTERN);
         if (X_String.isEmptyTrimmed(configured)) {
-            return "main".equals(moduleName) ? "$name" : "$name-$module";
+            return "main".equals(moduleName) ? "$name-$platform" : "$name-$module-$platform";
         }
 
         return configured;

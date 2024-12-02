@@ -21,7 +21,8 @@ tasks.register 'publishRequired', { req ->
 }
 
 File mvnRepo = new File(rootDir, 'repo')
-File indexRoot = new File(rootDir, 'build/xindex')
+//File indexRoot = new File(rootDir, 'build/xindex')
+File buildRoot = new File(rootDir, 'build')
 
 
 gradle.beforeProject {
@@ -106,7 +107,7 @@ wrapper {
 
 idea {
     module {
-        excludeDirs = [mvnRepo, indexRoot] as Set
+        excludeDirs = [mvnRepo, buildRoot] as Set
     }
 }
 

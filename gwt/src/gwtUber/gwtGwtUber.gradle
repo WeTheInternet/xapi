@@ -18,13 +18,13 @@ buildscript {
     }
 }
 plugins {
-    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+    id	"java-library"// GenInclude net.wti.gradle.settings.plugin.XapiSettingsPlugin adding java-library b/c api dependencies used
 }
 
 // GenInclude body.start from file:///opt/xapi/gwt/src/gradle/gwtUber/body.start
 // See <xapi repo>/gwt/src/gwtUber/todo/TODO.md for details abour re-enabling this
 // apply plugin: xapi.gradle.meta.MetaPlugin
-// GenStart XapiSettingsPlugin
+// GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
 
 apply from: "$rootDir/gradle/xapi-modern.gradle"
@@ -77,7 +77,8 @@ dependencies {
     testImplementation "junit:junit:4.13:sources"
 }
 
-// GenEnd XapiSettingsPlugin
+// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-gwt-uber-gwt
+// GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/gwt/src/gradle/gwtUber/body.end
 configurations {
     allDeps.extendsFrom runtimeClasspath
