@@ -54,7 +54,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
     private final Logger logger;
     private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-            .appendPattern(X_Namespace.TIMESTAMP_FORMAT)
+            .appendPattern(X_Namespace.TIMESTAMP_FORMAT_NO_TZ)
             .toFormatter();
 
     @Inject
@@ -271,44 +271,31 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // user may freely create and check in their own projects, and we'll happily hook them up,
                         // so, by default, only schema.xapi / indexed dependencies can trigger a generated project creation.
 
-                        final File generatedFile = new File(gradleSourceDir, "generated-" + buildFileName);
+                        final File lastGeneratedFile = new File(gradleSourceDir, "build/buildscripts/" + buildFileName);
+                        lastGeneratedFile.getParentFile().mkdirs();
 
-                        final String inclusion = "apply from: " +
-                                "\"$rootDir/" +
-                                segment + "/" +
-                                (gradleSourcePath.isEmpty() ? "" : gradleSourcePath + "/")
-                                + generatedFile.getName() + "\"";
-                        final BuildScriptBuffer defaultContent = makeDefaultBuildScript(inclusion);
-                        String defaultSource = defaultContent.toSource();
                         if (userBuildFile.exists()) {
                             String buildFileContents = GradleFiles.readFile(userBuildFile);
-                            if (buildFileContents.isEmpty()) {
-                                // empty file, we'll feel free to write into it.
-                                logger.info("Replacing empty build script {} with default content", userBuildFile);
-                            } else if (buildFileContents.contains(inclusion)) {
-                                // this signals later code not to overwrite the file. User has changes.
-                                if (!buildFileContents.equals(defaultSource)) {
-                                    logger.quiet("HEREOY: {}\n--\n{}\n++\n{}", inclusion, defaultSource, buildFileContents);
+                            if (lastGeneratedFile.exists()) {
+                                String lastGenContents = GradleFiles.readFile(lastGeneratedFile);
+                                if (!lastGenContents.equals(buildFileContents)) {
+                                    if ("true".equals(view.findProperty("forceRegen")) || "all".equals(view.findProperty("force"))) {
+                                        File backup = new File(view.getProjectDir(), "build/buildscripts/backup-" + LocalDateTime.now().format(formatter) + "-" + userBuildFile.getName());
+                                        backup.getParentFile().mkdirs();
+                                        logger.quiet("User passed -Pforce=all or -PforceBuildscripts=true; forcibly overwriting user-owned submodule " + userBuildFile.getName());
+                                        logger.quiet("A backup of this file was created in " + backup.getAbsolutePath());
+                                        if (backup.exists()) {
+                                            backup.delete();
+                                        }
+                                        userBuildFile.renameTo(backup);
+                                    } else {
+                                        throw new GradleException("Manual changed to generated build file " + userBuildFile.getPath() + " detected! To see difference, run:\n" +
+                                                "diff " + userBuildFile.getPath() + " " + lastGeneratedFile.getPath() + "\n" +
+                                                "Any changes to buildscripts need to be placed into " + buildscriptSrc.getPath() + "/{body.end,body.start,plugins,buildscript} file(s).\n" +
+                                                "Set -PforceRegen=true or -Pforce=all to forcibly overwrite user-owned .gradle files (you should git commit first!)");
+                                    }
                                 }
-                                defaultSource = "";
-                                // need to mark this node as "has explicit buildscript"... much sooner than now!
-                                // if (buildFileContents.equals(defaultSource)) { //...
-                            } else if ("true".equals(view.findProperty("forceRegen")) || "all".equals(view.findProperty("force"))) {
-                                File backup = new File(view.getProjectDir(), "build/buildscripts/backup-" + LocalDateTime.now().format(formatter) + "-" + userBuildFile.getName());
-                                backup.getParentFile().mkdirs();
-                                logger.quiet("User passed -Pforce=all or -PforceBuildscripts=true; forcibly overwriting user-owned submodule " + userBuildFile.getName());
-                                logger.quiet("A backup of this file was created in " + backup.getAbsolutePath());
-                                if (backup.exists()) {
-                                    backup.delete();
-                                }
-                                userBuildFile.renameTo(backup);
-                            } else {
-                                throw new GradleException("Fatal error; file " + userBuildFile.getAbsolutePath() + " does not contain expected text: " + inclusion
-                                    + "\nSet -PforceRegen=true or -Pforce=all to forcibly overwrite user-owned .gradle files (you should git commit first!)");
                             }
-                        }
-                        if (X_String.isNotEmpty(defaultSource)){
-                            GradleFiles.writeFile(userBuildFile, defaultSource);
                         }
 
 
@@ -331,14 +318,15 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
 
-                        BuildScriptBuffer out = new BuildScriptBuffer(false);
+                        BuildScriptBuffer out = new BuildScriptBuffer(true);
 
                         final In2Out1<String, Out1<Printable<?>>, Boolean> maybeAdd =
                                 (name, buffer) -> {
-                                    In2<String, File> cb = (script, file) ->
+                                    In2<String, File> cb = (script, file) -> {
                                             buffer.out1()
                                                     .print("// GenInclude ").print(name).print(" from file://").println(file.getAbsolutePath())
-                                                    .println(script)
+                                                    .printlns(script);
+                                    }
                                             ;
                                     return maybeRead(buildscriptSrc, name, cb);
                                 };
@@ -375,7 +363,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         }
 
                         out.println("// GenStart " + getClass().getSimpleName());
-                        out.getPlugins().println("ext.xapiModern = 'true'");
+                        out.println("ext.xapiModern = 'true'");
                         if (X_String.isNotEmpty(maybeInclude)) {
                             out.printlns(maybeInclude);
                         }
@@ -661,9 +649,11 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         out.print("// Done generating buildfile for ")
                                 .print(project.getPathGradle())
                                 .print(" at file://")
-                                .println(generatedFile.getPath().replace(settings.getSettingsDir().getPath(), "$rootDir"));
+                                .println(userBuildFile.getPath().replace(settings.getSettingsDir().getPath(), "$rootDir"));
                         // all done writing generated project
-                        GradleFiles.writeFile(generatedFile, out.toSource());
+                        final String finalSrc = out.toSource();
+                        GradleFiles.writeFile(userBuildFile, finalSrc);
+                        GradleFiles.writeFile(lastGeneratedFile, finalSrc);
                     }
                 });
             });
@@ -675,19 +665,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
     }
     public static boolean hasRememberedProject(final Settings settings, final String gradlePath) {
         return InternalGradleCache.buildOnce(settings, "_xapiProjects", missing-> X_Jdk.listArrayConcurrent()).containsEquality(gradlePath);
-    }
-
-    private BuildScriptBuffer makeDefaultBuildScript(final String inclusion) {
-        BuildScriptBuffer b = new BuildScriptBuffer();
-        b.println("// This buildscript was generated as a place for you to manually configure your subproject as you wish.");
-        b.println("//");
-        b.println("// You can safely delete this file, and a new one will be generated for you in its place");
-        b.println("//");
-        b.println("// The only rule is that, somewhere in this file, even in a comment, you must include the following line:");
-        b.println(inclusion);
-        b.println("//");
-        b.println("// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.");
-        return b;
     }
 
     private void finalizeProject(final Project gradleProject, final SchemaProject project, final SchemaProperties properties, final SchemaIndexReader index, final SchemaMap map) {

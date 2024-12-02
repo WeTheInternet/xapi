@@ -1,8 +1,57 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/ui/html/src/gwt/generated-htmlGwt.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+}
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/ui/html/src/gwt/java")
+main.resources.srcDir("$rootDir/ui/html/src/gwt/resources")
+test.java.srcDir("$rootDir/ui/html/src/gwtTest/java")
+test.resources.srcDir("$rootDir/ui/html/src/gwtTest/resources")
+
+dependencies {
+    api project(path: ":ui:autoui-gwt")
+    api project(path: ":ui:service-gwt")
+    implementation project(path: ":ui:html-main")
+    implementation project(path: ":inject-jre")
+    implementation project(path: ":util-main")
+    testImplementation project(path: ":ui:autoui-sample")
+    testImplementation project(path: ":base-testTools")
+    implementation "net.wetheinter:gwt-elemental:2.8.0"
+    compileOnly "net.wetheinter:gwt-dev:2.8.0"
+    compileOnly "net.wetheinter:gwt-codeserver:2.8.0"
+    compileOnly "net.wetheinter:gwt-user:2.8.0"
+    testImplementation "net.sourceforge.htmlunit:htmlunit:2.19"
+    testImplementation "net.wetheinter:gwt-dev:2.8.0"
+    testImplementation "net.wetheinter:gwt-codeserver:2.8.0"
+    testImplementation "net.wetheinter:gwt-user:2.8.0"
+    api project(path: ":ui:html-main")
+}
+
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :ui:html at file://$rootDir/ui/html/src/gwt/htmlGwt.gradle

@@ -11,6 +11,7 @@ buildscript {
 }
 plugins {
     id 'idea'
+    id 'groovy-gradle-plugin'
 }
 if (gradle.getParent() == null || gradle.getParent().getParent() == null) {
     group = 'xapi-buildSrc'

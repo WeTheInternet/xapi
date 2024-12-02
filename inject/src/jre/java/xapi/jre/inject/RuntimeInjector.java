@@ -137,7 +137,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       .scan(targetClassloader())
       ;
     // Only collect platform types if we are not running in a known platform.
-    final String runtime[] = checker.getRuntime();
+    final String[] runtime = checker.getRuntime();
 
     final Fifo<ClassFile> defaultSingletons = new SimpleFifo<ClassFile>();
     final Fifo<ClassFile> defaultInstances = new SimpleFifo<ClassFile>();

@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.source.X_Source;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/18/16.
@@ -8,7 +10,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
 
   String NEW_LINE = "\n";
 
-  String INDENT = System.getProperty("xapi.indent", "  ");
+  String INDENT = System.getProperty("xapi.indent", "    ");
 
   Self append(final CharSequence s, final int start, final int end);
 
@@ -246,8 +248,44 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
   }
 
   default Self printlns(String str) {
-    for (String line : str.split("\\r|(?:\\r?\\n)")) {
-      println(line.trim());
+    final String[] lines = str.split("\\r|(?:\\r?\\n)");
+    int leading = 0;
+
+    for (String line : lines) {
+      if (line.isEmpty()) {
+        continue;
+      }
+      if (!Character.isWhitespace(line.charAt(0))) {
+        continue;
+      }
+      int numLead = 0;
+      while (Character.isWhitespace(line.charAt(numLead))) {
+        numLead++;
+      }
+      if (leading == 0) {
+        leading = numLead;
+      } else if (numLead < leading) {
+        leading = numLead;
+      }
+    }
+    StringBuilder localIndent = new StringBuilder(leading);
+    for (int i = leading; i-->0;) {
+      localIndent.append(' ');
+    }
+    String in = isIndentNeeded() ? getIndent() : "";
+    for (String line : lines) {
+      if (line.isEmpty()) {
+//        println(in);
+        println();
+      } else if (Character.isWhitespace(line.charAt(0))) {
+//        append();
+        append(localIndent);
+        println(line.replaceFirst(localIndent.toString(), ""));
+      } else {
+//        append(in);
+        println(line);
+      }
+      in = getIndent();
     }
     return self();
   }

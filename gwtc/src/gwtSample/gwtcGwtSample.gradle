@@ -1,8 +1,72 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/gwtc/src/gwtSample/generated-gwtcGwtSample.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    // GenInclude plugin from file:///opt/xapi/gwtc/src/gradle/gwtSample/plugins
+    id('xapi-tools-jar')
+}
+
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/gwtc/src/gwtSample/java")
+main.resources.srcDir("$rootDir/gwtc/src/gwtSample/resources")
+test.java.srcDir("$rootDir/gwtc/src/gwtSampleTest/java")
+test.resources.srcDir("$rootDir/gwtc/src/gwtSampleTest/resources")
+
+dependencies {
+    implementation project(path: ":gwtc-api")
+    implementation project(path: ":inject-main")
+    implementation project(path: ":dev:maven-main")
+    compileOnly project(path: ":ui:generator")
+    compileOnly project(path: ":dev:javac-jdk8")
+    compileOnly project(path: ":dev:scanner-main")
+    compileOnly project(path: ":base-main")
+    compileOnly project(path: ":base-api")
+    compileOnly project(path: ":inject-jre")
+    compileOnly project(path: ":collect-jre")
+    annotationProcessor project(path: ":ui:generator")
+    annotationProcessor project(path: ":inject-jre")
+    annotationProcessor project(path: ":collect-jre")
+    annotationProcessor project(path: ":base-main")
+    annotationProcessor project(path: ":base-api")
+    annotationProcessor project(path: ":dev:scanner-main")
+    annotationProcessor project(path: ":dev:javac-jdk8")
+    testImplementation project(path: ":gwtc-gwtTestTools")
+    implementation "net.wetheinter:gwt-user:2.8.0"
+}
+// GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/gwtc/src/gradle/gwtSample/body.end
+tasks.named('compileJava').configure {
+    Task t ->
+        t.dependsOn ":dev:javac-jdk8:jar",
+                    ":dev:javac-main:jar",
+                    ":dev:scanner-main:jar",
+                    ":base-main:jar",
+                    ":inject-jre:jar",
+                    ":dev:lang-main:jar",
+                    ":ui:generator:jar"
+}
+// Done generating buildfile for :gwtc at file://$rootDir/gwtc/src/gwtSample/gwtcGwtSample.gradle

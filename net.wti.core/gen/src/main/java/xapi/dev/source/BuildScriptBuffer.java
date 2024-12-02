@@ -65,10 +65,13 @@ public class BuildScriptBuffer extends GradleBuffer {
     public boolean addPlugin(String pluginId) {
         String key = pluginId.trim();
 
-        boolean hasId = false, hasQuote = false;
+        boolean hasId = false, hasQuote = false, hasParen = false;
         if (key.startsWith("id ") || key.startsWith("id\t")) {
             hasId = true;
             key = key.replaceFirst("id\\s*", "");
+        } else if (key.startsWith("id(")) {
+            hasParen = true;
+            key = key.replaceFirst("id[(]", "").replace(")", "");
         }
         if (key.startsWith("'") || key.startsWith("\"")) {
             hasQuote = true;
@@ -77,21 +80,23 @@ public class BuildScriptBuffer extends GradleBuffer {
         if (pluginList.addIfMissing(key)) {
             final Printable<?> out = getPlugins();
             if (allowPluginsBlock) {
-                out.println().indent();
-                if (!hasId) {
-                    out.append("id\t");
+                if (hasParen) {
+                    out.print(pluginId);
+                } else {
+                    if (!hasId) {
+                        out.print("id\t");
+                    }
+                    if (!hasQuote) {
+                        out.print("\"");
+                    }
+                    out.print(pluginId);
+                    if (!hasQuote) {
+                        out.append("\"");
+                    }
                 }
-                if (!hasQuote) {
-                    out.append("\"");
-                }
-                out.append(pluginId);
-                if (!hasQuote) {
-                    out.append("\"");
-                }
-                out.outdent();
             } else {
                 out.println()
-                   .append("plugins.apply \"").append(pluginId).append("\"")
+                   .print("plugins.apply \"").append(pluginId).append("\"")
                    .println();
             }
             return true;

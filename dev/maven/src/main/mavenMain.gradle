@@ -1,8 +1,77 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/dev/maven/src/main/generated-mavenMain.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+}
+// GenInclude body.start from file:///opt/xapi/dev/maven/src/gradle/main/body.start
+apply from: "$rootDir/gradle/xapi-env.gradle"
+apply from: "$rootDir/gradle/int-test.gradle"
+
+tasks.named('compileJava').configure {
+    Task t ->
+        t.dependsOn ":dev:javac-jdk8:jar",
+                    ":dev:javac-main:jar",
+                    ":base-main:jar",
+                    ":inject-jre:jar",
+                    ":dev:lang-main:jar",
+                    ":ui:generator:jar"
+}
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/maven/src/main/java")
+main.resources.srcDir("$rootDir/dev/maven/src/main/resources")
+test.java.srcDir("$rootDir/dev/maven/src/test/java")
+test.resources.srcDir("$rootDir/dev/maven/src/test/resources")
+test.java.srcDir("$rootDir/dev/maven/src/test/groovy")
+
+dependencies {
+    api project(path: ":dev:bytecode-main")
+    api project(path: ":dev:scanner-main")
+    api project(path: ":model-main")
+    api project(path: ":log-api")
+    implementation project(path: ":server:servlets")
+    implementation project(path: ":dev:api-main")
+    implementation project(path: ":util-main")
+    implementation project(path: ":io-main")
+    implementation project(path: ":collect-main")
+    implementation project(path: ":dev:file-main")
+    implementation project(path: ":core:scope-main")
+    implementation project(path: ":model-jre")
+    implementation project(path: ":inject-jre")
+    testImplementation project(path: ":base-testTools")
+    testImplementation project(path: ":io-jre")
+    api "org.apache.maven:maven-core:3.2.5"
+    implementation "org.slf4j:slf4j-api:1.7.25"
+    implementation "net.wti.core:xapi-lang-core:${version}"
+    implementation "org.eclipse.aether:aether-connector-basic:1.0.1.v20141111"
+    implementation "org.eclipse.aether:aether-transport-file:1.0.1.v20141111"
+    implementation "org.eclipse.aether:aether-transport-http:1.0.1.v20141111"
+    implementation "org.eclipse.aether:aether-impl:1.0.1.v20141111"
+}
+
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :dev:maven at file://$rootDir/dev/maven/src/main/mavenMain.gradle

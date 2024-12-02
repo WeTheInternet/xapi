@@ -1,8 +1,60 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/jre/uber/generated-uber.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+}
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/jre/uber/src/main/java")
+main.resources.srcDir("$rootDir/jre/uber/src/main/resources")
+test.java.srcDir("$rootDir/jre/uber/src/test/java")
+test.resources.srcDir("$rootDir/jre/uber/src/test/resources")
+
+dependencies {
+    api project(path: ":base-jre")
+    api project(path: ":process-jre")
+    api project(path: ":collect-jre")
+    api project(path: ":model-jre")
+    api project(path: ":io-jre")
+    api project(path: ":dev:scanner-main")
+    api project(path: ":ui:javafx")
+    testImplementation project(path: ":base-testTools")
+    testImplementation project(path: ":model-jre")
+}
+
+
+
+configurations {
+    mainOut
+}
+// GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/jre/uber/src/gradle/main/body.end
+tasks.named("test", Test).configure {
+    Test t ->
+        t.maxHeapSize("6G")
+}
+// Done generating buildfile for :jre:uber at file://$rootDir/jre/uber/uber.gradle

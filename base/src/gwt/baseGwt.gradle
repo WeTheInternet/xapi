@@ -1,8 +1,62 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/base/src/gwt/generated-baseGwt.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+}
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/base/src/gwt/java")
+main.resources.srcDir("$rootDir/base/src/gwt/resources")
+test.java.srcDir("$rootDir/base/src/gwtTest/java")
+test.resources.srcDir("$rootDir/base/src/gwtTest/resources")
+
+dependencies {
+    implementation project(path: ":util-main")
+    implementation project(path: ":core:reflect-main")
+    implementation project(path: ":inject-main")
+    implementation project(path: ":log-api")
+    implementation project(path: ":collect-api")
+    testImplementation project(path: ":base-gwtTestTools")
+    testImplementation project(path: ":base-gwt")
+    implementation "net.wetheinter:gwt-user:2.8.0"
+    implementation "net.wetheinter:gwt-dev:2.8.0"
+    implementation "net.wti.core:xapi-fu:0.5.1"
+    implementation "com.google.elemental2:elemental2-core:1.0.0-RC1"
+    implementation "com.google.jsinterop:base:1.0.0-RC1"
+    api "javax.inject:javax.inject:1"
+    api "javax.inject:javax.inject:1:sources"
+    api "javax.validation:validation-api:1.0.0.GA"
+    api "javax.validation:validation-api:1.0.0.GA:sources"
+    testImplementation "net.wetheinter:gwt-dev:2.8.0"
+    testImplementation "net.wti.core:xapi-gen:0.5.1"
+    api project(path: ":base-main")
+    api project(path: ":base-gwtApi")
+    api project(path: ":base-gwtSpi")
+}
+
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :base at file://$rootDir/base/src/gwt/baseGwt.gradle

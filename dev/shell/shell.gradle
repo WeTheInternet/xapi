@@ -1,8 +1,49 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/dev/shell/generated-shell.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/dev/shell/src/main/java")
+main.resources.srcDir("$rootDir/dev/shell/src/main/resources")
+test.java.srcDir("$rootDir/dev/shell/src/test/java")
+test.resources.srcDir("$rootDir/dev/shell/src/test/resources")
+
+dependencies {
+    implementation project(path: ":io-main")
+    implementation project(path: ":collect-main")
+    implementation project(path: ":process-jre")
+    implementation project(path: ":server:servlets")
+    implementation project(path: ":dev:file-main")
+    testImplementation project(path: ":base-testTools")
+    testImplementation project(path: ":inject-jre")
+}
+
+
+configurations {
+    mainOut
+}
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :dev:shell at file://$rootDir/dev/shell/shell.gradle

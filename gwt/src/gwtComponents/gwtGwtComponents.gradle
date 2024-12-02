@@ -1,8 +1,63 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/gwt/src/gwtComponents/generated-gwtGwtComponents.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+}
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/gwt/src/gwtComponents/java")
+main.resources.srcDir("$rootDir/gwt/src/gwtComponents/resources")
+test.java.srcDir("$rootDir/gwt/src/gwtComponentsTest/java")
+test.resources.srcDir("$rootDir/gwt/src/gwtComponentsTest/resources")
+
+dependencies {
+    api project(path: ":gwt-gwtElemental")
+    implementation project(path: ":dev:javac-jdk8")
+    implementation project(path: ":gwt-gwtElemental2")
+    implementation project(path: ":io-jre")
+    implementation project(path: ":ui:generator")
+    implementation project(path: ":ui:service-main")
+    testImplementation project(path: ":process-jre")
+    testImplementation project(path: ":gwtc-api")
+    testImplementation project(path: ":gwtc-compiler")
+    testImplementation project(path: ":gwtc-gwtCompiler")
+    testImplementation project(path: ":inject-jre")
+    api "net.wetheinter:gwt-user:2.8.0"
+    implementation "net.wti.core:xapi-lang-core:${version}"
+    compileOnly "net.wetheinter:gwt-dev:2.8.0"
+    testImplementation "junit:junit:4.12"
+    testImplementation "info.cukes:cucumber-java:1.2.5"
+    testImplementation "info.cukes:cucumber-junit:1.2.5"
+    testImplementation "org.assertj:assertj-core:3.2.0"
+    testImplementation "net.wetheinter:gwt-dev:2.8.0"
+}
+
+// GenEnd XapiSettingsPlugin
+// GenInclude body.end from file:///opt/xapi/gwt/src/gradle/gwtComponents/body.end
+main.java.srcDir("$rootDir/gwt/src/gwtComponents/gen")
+test.java.srcDir("$rootDir/gwt/src/getComponentsTest/gen")
+// Done generating buildfile for :gwt at file://$rootDir/gwt/src/gwtComponents/gwtGwtComponents.gradle

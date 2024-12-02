@@ -1,8 +1,63 @@
-// This buildscript was generated as a place for you to manually configure your subproject as you wish.
-//
-// You can safely delete this file, and a new one will be generated for you in its place
-//
-// The only rule is that, somewhere in this file, even in a comment, you must include the following line:
-apply from: "$rootDir/server/gen/src/main/generated-genMain.gradle"
-//
-// Feel free to 'own' this script, and do with it as you please, just make sure you include the generated script at some point.
+import org.gradle.api.tasks.SourceSet;
+
+plugins {
+    id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
+}
+// GenStart XapiSettingsPlugin
+ext.xapiModern = 'true'
+
+apply from: "$rootDir/gradle/xapi-modern.gradle"
+String repo = project.findProperty("xapi.mvn.repo")
+if (repo) {
+    repositories {
+        maven {
+            name = 'xapiLocal'
+            url = repo
+        }
+    }
+}
+plugins.apply 'java-library'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+repositories.mavenCentral()
+
+SourceSet main = sourceSets.maybeCreate('main');
+
+
+SourceSet test = sourceSets.maybeCreate('test');
+
+main.java.setSrcDirs([]);
+main.resources.setSrcDirs([]);
+test.java.setSrcDirs([]);
+test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/server/gen/src/main/java")
+main.resources.srcDir("$rootDir/server/gen/src/main/resources")
+test.java.srcDir("$rootDir/server/gen/src/test/java")
+test.resources.srcDir("$rootDir/server/gen/src/test/resources")
+
+dependencies {
+    implementation project(path: ":inject-main")
+    implementation project(path: ":process-jre")
+    implementation project(path: ":io-main")
+    api project(path: ":core:scope-main")
+    api project(path: ":dev:api-main")
+    api project(path: ":server:servlets")
+    api project(path: ":ui:generator")
+    api project(path: ":ui:service-main")
+    compileOnly project(path: ":dev:javac-main")
+    testImplementation project(path: ":dev:scanner-main")
+    testImplementation project(path: ":collect-jre")
+    testImplementation project(path: ":model-jre")
+    testImplementation project(path: ":dev:javac-main")
+    testImplementation project(path: ":server:gen-sample")
+    implementation "net.wti.core:xapi-lang-core:$version"
+    implementation "net.wetheinter:gwt-user:2.8.0"
+    testImplementation "javax.servlet:javax.servlet-api:3.1-b02"
+    testImplementation "org.eclipse.jetty:jetty-server:9.4.18.v20190429"
+    testImplementation "org.eclipse.jetty:jetty-servlet:9.4.18.v20190429"
+    testImplementation "junit:junit:4.12"
+    testImplementation "info.cukes:cucumber-java:1.2.5"
+    testImplementation "info.cukes:cucumber-junit:1.2.5"
+}
+
+// GenEnd XapiSettingsPlugin
+// Done generating buildfile for :server:gen at file://$rootDir/server/gen/src/main/genMain.gradle
