@@ -3,36 +3,35 @@ package xapi.source.write;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * A fast, lightweight string templating system with zero dependencies.
- * <p>
- * You supply a template String and an array of tokens to replace when calling
- * {@link #apply(Object...)}. The order of tokens supplied in the constructor
- * corresponds to the order of strings supplied in apply().
- * <p>
- * The Template will compile your string into an executable stack, which
- * generates output with extreme efficiency; the only string-matching performed
- * is during Template compile, and it processes all tokens in a single,
- * efficient iteration of the template String.
- * <p>
- * This ensures an absolute minimum of processing, and allows large templates
- * with a large number of replacements to scale nicely.
- * <p>
- * Usage:
- * <pre>
- * assert
- * new Template("$1, $2!", "$1", "$2")
- * .apply("Hello", "World")
- * .equals("Hello, World!");
- *
- * assert
- * new Template("(*[])$.toArray(new Object[$.size()])", "*", "$")
- * .apply("Callable&lt;String>", "myList")
- * .equals("(Callable&lt;String>[])myList.toArray(new Object[myList.size()])");
- * </pre>
- * @author "James X. Nelson (james@wetheinter.net)"
- *
- */
+///
+/// A fast, lightweight string templating system with zero dependencies.
+///
+/// You supply a template String and an array of tokens to replace when calling
+/// [ #apply(Object...) ]. The order of tokens supplied in the constructor
+/// corresponds to the order of strings supplied in apply().
+///
+/// The Template will compile your string into an executable stack, which
+/// generates output with extreme efficiency; the only string-matching performed
+/// is during Template compile, and it processes all tokens in a single,
+/// efficient iteration of the template String.
+///
+/// This ensures an absolute minimum of processing, and allows large templates
+/// with a large number of replacements to scale nicely.
+///
+/// Usage:
+/// ```
+///
+/// assert
+/// new Template("$1, $2!", "$1", "$2")
+/// .apply("Hello", "World")
+/// .equals("Hello, World!");
+///
+/// assert
+/// new Template("(*[])$.toArray(new Object[$.size()])", "*", "$")
+/// .apply("Callable&lt;String&gt;", "myList")
+/// .equals("(Callable&lt;String&gt;[])myList.toArray(new Object[myList.size()])");
+/// ```
+/// @author "James X. Nelson (james@wetheinter.net)"
 public class Template extends Stack{
 
   public Template(String template, String ... replaceables) {

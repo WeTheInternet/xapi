@@ -10,29 +10,29 @@ import xapi.fu.java.X_Jdk;
 
 import static net.wti.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
-/**
- * An object-oriented facade over a {@code <preload />} xapi element:
- * <code><pre>
- *        <preload
- *             name = "gwt"
- *             url = "${System.getProperty('xapi.mvn.repo', 'https://wti.net/repo')}"
- *             version = "${System.getProperty('xapi.version', XAPI_VERSION)}"
- *             // limits these artifacts to gwt platform, where they will be auto-available as versionless dependencies
- *             // this inheritance is also given to any platform replacing gwt platform.
- *             platforms = [ "gwt" ]
- *             modules = [ main ]
- *             artifacts = {
- *                 "com.google.gwt" : [
- *                     "gwt-user",
- *                     "gwt-dev",
- *                     "gwt-codeserver",
- *                 ]
- *             }
- *         /preload>
- * </pre></code>
- *
- * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-08 @ 4:56 a.m..
- */
+///
+/// An object-oriented facade over a {@code <preload />} xapi element:
+/// ```
+/// <preload
+///      name = "gwt"
+///      url = "${System.getProperty('xapi.mvn.repo', 'https://wti.net/repo')}"
+///      version = "${System.getProperty('xapi.version', XAPI_VERSION)}"
+///      // limits these artifacts to gwt platform, where they will be auto-available as versionless dependencies
+///      // this inheritance is also given to any platform replacing gwt platform.
+///      platforms = [ "gwt" ]
+///      modules = [ main ]
+///      artifacts = {
+///          "com.google.gwt" : [
+///              "gwt-user",
+///              "gwt-dev",
+///              "gwt-codeserver",
+///          ]
+///      }
+///  /preload>
+/// ```
+///
+/// Created by James X. Nelson (James@WeTheInter.net) on 2020-02-08 @ 4:56 a.m.
+///
 public class SchemaPreload {
 
     private final String name, url, version;

@@ -561,7 +561,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
      * TODO: adapt this javadoc to all methods
      *
      * Check if none of the elements in this iterable match a given 2-to-boolean filter,
-     * with our element type T as first argument, and an Out1&lt;A> factory as second argument.
+     * with our element type T as first argument, and an Out1&lt;A&gt; factory as second argument.
      *
      * BEWARE THE FACTORY SENT TO THIS METHOD WILL BE CALLED ONCE PER ITEM IN THIS ITERABLE!
      *
@@ -576,11 +576,11 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
      *
      * // We want .noneMatchRepeated to detect if an iterable's value matches
      * // it's position in said iterable:
-     * MappedIterable<String> strs = Chain.of("0", "1", "2");
+     * {@code MappedIterable<String> strs = Chain.of("0", "1", "2");}
      * // all above elements match, so noneMatchRepeated will return false immediately.
      *
-     * Mutable<Integer> cnt = new Mutable(0);
-     * if (strs.noneMatchRepeated(String::contains, ()-> {
+     * {@code Mutable<Integer> cnt = new Mutable(0);}
+     * if (strs.noneMatchRepeated(String::contains, ()-&gt; {
      *   // can be shortened using X_Fu::increment, but this is more legible for the example
      *   int c = count.out1() + 1;
      *   count.in1(c);
@@ -824,7 +824,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
      * for objects with expensive hashcodes and equality tests
      * (at least, until your iterables get very large,
      * in which case we should provide a lazily-initialized hash-cache
-     * (something like WeakMap<MappedIterable<T>, SetLike<T>> might suffice)
+     * (something like {@code WeakMap<MappedIterable<T>, SetLike<T>>} might suffice)
      *
      * @param key The reference to search for.
      * @return

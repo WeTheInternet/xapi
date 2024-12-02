@@ -1,7 +1,7 @@
 <xapi-schema
     inherit = false
     platforms = [
-        <main
+        <main published = true
             modules = [
                 <api
                     description = "Xapi - Gwt Compiler Api"
@@ -61,7 +61,7 @@
                 /compiler>
             ]
         /main>,
-        <gwt
+        <gwt published=true
             description = "Xapi - GWT client to run xapi-gwt-compiler"
             replaces=main
             modules = [

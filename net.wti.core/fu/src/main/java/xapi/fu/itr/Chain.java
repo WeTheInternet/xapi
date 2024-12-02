@@ -21,7 +21,7 @@ import java.util.Iterator;
  * Chain tail = head = new Chain();
  * tail = tail.add(1);
  * tail = tail.add(2);
- * head.forEach(value->{});
+ * head.forEach(value-&gt;{});
  *
  * If you need to chain inline and want to keep your head pointer,
  * use the built-in builder helper:

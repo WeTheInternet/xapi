@@ -130,18 +130,18 @@ public interface X_Fu {
    * convert a more specific generic into a more raw form,
    * in order to obey a concrete api requiring a supertype:
    *
-   * <pre>
+   * <pre><code>
    *
-   * class Thing <T extends Number> {
+   * class Thing {@code <T extends Number>} {
    *   Number defaultObject;
    *
-   *   Number getThing(Maybe<T> from) {
+   *   Number getThing({@code Maybe<T>} from) {
    *     return from.mapImmediate(X_Fu::weaken)
    *         .ifAbsentReturn(defaultObject);
    *   }
    * }
    *
-   * </pre>
+   * </code></pre>
    *
    * It's a bit verbose, but it at least affords you the
    * ability to specify a typesafe conversion to a weaker type.
@@ -299,10 +299,10 @@ public interface X_Fu {
    * Returns the comparable class for the given object,
    * if it is comparable to itself;
    * that is:
-   * interface Type extends Comparable&lt;Type> {}.
+   * interface Type extends Comparable&lt;Type&gt; {}.
    * will allow Type.class to be returned.
    *
-   * interface Type extends Supertype, Comparable &lt;Supertype> {}
+   * interface Type extends Supertype, Comparable &lt;Supertype&gt; {}
    * will return null, as only directly comparable objects will
    */
     static Class<?> comparableClassFor(Object x) {

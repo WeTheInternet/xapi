@@ -37,20 +37,20 @@ public enum Transitivity {
      */
     stub,
 
-    /**
-     * Resolved + visible at compile time.
-     * Runtime transitive, visible when platforms match.
-     *
-     * Such dependencies should be interchangeable;
-     * i.e. a base module makes a default impl available,
-     * and a platform module may choose to replace the impl jar,
-     * or simply extend it (i.e. replaces vs. requires).
-     *
-     * When present, impl dependencies will replace any competing {@link #stub} dependencies.
-     *
-     * This needs to be codified into {@link net.wti.gradle.internal.require.api.ArchiveRequest).
-     *
-     */
+    ///
+    /// Resolved + visible at compile time.
+    /// Runtime transitive, visible when platforms match.
+    ///
+    /// Such dependencies should be interchangeable;
+    /// i.e. a base module makes a default impl available,
+    /// and a platform module may choose to replace the impl jar,
+    /// or simply extend it (i.e. replaces vs. requires).
+    ///
+    /// When present, impl dependencies will replace any competing {@link #stub} dependencies.
+    ///
+    /// This needs to be codified into [net.wti.gradle.internal.require.api.ArchiveRequest].
+    ///
+    ///
     impl,
 
     /**

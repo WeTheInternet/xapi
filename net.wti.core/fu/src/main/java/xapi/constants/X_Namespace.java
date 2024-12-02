@@ -76,7 +76,7 @@ public class X_Namespace {
   public static final String PROPERTY_INJECTOR = "xapi.injector";
 
   /**
-   * "xapi.log.level" -> The default log level to use;
+   * "xapi.log.level" - The default log level to use;
    * Choices are: ERROR, WARN, INFO, TRACE, DEBUG, SPAM or ALL.
    */
   public static final String PROPERTY_LOG_LEVEL = "xapi.log.level";
@@ -164,7 +164,7 @@ public class X_Namespace {
    * "xapi.inject"
    * Send false to explicitly disable runtime injection.
    * Use system properties for jre environments,
-   * and gwt module xml <set-property name="xapi.inject" value="false" />
+   * and gwt module xml {@code <set-property name="xapi.inject" value="false" />}
    */
   public static String PROPERTY_USE_X_INJECT = "xapi.inject";
 

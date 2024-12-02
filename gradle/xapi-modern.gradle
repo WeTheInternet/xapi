@@ -1,15 +1,9 @@
 plugins.apply('java-library')
-
 plugins.apply('maven-publish')
-
-//sourceCompatibility = '1.8'
 
 String xapiHome = getProperty('xapi.home') // you must apply xapi-env.gradle before applying xapi-modern.gradle
 
 TaskProvider required = rootProject.tasks.named('publishRequired')
-
-final Attribute<String> ATTR_ARTIFACT_TYPE = Attribute.of("moduleType", String.class);
-final Attribute<String> ATTR_PLATFORM_TYPE = Attribute.of("platformType", String.class);
 
 // for this ultra-core, zero-dependency buildSrc project, we want to always install
 // our jars to xapiLocal repo, so other projects can reference us.
@@ -25,13 +19,11 @@ Task xapiPublish = tasks.create('xapiPublish')
 required.configure { it.dependsOn xapiPublish }
 xapiPublish.group = 'Publishing'
 xapiPublish.description = 'Publish jars to xapiLocal repository'
-tasks.withType(PublishToMavenRepository).all {
+tasks.withType(PublishToMavenRepository).configureEach {
     PublishToMavenRepository pub ->
-        afterEvaluate {
-            if (pub.repository.name == 'xapiLocal') {
-                tasks.assemble.finalizedBy pub
-                xapiPublish.dependsOn pub
-            }
+        if (pub.name.contains("XapiLocal")) {
+            tasks.assemble.finalizedBy pub
+            xapiPublish.dependsOn pub
         }
 }
 
@@ -41,15 +33,10 @@ ext.repositories.maven {
         repo.name = 'xapiLocal'
         repo.url = "file://$xapiHome/repo"
 }
-SourceSet main = sourceSets.main
 SourceSet test = sourceSets.test
 // not really what we want, but it's good enough for right now
-Jar sourceJar = tasks.create 'sourceJar', Jar, {
-    Jar jar ->
-        jar.archiveClassifier.set('sources')
-        jar.from main.allSource
-        return
-}
+java.withSourcesJar()
+java.withJavadocJar()
 
 TaskProvider<Jar> testJar = tasks.register('testJar', Jar, {
     Jar jar ->
@@ -58,7 +45,7 @@ TaskProvider<Jar> testJar = tasks.register('testJar', Jar, {
         return
 })
 
-PublishArtifact art = project.artifacts.add('archives', sourceJar)
+//PublishArtifact art = project.artifacts.add('archives', sourceJar)
 boolean publishTests = findProperty('publishTests') == 'true'
 PublishArtifact testArt = !publishTests ? null : artifacts.add('archives', testJar.get())
 ext.publications.create("main", MavenPublication, {
@@ -67,27 +54,19 @@ ext.publications.create("main", MavenPublication, {
             if (tasks.names.contains('shadowJar')) {
                 shadow.component(pub)
             } else {
-                pub.from(components.getByName('java'))
+                pub.from(components.named('java').get())
             }
         }
         pub.groupId = rootProject.group
-        pub.artifact(art)
         if (testArt != null) {
             pub.artifact(testArt)
         }
 })
 
-//configurations.apiElements.attributes {
-//    AttributeContainer attrs ->
-//        attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
-//        attrs.attribute(ATTR_PLATFORM_TYPE, "main")
-//}
-//configurations.runtimeElements.attributes {
-//    AttributeContainer attrs ->
-//        attrs.attribute(ATTR_ARTIFACT_TYPE, "main")
-//        attrs.attribute(ATTR_PLATFORM_TYPE, "main")
-//}
+String repo = findProperty('xapi.mvn.repo')
 
-if (!findProperty('xapi.repo.mvn')) {
+if (repo) {
+    project.setProperty('xapi.mvn.repo', repo.replace("\$rootDir", rootDir.path))
+} else {
     project.extensions.add("xapi.mvn.repo", "$rootDir/repo");
 }

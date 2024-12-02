@@ -81,6 +81,18 @@ public class SchemaIndexReader implements SchemaDirs {
         return multiplatformFile.exists() && "true".equals(readFile(multiplatformFile).trim());
     }
 
+    public boolean isPublished(final MinimalProjectView view, final String path, final PlatformModule coords) {
+        final File pathDir = new File(getDirIndex(), "path");
+        File projectDir = new File(pathDir, QualifiedModule.mangleProjectPath(path));
+        if ("_".equals(projectDir.getName())) {
+            projectDir = new File(pathDir, "_" + view.getBuildName());
+        }
+        // if the parent project-wide directory is marked as publish=true, we treat default of true
+        final String key = PlatformModule.unparse(coords);
+        final File moduleDir = new File(projectDir, key);
+        final File publishedFile = new File(moduleDir, "publish");
+        return publishedFile.exists() && "true".equals(readFile(publishedFile).trim());
+    }
     public boolean isVirtual(final MinimalProjectView view, final String path, final PlatformModule coords) {
         // this is kinda gross... each layer of parenting might be virtual/multiplatform.
         // we're going to hack our way through, I suppose

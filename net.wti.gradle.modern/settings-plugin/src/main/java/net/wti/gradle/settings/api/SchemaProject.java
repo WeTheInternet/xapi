@@ -20,11 +20,11 @@ import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.string.X_String;
 
-/**
- * Abstraction layer over a project descriptor, like <project-name virtual=true multiplatform=false />
- *
- * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-06 @ 4:39 a.m..
- */
+///
+/// Abstraction layer over a project descriptor, like `<project-name virtual=true multiplatform=false />`
+///
+/// Created by James X. Nelson (James@WeTheInter.net) on 2020-02-06 @ 4:39 a.m.
+///
 public class SchemaProject implements Named, HasPath {
 
     private static final Log LOG = Log.loggerFor(SchemaProject.class);

@@ -1,6 +1,6 @@
 <xapi-schema
     inherit = false
-    platforms = [ main ]
+    platforms = [ <main published = true /> ]
     modules = [ main ]
     projects = {
         standalone : [
@@ -115,6 +115,7 @@
                     /main>,
                     <sample
                         include = main
+                        published = true
                         requires = {
                             project : { process : jre }
                         }

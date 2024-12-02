@@ -19,83 +19,83 @@ import java.io.File;
 
 import static xapi.gradle.fu.LazyString.lazyToString;
 
-/**
- * Example schema.xapi (edited snapshot of xapi project's main schema.xapi:
- * <pre>
- * <xapi-schema
- *
- *     defaultRepoUrl = mavenCentral()
- *
- *     schemaLocation = "schema/schema.gradle"
- *
- *     platforms = [
- *         <main />,
- *         <jre replace = "main" published = true/>,
- *         <gwt replace = "main" published = true/>,
- *     ]
- *
- *     modules = [
- *         <api />,
- *         <spi />,
- *         <main include = [ api, "spi" ] />,
- *     ]
- *
- *     requires = {
- *         project: common
- *     }
- *
- *     projects = {
- *         // the projects below all have gwt, jre and other platforms
- *         multiplatform: [
- *             "collections",
- *             "common",
- *             "model",
- *         ]
- *
- *         // the projects below all have a single "main" platform (potentially w/ multiple modules like api and testTools though!)
- *         standalone: [
- *             "util"
- *         ]
- *
- *         // the projects below are effectively parents of multiple child projects.
- *         // it will be left to the schema.xapi of these projects to determine whether
- *         // the child modules are multiPlatform, standalone, or nested multiProject
- *         virtual: {
- *             dist: ["gwt", "jre"],
- *             samples: ["demo"]
- *         }
- *     }
- *
- *     // declare any external dependencies here,
- *     // so we can handle pre-emptively syncing jars (and maybe source checkouts) to a local cache,
- *     // then just reference these "blessed artifacts" w/out versions anywhere;
- *     // leaving it up to the system to decide what version to use.
- *     external = [
- *         // preload elements will be downloaded once, on build startup, into a local filesystem repository (xapi.repo)
- *         <preload
- *             name = "gwt"
- *             url = "https://wti.net/repo"
- *             version = "2.8.0"
- *             // limits these artifacts to gwt platform, where they will be auto-available as versionless dependencies
- *             // this inheritance is also given to any platform replacing gwt platform.
- *             platforms = [ "gwt" ]
- *             module = [ main ] // optionally limit modules
- *             artifacts = {
- *                 "com.google.gwt" : [
- *                     "gwt-user",
- *                     "gwt-dev",
- *                     "gwt-codeserver",
- *                 ]
- *             }
- *         /preload>
- *         ,
- *     ]
- *
- * /xapi-schema>
- * </pre>
- *
- * Created by James X. Nelson (James@WeTheInter.net) on 29/07/19 @ 5:09 AM.
- */
+///
+/// Example schema.xapi (edited snapshot of xapi project's main schema.xapi:
+/// ```
+/// <xapi-schema
+///
+///     defaultRepoUrl = mavenCentral()
+///
+///     schemaLocation = "schema/schema.gradle"
+///
+///     platforms = [
+///         <main />,
+///         <jre replace = "main" published = true/>,
+///         <gwt replace = "main" published = true/>,
+///     ]
+///
+///     modules = [
+///         <api />,
+///         <spi />,
+///         <main include = [ api, "spi" ] />,
+///     ]
+///
+///     requires = {
+///         project: common
+///     }
+///
+///     projects = {
+///         // the projects below all have gwt, jre and other platforms
+///         multiplatform: [
+///             "collections",
+///             "common",
+///             "model",
+///         ]
+///
+///         // the projects below all have a single "main" platform (potentially w/ multiple modules like api and testTools though!)
+///         standalone: [
+///             "util"
+///         ]
+///
+///         // the projects below are effectively parents of multiple child projects.
+///         // it will be left to the schema.xapi of these projects to determine whether
+///         // the child modules are multiPlatform, standalone, or nested multiProject
+///         virtual: {
+///             dist: ["gwt", "jre"],
+///             samples: ["demo"]
+///         }
+///     }
+///
+///     // declare any external dependencies here,
+///     // so we can handle pre-emptively syncing jars (and maybe source checkouts) to a local cache,
+///     // then just reference these "blessed artifacts" w/out versions anywhere;
+///     // leaving it up to the system to decide what version to use.
+///     external = [
+///         // preload elements will be downloaded once, on build startup, into a local filesystem repository (xapi.repo)
+///         <preload
+///             name = "gwt"
+///             url = "https://wti.net/repo"
+///             version = "2.8.0"
+///             // limits these artifacts to gwt platform, where they will be auto-available as versionless dependencies
+///             // this inheritance is also given to any platform replacing gwt platform.
+///             platforms = [ "gwt" ]
+///             module = [ main ] // optionally limit modules
+///             artifacts = {
+///                 "com.google.gwt" : [
+///                     "gwt-user",
+///                     "gwt-dev",
+///                     "gwt-codeserver",
+///                 ]
+///             }
+///         /preload>
+///         ,
+///     ]
+///
+/// /xapi-schema>
+/// ```
+///
+/// Created by James X. Nelson (James@WeTheInter.net) on 29/07/19 @ 5:09 AM.
+///
 public class DefaultSchemaMetadata implements SchemaMetadata {
     public static final String EXT_NAME = "_xapiSchema";
     /**

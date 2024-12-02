@@ -159,9 +159,8 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
   /**
    * Called whenever a node is created, including the {@link #head} node.
    *
-   * @param item
-   *          -> The item that will become the value for this node. Expect a
-   *          null for the head node.
+   * @param item - The item that will become the value for this node.
+   *             Expect a null for the head node.
    */
   protected abstract N newNode(T item);
 

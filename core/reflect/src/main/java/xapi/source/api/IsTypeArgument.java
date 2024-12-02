@@ -1,28 +1,28 @@
 package xapi.source.api;
 
-/**
- * Represents a reified type in a field, method or type implementation.
- *
- * <pre>
- * Given:
- * class X<Y> extends Z<Y> { }
- * In X<Y>, Y is a type parameter of the IsTypeDeclaration of IsClassDeclaration X.
- * In Z<Y>, Y is a type argument of the IsTypeArgument of superclass field of IsClassDeclaration X.
- * And:
- * X<A> variable = new X<>();
- * A is a type argument of an IsTypeArgument[] field in IsClassParameter X
- * And:
- * List<X> list = ...
- * X is a type argument of an IsTypeArgument[] field in IsClassParameter List
- * And:
- * List<? extends X> list = ...
- * X is a type argument of an IsTypeArgument[] field in an IsWildcardArgument,
- * which is a type argument of an IsTypeArgument[] field in IsClassParameter List
- * </pre>
- *
- *
- * Created by James X. Nelson (James@WeTheInter.net) on 10/7/18 @ 12:52 AM.
- */
+///
+/// Represents a reified type in a field, method or type implementation.
+///
+/// ```
+/// Given:
+/// class X<Y> extends Z<Y> { }
+/// In X<Y>, Y is a type parameter of the IsTypeDeclaration of IsClassDeclaration X.
+/// In Z<Y>, Y is a type argument of the IsTypeArgument of superclass field of IsClassDeclaration X.
+/// And:
+/// X<A> variable = new X<>();
+/// A is a type argument of an IsTypeArgument[] field in IsClassParameter X
+/// And:
+/// List<X> list = ...
+/// X is a type argument of an IsTypeArgument[] field in IsClassParameter List
+/// And:
+/// List<? extends X> list = ...
+/// X is a type argument of an IsTypeArgument[] field in an IsWildcardArgument,
+/// which is a type argument of an IsTypeArgument[] field in IsClassParameter List
+/// ```
+///
+///
+/// Created by James X. Nelson (James@WeTheInter.net) on 10/7/18 @ 12:52 AM.
+///
 public interface IsTypeArgument extends IsNamedType {
 
     IsTypeArgument[] EMPTY_ARRAY = {};

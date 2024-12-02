@@ -142,15 +142,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
         final String rootDir = view.getProjectDir().getPath();
-        final String maybeInclude;
-        File xapiModern = new File(rootDir, "gradle/xapi-modern.gradle");
-        if (xapiModern.exists()) {
-            maybeInclude = "\n" +
-                    "apply from: \"$rootDir/gradle/xapi-modern.gradle\"" +
-                    "\n";
-        } else {
-            maybeInclude = "";
-        }
 
         view.getLogger().info("All projects ({}):\n{}", map.getAllProjects().size(),
                 map.getAllProjects().map(s->s.getPathGradle() + "@" + s.getPublishedName()).join("\n"));
@@ -364,18 +355,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         out.println("// GenStart " + getClass().getName());
                         out.println("ext.xapiModern = 'true'");
-                        if (X_String.isNotEmpty(maybeInclude)) {
-                            out.printlns(maybeInclude);
-                        }
-                        out
-                                .println("String repo = project.findProperty(\"xapi.mvn.repo\")")
-                                .print("if (repo) ").startClosure()
-                                    .startClosure("repositories")
-                                        .startClosure("maven")
-                                            .println("name = 'xapiLocal'")
-                                            .println("url = repo");
-
-                        out.println("plugins.apply 'java-library'");
+                        // for now, we're just going to forcibly use java-library.
+                        // we can add an optional switch to disable this if it's ever needed
+                        out.addPlugin("java-library");
                         // Need to make the java version configurable...
                         out.println("java.toolchain.languageVersion = JavaLanguageVersion.of(8)");
 
@@ -492,11 +474,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             final ClosureBuffer depOut = dependencies.out1();
                             switch (dependency.getTransitivity()) {
                                 case api:
-                                    if (out.addPlugin("java-library")) {
-                                        out.getPlugins().print("// GenInclude ")
-                                                .print(getClass().getName())
-                                                .println(" adding java-library b/c api dependencies used");
-                                    }
                                     depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "api" : key + "Api"
@@ -542,6 +519,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     throw new IllegalArgumentException("transitivity " + dependency.getTransitivity() + " is not supported!");
                             }
                             depOut.print(" ");
+                            PlatformModule dependencyCoords = null;
                             switch (dependency.getType()) {
                                 case unknown:
                                     view.getLogger().warn("Unknown dependency type {}", dependency);
@@ -551,19 +529,19 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     if (!path.startsWith(":")) {
                                         path = ":" + path;
                                     }
-                                    PlatformModule coords = dependency.getCoords();
-                                    if (coords.getPlatform() == null) {
-                                        coords = coords.edit(plat.getName(), null);
+                                    dependencyCoords = dependency.getCoords();
+                                    if (dependencyCoords.getPlatform() == null) {
+                                        dependencyCoords = dependencyCoords.edit(plat.getName(), null);
                                     }
-                                    if (coords.getModule() == null) {
-                                        coords = coords.edit(null, mod.getName());
+                                    if (dependencyCoords.getModule() == null) {
+                                        dependencyCoords = dependencyCoords.edit(null, mod.getName());
                                     }
                                     // compute whether the target project is not-multiplatform / needs configuration: set too.
-                                    final String unparsed = QualifiedModule.unparse(coords);
+                                    final String unparsed = QualifiedModule.unparse(dependencyCoords);
                                     // this is gross. need to consider deeply nested structures...
-                                    if (index.isVirtual(view, path, coords)) {
+                                    if (index.isVirtual(view, path, dependencyCoords)) {
                                         path = path + ":" + unparsed;
-                                    } else if (index.isMultiPlatform(view, path, coords)) {
+                                    } else if (index.isMultiPlatform(view, path, dependencyCoords)) {
                                         // multi-platform needs to convert to a subproject dependency.
                                         path = path + "-" + unparsed;
                                     } else {
@@ -581,11 +559,11 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     if (":".equals(path)) {
                                         path = project.getName();
                                     }
-                                    final PlatformModule internalCoords = PlatformModule.parse(dependency.getName());
+                                    dependencyCoords = PlatformModule.parse(dependency.getName());
 //                                    String simpleName = path.substring(path.lastIndexOf(":") + 1);
-                                    if (index.isMultiPlatform(view, project.getPathIndex(), internalCoords)) {
+                                    if (index.isMultiPlatform(view, project.getPathIndex(), dependencyCoords)) {
 //                                        path = ":" + simpleName + "-" + platMod.toPlatMod();
-                                        path = path + "-" + internalCoords.toPlatMod();
+                                        path = path + "-" + dependencyCoords.toPlatMod();
 
                                     }
                                     if (pool.isDeleted(depIdent)) {
@@ -639,13 +617,60 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         // now, lets add some publishing!
                         String pubName = project.getPublishedName();
-                        String gid = fullIndex.getGroupIdNotNull();
-                        String grp = map.getGroup();
                         String groupNameResolved = properties.resolvePattern(plat.getPublishPattern(), fullIndex, pubName, plat.getName(), "");;
                         String modNameResolved = properties.resolvePattern(mod.getPublishPattern(), fullIndex, pubName, plat.getName(), mod.getName());
+                        String mavenRepo = (String) view.findProperty("xapi.mvn.repo");
+                        if (X_String.isNotEmpty(mavenRepo)) {
+                            out
+                                .startClosure("repositories")
+                                .startClosure("maven")
+                                .println("name = 'xapiLocal'")
+                                .println("url = \"" + mavenRepo + "\"");
+                        }
+                        if (index.isPublished(view, project.getPathIndex(), myPlatMod)) {
+                            out.addPlugin("maven-publish");
+                            if (X_String.isEmpty(mavenRepo)) {
+                                mavenRepo = "$rootDir/repo";
+                            }
+                            out
+                                .println("// Setup publishing to coordinates: " + groupNameResolved + ":" + modNameResolved)
+                                .printlns("project.extensions.add('xapi.mvn.repo', \"" + mavenRepo + "\")\n" +
+                                    "Task xapiPublish = tasks.create('xapiPublish')\n" +
+                                    "xapiPublish.group = 'Publishing'\n" +
+                                    "xapiPublish.description = 'Publish jars to xapiLocal repository'\n" +
+                                    "xapiPublish.dependsOn \"publishXapiPublicationToXapiLocalRepository\"\n" +
+                                    "\n" +
+                                    "PublishingExtension ext = extensions.findByName(PublishingExtension.NAME) as PublishingExtension\n" +
+                                    "ext.repositories.maven {\n" +
+                                    "    MavenArtifactRepository repo ->\n" +
+                                    "        repo.name = 'xapiLocal'\n" +
+                                    "        repo.url = \"file://" + mavenRepo + "\"\n" +
+                                    "}\n" +
+                                    "// not really what we want, but it's good enough for right now\n" +
+                                    "java.withSourcesJar()\n" +
+                                    "java.withJavadocJar()\n" +
+                                    "\n" +
+                                    "ext.publications.create(\"xapi\", MavenPublication, {\n" +
+                                    "    pub ->\n" +
+                                    "        afterEvaluate {\n" +
+                                    "            if (tasks.names.contains('shadowJar')) {\n" +
+                                    "                shadow.component(pub)\n" +
+                                    "            } else {\n" +
+                                    "                pub.from(components.named('java').get())\n" +
+                                    "            }\n" +
+                                    "        }\n" +
+                                    "        pub.artifactId = \"" + modNameResolved + "\"\n" +
+                                    "        pub.groupId = \"" + groupNameResolved + "\"\n" +
+                                    "})\n"
+                                );
 
-                        out.println("// Setup publishing to coordinates(" +
-                                grp + "): " + groupNameResolved + ":" + modNameResolved);
+                        } else {
+                            // we'll want to reduce this warn() to info() later on; for now, all our modules are published,
+                            // and we want to know if something slips through.
+                            logger.warn("Skipping publishing: {}@{}", project.getPathIndex(), myPlatMod);
+                        }
+
+
 
                         out.println("// GenEnd " + getClass().getName());
 

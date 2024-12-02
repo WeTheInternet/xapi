@@ -20,7 +20,7 @@ import java.io.Serializable;
  *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
- * @param <V>
+ * @param <V> The type of value used by this MapLike structure
  */
 public interface StringTo <V>
 extends HasValues<String,V>, Serializable, MapLike<String, V>

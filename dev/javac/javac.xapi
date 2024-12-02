@@ -33,7 +33,8 @@
                 /main>
             ]
         /main>,
-        <jdk8 replaces=main
+        <jdk8
+            replaces = main
             modules = <main
                 requires = {
                     project : {

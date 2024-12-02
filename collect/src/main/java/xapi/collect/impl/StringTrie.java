@@ -390,10 +390,8 @@ public class StringTrie<E> {
   }
 
   /**
-   * @param into - The edge to lock
-   * @param ownsParent - Whether we already own an explicit lock on the parent.
-   * @return - Any object you want; null will do fine. This method is provided
-   * as a stub for more sophisticated, concurrent subclasses which may want to
+   *
+   * This method is provided as a stub for more sophisticated, concurrent subclasses which may want to
    * employ locking mechanisms (or event dispatch). You may call
    * {@link Object#wait(long, int)}; as you already own the lock. long param is
    * millis, should be zero. int param is nanos, keep it in the hundreds. DON'T
@@ -405,6 +403,9 @@ public class StringTrie<E> {
    * in this case is to acquire a {@link Lock}. If ownsParent is true, you are
    * safe from intrusion from above (nobody will be able to modify your parent),
    * but you still have to contend
+   *
+   * @param into - The edge to lock
+   * @param ownsParent - Whether we already own an explicit lock on the parent.
    */
   protected void lock(TrieEdge into, boolean ownsParent) {
 
@@ -413,12 +414,6 @@ public class StringTrie<E> {
   /**
    * @param into - The edge to lock
    * @param ownsParent - If true, you are already synchronized on into.
-   * @param cursor - Whatever object you returned when you locked. This method
-   * is a stub for more sophisticated subclasses of StringTrie, which may need
-   * to perform proper concurrent locking, or event dispatch. It is called in
-   * the finally block of whatever code ran
-   * {@link StringTrie#lock(StringTrieEdge, boolean)}. If you use Edge into.wait(0, nanos)
-   * in lock(), now would be a great time to call into into.notify() :)
    */
   protected void unlock(TrieEdge into, boolean ownsParent) {
   }

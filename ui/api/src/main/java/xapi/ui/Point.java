@@ -146,22 +146,23 @@ public final class Point implements IsImmutable {
         return getX() == 0 && getY() == 0;
     }
 
-    /**
-     * @param range - A Coord to check
-     * @return - true if this coords wholly contains the coord to check.
-        range.getX() >= getX()
-        &&
-        range.getY() <= getY()
-     */
+    ///
+    /// @param range - A Coord to check
+    /// @return - true if this coords wholly contains the coord to check.
+    /// ```
+    ///  range.getX() >= getX()
+    ///  &&
+    ///  range.getY() <= getY()
+    /// ```
     public boolean contains(Point range) {
         return range.getX() >= getX() && range.getY() <= getY();
     }
 
-    /**
-     * @param range - A Coord to check
-     * @return - true if these coords overlap at all.
-            ! (range.getY() < getX() || range.getX() > getY());
-     */
+    ///
+    /// @param range - A Coord to check
+    /// @return - true if these coords overlap at all.
+    ///      ```! (range.getY() < getX() || range.getX() > getY());```
+    ///
     public boolean intersects(Point range) {
         return ! (range.getY() < getX() || range.getX() > getY());
     }

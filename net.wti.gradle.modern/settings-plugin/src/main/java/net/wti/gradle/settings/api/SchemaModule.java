@@ -4,11 +4,11 @@ import org.gradle.api.Named;
 import xapi.fu.Debuggable;
 import xapi.fu.data.SetLike;
 
-/**
- * Abstraction layer over a module descriptor, like <mod-name require=["a", b] published=true />
- *
- * Created by James X. Nelson (James@WeTheInter.net) on 2020-02-06 @ 4:39 a.m.
- */
+///
+/// Abstraction layer over a module descriptor, like `<mod-name require=["a", b] published=true />`
+///
+/// Created by James X. Nelson (James@WeTheInter.net) on 2020-02-06 @ 4:39 a.m.
+///
 public class SchemaModule implements Named {
     private final String name;
     private final SetLike<String> include;

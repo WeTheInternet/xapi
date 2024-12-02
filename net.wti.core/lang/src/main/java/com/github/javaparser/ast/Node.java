@@ -47,7 +47,7 @@ import java.util.List;
  * associated to any element.
  *
  * @author Julio Vilmar Gesser
- * @modifier James X. Nelson (james @wetheinter.net)
+ * @author James X. Nelson (james @wetheinter.net)
  */
 public abstract class Node implements Serializable, Cloneable {
 // TODO(james) Turn this class into a xapi Model, and then replace ALL THE new Instance()S!

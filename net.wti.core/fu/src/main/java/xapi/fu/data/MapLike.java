@@ -39,13 +39,13 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
    *
    * THIS METHOD READS THE MAP ONCE AND IS THEN IMMUTABLE.
    *
-   * For a mutable maybe bound to this map, see {@link #getMaybeBound(K)}
+   * For a mutable maybe bound to this map, see {@link #getMaybeBound(Object)}
    *
    * Example:
    *
    boolean hasKey(String key) {
        map.getMaybe(key)
-       .mapNullSafe(p->p.getKeys().contains(key))
+       .mapNullSafe(p-&gt;p.getKeys().contains(key))
        .isPresent();
    }
 
@@ -77,9 +77,12 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
   /**
    * Returns a Maybe that is bound to the underlying data of this map
    * (i.e., the internal state can change from present to absent on you.
-   *
+   * <p>
    * If you want an immutable snapshot, either call .lazy() on the resulting Maybe,
-   * or use {@link #getMaybe(K)}
+   * or use {@link #getMaybe(Object)}
+   * <p>
+   * @param key The key to read from
+   * @return a Maybe wrapper which defers the read until requested
    */
   default Maybe<V> getMaybeBound(K key) {
     return ()->get(key);

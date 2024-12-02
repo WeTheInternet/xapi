@@ -3,23 +3,12 @@ import org.gradle.api.tasks.SourceSet;
 plugins {
     // GenInclude plugin from file:///opt/xapi/dev/dist/src/gradle/main/plugins
     id('xapi-tools-jar')
-    id	"java-library"// GenInclude net.wti.gradle.settings.plugin.XapiSettingsPlugin adding java-library b/c api dependencies used
+    id	"java-library"
+    id	"maven-publish"
 }
 
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
-
-apply from: "$rootDir/gradle/xapi-modern.gradle"
-String repo = project.findProperty("xapi.mvn.repo")
-if (repo) {
-    repositories {
-        maven {
-            name = 'xapiLocal'
-            url = repo
-        }
-    }
-}
-plugins.apply 'java-library'
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
 
@@ -51,7 +40,42 @@ dependencies {
     testImplementation project(path: ":base-testTools")
     implementation "net.wti.core:xapi-gen:$version"
 }
-// Setup publishing to coordinates(net.wetheinter): net.wetheinter:xapi-dev-dist
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = "$rootDir/repo"
+    }
+}
+// Setup publishing to coordinates: net.wetheinter:xapi-dev-dist
+project.extensions.add('xapi.mvn.repo', "$rootDir/repo")
+Task xapiPublish = tasks.create('xapiPublish')
+xapiPublish.group = 'Publishing'
+xapiPublish.description = 'Publish jars to xapiLocal repository'
+xapiPublish.dependsOn "publishXapiPublicationToXapiLocalRepository"
+
+PublishingExtension ext = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
+ext.repositories.maven {
+    MavenArtifactRepository repo ->
+        repo.name = 'xapiLocal'
+        repo.url = "file://$rootDir/repo"
+}
+// not really what we want, but it's good enough for right now
+java.withSourcesJar()
+java.withJavadocJar()
+
+ext.publications.create("xapi", MavenPublication, {
+    pub ->
+        afterEvaluate {
+            if (tasks.names.contains('shadowJar')) {
+                shadow.component(pub)
+            } else {
+                pub.from(components.named('java').get())
+            }
+        }
+        pub.artifactId = "xapi-dev-dist"
+        pub.groupId = "net.wetheinter"
+})
 // GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
 // GenInclude body.end from file:///opt/xapi/dev/dist/src/gradle/main/body.end
 tasks.named('test', Test).configure {

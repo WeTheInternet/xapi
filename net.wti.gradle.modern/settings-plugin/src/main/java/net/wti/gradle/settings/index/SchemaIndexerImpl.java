@@ -462,11 +462,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                             continue;
                         }
                     }
-                    if (!platform.isPublished() || !module.isPublished()) {
-                        // TODO: write out a non-published, "private module" file, so we can accurately say "your coordinates exist, but the target is private"
-                        //   instead of "coordinates not found".
-                        continue;
-                    }
                     // setup a publishing target.
                     String configName = PlatformModule.unparse(platform.getName(), module.getName());
 
@@ -474,7 +469,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     String nameResolved = properties.resolvePattern(module.getPublishPattern(), index, project.getPublishedName(), platform.getName(), module.getName());
 
                     Log.firstLog(this, map, index, view) // none of these objects, by default implement Log, but you can intercept them to add Log interface
-                            .log(SchemaIndexerImpl.class, LogLevel.TRACE, Out1.newOut1( ()-> // make the string below lazily-computer
+                            .log(SchemaIndexerImpl.class, LogLevel.TRACE, Out1.newOut1( ()-> // make the string below lazily-computed
                                     groupResolved+":"+nameResolved+":" + map.getVersion() +
                                             " -> " +
                                             project.getPublishedName() +":" + platform.getName()+":"+module.getName()+"?" + platform.isPublished() + ":" + module.isPublished()
@@ -486,10 +481,13 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     // Check for sources, so we can record that this module is "live"
                     File srcDir = new File(project.getView().getProjectDir(), "src/" + configName);
                     boolean hasSrc = hasSources(srcDir);
+                    File moduleDir = new File(projectDir, configName);
+                    final File sourcesFile = new File(moduleDir, "sources");
                     if (hasSrc) {
                         // yay! record that this module has sources.
-                        File moduleDir = new File(projectDir, configName);
-                        writeFile(new File(moduleDir, "sources"), srcDir.getAbsolutePath());
+                        writeFile(sourcesFile, srcDir.getAbsolutePath());
+                    } else if (sourcesFile.exists()){
+                        sourcesFile.delete();
                     }
 
                     // Ok, we now have a coords/group/name/version directory, place our dependency information there.
@@ -567,7 +565,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                         writeFile(publishFile, "true");
                     } else if (publishFile.exists()) {
                         publishFile.delete();
-                        GradleFiles.deleteQuietly(publishFile);
                     }
                     if (module.isForce()) {
                         writeFile(forceFile, "true");

@@ -5,58 +5,56 @@ import xapi.fu.Debuggable;
 
 import static net.wti.gradle.system.tools.GradleCoerce.isEmptyString;
 
-/**
- * An object representing a dependency relationship created in schema.xapi;
- * Given:
- * <code><pre>
- * <xapi-schema
- *      // these are "global requires", which are added as implementation scope dependencies to all projects defined in this schema.
- *      // use requires at this level sparingly / only in "leaf" modules.
- *      requires = {
- *         project: common, util
- *         internal: [ 'jre:spi', 'api' ] // api would be 'main:api' (or whatever is default platform for consumer gradle project)
- *         external: [ 'g:n:v', 'jre', 'api' ]
- *      }
- *
- *      // or...
- *
- *      requires = [ common ] // translates to: requires = { project: [ common ] }
- *
- *      platforms = [
- *         <gwt requires = { external: 'g:gwt-user:$gwtVersion' } /gwt>
- *     ]
- *
- *     modules = [
- *         <impl requires = { ... } /impl>
- *     ]
- *
- *     projects = [
- *          <some-project
- *              requires = {
- *                  // global to this project
- *                  project 'other-project'
- *                  // special key by_module to support per-module requires within a project configuration.
- *                  by_module: {
- *                      spi: { project 'some-spi' }
- *                  }
- *              }
- *          /some-project>
- *     ]
- * /xapi-schema>
- *
- *
- * </pre></code>
- *
- *  We want to create a SchemaDependency object to encapsulate each entry created in schema.xapi requires = {} json.
- *  For every require = declared, we will create a dependency object describing that request for a dependency.
- *
- *  This object does not represent a single discrete platform+module to platform+module dependency;
- *  we will consider omitted modules or platforms to mean "default platform" (main) or "default module" (main).
- *
- *  The PlatformModule {@link #coords} field describes any optional platform:module specifications.
- *
- *  Created by James X. Nelson (James@WeTheInter.net) on 2020-02-09 @ 7:30 a.m.
- */
+///
+/// An object representing a dependency relationship created in schema.xapi;
+/// Given:
+/// ```
+/// <xapi-schema
+///      // these are "global requires", which are added as implementation scope dependencies to all projects defined in this schema.
+///      // use requires at this level sparingly / only in "leaf" modules.
+///      requires = {
+///         project: common, util
+///         internal: [ 'jre:spi', 'api' ] // api would be 'main:api' (or whatever is default platform for consumer gradle project)
+///         external: [ 'g:n:v', 'jre', 'api' ]
+///      }
+///
+///      // or...
+///
+///      requires = [ common ] // translates to: requires = { project: [ common ] }
+///
+///      platforms = [
+///         <gwt requires = { external: 'g:gwt-user:$gwtVersion' } /gwt>
+///     ]
+///
+///     modules = [
+///         <impl requires = { ... } /impl>
+///     ]
+///
+///     projects = [
+///          <some-project
+///              requires = {
+///                  // global to this project
+///                  project 'other-project'
+///                  // special key by_module to support per-module requires within a project configuration.
+///                  by_module: {
+///                      spi: { project 'some-spi' }
+///                  }
+///              }
+///          /some-project>
+///     ]
+/// /xapi-schema>
+/// ```
+///
+///  We want to create a SchemaDependency object to encapsulate each entry created in schema.xapi requires = {} json.
+///  For every require = declared, we will create a dependency object describing that request for a dependency.
+///
+///  This object does not represent a single discrete platform+module to platform+module dependency;
+///  we will consider omitted modules or platforms to mean "default platform" (main) or "default module" (main).
+///
+///  The PlatformModule {@link #coords} field describes any optional platform:module specifications.
+///
+///  Created by James X. Nelson (James@WeTheInter.net) on 2020-02-09 @ 7:30 a.m.
+///
 public class SchemaDependency {
     private final DependencyType type;
     private final CharSequence group, name, version;

@@ -29,9 +29,7 @@ public interface In3Out1<I1, I2, I3, O> extends Rethrowable, Lambda {
     };
   }
 
-  /**
-   * This method just exists to give you somewhere to create a lambda that will rethrow exceptions.
-   */
+  // This method just exists to give you somewhere to create a lambda that will rethrow exceptions.
   static <I1, I2, I3, O> In3Out1<I1, I2, I3, O> unsafe(In3Out1Unsafe<I1, I2, I3, O> of) {
     return of;
   }

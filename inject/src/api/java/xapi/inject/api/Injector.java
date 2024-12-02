@@ -55,30 +55,30 @@ import xapi.fu.Out1;
 public interface Injector {
 
 
-  /**
-   * Synchronously returns a singleton which implements or extends this method's generic type.
-   *
-   * For gwt-dev mode, this class is generated from the annotations
-   * {@link SingletonDefault} and {@link SingletonOverride}
-   *
-   * For java mode, the {@link xapi.inject.impl.JavaInjector} uses runtime lookup of resources in
-   * META-INF/singletons or META-INF/singletons to find bindings for your classes.
-   *
-   * If you enable runtime injection, the tool will do a once-per-runtime scan for annotations,
-   * and will generate the bindings in memory.  For maximum performance in
-   * production, you will want to use the preloading strategy to read in a
-   * manifest of all injectable classes and prepare providers before they are
-   * requested.
-   *
-   * A maven plugin will be provided to create this manifest for you.
-   *
-   * All libraries exporting functionality should include specific META-INF
-   * bindings for defaults at least; the META-INF resources will only be checked
-   * if the given type is not already bound.
-   *
-   * @param cls - The service interface or base service class to provide
-   * @return - A singleton instance of the service class.
-   */
+  ///
+  ///  Synchronously returns a singleton which implements or extends this method's generic type.
+  ///
+  ///  For gwt-dev mode, this class is generated from the annotations
+  ///  {@link SingletonDefault} and {@link SingletonOverride}
+  ///
+  ///  For java mode, the [xapi.inject.impl.JavaInjector] uses runtime lookup of resources in
+  ///  META-INF/singletons or META-INF/singletons to find bindings for your classes.
+  ///
+  ///  If you enable runtime injection, the tool will do a once-per-runtime scan for annotations,
+  ///  and will generate the bindings in memory.  For maximum performance in
+  ///  production, you will want to use the preloading strategy to read in a
+  ///  manifest of all injectable classes and prepare providers before they are
+  ///  requested.
+  ///
+  ///  A maven plugin will be provided to create this manifest for you.
+  ///
+  ///  All libraries exporting functionality should include specific META-INF
+  ///  bindings for defaults at least; the META-INF resources will only be checked
+  ///  if the given type is not already bound.
+  ///
+  ///  @param cls - The service interface or base service class to provide
+  ///  @return - A singleton instance of the service class.
+  ///
   <T, C extends Class<? extends T>> T provide(C cls);
 
   <T, C extends Class<? extends T>> T create(C cls);

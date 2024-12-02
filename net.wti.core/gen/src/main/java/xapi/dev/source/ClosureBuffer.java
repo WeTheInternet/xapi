@@ -9,9 +9,9 @@ import xapi.string.X_String;
  * ClosureBuffer:
  * <p>
  * <p>
- * <p> A {@link GradleBuffer} which provides { closure, like -> structuresAvailable(); }
+ * <p> A {@link GradleBuffer} which provides { closure, like -&gt; structuresAvailable(); }
  * <p>
- * <p> This class always inserts { -> }, and you can alter the closure parameters any time before printing.
+ * <p> This class always inserts {@code { -> }}, and you can alter the closure parameters any time before printing.
  * <p>
  * <p> We simply override {@link #toSource()}, to add the decorations.
  * <p>

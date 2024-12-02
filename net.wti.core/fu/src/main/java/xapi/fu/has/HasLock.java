@@ -45,7 +45,7 @@ public interface HasLock {
      *
      * @param source - An instance of HasLock, or any non-null object
      * @param todo - The supplier to return a value, if any, from this method
-     * @param <O> - The type of object to return.  Use <Void> and return null for non-synchronous use
+     * @param <O> - The type of object to return.  Use {@code <Void>} and return null for non-synchronous use
      * @return
      */
     static <O> O maybeLock(Object source, Out1<O> todo) {

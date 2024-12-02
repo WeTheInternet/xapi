@@ -5,7 +5,7 @@
     // defaultPlatform = "gwt"
     platforms = [
         // main,
-        <gwt
+        <gwt published = true
             // replaces = main
             modules = [
                 <elemental

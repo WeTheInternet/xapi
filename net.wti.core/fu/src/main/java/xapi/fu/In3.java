@@ -132,11 +132,9 @@ public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
     };
   }
 
-  /**
-   * This method just exists to give you somewhere to create a lambda that will rethrow exceptions,
-   * but exposes an exceptionless api.  If you don't have to call code with checked exceptions,
-   * prefer the standard {@link #in3(In3)}, as try/catch can disable / weaken some JIT compilers.
-   */
+  // This method just exists to give you somewhere to create a lambda that will rethrow exceptions,
+  // but exposes an exceptionless api.  If you don't have to call code with checked exceptions,
+  // prefer the standard {@link #in3(In3)}, as try/catch can disable / weaken some JIT compilers.
   static <I1, I2, I3> In3<I1, I2, I3> in3Unsafe(In3Unsafe<I1, I2, I3> of) {
     return of;
   }

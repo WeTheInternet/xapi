@@ -397,10 +397,8 @@ public interface Maybe <V> extends Rethrowable {
         };
     }
 
-    /**
-     * The java type system kinda sucks;
-     * the only way to weaken a type argument (safely) is through a static method.
-     */
+    // The java type system kinda sucks;
+    // the only way to weaken a type argument (safely) is through a static method.
     @SuppressWarnings("unchecked")
     static <V1 extends V, V> Maybe<V> weaken(Maybe<V1> from) {
         return (Maybe<V>) from;

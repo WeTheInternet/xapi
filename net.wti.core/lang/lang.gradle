@@ -27,7 +27,7 @@ tasks.withType(Test).configureEach {
         t.useJUnitPlatform()
 }
 
-tasks.named('sourceJar').configure {
+tasks.named('sourcesJar').configure {
     Task t ->
         t.dependsOn 'compileJavacc'
 }

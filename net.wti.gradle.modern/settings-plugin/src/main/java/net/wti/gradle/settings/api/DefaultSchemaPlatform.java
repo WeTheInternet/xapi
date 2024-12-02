@@ -3,11 +3,11 @@ package net.wti.gradle.settings.api;
 import xapi.fu.Debuggable;
 import xapi.fu.log.Log;
 
-/**
- * Abstraction layer over a platform descriptor, like <mod-name replace=["main"] published=true />
- *
- * Created by James X. Nelson (James@WeTheInter.net) on 2020-06-14 @ 1:34 a.m..
- */
+///
+/// Abstraction layer over a platform descriptor, like `<mod-name replace=["main"] published=true />`
+///
+/// Created by James X. Nelson (James@WeTheInter.net) on 2020-06-14 @ 1:34 a.m.
+///
 public class DefaultSchemaPlatform implements SchemaPlatform {
     private final String name;
     private final String replace;

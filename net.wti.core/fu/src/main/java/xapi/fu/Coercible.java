@@ -51,13 +51,13 @@ public interface Coercible {
    * If you want this high-levels of control,
    * it comes at the cost of a higher complexity method signature.
    *
-   * @param first
-   * @param obj
-   * @param before
-   * @param after
-   * @param newline
-   * @param emptyString
-   * @return
+   * @param first A boolean that is passed along for subtypes which want to special-case the first value of an array
+   * @param obj The object to perform coercion upon
+   * @param before A provider to add text before each coerced value
+   * @param after A provider to add text after each coerced value
+   * @param newline A provider to print newlines (and additional indent)
+   * @param emptyString A provider to print values when array/list is empty
+   * @return The final coerced string output
    */
   // @ShouldProbablyNotOverride ;-)
   default String coerce(boolean first, Object obj, Out1<String> before, Out1<String> after, Out1<String> newline, Out1<String> emptyString) {

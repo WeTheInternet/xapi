@@ -112,16 +112,23 @@ public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
    * While terrible to read, this method can be used as follows:
    *
    * <pre>
-   *   Map<String, Integer> map = new HashMap<>();
+   *   {@code Map<String, Integer> map = new HashMap<>();}
    *   map.put("key", 0);
    *   In3Out1.transformCompute(map, Map::get, Map::set)
-   *      .io(map, "key", (k, v)->v++);
+   *      .io(map, "key", {@code (k, v)->v++});
    *   assert map.get("key") == 2;
    *
    *   When using a Map class, you can use X_Collect.computeMapTransform,
    *   which will supply the Map::get and Map::put method references for you.
    *
    * </pre>
+   * @param obj The source object to operate upon
+   * @param getter The getter used to get value from obj
+   * @param setter The setter used to set value on obj
+   * @return An In2Out1 which converts a Key object into a {@code In2Out1<Key, Val, Val>}
+   * @param <Obj> The type of the source object
+   * @param <Key> The type of the Key passed to getter/setter
+   * @param <Val> The type of value to read/write
    */
   static <Obj, Key, Val>
   In2Out1<Key , In2Out1<Key, Val, Val>,Val>

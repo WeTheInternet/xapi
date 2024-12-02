@@ -1,30 +1,30 @@
 package xapi.util.impl;
 
-/**
- * Need 32 boolean fields?
- * At one int-per-pointer for boolean fields, that's 128 bytes of heap.
- * Using one int value and one pointer to a Bitwise instance saves heap space,
- * at the price of some bitwise math and synchronization code.
- *
- * All bitwise add and remove operations are synchronized (and volatile).
- * All set and get operations are only volatile.
- *
- * This class may incur slight overhead in single-threaded implementations,
- * (provided the jvm doesn't delete locking code because it knows it's unithread)
- * but if used to represent multiple volatile synchronized boolean fields,
- * it can be a very effective means to share state between multiple threads.
- *
- * Note that this class will enforce a happens-before relationship between
- * threads writing to or reading from this value.
- *
- * If you have multiple sets of bools which should not enforce synchronicity
- * between each other, you should use separate Bitwise objects for each.
- * (This will also reduce the size of your bytecode constant pool,
- * by encouraging the reuse of 1,2,4,8,16, instead of 0x1->0xFFFFF)
- *
- * @author "James X. Nelson (james@wetheinter.net)"
- *
- */
+///
+/// Need 32 boolean fields?
+/// At one int-per-pointer for boolean fields, that's 128 bytes of heap.
+/// Using one int value and one pointer to a Bitwise instance saves heap space,
+/// at the price of some bitwise math and synchronization code.
+///
+/// All bitwise add and remove operations are synchronized (and volatile).
+/// All set and get operations are only volatile.
+///
+/// This class may incur slight overhead in single-threaded implementations,
+/// (provided the jvm doesn't delete locking code because it knows it's unithread)
+/// but if used to represent multiple volatile synchronized boolean fields,
+/// it can be a very effective means to share state between multiple threads.
+///
+/// Note that this class will enforce a happens-before relationship between
+/// threads writing to or reading from this value.
+///
+/// If you have multiple sets of bools which should not enforce synchronicity
+/// between each other, you should use separate Bitwise objects for each.
+/// (This will also reduce the size of your bytecode constant pool,
+/// by encouraging the reuse of `1,2,4,8,16,` instead of `0x1->0xFFFFF`)
+///
+/// @author "James X. Nelson (james@wetheinter.net)"
+///
+///
 public final class Bitwise {
 
   /**

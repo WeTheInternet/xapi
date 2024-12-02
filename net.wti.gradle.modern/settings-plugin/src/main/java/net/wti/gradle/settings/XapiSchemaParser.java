@@ -1283,7 +1283,7 @@ public interface XapiSchemaParser {
             Maybe<UiAttrExpr> modules = platform.getAttribute("modules");
             if (modules.isPresent()) {
                 // we need to stash something that says "this module configuration applies only to our scoped platform".
-                extractModuleForPlatform(platform.getName(), metadata, modules.get());
+                extractModuleForPlatform(platform.getName(), metadata, modules.get(), published);
             }
         }
         if (X_String.isNotEmpty(explicitPlatform)) {
@@ -1406,14 +1406,13 @@ public interface XapiSchemaParser {
     }
 
 
-    default ListLike<UiContainerExpr> extractModuleForPlatform(final String platformName, final DefaultSchemaMetadata metadata, UiAttrExpr uiAttrExpr) {
-        final ListLike<UiContainerExpr> list = X_Jdk.list();
-
+    default void extractModuleForPlatform(final String platformName, final DefaultSchemaMetadata metadata, UiAttrExpr uiAttrExpr, final boolean platformPublished) {
         addModules(metadata, uiAttrExpr.getExpression(), mod->{
+            if (platformPublished && !mod.hasAttribute("published")) {
+                mod.addAttribute("published", BooleanLiteralExpr.boolLiteral(true));
+            }
             mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
         });
-
-        return list;
     }
 
     default SchemaProperties getProperties() {
