@@ -15,6 +15,7 @@ public interface SchemaPlatform extends Named, Serializable {
     String getReplace();
     boolean isPublished();
     boolean isSourcePublished();
+    boolean isSourceConsumed();
     boolean isDisabled();
     boolean isTest();
     SchemaPlatform update(SchemaPlatform module);
@@ -22,6 +23,7 @@ public interface SchemaPlatform extends Named, Serializable {
     void setPublished(boolean published);
 
     void setSourcePublished(boolean sourcePublished);
+    void setSourceConsumed(boolean sourcePublished);
 
     void setDisabled(boolean disabled);
 }

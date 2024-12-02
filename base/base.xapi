@@ -100,7 +100,10 @@
                 /testTools>,
             ]
         /gwt>,
-        <jre replace = "main" published = true
+        <jre
+            replace = main
+            published = true
+            publishSource = true // this should not be necessary
             modules = [
                 <main
                     requires = {

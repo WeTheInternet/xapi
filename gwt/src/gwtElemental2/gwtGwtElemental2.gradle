@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -40,6 +41,7 @@ dependencies {
     testImplementation "info.cukes:cucumber-java:1.2.5"
     testImplementation "info.cukes:cucumber-junit:1.2.5"
     testImplementation "org.hamcrest:hamcrest-library:1.1"
+    api project(":gwt-gwtElemental2-sources")
 }
 
 repositories {

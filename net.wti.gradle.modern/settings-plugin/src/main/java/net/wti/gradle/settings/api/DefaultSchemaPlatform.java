@@ -14,6 +14,7 @@ public class DefaultSchemaPlatform implements SchemaPlatform {
     private String publishPattern;
     private boolean published;
     private boolean sourcePublished;
+    private boolean sourceConsumed;
     private boolean test;
     private boolean disabled;
 
@@ -98,11 +99,18 @@ public class DefaultSchemaPlatform implements SchemaPlatform {
 
     @Override
     public SchemaPlatform update(SchemaPlatform module) {
-        return new DefaultSchemaPlatform(name,
+        DefaultSchemaPlatform plat = new DefaultSchemaPlatform(name,
                 publishPattern,
                 module.getReplace(),
                 published || module.isPublished(),
                 test || module.isTest());
+        if (isSourcePublished() || module.isSourcePublished()) {
+            plat.setSourcePublished(true);
+        }
+        if (isSourceConsumed() || module.isSourceConsumed()) {
+            plat.setSourceConsumed(true);
+        }
+        return plat;
     }
 
     @Override
@@ -117,5 +125,15 @@ public class DefaultSchemaPlatform implements SchemaPlatform {
                     '}';
         }
         return "[" + name + "]";
+    }
+
+    @Override
+    public boolean isSourceConsumed() {
+        return sourceConsumed;
+    }
+
+    @Override
+    public void setSourceConsumed(final boolean sourceConsumed) {
+        this.sourceConsumed = sourceConsumed;
     }
 }

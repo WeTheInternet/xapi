@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -19,12 +20,14 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
-main.java.srcDir("$rootDir/core/args/src/main/java")
-main.resources.srcDir("$rootDir/core/args/src/main/resources")
-test.java.srcDir("$rootDir/core/args/src/test/java")
-test.resources.srcDir("$rootDir/core/args/src/test/resources")
+main.java.srcDir("$rootDir/core/scope/src/main/java")
+main.resources.srcDir("$rootDir/core/scope/src/main/resources")
+test.java.srcDir("$rootDir/core/scope/src/test/java")
+test.resources.srcDir("$rootDir/core/scope/src/test/resources")
 
 dependencies {
+    implementation project(path: ":util-main")
+    implementation project(path: ":collect-main")
     implementation "net.wti.core:xapi-fu:$version"
     testImplementation "junit:junit:4.12"
 }
@@ -35,7 +38,7 @@ repositories {
         url = "$rootDir/repo"
     }
 }
-// Setup publishing to coordinates: net.wetheinter:xapi-core-args
+// Setup publishing to coordinates: net.wetheinter:xapi-core-scope
 project.extensions.add('xapi.mvn.repo', "$rootDir/repo")
 Task xapiPublish = tasks.create('xapiPublish')
 xapiPublish.group = 'Publishing'
@@ -61,8 +64,8 @@ ext.publications.create("xapi", MavenPublication, {
                 pub.from(components.named('java').get())
             }
         }
-        pub.artifactId = "xapi-core-args"
+        pub.artifactId = "xapi-core-scope"
         pub.groupId = "net.wetheinter"
 })
 // GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
-// Done generating buildfile for :core:args at file://$rootDir/core/args/src/main/argsMain.gradle
+// Done generating buildfile for :core:scope at file://$rootDir/core/scope/scope.gradle

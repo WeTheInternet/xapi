@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Cucumber.class)
 @CucumberOptions(
-    features = "src/test/resources/xapi/test/server",
+    features = "../test/resources/xapi/test/server",
     glue = "xapi.test.server.bdd",
     format = {"pretty", "html:target/cucumber"}
 )

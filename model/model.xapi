@@ -54,6 +54,7 @@
             ]
         /gwt>,
         <jre
+            publishSource = true // this should not be necessary
             modules = [
                 <main
                     requires = {

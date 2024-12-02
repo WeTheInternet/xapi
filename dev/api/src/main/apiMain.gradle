@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -29,7 +30,7 @@ dependencies {
     implementation project(path: ":model-main")
     implementation project(path: ":collect-main")
     implementation project(path: ":io-main")
-    implementation project(path: ":core:scope-main")
+    implementation project(path: ":core:scope")
     implementation "net.wti.core:xapi-lang-core:$version"
 }
 

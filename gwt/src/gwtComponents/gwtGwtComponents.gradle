@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -44,6 +45,7 @@ dependencies {
     testImplementation "info.cukes:cucumber-junit:1.2.5"
     testImplementation "org.assertj:assertj-core:3.2.0"
     testImplementation "net.wetheinter:gwt-dev:2.8.0"
+    api project(":gwt-gwtComponents-sources")
 }
 
 repositories {

@@ -1246,6 +1246,12 @@ public interface XapiSchemaParser {
             boolean published = platform.getAttribute("published")
                     .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn("main".equals(name));
+            boolean needSource = platform.getAttribute("needSource")
+                    .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                    .ifAbsentReturn("gwt".equals(name));
+            boolean publishSource = platform.getAttribute("publishSource")
+                    .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                    .ifAbsentReturn("gwt".equals(name));
             boolean test = platform.getAttribute("test")
                     .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn(false);
@@ -1263,13 +1269,18 @@ public interface XapiSchemaParser {
 
             assert replace.isEmpty() || replace.size() == 1 : "Cannot replace more than one other platform; " + name + " tries to replace " + replace;
 
-            // hm, this should be get-or-create semantics, to allow re-declaring a platform in an additive manner.
-            SchemaPlatform tailPlatform = new DefaultSchemaPlatform(name,
-                    groupPattern,
-                    replace.isEmpty() ? null : replace.first(),
-                    published,
-                    test);
-            final SchemaPlatform result = insertPlatform(project, metadata, tailPlatform, platform);
+            // use get-or-create semantics via insertPlatform(), to allow re-declaring a platform in an additive manner.
+            final SchemaPlatform result;
+            {
+                SchemaPlatform tailPlatform = new DefaultSchemaPlatform(name,
+                        groupPattern,
+                        replace.isEmpty() ? null : replace.first(),
+                        published,
+                        test);
+                result = insertPlatform(project, metadata, tailPlatform, platform);
+            }
+            result.setSourceConsumed(needSource);
+            result.setSourcePublished(needSource || publishSource);
             added.add(result);
 
             final In1<UiAttrExpr> insertModule = In4.in4(this::insertModuleRequires)

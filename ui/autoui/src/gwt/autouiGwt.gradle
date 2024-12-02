@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -28,7 +29,7 @@ dependencies {
     implementation project(path: ":collect-main")
     implementation project(path: ":ui:service-main")
     implementation project(path: ":util-main")
-    implementation project(path: ":core:event-main")
+    implementation project(path: ":core:event")
     implementation project(path: ":ui:autoui-main")
     implementation project(path: ":ui:html-main")
     implementation project(path: ":model-gwt")
@@ -43,6 +44,7 @@ dependencies {
     testImplementation "net.wetheinter:gwt-codeserver:2.8.0"
     testImplementation "net.sourceforge.htmlunit:htmlunit:2.19"
     api project(path: ":ui:autoui-main")
+    api project(":ui:autoui-gwt-sources")
 }
 
 repositories {

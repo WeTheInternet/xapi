@@ -132,7 +132,7 @@ public class SchemaProject implements Named, HasPath {
             platforms.add((result = platform));
         }
         for (SchemaProject child : children.mappedValues()) {
-            child.addPlatform(platform);
+            child.addPlatform(result);
         }
         return result;
     }
@@ -245,7 +245,9 @@ public class SchemaProject implements Named, HasPath {
         forAllPlatforms(plat -> forAllModules(mod -> callback.in(plat, mod)));
     }
 
-
+    public boolean hasPlatform(String platform) {
+        return platforms.getNames().contains(platform);
+    }
 
     public SchemaPlatform getPlatform(String platform) {
         return platforms.getByName(platform);

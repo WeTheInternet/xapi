@@ -4,7 +4,6 @@ import net.wti.gradle.api.BuildCoordinates;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.settings.index.IndexNodePool;
 import xapi.fu.data.MapLike;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
 
 import javax.annotation.Nonnull;
@@ -28,6 +27,13 @@ import static net.wti.gradle.tools.GradleFiles.readFile;
  * Created by James X. Nelson (James@WeTheInter.net) on 16/03/2021 @ 1:39 a.m..
  */
 public class SchemaIndexReader implements SchemaDirs {
+
+    public boolean hasExternalSources(final SchemaDependency dependency) {
+        if (dependency.getType() == DependencyType.external) {
+            // TODO: record G:N:V records of when a module either a) has sources classifier or b) has xapi-settings source module
+        }
+        return false;
+    }
 
     private enum SearchDir {
         in, out, both

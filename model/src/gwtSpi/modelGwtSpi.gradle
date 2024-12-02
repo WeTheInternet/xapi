@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -24,6 +25,7 @@ dependencies {
     implementation "net.wetheinter:gwt-user:2.8.0"
     implementation "net.wetheinter:gwt-dev:2.8.0"
     api project(path: ":model-spi")
+    api project(":model-gwtSpi-sources")
 }
 
 repositories {

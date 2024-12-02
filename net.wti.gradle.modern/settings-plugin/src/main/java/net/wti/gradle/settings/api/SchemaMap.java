@@ -227,9 +227,24 @@ public class SchemaMap implements HasAllProjects {
                 }
                 PlatformModule myPlatMod = new PlatformModule(plat.getName(), mod.getName());
                 String platReplace = plat.getReplace();
-                if (isNotEmpty(platReplace)) {
+                if (project.isVirtual()) {
+                    if (plat.isSourcePublished()) {
+                        for (SchemaProject child : project.getChildren()) {
+                            child.getDefaultPlatform().setSourcePublished(true);
+                        }
+                    }
+                    if (plat.isSourceConsumed()) {
+                        for (SchemaProject child : project.getChildren()) {
+                            child.getDefaultPlatform().setSourceConsumed(true);
+                        }
+                    }
+                }
+                if (X_String.isNotEmpty(platReplace)) {
                     // Need to bind gwt:api to main:api or jre:main to main:main
                     PlatformModule intoPlatMod = myPlatMod.edit(platReplace, null);
+                    if (plat.isSourcePublished()) {
+                        project.getPlatform(platReplace).setSourcePublished(true);
+                    }
                     final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
                     project.getDependencies().get(myPlatMod).add(dep);
                 }

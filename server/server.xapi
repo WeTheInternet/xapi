@@ -95,13 +95,11 @@
                             @transitive(test)
                             project : {
                                 ":dev:scanner" : main,
+                                collect : jre,
+                                model : jre,
+                                inject : jre,
+                                ":dev:javac" : jdk8,
                             },
-                            @transitive(test)
-                            project : [
-                                ":collect-jre",
-                                ":model-jre",
-                                ":dev:javac",
-                            ],
                             @transitive(test)
                             external : [
                                 "javax.servlet:javax.servlet-api:3.1-b02",

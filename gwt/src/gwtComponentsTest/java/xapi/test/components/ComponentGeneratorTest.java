@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-    features = "src/test/resources/xapi/test/components/bdd",
+    features = "../gwtComponentsTest/resources/xapi/test/components/bdd",
     glue = "xapi.test.components.bdd",
     format = {"pretty", "html:target/cucumber"}
 )

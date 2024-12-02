@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -70,4 +71,4 @@ ext.publications.create("xapi", MavenPublication, {
         pub.groupId = "net.wetheinter"
 })
 // GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
-// Done generating buildfile for :core:settings at file://$rootDir/core/settings/src/main/settingsMain.gradle
+// Done generating buildfile for :core:settings at file://$rootDir/core/settings/settings.gradle

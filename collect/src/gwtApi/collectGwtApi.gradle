@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -22,6 +23,7 @@ test.resources.setSrcDirs([]);
 
 dependencies {
     api project(path: ":collect-api")
+    api project(":collect-gwtApi-sources")
 }
 
 repositories {

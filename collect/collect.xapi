@@ -36,6 +36,9 @@
                 /main>
             ]
         /gwt>,
-        <jre modules = [ main ] />
+        <jre
+            modules = main
+            publishSource = true // this should not be necessary
+        /jre>
     ]
 /xapi-schema>

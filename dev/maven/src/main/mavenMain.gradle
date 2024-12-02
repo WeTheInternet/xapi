@@ -22,6 +22,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -49,7 +50,7 @@ dependencies {
     implementation project(path: ":io-main")
     implementation project(path: ":collect-main")
     implementation project(path: ":dev:file-main")
-    implementation project(path: ":core:scope-main")
+    implementation project(path: ":core:scope")
     implementation project(path: ":model-jre")
     implementation project(path: ":inject-jre")
     testImplementation project(path: ":base-testTools")

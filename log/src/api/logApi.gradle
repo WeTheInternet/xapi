@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -24,7 +25,7 @@ main.resources.srcDir("$rootDir/log/src/api/resources")
 
 dependencies {
     implementation project(path: ":collect-api")
-    api project(path: ":core:args-main")
+    api project(path: ":core:args")
     compileOnly "net.wetheinter:gwt-dev:2.8.0"
     compileOnly "javax.inject:javax.inject:1"
 }

@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -21,12 +22,12 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/process/src/gwt/java")
 main.resources.srcDir("$rootDir/process/src/gwt/resources")
-test.java.srcDir("$rootDir/process/src/gwtTest/java")
 
 dependencies {
     implementation project(path: ":inject-gwt")
     compileOnly "net.wetheinter:gwt-user:2.8.0"
     api project(path: ":process-main")
+    api project(":process-gwt-sources")
 }
 
 repositories {

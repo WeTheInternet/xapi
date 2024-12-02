@@ -1,14 +1,17 @@
 import org.gradle.api.tasks.SourceSet;
 
 plugins {
+    // GenInclude plugin from file:///opt/xapi/server/gen/src/gradle/main/plugins
+    id('xapi-tools-jar')
     id	"java-library"
     id	"maven-publish"
 }
+
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
-
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -28,7 +31,7 @@ dependencies {
     implementation project(path: ":inject-main")
     implementation project(path: ":process-jre")
     implementation project(path: ":io-main")
-    api project(path: ":core:scope-main")
+    api project(path: ":core:scope")
     api project(path: ":dev:api-main")
     api project(path: ":server:servlets")
     api project(path: ":ui:generator")
@@ -37,7 +40,8 @@ dependencies {
     testImplementation project(path: ":dev:scanner-main")
     testImplementation project(path: ":collect-jre")
     testImplementation project(path: ":model-jre")
-    testImplementation project(path: ":dev:javac-main")
+    testImplementation project(path: ":inject-jre")
+    testImplementation project(path: ":dev:javac-jdk8")
     testImplementation project(path: ":server:gen-sample")
     implementation "net.wti.core:xapi-lang-core:$version"
     implementation "net.wetheinter:gwt-user:2.8.0"

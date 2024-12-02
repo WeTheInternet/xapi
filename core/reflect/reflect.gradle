@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -109,4 +110,4 @@ if (JavaVersion.current().isJava9Compatible()) {
         }
     }
 }
-// Done generating buildfile for :core:reflect at file://$rootDir/core/reflect/src/main/reflectMain.gradle
+// Done generating buildfile for :core:reflect at file://$rootDir/core/reflect/reflect.gradle

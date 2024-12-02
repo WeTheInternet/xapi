@@ -35,6 +35,7 @@
         /main>,
         <jdk8
             replaces = main
+            publishSource = true
             modules = <main
                 requires = {
                     project : {
@@ -55,6 +56,9 @@
                 }
             /main>
         />,
-        <jdk17 replaces=main />,
+        <jdk17
+            replaces = main
+            publishSource = true
+        /jdk17>,
     ]
 /xapi-schema>

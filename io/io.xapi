@@ -51,6 +51,10 @@
                     }
                 /main>,
             ]
-        /gwt>
+        /gwt>,
+        <jre
+            // TODO: remove the need for this by making consumeSource=true dependencies "inherit" this requirement
+            publishSource = true
+        /jre>
     ]
 /xapi-schema>

@@ -11,6 +11,7 @@ plugins {
 ext.xapiModern = 'true'
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -43,6 +44,7 @@ dependencies {
     annotationProcessor project(path: ":dev:javac-jdk8")
     testImplementation project(path: ":gwtc-gwtTestTools")
     implementation "net.wetheinter:gwt-user:2.8.0"
+    api project(":gwtc-gwtSample-sources")
 }
 
 repositories {

@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -38,6 +39,7 @@ dependencies {
     testImplementation "net.wetheinter:gwt-dev:2.8.0"
     api project(path: ":io-main")
     api project(path: ":io-gwtApi")
+    api project(":io-gwt-sources")
 }
 
 repositories {

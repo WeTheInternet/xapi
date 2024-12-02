@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -20,13 +21,12 @@ main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/process/src/main/java")
-test.java.srcDir("$rootDir/process/src/test/java")
 
 dependencies {
     implementation project(path: ":io-main")
     implementation project(path: ":inject-main")
     implementation project(path: ":collect-main")
-    api project(path: ":core:scope-main")
+    api project(path: ":core:scope")
     api project(path: ":util-main")
 }
 

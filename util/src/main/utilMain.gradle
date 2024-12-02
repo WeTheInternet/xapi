@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -26,7 +27,7 @@ test.java.srcDir("$rootDir/util/src/test/java")
 dependencies {
     implementation project(path: ":collect-main")
     api project(path: ":log-api")
-    implementation project(path: ":core:reflect-main")
+    implementation project(path: ":core:reflect")
     implementation project(path: ":base-api")
     testImplementation project(path: ":util-testTools")
     api "net.wti.core:xapi-fu:$version"

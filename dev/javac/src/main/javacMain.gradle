@@ -11,6 +11,7 @@ plugins {
 ext.xapiModern = 'true'
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -25,7 +26,7 @@ main.java.srcDir("$rootDir/dev/javac/src/main/java")
 main.resources.srcDir("$rootDir/dev/javac/src/main/resources")
 
 dependencies {
-    api project(path: ":core:scope-main")
+    api project(path: ":core:scope")
     api project(path: ":collect-main")
     api project(path: ":util-main")
     api project(path: ":dev:file-main")

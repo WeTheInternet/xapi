@@ -9,6 +9,7 @@ ext.xapiModern = 'true'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
+// setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
@@ -30,6 +31,7 @@ dependencies {
     api project(path: ":inject-main")
     api project(path: ":inject-gwtApi")
     api project(path: ":inject-gwtSpi")
+    api project(":inject-gwt-sources")
 }
 
 repositories {
