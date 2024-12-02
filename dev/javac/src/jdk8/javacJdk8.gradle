@@ -1,8 +1,11 @@
 import org.gradle.api.tasks.SourceSet;
 
 plugins {
+    // GenInclude plugin from file:///opt/xapi/dev/javac/src/gradle/jdk8/plugins
+    id('xapi-tools-jar')
     id	"java-library"// GenInclude XapiSettingsPlugin adding java-library b/c api dependencies used
 }
+
 // GenStart XapiSettingsPlugin
 ext.xapiModern = 'true'
 
@@ -45,37 +48,5 @@ dependencies {
     testImplementation "org.assertj:assertj-core-java8:1.0.0m1"
     api project(path: ":dev:javac-main")
 }
-
 // GenEnd XapiSettingsPlugin
-// GenInclude body.end from file:///opt/xapi/dev/javac/src/gradle/jdk8/body.end
-import org.gradle.internal.jvm.Jvm
-
-Jvm jvm = Jvm.current()
-File tools = jvm.toolsJar
-if (!tools?.exists()) {
-    tools = new File(javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(8)
-    }.get().getMetadata().installationPath.asFile, "lib/tools.jar")
-}
-if (tools) {
-    dependencies {
-        compileOnly files(tools)
-        testImplementation files(tools)
-        if (System.getProperty('idea.version')) {
-            implementation files(tools)
-        }
-    }
-}
-
-idea {
-    project {
-        jdkName = "1.8"
-        languageLevel = "1.8"
-    }
-}
-tasks.withType(Test).configureEach {
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
 // Done generating buildfile for :dev:javac at file://$rootDir/dev/javac/src/jdk8/javacJdk8.gradle

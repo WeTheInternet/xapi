@@ -25,9 +25,9 @@ if (tools) {
 
 if (System.getProperty('idea.version')) {
     idea {
-        project {
+        module {
             jdkName = "1.8"
-            languageLevel = "1.8"
+            languageLevel = new org.gradle.plugins.ide.idea.model.IdeaLanguageLevel("1.8")
         }
     }
 }
