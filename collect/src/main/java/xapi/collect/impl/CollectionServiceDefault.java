@@ -232,6 +232,11 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
+  public <V> StringDictionary<V> newDictionaryInsertionOrdered(final Class<V> cls) {
+    return new StringDictionaryDefault<>(cls, new LinkedHashMap<>());
+  }
+
+  @Override
   public <V> Fifo<V> newFifo() {
     return new SimpleFifo<V>();
   }

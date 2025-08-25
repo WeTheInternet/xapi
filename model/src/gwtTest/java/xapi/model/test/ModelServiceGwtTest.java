@@ -105,9 +105,12 @@ public class ModelServiceGwtTest
     content.setKey(newKey("content"));
     content.setText("Hello World");
     content.setTime(time);
-    final ModelContent[] array = GwtReflect.newArray(ModelContent.class, 1);
-    array[0] = X_Model.create(ModelContent.class);
-    content.setRelated(array);
+    final ModelList<ModelContent> list = content.related();
+    final ModelContent related = X_Model.create(ModelContent.class);
+    related.setKey(newKey("related"));
+    related.setText("Hello");
+    list.add(related);
+
     X_Model.register(ModelContent.class);
     final String serialized = X_Model.serialize(ModelContent.class, content);
     final ModelContent asModel = X_Model.deserialize(ModelContent.class, serialized);
@@ -136,7 +139,7 @@ public class ModelServiceGwtTest
             content.setKey(received.getKey());
 
             assertArrayEquals(content.getChildren(), received.getChildren());
-            assertArrayEquals(content.getRelated(), received.getRelated());
+            assertArrayEquals(content.getRelated().toArray(ModelContent.class), received.getRelated().toArray(ModelContent.class));
             assertArrayEquals(content.getUpvotes(), received.getUpvotes());
             assertArrayEquals(content.getDownvotes(), received.getDownvotes());
 

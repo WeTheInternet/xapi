@@ -9,8 +9,9 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
-import xapi.fu.In2;
+import xapi.fu.*;
 import xapi.inject.X_Inject;
+import xapi.log.X_Log;
 import xapi.model.api.*;
 import xapi.model.service.ModelService;
 import xapi.model.tools.ModelSerializerDefault;
@@ -19,6 +20,7 @@ import xapi.source.lex.CharIterator;
 import xapi.source.lex.StringCharIterator;
 import xapi.string.X_String;
 import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.api.SuccessHandler;
 
 import java.util.Objects;
@@ -60,21 +62,82 @@ public abstract class AbstractModelService implements ModelService
 
   protected abstract <M extends Model> void doPersist(String type, M model, SuccessHandler<M> callback);
 
+  @Override
+  public <M extends Model> Out1<M> doPersistBlocking(String type, M model, long milliTimeout) {
+    final Pointer<M> win = Pointer.pointer();
+    final Pointer<Throwable> lose = Pointer.pointer();
+    doPersist(type, model, SuccessHandler.handler(
+            success -> {
+              win.in(success);
+              synchronized (win) {
+                win.notifyAll();
+              }
+            }, failure -> {
+              lose.in(failure);
+              synchronized (win) {
+                win.notifyAll();
+              }
+            }
+    ));
+    final Moment start = X_Time.now();
+    return Lazy.deferred1(()->{
+      M won;
+      Throwable lost;
+      won = win.out1();
+      if (won != null) {
+        return won;
+      }
+      lost = lose.out1();
+      if (lost != null) {
+        throw X_Fu.rethrow(lost);
+      }
+      synchronized (win) {
+        try {
+            if (milliTimeout < 1) {
+                win.wait();
+            } else {
+                win.wait(milliTimeout, 0);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw X_Fu.rethrow(e);
+        }
+      }
+      won = win.out1();
+      if (won != null) {
+        return won;
+      }
+      lost = lose.out1();
+      if (lost != null) {
+        throw X_Fu.rethrow(lost);
+      }
+      throw new IllegalStateException( "Waited " + X_Time.difference(start) +
+              (milliTimeout < 1 ? " until doPersist completed" : " with a time limit of " + milliTimeout + "ms" ) +
+              ", but neither result nor error found");
+    });
+  }
+
   protected <M extends Model> M deserialize(final String cls, final CharIterator model) {
     return deserialize((Class<M>)typeNameToClass.get(cls), model);
   }
 
   @Override
-  public <M extends Model> M deserialize(final Class<M> cls, final CharIterator model) {
+  public <M extends Model> M deserialize(final Class<M> cls, final CharIterator model, ModelSerializationHints hints) {
     if (model == null) {
       return null;
     }
-    final ModelDeserializationContext context = new ModelDeserializationContext(doCreate(cls), this, findManifest(cls));
+    final ModelDeserializationContext parent = hints.getParentContext();
+    final ModelDeserializationContext context;
+    if (parent == null) {
+        context = new ModelDeserializationContext(doCreate(cls), this, findManifest(cls));
+    } else {
+        context = parent.createChildContext(cls, hints);
+    }
     context.setClientToServer(isClientToServer());
-    boolean isKeyOnly = cls.getAnnotation(KeyOnly.class) != null || context.isKeyOnly();
+    boolean isKeyOnly = cls.getAnnotation(KeyOnly.class) != null || context.isKeyOnly() || hints.isKeyOnly();
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
     if (isKeyOnly) {
-      context.setKeyOnly(isKeyOnly);
+      context.setKeyOnly(true);
     }
     return serializer.modelFromString(cls, model, context, isKeyOnly);
   }

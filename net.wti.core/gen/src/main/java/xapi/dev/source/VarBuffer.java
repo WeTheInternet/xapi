@@ -67,6 +67,10 @@ public interface VarBuffer <Self extends CharBuffer & VarBuffer<Self>> extends R
             b.append(";");
         }
         b.append("\n");
+        final Self buf = self();
+        if (buf instanceof PrintBuffer) {
+            ((PrintBuffer) buf).setIndentNeeded(true);
+        }
         return b.toString();
     }
 

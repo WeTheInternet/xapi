@@ -36,7 +36,10 @@ package xapi.log;
 
 import xapi.collect.fifo.Fifo;
 import xapi.collect.fifo.SimpleFifo;
+import xapi.fu.Coercible;
+import xapi.fu.Debuggable;
 import xapi.fu.Lazy;
+import xapi.fu.has.HasName;
 import xapi.inject.X_Inject;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
@@ -73,6 +76,12 @@ public class X_Log {
     Fifo<Object> logMsg = log.newFifo();
     logMsg.give("[" +level+"]");
     for (Object m : message){
+      if (m instanceof Coercible) {
+        m = ((Coercible) m).coerce(m);
+      }
+      if (m instanceof HasName) {
+        logMsg.give(((HasName) m).getName() + "->");
+      }
       Iterable<Object> iter = log.shouldIterate(m);
       if (iter == null) {
         logMsg.give(log.unwrap(l, m));

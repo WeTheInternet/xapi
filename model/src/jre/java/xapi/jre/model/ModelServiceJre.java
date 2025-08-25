@@ -54,31 +54,27 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
         return;
       }
 
-      final Runnable finish = new Runnable() {
-
-        @Override
-        public void run() {
-          try {
-            if (file.exists()) {
-              file.delete();
-            }
-            if (!file.getParentFile().isDirectory()) {
-              final boolean created = file.getParentFile().mkdirs();
-              if (!created) {
-                X_Log.warn(ModelServiceJre.class, "Unable to create directory", file.getParentFile());
-              }
-            }
-            final FileOutputStream result = new FileOutputStream(file);
-            final String source = serialized.toSource();
-            X_IO.drain(result, X_IO.toStreamUtf8(source));
-            callback.onSuccess(model);
-            X_Log.trace(ModelServiceJre.class, "Saved model to ", file);
-            X_Log.trace(ModelServiceJre.class, "Saved model source", source);
-            assert deserialize(type, CharIterator.forString(source)).equals(model);
-          } catch (final IOException e) {
-            X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
-            fail(callback, e);
+      final Runnable finish = () -> {
+        try {
+          if (file.exists()) {
+            file.delete();
           }
+          if (!file.getParentFile().isDirectory()) {
+            final boolean created = file.getParentFile().mkdirs();
+            if (!created) {
+              X_Log.warn(ModelServiceJre.class, "Unable to create directory", file.getParentFile());
+            }
+          }
+          final FileOutputStream result = new FileOutputStream(file);
+          final String source = serialized.toSource();
+          X_IO.drain(result, X_IO.toStreamUtf8(source));
+          callback.onSuccess(model);
+          X_Log.trace(ModelServiceJre.class, "Saved model to ", file);
+          X_Log.trace(ModelServiceJre.class, "Saved model source", source);
+          assert deserialize(type, CharIterator.forString(source)).equals(model);
+        } catch (final IOException e) {
+          X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
+          fail(callback, e);
         }
       };
       if (isAsync()) {
@@ -506,6 +502,41 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       X_Log.info(ModelServiceJre.class, "Initialized model service to ", "file://" + root);
     }
     return root;
+  }
+
+  @Override
+  public void delete(final ModelKey key, final SuccessHandler<Boolean> callback) {
+    File f = getRoot(callback);
+    if (f == null) {
+      callback.onSuccess(null);
+      return;
+    }
+    if (X_String.isEmpty(key.getId())) {
+      throw new IllegalArgumentException("Key must have an ID to be deleted: " + key);
+    }
+    if (!key.getNamespace().isEmpty()) {
+      f = new File(f, key.getNamespace());
+    }
+    f = new File(f, key.getKind());
+    // nest hierarchical keys in a directory structure
+    f = resolveParents(f, key.getParent());
+    if (!f.exists()) {
+      callback.onSuccess(null);
+      return;
+    }
+    final boolean success;
+    try {
+      success = f.delete();
+    } catch (Exception e) {
+      if (callback instanceof ErrorHandler) {
+        ErrorHandler.delegateTo(callback).onError(e);
+      } else {
+        X_Log.warn(ModelServiceJre.class, "Problem deleting model", key, e);
+        callback.onSuccess(false);
+      }
+      return;
+    }
+    callback.onSuccess(success);
   }
 
   @Override

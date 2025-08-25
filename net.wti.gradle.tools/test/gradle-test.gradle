@@ -7,7 +7,7 @@ description = '''Gradle testing tools (test dependencies in api configuration).'
 
 String xapiHome = rootDir.parent
 apply from: "$xapiHome/gradle/xapi-env.gradle"
-apply from: "$xapiHome/gradle/int-test.gradle"
+repositories.mavenCentral()
 
 dependencies {
     api "net.wti.gradle.modern:xapi-gradle-core:${->version}"
@@ -15,8 +15,7 @@ dependencies {
     api gradleTestKit()
     api 'org.junit.jupiter:junit-jupiter-api:5.3.2'
     implementation 'junit:junit:4.12' // TODO: get junit 5 vintage mode to work
-    String spockVersion = System.getProperty('idea.version') ? '2.4' : '2.3'
-    api "org.spockframework:spock-core:1.0-groovy-$spockVersion", {
+    api "org.spockframework:spock-core:1.2-groovy-2.5", {
         exclude module: 'groovy-all'
     }
 }

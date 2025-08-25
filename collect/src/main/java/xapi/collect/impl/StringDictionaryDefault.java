@@ -4,6 +4,9 @@ import xapi.collect.api.StringDictionary;
 import xapi.fu.In2;
 import xapi.util.api.ReceivesValue;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class StringDictionaryDefault <V> extends StringToAbstract<V> implements StringDictionary<V>{
 
   private static final long serialVersionUID = 7852257257033178551L;
@@ -13,6 +16,8 @@ public class StringDictionaryDefault <V> extends StringToAbstract<V> implements 
   }
 
   public StringDictionaryDefault(Class<V> cls) {super(cls);}
+
+  public StringDictionaryDefault(Class<V> cls, Map<String, V> map) {super(cls, map);}
 
   @Override
   public boolean hasKey(final String key) {

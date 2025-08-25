@@ -408,6 +408,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         doVisit(EnclosedExpr.class, n, arg, super::visit);
     }
 
+    public ComposableXapiVisitor<Ctx> withEnclosedExprTerminal(In2<EnclosedExpr, Ctx> callback) {
+        putCallback(EnclosedExpr.class, callback.supply1(false));
+        return this;
+    }
+
     public ComposableXapiVisitor<Ctx> withEnclosedExpr(In2Out1<EnclosedExpr, Ctx, Boolean> callback) {
         putCallback(EnclosedExpr.class, callback);
         return this;

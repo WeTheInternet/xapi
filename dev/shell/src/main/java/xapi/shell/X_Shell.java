@@ -47,7 +47,7 @@ public class X_Shell {
 
   /**
    * Launches a java process inside a shell environment.
-   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/sh.sh,
+   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/repl.sh,
    * and is only tested on linux.
    *
    * @param mainClass - The class name with the main method to run
@@ -60,7 +60,7 @@ public class X_Shell {
 
   /**
    * Launches a java process inside a shell environment.
-   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/sh.sh,
+   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/repl.sh,
    * and is only tested on linux.
    *
    * @param mainClass - The class name with the main method to run
@@ -74,7 +74,7 @@ public class X_Shell {
   }
   /**
    * Launches a java process inside a shell environment.
-   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/sh.sh,
+   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/repl.sh,
    * and is only tested on linux.
    *
    * @param mainClass - The class name with the main method to run

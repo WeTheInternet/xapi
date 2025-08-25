@@ -1,6 +1,6 @@
 package xapi.source;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 

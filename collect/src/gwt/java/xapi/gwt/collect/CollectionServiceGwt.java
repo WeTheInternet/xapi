@@ -78,6 +78,11 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
+  public <V> StringDictionary<V> newDictionaryInsertionOrdered(Class<V> cls) {
+    return JsStringDictionary.create(cls);
+  }
+
+  @Override
   public <K,V> Many<K,V> newMultiMap(final Class<K> key, final Class<V> cls, final CollectionOptions opts) {
     return new ObjectToManyList<>(key, cls, newMap(opts));
   }

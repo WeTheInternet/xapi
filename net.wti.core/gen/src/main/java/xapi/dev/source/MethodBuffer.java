@@ -718,7 +718,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       println();
     }
     addToEnd(var);
-    println();
+    setIndentNeeded(true);
     return var;
   }
 

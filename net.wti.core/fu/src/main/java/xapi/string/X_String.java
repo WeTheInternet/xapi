@@ -4,8 +4,10 @@ import xapi.fu.In1Out1;
 import xapi.fu.Out1;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.List;
 
 import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.fu.itr.MappedIterable.mapped;
@@ -618,4 +620,43 @@ public class X_String {
       }
       return join("\n", lines);
     }
+  /// Formats a time string like "9:00" or "17:05" without using String.format
+  public static String formatTime(int hour, int minute) {
+    return hour + ":" + (minute < 10 ? "0" : "") + minute;
+  }
+
+  /// Joins an array of days into "5th", "5th and 15th", or "5th, 12th, and 28th"
+  public static String ordinalJoin(int ... values) {
+    final int len = values.length;
+    if (len == 0) return "";
+
+    String[] ordinals = new String[len];
+    for (int i = 0; i < len; i++) {
+      ordinals[i] = numberWithOrdinal(values[i]);
+    }
+
+    if (len == 1) {
+      return ordinals[0];
+    } else if (len == 2) {
+      return ordinals[0] + " and " + ordinals[1];
+    }
+
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < len - 1; i++) {
+      sb.append(ordinals[i]).append(", ");
+    }
+    sb.append("and ").append(ordinals[len - 1]);
+    return sb.toString();
+  }
+
+  public static String numberWithOrdinal(int num) {
+    if (num >= 11 && num <= 13) return num + "th";
+    switch (num % 10) {
+      case 1: return num + "st";
+      case 2: return num + "nd";
+      case 3: return num + "rd";
+      default: return num + "th";
+    }
+  }
+
 }

@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.SourceSet;
-
 plugins {
     // GenInclude plugin from file:///opt/xapi/dev/javac/src/gradle/jdk8/plugins
     id('xapi-tools-jar')
@@ -15,9 +13,7 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
-
 SourceSet test = sourceSets.maybeCreate('test');
-
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
@@ -28,6 +24,7 @@ test.java.srcDir("$rootDir/dev/javac/src/jdk8Test/java")
 test.resources.srcDir("$rootDir/dev/javac/src/jdk8Test/resources")
 
 dependencies {
+    annotationProcessor project(path: ":base-api")
     implementation project(path: ":io-jre")
     implementation project(path: ":inject-jre")
     testImplementation project(path: ":base-testTools")

@@ -100,9 +100,11 @@ public class ModelServiceTestJre {
   public void testComplexSerialization() {
     final ModelContent content = X_Model.create(ModelContent.class);
     final long time = System.currentTimeMillis();
-    content.setText("Hello World");
+    content.setText("Hi there,");
     content.setTime(time);
-    content.setRelated(new ModelContent[]{X_Model.create(ModelContent.class)});
+    final ModelContent related = X_Model.create(ModelContent.class);
+    related.setText("Hello!");
+    content.related().add(related);
     final String serialized = X_Model.serialize(ModelContent.class, content);
     final ModelContent asModel = X_Model.deserialize(ModelContent.class, serialized);
     assertEquals(content, asModel);
@@ -128,13 +130,15 @@ public class ModelServiceTestJre {
     assertEquals(hasMap, deserializeFull);
 
   }
+
   @Test
   public void testModelPersistence() {
     final ModelContent content = X_Model.create(ModelContent.class);
     final long time = System.currentTimeMillis();
     content.setText("Hello World");
     content.setTime(time);
-    content.setRelated(new ModelContent[]{X_Model.create(ModelContent.class)});
+    final ModelContent related = X_Model.create(ModelContent.class);
+    content.related().add(related);
     content.setKey(X_Model.newKey(content.getType()));
     final Pointer<Boolean> waiting = new Pointer<>(true);
     X_Model.persist(content,
@@ -148,6 +152,7 @@ public class ModelServiceTestJre {
           public void onSuccess(final ModelContent loaded) {
             Assert.assertFalse(loaded == m);
             Assert.assertTrue(loaded.equals(m));
+            Assert.assertTrue(related.equals(loaded.related().first()));
             waiting.set(false);
           }
         });

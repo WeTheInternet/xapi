@@ -29,6 +29,8 @@
                 /api>,
                 <compiler
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         internal : api,
                         @transitive
                         project : {
@@ -93,6 +95,8 @@
                 /compiler>,
                 <sample
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         @transitive(test)
                         internal : gwtTestTools,
                         project : {

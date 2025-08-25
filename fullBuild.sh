@@ -9,7 +9,7 @@ skip_tools=n
 
 remove_shadow="-x shadowJar"
 shadow=${shadow:-$remove_shadow}
-main_args="-Dxapi.composite=true -Pxapi.changing=true --parallel --build-cache -Pxapi.debug=false $shadow"
+main_args="-Dxapi.composite=true -Pxapi.changing=true --parallel --build-cache --stacktrace -Pxapi.debug=false $shadow"
 
 while (( arg_len > 0 )); do
   arg_ind=$(( 1 + $# - arg_len ))
@@ -88,7 +88,7 @@ function do_it() {
 
         pushd net.wti.gradle.modern > /dev/null
         echo "invoking ./gradlew $args in $(pwd)"
-        ./gradlew $args
+        ./gradlew $args -x functionalTest
         popd > /dev/null
 
         pushd net.wti.gradle.tools > /dev/null

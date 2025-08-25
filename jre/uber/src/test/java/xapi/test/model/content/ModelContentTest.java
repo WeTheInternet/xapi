@@ -3,6 +3,7 @@
  */
 package xapi.test.model.content;
 
+import xapi.model.api.ModelList;
 import xapi.model.content.HasAuthor;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelRating;
@@ -52,7 +53,7 @@ public class ModelContentTest extends ModelTextTest implements ModelContent {
    * @see xapi.model.content.ModelContent#getRelated()
    */
   @Override
-  public ModelContent[] getRelated() {
+  public ModelList<ModelContent> getRelated() {
     return getProperty("related");
   }
 
@@ -60,7 +61,7 @@ public class ModelContentTest extends ModelTextTest implements ModelContent {
    * @see xapi.model.content.ModelContent#setRelated(xapi.model.content.ModelContent[])
    */
   @Override
-  public ModelContent setRelated(final ModelContent[] related) {
+  public ModelContent setRelated(final ModelList<ModelContent> related) {
     setProperty("related", related);
     return this;
   }

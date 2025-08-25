@@ -1,7 +1,7 @@
 repositories.mavenCentral()
 
 String configuration = findProperty('xapiTestConfiguration') ?: 'testImplementation'
-project.dependencies.add(configuration, project.dependencies.module('org.spockframework:spock-core:1.2-groovy-2.5'))
+project.dependencies.add(configuration, project.dependencies.module('org.spockframework:spock-core:2.3-groovy-3.0'))
 project.dependencies.add(configuration, project.dependencies.gradleTestKit())
 
 // TODO: bother with a custom sourceset.

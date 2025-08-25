@@ -27,7 +27,6 @@ public class StringToAbstract <V> implements StringTo<V>{
   private final Class<V> valueType;
   private final AtomicBoolean recurseProtect = new AtomicBoolean(false);
 
-
   public StringToAbstract(Class<V> valueType) {
     this.valueType = valueType;
     if (isMultithreaded()) {

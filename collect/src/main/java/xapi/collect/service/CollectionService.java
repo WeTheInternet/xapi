@@ -34,6 +34,7 @@ public interface CollectionService {
   <V, Generic extends V> StringTo.Many<V> newStringMultiMap(Class<Generic> cls, CollectionOptions opts);
 
   <V> StringDictionary<V> newDictionary(Class<V> cls);
+  <V> StringDictionary<V> newDictionaryInsertionOrdered(Class<V> cls);
 
   <V> Fifo<V> newFifo();
 

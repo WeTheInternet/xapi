@@ -1,9 +1,10 @@
-import org.gradle.api.tasks.SourceSet;
-
 plugins {
+    // GenInclude plugin from file:///opt/xapi/dev/maven/src/gradle/main/plugins
+    id	"groovy"
     id	"java-library"
     id	"maven-publish"
 }
+
 // GenInclude body.start from file:///opt/xapi/dev/maven/src/gradle/main/body.start
 apply from: "$rootDir/gradle/xapi-env.gradle"
 apply from: "$rootDir/gradle/int-test.gradle"
@@ -19,16 +20,13 @@ tasks.named('compileJava').configure {
 }
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
-
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
 // setup sourcesets
 
 SourceSet main = sourceSets.maybeCreate('main');
 
-
 SourceSet test = sourceSets.maybeCreate('test');
-
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
@@ -37,9 +35,10 @@ main.java.srcDir("$rootDir/dev/maven/src/main/java")
 main.resources.srcDir("$rootDir/dev/maven/src/main/resources")
 test.java.srcDir("$rootDir/dev/maven/src/test/java")
 test.resources.srcDir("$rootDir/dev/maven/src/test/resources")
-test.java.srcDir("$rootDir/dev/maven/src/test/groovy")
+test.groovy.srcDir("$rootDir/dev/maven/src/test/groovy")
 
 dependencies {
+    annotationProcessor project(path: ":base-api")
     api project(path: ":dev:bytecode-main")
     api project(path: ":dev:scanner-main")
     api project(path: ":model-main")
@@ -54,7 +53,9 @@ dependencies {
     implementation project(path: ":model-jre")
     implementation project(path: ":inject-jre")
     testImplementation project(path: ":base-testTools")
+    testImplementation project(path: ":log-main")
     testImplementation project(path: ":io-jre")
+    testImplementation project(path: ":inject-jre")
     api "org.apache.maven:maven-core:3.2.5"
     implementation "org.slf4j:slf4j-api:1.7.25"
     implementation "net.wti.core:xapi-lang-core:${version}"
@@ -62,6 +63,7 @@ dependencies {
     implementation "org.eclipse.aether:aether-transport-file:1.0.1.v20141111"
     implementation "org.eclipse.aether:aether-transport-http:1.0.1.v20141111"
     implementation "org.eclipse.aether:aether-impl:1.0.1.v20141111"
+    testImplementation xapiLib.junit5api
 }
 
 repositories {

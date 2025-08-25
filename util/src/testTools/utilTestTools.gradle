@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.SourceSet;
-
 plugins {
     id	"java-library"
     id	"maven-publish"
@@ -13,9 +11,7 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
-
 SourceSet test = sourceSets.maybeCreate('test');
-
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
@@ -23,7 +19,6 @@ test.resources.setSrcDirs([]);
 
 dependencies {
     api project(path: ":base-api")
-    api "junit:junit:4.13"
     api "net.wti.core:xapi-gen:$version"
     api project(path: ":util-main")
 }

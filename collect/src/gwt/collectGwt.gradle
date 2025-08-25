@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.SourceSet;
-
 plugins {
     id	"java-library"
     id	"maven-publish"
@@ -13,9 +11,7 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
-
 SourceSet test = sourceSets.maybeCreate('test');
-
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
@@ -23,6 +19,7 @@ test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/collect/src/gwt/java")
 
 dependencies {
+    annotationProcessor project(path: ":base-api")
     implementation project(path: ":inject-gwt")
     compileOnly "net.wetheinter:gwt-user:2.8.0"
     compileOnly "net.wetheinter:gwt-dev:2.8.0"

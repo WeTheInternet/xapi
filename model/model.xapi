@@ -4,12 +4,15 @@
             modules = [
                 <api
                     requires = {
+                        @transitive
                         project: collect,
                         project: { inject: main }
                     }
                 /api>,
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         @transitive(false)
                         external : "net.wetheinter:jsinterop-annotations:2.8.0",
                         @transitive
@@ -29,6 +32,8 @@
             modules = [
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         @transitive(false)
                         project: [ {base : jre}, {collect: jre}, {inject: jre} ],
                         @transitive
@@ -58,6 +63,8 @@
             modules = [
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         project: [ base, inject, collect ],
                         project: [ { model : main }, { io : main }, { util : main } ],
                         @transitive

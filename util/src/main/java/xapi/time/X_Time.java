@@ -12,6 +12,10 @@ import static xapi.inject.X_Inject.singleton;
 
 public class X_Time {
 
+  public static final int ONE_MINUTE = 60 * 1000;
+  public static final int ONE_HOUR = ONE_MINUTE * 60;
+  public static final int ONE_DAY = ONE_HOUR * 24;
+
   private X_Time() {}
 
   private static final TimeService
@@ -24,6 +28,10 @@ public class X_Time {
 
   public static double nowMillis() {
     return now().millis();
+  }
+
+  public static double nowMillisLong() {
+    return now().millisLong();
   }
 
   public static String printTimeSince(double millis) {
@@ -93,7 +101,43 @@ public class X_Time {
     return print(finish.millis() - start.millis());
   }
   public static String print(double millis) {
-    return X_String.toMetricSuffix(millis/1000.0)+"seconds";
+    if (millis < 0) {
+      return "-" + print(-millis);
+    }
+    if (millis <= ONE_MINUTE) {
+      return X_String.toMetricSuffix(millis/1000.0)+"sec";
+    }
+    int numPrinted = 0;
+    StringBuilder b = new StringBuilder();
+    if (millis > ONE_DAY) {
+      int days =(int)(millis / ONE_DAY);
+      b.append(days).append("D");
+      numPrinted++;
+    }
+    int remain = ((int)millis) % ONE_DAY;
+    int hours = remain / ONE_HOUR;
+    if (hours > 0) {
+        b.append(hours).append("h");
+        remain %= ONE_HOUR;
+        numPrinted++;
+    }
+    if (numPrinted > 1) {
+      return b.toString();
+    }
+    int minutes = remain % ONE_HOUR;
+    if (minutes > 0) {
+      b.append(minutes / ONE_MINUTE).append("m");
+      remain %= ONE_MINUTE;
+        numPrinted++;
+    }
+    if (numPrinted > 1) {
+      return b.toString();
+    }
+    int seconds = remain / 1000;
+    if (seconds > 0) {
+        b.append(seconds).append("s");
+    }
+    return b.toString();
   }
   public static Out1<String> diff(final Moment start) {
     final Moment now = now();

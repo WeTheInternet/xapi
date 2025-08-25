@@ -226,6 +226,11 @@ public class X_Collect {
     return filthyLie;
   }
 
+  public static <V> StringDictionary<V> newDictionaryInsertionOrdered() {
+    StringDictionary filthyLie = service.newDictionaryInsertionOrdered(Object.class);
+    return filthyLie;
+  }
+
   public static <V> StringDictionary<V> newDictionary(Class<V> cls) {
     return service.newDictionary(cls);
   }

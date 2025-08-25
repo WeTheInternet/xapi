@@ -10,6 +10,7 @@ import static net.wti.gradle.system.tools.GradleCoerce.isEmptyString;
 public class PlatformModule implements CharSequence {
 
     public static final PlatformModule UNKNOWN = new PlatformModule(null, null);
+    public static final PlatformModule RAW = new PlatformModule("", "");
 
     public static final LazyString defaultPlatform = LazyString.nonNullString(
             ()->System.getenv("XAPI_DEFAULT_PLATFORM"),

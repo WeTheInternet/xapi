@@ -14,7 +14,7 @@ public class MavenApiTest {
     if (X_IO.isOffline()) {
       return;
     }
-    ArtifactResult artifact = X_Maven.loadArtifact("net.wetheinter", "xapi-template", "0.2");
+    ArtifactResult artifact = X_Maven.loadArtifact("net.wti.core", "xapi-fu", "0.5.1");
     Assert.assertTrue(artifact.isResolved());
     Assert.assertTrue(artifact.getArtifact().getFile().exists());
   }

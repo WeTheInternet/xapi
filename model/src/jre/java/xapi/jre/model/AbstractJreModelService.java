@@ -18,6 +18,7 @@ import xapi.model.impl.ModelUtil;
 import xapi.reflect.X_Reflect;
 import xapi.debug.X_Debug;
 import xapi.util.api.RemovalHandler;
+import xapi.util.api.SuccessHandler;
 
 import javax.inject.Provider;
 import java.lang.reflect.Array;
@@ -89,7 +90,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     ModelKey key;
 
     public ModelInvocationHandler(final Class<? extends Model> modelClass) {
-      this(modelClass, X_Collect.newDictionary());
+      this(modelClass, X_Collect.newDictionaryInsertionOrdered());
     }
 
     public ModelInvocationHandler(final Class<? extends Model> modelClass, final Dictionary<String, Object> values) {

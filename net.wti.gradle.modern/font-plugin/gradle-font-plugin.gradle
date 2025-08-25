@@ -1,0 +1,58 @@
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+description = '''Xapi Font Plugin: A plugin to download google fonts and pack them up for use in libgdx projects.
+This plugin uses hiero and gdx texture packer to transform .ttf fonts to .png + .fnt files, suitable for text rendering'''
+
+repositories.mavenCentral()
+repositories.gradlePluginPortal()
+
+/// Separate source set for functional tests so that pluginClasspath()
+/// only picks up *this* plugin and not the game that consumes it.
+sourceSets {
+    functionalTest {
+        groovy.srcDir 'src/functionalTest/groovy'
+        resources.srcDir 'src/functionalTest/resources'
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+dependencies {
+    /// Gradle API & Groovy runtime
+    implementation gradleApi()
+    implementation localGroovy()
+
+    /// libGDX asset helper plugin (BitmapFontTask + PackTexturesTask)  :contentReference[oaicite:0]{index=0}
+    implementation 'com.github.blueboxware.gdx:com.github.blueboxware.gdx.gradle.plugin:1.5'
+
+    /// Tiny HTTP download helper that supports parallel downloads          :contentReference[oaicite:1]{index=1}
+    implementation 'de.undercouch:gradle-download-task:5.6.0'
+
+    /// ------------- functional tests (Gradle TestKit + Spock) -------------
+    functionalTestImplementation platform('org.spockframework:spock-bom:2.3-groovy-3.0')
+    functionalTestImplementation 'org.spockframework:spock-core'
+    functionalTestImplementation gradleTestKit()
+}
+
+/// Create a task named “functionalTest” and hook it into “check”
+tasks.register('functionalTest', Test) {
+    description = 'Runs the functional tests (Gradle TestKit + Spock).'
+    testClassesDirs = sourceSets.functionalTest.output.classesDirs
+    classpath       = sourceSets.functionalTest.runtimeClasspath
+    useJUnitPlatform()
+}
+tasks.named('check') { dependsOn tasks.functionalTest }
+
+/// Gradle‑plugin descriptor (META‑INF/gradle‑plugins/… is generated automatically)
+gradlePlugin {
+    plugins {
+        xapiFont {
+            id                  = 'net.wti.gradle.font'
+            implementationClass = 'net.wti.gradle.font.plugin.XapiFontGradlePlugin'
+        }
+    }
+}

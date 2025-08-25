@@ -3,6 +3,7 @@
  */
 package xapi.model.api;
 
+import xapi.model.impl.ModelSerializationHints;
 import xapi.model.service.ModelService;
 
 /**
@@ -87,7 +88,15 @@ public class ModelDeserializationContext {
     this.keyOnly = keyOnly;
   }
 
-  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType) {
+  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final String propName) {
+    final ModelSerializationHints hints = new ModelSerializationHints();
+    if (manifest != null) {
+      hints.setKeyOnly(manifest.isKeyOnly(propName));
+      hints.setClientToServer(manifest.isClientToServerEnabled(propName));
+    }
+    return createChildContext(propertyType, hints);
+  }
+  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final ModelSerializationHints hints) {
     final ModelService svc = getService();
     final ModelDeserializationContext ctx;
     if (manifest == null) {
@@ -95,6 +104,8 @@ public class ModelDeserializationContext {
     } else {
         final ModelManifest childType = svc.findManifest(propertyType);
         ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
+        ctx.setKeyOnly(hints.isKeyOnly());
+        ctx.setClientToServer(hints.isClientToServer());
     }
     ctx.subModel = true;
     return ctx;
@@ -109,5 +120,9 @@ public class ModelDeserializationContext {
       return manifest.getPropertyNames();
     }
     return model.getPropertyNames();
+  }
+
+  public void setSubModel(final boolean subModel) {
+    this.subModel = subModel;
   }
 }

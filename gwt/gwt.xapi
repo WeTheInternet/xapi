@@ -11,6 +11,8 @@
                 <elemental
                     description = "Xapi - GWT Elemental implementation"
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         @transitive
                         project : {
                             base : gwt,
@@ -41,6 +43,8 @@
                 /elemental>,
                 <elemental2
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         @transitive
                         project : {
                             base : gwt,

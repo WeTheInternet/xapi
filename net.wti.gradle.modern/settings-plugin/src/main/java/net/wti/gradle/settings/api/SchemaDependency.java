@@ -61,6 +61,7 @@ public class SchemaDependency {
     private final PlatformModule coords;
     private Transitivity transitivity;
     private String extraGnv;
+    private String closureConfig;
 
     public SchemaDependency(
             DependencyType type,
@@ -80,6 +81,7 @@ public class SchemaDependency {
         SchemaDependency dep = new SchemaDependency(type, toMod, group, version, name);
         dep.transitivity = transitivity;
         dep.extraGnv = extraGnv;
+        dep.closureConfig = closureConfig;
         return dep;
     }
 
@@ -187,5 +189,13 @@ public class SchemaDependency {
 
     public void setExtraGnv(final String extraGnv) {
         this.extraGnv = extraGnv;
+    }
+
+    public String getClosureConfig() {
+        return closureConfig;
+    }
+
+    public void setClosureConfig(final String closure) {
+        this.closureConfig = closure;
     }
 }

@@ -1,5 +1,6 @@
 package xapi.time.api;
 
+import xapi.fu.api.DoNotOverride;
 import xapi.time.impl.ImmutableMoment;
 
 import java.io.Serializable;
@@ -8,6 +9,10 @@ public interface Moment extends Serializable, Comparable <Moment> {
 
   double millis();
 
+  @DoNotOverride
+  default long millisLong() {
+    return (long) millis();
+  }
   @Override
   default int compareTo(final Moment o) {
     final double yours = o.millis();

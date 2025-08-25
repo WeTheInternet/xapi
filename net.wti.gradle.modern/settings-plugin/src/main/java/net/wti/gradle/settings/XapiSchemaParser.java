@@ -12,6 +12,7 @@ import net.wti.javaparser.ParseException;
 import net.wti.javaparser.ast.HasAnnotationExprs;
 import net.wti.javaparser.ast.expr.*;
 import net.wti.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.javaparser.ast.visitor.DumpVisitor;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import xapi.constants.X_Namespace;
@@ -736,6 +737,11 @@ public interface XapiSchemaParser {
                                             if (annoValue == null) {
                                                 return "true";
                                             }
+                                            if (key == DependencyKey.closure) {
+                                                if (annoValue instanceof StringLiteralExpr) {
+                                                    return ((StringLiteralExpr) annoValue).getValue();
+                                                }
+                                            }
                                             return annoValue.toSource();
                                         }
                                 ).join("");
@@ -883,6 +889,44 @@ public interface XapiSchemaParser {
                         }
                     }
                 })
+                .withEnclosedExprTerminal((enclosed, parser) -> {
+                    final Expression inner = enclosed.getInner();
+                    final String rawExpr;
+                    if (inner instanceof JsonContainerExpr && ((JsonContainerExpr) inner).isArray()) {
+                        final StringBuilder b = new StringBuilder();
+                        for (JsonPairExpr item : ((JsonContainerExpr) inner).getPairs()) {
+                            b.append(item.getValueExpr().toSource());
+                            b.append(" ");
+                        }
+                        rawExpr = b.toString();
+                    } else {
+                        rawExpr = enclosed.getInner().toSource();
+                    }
+                    CharSequence typeStr = deps.get(DependencyKey.category);
+                    if (typeStr == null) {
+                        typeStr = DependencyType.unknown;
+                    }
+                    DependencyType type = DependencyType.valueOf(typeStr.toString());
+
+                    SchemaDependency dep = new SchemaDependency(type, PlatformModule.RAW, "", "", rawExpr);
+
+                    final CharSequence transitive = deps.get(DependencyKey.transitive);
+                    if (transitive == null) {
+                        dep.setTransitivity(Transitivity.impl);
+                    } else if ("true".equals(transitive.toString())) {
+                        dep.setTransitivity(Transitivity.api);
+                    } else if ("false".equals(transitive.toString())) {
+                        dep.setTransitivity(Transitivity.compile_only);
+                    } else {
+                        dep.setTransitivity(Transitivity.valueOf(transitive.toString().replace("\"", "")));
+                    }
+                    final CharSequence closure = deps.get(DependencyKey.closure);
+                    if (closure != null) {
+                        dep.setClosureConfig(closure.toString());
+                    }
+
+                    dependencies.add(dep);
+                })
                 .withNameOrStringOrType((name, parser) -> {
                     DependencyMap<CharSequence> localCopy = new DependencyMap<>(deps);
                     localCopy.put(DependencyKey.name, name);
@@ -907,6 +951,7 @@ public interface XapiSchemaParser {
                     CharSequence gId = deps.getOrDefault(DependencyKey.group, UNKNOWN_VALUE);
                     CharSequence version = deps.getOrDefault(DependencyKey.version, UNKNOWN_VALUE);
                     CharSequence classifier = deps.getOrDefault(DependencyKey.classifier, UNKNOWN_VALUE);
+                    CharSequence closure = deps.getOrDefault(DependencyKey.closure, UNKNOWN_VALUE);
 
                     switch (type) {
                         case internal:
@@ -939,6 +984,9 @@ public interface XapiSchemaParser {
                     SchemaDependency dep = new SchemaDependency(type, platMod, gId.toString(), version.toString(), name);
                     if (classifier != UNKNOWN_VALUE) {
                         dep.setExtraGnv(classifier.toString());
+                    }
+                    if (closure != UNKNOWN_VALUE) {
+                        dep.setClosureConfig(closure.toString());
                     }
                     final CharSequence transitive = deps.get(DependencyKey.transitive);
                     if (transitive == null) {

@@ -71,5 +71,29 @@ public enum DependencyKey {
      * Use @test to denote that the given dependencies are test dependencies (useful for non-multi-module projects)
      */
     test,
+    /**
+     * A dirty hack to be able to insert arbitrary gradle dependency wiring via a "dependency closure".
+     * <p>
+     * <p>A (contrived) example:
+     * <code>
+     *     requires = {
+     *         {@code @closure("artifact { classifier = 'linux-x86_64' }")}
+     *         external: [ ( libs.something.toml ) ]
+     *     }
+     * </code>
+     * <p>
+     * While this example is better handled with a `@classifier`, there are times you need more than just a static classifier.
+     * <p>
+     * This example renders in gradle:
+     * <p>
+     * <code>
+     *     dependencies {
+     *         implementation ( libs.something.toml ) {
+     *             artifact { classifier = 'linux-x86_64' }
+     *         }
+     *     }
+     * </code>
+     */
+    closure,
 }
 

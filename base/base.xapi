@@ -46,11 +46,15 @@
             modules = [
                 <main
                     requires = {
-                        project : { ":util" : "main:main" },
-                        project : { ":core:reflect" : "main" },
-                        project : { ":inject" : "main:main" },
-                        project : { ":log" : "api" },
-                        project : { ":collect" : api },
+                        @transitive(annotation_processor)
+                        project : { base : api },
+                        project : {
+                            ":util" : "main:main",
+                            ":core:reflect" : "main",
+                            ":inject" : "main:main",
+                            ":log" : "api",
+                            ":collect" : api,
+                        },
                         external : "net.wti.core:xapi-fu:0.5.1",
                         external : "com.google.elemental2:elemental2-core:1.0.0-RC1",
                         external : "com.google.jsinterop:base:1.0.0-RC1",
@@ -107,6 +111,8 @@
             modules = [
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         project : { "util": "main:main" },
                         @transitive("test")
                         external : "junit:junit:4.13",

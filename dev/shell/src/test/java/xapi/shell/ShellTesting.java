@@ -80,7 +80,7 @@ public class ShellTesting {
     final boolean[] success = new boolean[1];
     final ShellSession shell = X_Shell.newService().newCommand(
         "sh"
-        ,"-ac",X_File.unzippedResourcePath("xapi/sh.sh", null)
+        ,"-ac",X_File.unzippedResourcePath("xapi/repl.sh", null)
         )
         .run(t -> {
           synchronized (success){

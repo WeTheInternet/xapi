@@ -5,6 +5,8 @@
         modules = [
             <api
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     project: { ":collect" : api },
                     @transitive
                     project: { ":core:args" : "main" },

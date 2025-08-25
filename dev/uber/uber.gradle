@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.SourceSet;
-
 buildscript {
     // GenInclude buildscript from file:///opt/xapi/dev/uber/src/gradle/main/buildscript
     repositories {
@@ -45,9 +43,7 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
-
 SourceSet test = sourceSets.maybeCreate('test');
-
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
@@ -58,6 +54,7 @@ test.java.srcDir("$rootDir/dev/uber/src/test/java")
 test.resources.srcDir("$rootDir/dev/uber/src/test/resources")
 
 dependencies {
+    annotationProcessor project(path: ":base-api")
     api project(path: ":dev:javac-main")
     api project(path: ":server:vertx")
     api project(path: ":ui:javafx")

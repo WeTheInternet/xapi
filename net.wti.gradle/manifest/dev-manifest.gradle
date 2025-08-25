@@ -8,7 +8,6 @@ plugins {
 }
 String xapiHome = "$rootDir.parent"
 apply from: "$xapiHome/gradle/xapi-env.gradle"
-apply from: "$xapiHome/gradle/int-test.gradle"
 //repositories.mavenCentral()
 
 
@@ -53,6 +52,7 @@ xapiRequire.main().configure {
 
 xapiRequire.module('test').configure {
     external "net.wti.gradle.tools:xapi-gradle-test:$version", 'main'
+    external "org.spockframework:spock-core:1.2-groovy-2.5"
 }
 
 tasks.withType(Test).configureEach({

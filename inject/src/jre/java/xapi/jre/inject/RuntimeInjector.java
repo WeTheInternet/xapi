@@ -408,12 +408,13 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     return true;
   }
   private NotConfiguredCorrectly platformMisconfigured(final String platform) {
-    Throwable trace = new Throwable();
+    String errMsg = "Could not find platform annotation for " +
+            "current runtime " + platform + "; please ensure this class is on the " +
+            "classpath, and that it is annotated with @Platform. ";
+    Throwable trace = new Throwable(errMsg);
     trace.fillInStackTrace();
     trace.printStackTrace();
-    final NotConfiguredCorrectly error = new NotConfiguredCorrectly("Could not find platform annotation for " +
-        "current runtime " + platform + "; please ensure this class is on the " +
-        "classpath, and that it is annotated with @Platform. "
+    final NotConfiguredCorrectly error = new NotConfiguredCorrectly(errMsg
         +Arrays.asList(trace.getStackTrace())
     );
     throw error;

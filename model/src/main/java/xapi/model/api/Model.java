@@ -84,13 +84,25 @@ public interface Model {
     }
 
     default <T extends Model, G extends T> ModelList<T> getOrCreateModelList(Class<G> type, Out1<ModelList<T>> getter, In1<ModelList<T>> setter) {
-        return getOrCreate(getter, ()->{
-            final ModelList list = X_Model.create(ModelList.class);
-            list.setModelType(type);
+        return getOrCreateModelList(type, getter, setter, myKey->{
             final String name = type.getSimpleName();
-            final ModelKey myKey = getKey();
             if (myKey != null) {
-                list.setKey(myKey.getChild(ModelList.MODEL_LIST, name));
+                return myKey.getChild(ModelList.MODEL_LIST, name);
+            }
+            return null;
+        });
+    }
+
+    default <T extends Model, G extends T> ModelList<T> getOrCreateModelList(Class<G> type, Out1<ModelList<T>> getter, In1<ModelList<T>> setter, In1Out1<ModelKey, ModelKey> keyFactory) {
+        return getOrCreate(getter, ()->{
+            @SuppressWarnings("rawtypes")
+            final ModelList list = X_Model.create(ModelList.class);
+            //noinspection unchecked
+            list.setModelType(type);
+            final ModelKey myKey = getKey();
+            final ModelKey resultKey = keyFactory.io(myKey);
+            if (resultKey != null) {
+                list.setKey(resultKey);
             }
             return list;
         }, setter);
@@ -188,6 +200,10 @@ public interface Model {
 
     String getType();
 
+    default Model absorbAndReturnSelf(Model model) {
+        absorb(model);
+        return this;
+    }
     default void absorb(Model model) {
         absorb(model, false);
     }

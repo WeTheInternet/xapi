@@ -50,6 +50,10 @@ public class X_Model {
     service.out1().persist(model, callback);
   }
 
+  public static void delete(final ModelKey key, final SuccessHandler<Boolean> callback) {
+    service.out1().delete(key, callback);
+  }
+
   public static <M extends Model> Out2<M, Throwable> persistBlocking(final M model, long milliTimeout) {
     final Object[] result = {null};
 

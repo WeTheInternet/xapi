@@ -18,6 +18,7 @@ import xapi.util.api.SuccessHandler;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -285,6 +286,15 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
         return false;
       }
       for(final String key : myProps) {
+        final Object myProp = self.getProperty(key);
+        final Object yourProp = theirModel.getProperty(key);
+        if (myProp instanceof EnumMap && yourProp == null) {
+          if (((EnumMap<?, ?>) myProp).isEmpty()) {
+            continue;
+          } else {
+            return false;
+          }
+        }
         if (!Objects.deepEquals(self.getProperty(key), theirModel.getProperty(key))) {
           return false;
         }

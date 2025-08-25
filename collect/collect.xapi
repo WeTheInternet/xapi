@@ -27,6 +27,8 @@
             modules = [
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         project: inject,
                         @transitive(false)
                         external : "net.wetheinter:gwt-user:2.8.0",
@@ -37,7 +39,12 @@
             ]
         /gwt>,
         <jre
-            modules = main
+            modules = <main
+                requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
+                }
+            /main>
             publishSource = true // this should not be necessary
         /jre>
     ]

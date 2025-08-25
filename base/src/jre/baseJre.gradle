@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.SourceSet;
-
 plugins {
     id	"java-library"
     id	"maven-publish"
@@ -13,9 +11,7 @@ repositories.mavenCentral()
 
 SourceSet main = sourceSets.maybeCreate('main');
 
-
 SourceSet test = sourceSets.maybeCreate('test');
-
 main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
@@ -24,6 +20,7 @@ main.java.srcDir("$rootDir/base/src/jre/java")
 test.java.srcDir("$rootDir/base/src/jreTest/java")
 
 dependencies {
+    annotationProcessor project(path: ":base-api")
     implementation project(path: ":util-main")
     testImplementation project(path: ":inject-main")
     testImplementation project(path: ":util-main")

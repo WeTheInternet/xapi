@@ -58,7 +58,6 @@ public class DefaultMethodInvoker {
             final MethodHandles.Lookup lookup = lookups.computeIfAbsent(methodOwner, ignored-> {
                 final MethodHandles.Lookup look;
                 try {
-                    System.out.println("WHY THO");
                     look = (MethodHandles.Lookup) lookupConstructor.out1().newInstance(methodOwner);
                 } catch (Exception e) {
                     throw new RuntimeException("Cannot get a MethodHandlers.Lookup", e);

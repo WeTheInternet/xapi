@@ -22,6 +22,10 @@ public class ModelCopier {
                 }
                 final Object myVal = me.getProperty(e.getKey());
                 final Class<?> propType = me.getPropertyType(e.getKey());
+                if (myVal == null) {
+                    me.setProperty(e.getKey(), yourVal);
+                    return;
+                }
                 if (Model.class.isAssignableFrom(propType)) {
                     Model myModel = (Model) myVal;
                     assert propType == myModel.getPropertyType(e.getKey());

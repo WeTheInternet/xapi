@@ -59,7 +59,7 @@ public class ShellServiceDefault implements ShellService {
     final Moment start = X_Time.now();
     final String[] commands;
     if (keepAlive) {
-      final String sh = X_File.unzippedResourcePath("xapi/sh.sh", null);
+      final String sh = X_File.unzippedResourcePath("xapi/repl.sh", null);
       commands = new String[]{"sh", "-ac", sh};
     } else {
       commands = cmds;

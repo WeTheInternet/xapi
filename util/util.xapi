@@ -6,6 +6,8 @@
             modules = [
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         project: { ":collect" : main },
                         @transitive
                         project: { ":log" : api },
@@ -15,14 +17,24 @@
                         project: { ":base" : api },
                         @transitive(test)
                         internal : testTools,
+                        @transitive(test)
+                        external : (xapiLib.spock),
+                        @transitive(test)
+                        external : (xapiLib.spockJunit),
+                        @transitive(test)
+                        external: (xapiLib.junit),
+                        @transitive(test)
+                        external: (xapiLib.junit5api),
+                        @transitive(test)
+                        external: (xapiLib.junit5engine),
+                        @transitive(test)
+                        external: (xapiLib.junit5platform),
                     }
                 /main>,
                 <testTools
                     requires = {
                         @transitive
                         project: { ":base" : api },
-                        @transitive
-                        external: "junit:junit:4.13",
                         @transitive
                         external: "net.wti.core:xapi-gen:$version",
                     }

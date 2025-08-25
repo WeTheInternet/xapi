@@ -11,11 +11,7 @@ import xapi.fu.Out2;
 import xapi.fu.itr.SizedIterable;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MapOf <K, V>
 implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
@@ -236,6 +232,19 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
       }
     }
     return true;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final MapOf<?, ?> mapOf = (MapOf<?, ?>) o;
+    return Objects.equals(map, mapOf.map);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(map);
   }
 
   @Override

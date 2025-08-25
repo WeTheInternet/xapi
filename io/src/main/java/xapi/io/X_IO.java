@@ -166,7 +166,7 @@ public class X_IO {
 
   public static boolean isOffline() {
     final boolean[] failure = new boolean[]{false};
-    getIOService().get("http://google.com", null, new IOCallbackDefault<IOMessage<String>>() {
+    getIOService().get("https://google.com", null, new IOCallbackDefault<IOMessage<String>>() {
       @Override
       public void onError(final Throwable e) {
         final Throwable unwrapped = X_Util.unwrap(e);

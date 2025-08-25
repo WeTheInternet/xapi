@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
+import xapi.model.api.ModelList;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
 import xapi.util.api.SuccessHandler;
@@ -185,7 +186,8 @@ public class ModelSerializationTest {
     final ModelContent related = X_Model.create(ModelContent.class);
     related.key().setId("child");
     related.setText("related");
-    content.setRelated(new ModelContent[]{related});
+    final ModelList<ModelContent> list = content.related();
+    list.add(related);
     X_Model.persist(related, SuccessHandler.noop());
     final String serialized = X_Model.serialize(ModelContent.class, content);
     final ModelContent asModel = X_Model.deserialize(ModelContent.class, serialized);

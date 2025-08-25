@@ -44,6 +44,7 @@ public class ModelManifest {
     private boolean c2sEncrypted = false;
     private boolean s2cEncrypted = false;
     private boolean keyOnly = false;
+    private boolean autoSave = false;
     private boolean obfuscated;
     private PersistenceStrategy persistenceStrategy;
     private final ArrayList<Class<? extends ValidatesValue<?>>> validators;
@@ -60,9 +61,9 @@ public class ModelManifest {
     }
 
     public MethodData(final String name, String idField, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
-      this.validators = new ArrayList<>();
       this.idField = idField;
       this.name = recordMethod(name, getter, setter, deleter);
+      this.validators = new ArrayList<>();
     }
     /**
      * @return -> name
@@ -94,6 +95,9 @@ public class ModelManifest {
           persistenceStrategy = persistent.strategy();
         } else if (anno instanceof KeyOnly) {
           keyOnly = true;
+          if (((KeyOnly) anno).autoSave()) {
+            autoSave = true;
+          }
         } else if (anno instanceof FieldValidator) {
           final FieldValidator validator = (FieldValidator) anno;
           for (final Class<? extends ValidatesValue<?>> validatesValue : validator.validators()) {
@@ -449,6 +453,11 @@ public class ModelManifest {
   public boolean isKeyOnly(final String name) {
     final MethodData methodData = getMethodData(name);
     return methodData.keyOnly;
+  }
+
+  public boolean isAutoSave(final String name) {
+    final MethodData methodData = getMethodData(name);
+    return methodData.autoSave;
   }
 
   public boolean isClientToServerEncrypted(final String name) {

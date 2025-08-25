@@ -16,6 +16,8 @@
             <event
                 description = "Xapi - Event Handlers"
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     project : [ collect, util ],
                     project : { inject : jre },
                     external : "javax.validation:validation-api:1.0.0.GA",
@@ -24,6 +26,8 @@
             <reflect
                 description = "Xapi - Reflection Utilities"
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     project : { base : main },
                     external : "net.wti.core:xapi-fu:$version",
                     external : "net.wti.core:xapi-gen:$version",
@@ -34,6 +38,8 @@
             <scope
                 description = "Xapi - Scope API"
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     project : [ ":util", ":collect" ],
                     external : "net.wti.core:xapi-fu:$version",
                     @transitive(test)

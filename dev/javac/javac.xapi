@@ -5,8 +5,15 @@
     platforms = [
         <main
             modules = [
+                <api
+                    requires = {
+
+                    }
+                /api>,
                 <main
                     requires = {
+                        @transitive
+                        internal : api,
                         @transitive
                         external : [
                             "net.wti.core:xapi-fu:${version}",
@@ -38,6 +45,8 @@
             publishSource = true
             modules = <main
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     project : {
                         // implementation scope
                         io : jre, inject : jre

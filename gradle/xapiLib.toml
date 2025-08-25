@@ -12,9 +12,11 @@ android = '30'
 android-plugin = '7.3.0'
 android-kotlin = '1.5.31'
 j2objc-plugin = '0.7.1'
-spock = '1.0-groovy-2.4'
-#spock = '2.3-groovy-4.0'
+#spock = '1.0-groovy-2.4'
+spock = '2.3-groovy-4.0'
 junit = '4.13.2'
+junit5 = '5.12.1'
+junitPlatform = '1.12.1'
 quarkus = '3.6.4'
 
 
@@ -62,4 +64,10 @@ playn-java-base = { module = "io.playn:playn-java-base", version.ref = "playn" }
 playn-jbox2d-library = { module = "org.jbox2d:jbox2d-library", version.ref = "jbox2d" }
 
 spock = { module = "org.spockframework:spock-core", version.ref = "spock" }
+spockJunit = { module = "org.spockframework:spock-junit4", version.ref = "spock" }
+junit5 = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
+junit5api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
+junit5engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
+junit5vintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit5" }
+junit5platform = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }
 junit = { module = "junit:junit", version.ref = "junit" }

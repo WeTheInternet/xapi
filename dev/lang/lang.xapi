@@ -32,7 +32,7 @@
                         external : [
                             "net.wti.core:xapi-fu:${version}",
                             "net.wti.core:xapi-lang-core:${version}",
-                            "org.spockframework:spock-core:1.2-groovy-2.5",
+                            (xapiLib.spock),
                         ],
                     }
                 /testTools>

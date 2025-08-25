@@ -6,7 +6,6 @@ plugins {
 }
 String xapiHome = "$rootDir.parent"
 apply from: "$xapiHome/gradle/xapi-env.gradle"
-apply from: "$xapiHome/gradle/int-test.gradle"
 
 repositories {
     gradlePluginPortal()
@@ -47,6 +46,7 @@ xapiRequire.main().configure {
 xapiRequire.module('test').configure {
         external "net.wti.gradle.tools:xapi-gradle-test:$version", 'main'
         external 'junit:junit:4.12'
+        external "org.spockframework:spock-core:1.2-groovy-2.5"
 }
 
 // we'll leave it up to scripts to decide which plugin/gradle/groovy version they want to use...
@@ -57,6 +57,10 @@ depend 'compileOnly', [
         module('com.github.jengelman.gradle.plugins:shadow:4.0.4')
 //        module('com.gradleup.shadow:shadow-gradle-plugin:8.3.3')
 ]
+
+dependencies {
+    testImplementation gradleTestKit()
+}
 
 tasks.withType(Test).configureEach({
     Test t ->

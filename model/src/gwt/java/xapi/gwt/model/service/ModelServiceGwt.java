@@ -7,6 +7,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringDictionary;
 import xapi.dev.source.CharBuffer;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.Out1;
 import xapi.fu.itr.MappedIterable;
 import xapi.io.X_IO;
 import xapi.io.api.DelegatingIOCallback;
@@ -128,6 +129,19 @@ public class ModelServiceGwt extends AbstractModelService
     }, DelegatingIOCallback.failHandler(callback)));
   }
 
+  @Override
+  public void delete(final ModelKey key, final SuccessHandler<Boolean> callback) {
+    final String url = getUrlBase()+"model/persist";
+    final StringDictionary<String> headers = X_Collect.newDictionary();
+    headers.setValue("X-Model-Type", key.getKind());
+    X_Log.warn(ModelServiceGwt.class, this, "deleting model", key);
+    X_IO.getIOService().delete(url, headers, new DelegatingIOCallback<>(
+            resp -> {
+          callback.onSuccess(resp.statusCode() == 200);
+    }, DelegatingIOCallback.failHandler(callback)));
+
+  }
+
   protected String getUrlBase() {
     return GWT.getModuleBaseURL().replace("/" + GWT.getModuleName(), "");
   }
@@ -232,5 +246,11 @@ public class ModelServiceGwt extends AbstractModelService
   @Override
   public MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
     return MappedIterable.mapped(type.getMethods());
+  }
+
+  @Override
+  public <M extends Model> Out1<M> doPersistBlocking(final String type, final M model, final long milliTimeout) {
+    // TODO: use await correctly; preferably w/ an Out1 + js Promise object.
+    return super.doPersistBlocking(type, model, milliTimeout);
   }
 }

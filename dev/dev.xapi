@@ -38,6 +38,8 @@
             <shell
                 description = "Xapi - Command line interface."
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     project : [
                         io,
                         collect,
@@ -68,7 +70,9 @@
                         "net.wetheinter:gwt-user:2.8.0",
                     ],
                     @transitive(test)
-                    external : "junit:junit:4.12",
+                    external : (xapiLib.junit5),
+                    @transitive(test)
+                    external : (xapiLib.junit5platform),
                 }
             /maven-plugin>,
             <dist
@@ -101,6 +105,8 @@
             <uber
                 description = "Xapi - Dev uber jar"
                 requires = {
+                    @transitive(annotation_processor)
+                    project : { base : api },
                     external : [
                         "net.wti.core:xapi-gen:$version",
                         "javax.inject:javax.inject:1:sources",
@@ -177,6 +183,8 @@
         <file
             description = "XApi - java.io.File utilities"
             requires = {
+                @transitive(annotation_processor)
+                project : { base : api },
                 project : [ io, inject, util ],
                 @transitive(test)
                 project : { base :  testTools },
@@ -194,6 +202,8 @@
         <maven
             description = "Xapi - Pom scanner and portable maven api"
             requires = {
+                @transitive(annotation_processor)
+                project : { base : api },
                 @transitive
                 external : [
                     "org.apache.maven:maven-core:3.2.5",
@@ -227,8 +237,12 @@
                 @transitive(test)
                 project : {
                     base : testTools,
+                    log : main,
                     io : jre,
+                    inject : jre,
                 },
+                @transitive(test)
+                external: (xapiLib.junit5api)
             }
         /maven>
     ]

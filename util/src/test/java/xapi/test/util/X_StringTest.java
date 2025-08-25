@@ -1,6 +1,6 @@
 package xapi.test.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import xapi.string.X_String;
 
 import static org.junit.Assert.assertEquals;

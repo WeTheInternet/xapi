@@ -12,7 +12,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
-import xapi.dev.processor.AnnotationTools;
+import xapi.dev.gen.AnnotationTools;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.inject.X_Inject;

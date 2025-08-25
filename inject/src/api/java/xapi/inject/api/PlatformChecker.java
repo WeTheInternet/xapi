@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-/**
- * Created by James X. Nelson (james @wetheinter.net) on 7/18/16.
- */
+///
+/// Created by James X. Nelson (james @wetheinter.net) on 7/18/16.
+///
 @JrePlatform
 @GwtPlatform
 @DevPlatform

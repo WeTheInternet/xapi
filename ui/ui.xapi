@@ -76,6 +76,8 @@
                     modules = <main
                         description = "Xapi - JavaFx UI"
                         requires = {
+                            @transitive(annotation_processor)
+                            project : { base : api },
                             project : {
                                 collect : jre,
                                 io : jre,
@@ -99,6 +101,8 @@
                         modules = [
                             <main
                                 requires = {
+                                    @transitive(annotation_processor)
+                                    project : { base : api },
                                     @transitive
                                     project : [ ":ui:api" ],
                                     @transitive
@@ -207,6 +211,8 @@
                         modules = [
                             <main
                                 requires = {
+                                    @transitive(annotation_processor)
+                                    project : { base : api },
                                     project : [ collect, ":ui:autoui", ":ui:service", util ],
                                     @transitive
                                     project : { base : api },

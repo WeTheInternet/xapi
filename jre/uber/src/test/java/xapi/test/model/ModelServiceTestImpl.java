@@ -239,4 +239,10 @@ public class ModelServiceTestImpl extends AbstractModelService {
   public MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
     return BytecodeAdapterService.getMethodsInDeclaredOrder(type);
   }
+
+  @Override
+  public void delete(final ModelKey key, final SuccessHandler<Boolean> callback) {
+    boolean success = ramCache.remove(key) != null;
+    callback.onSuccess(success);
+  }
 }

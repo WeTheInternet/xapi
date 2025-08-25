@@ -223,13 +223,15 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                 String moduleSourcePath = "src" + File.separator + key;
                 String moduleTestSourcePath = "src" + File.separator + (project.isMultiplatform() && !"main".equals(key) ? key + "Test" : "test");
                 String gradleSourcePath = project.isMultiplatform() ? moduleSourcePath : "";
-                String buildscriptSrcPath = "src/gradle/" + key;
+                String buildscriptSrcPath = "src" + File.separator + "gradle" + File.separator + key;
+                String buildscriptSrcPath2 = moduleSourcePath + File.separator + "gradle";
                 String sourceModulePath = gradleSourcePath + "/build/srcMod" + X_String.toTitleCase(key);
                 final File gradleSourceDir = new File(aggregatorRoot, gradleSourcePath);
                 final File sourceModuleDir = new File(aggregatorRoot, sourceModulePath);
                 final File moduleSourceDir = new File(aggregatorRoot, moduleSourcePath);
                 final File moduleTestSourceDir = new File(aggregatorRoot, moduleTestSourcePath);
-                final File buildscriptSrc = new File(aggregatorRoot, buildscriptSrcPath);
+                final File buildscriptSrcOld = new File(aggregatorRoot, buildscriptSrcPath);
+                final File buildscriptSrcNew = new File(aggregatorRoot, buildscriptSrcPath2);
                 final String buildFileName = project.getName() + (project.isMultiplatform() ? GradleCoerce.toTitleCase(key) : "") + ".gradle";
                 map.whenResolved(() -> {
 
@@ -280,7 +282,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     } else {
                                         throw new GradleException("Manual changed to generated build file " + userBuildFile.getPath() + " detected! To see difference, run:\n" +
                                                 "diff " + userBuildFile.getPath() + " " + lastGeneratedFile.getPath() + "\n" +
-                                                "Any changes to buildscripts need to be placed into " + buildscriptSrc.getPath() + "/{body.end,body.start,plugins,buildscript} file(s).\n" +
+                                                "Any changes to buildscripts need to be placed into " + buildscriptSrcNew.getPath() + "/{body.end,body.start,plugins,buildscript} file(s).\n" +
                                                 "Set -PforceRegen=true or -Pforce=all to forcibly overwrite user-owned .gradle files (you should git commit first!)");
                                     }
                                 }
@@ -316,41 +318,46 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                             buffer.out1()
                                                     .print("// GenInclude ").print(name).print(" from file://").println(file.getAbsolutePath())
                                                     .printlns(script);
-                                    }
-                                            ;
-                                    return maybeRead(buildscriptSrc, name, cb);
+                                    };
+                                    final boolean read1 = maybeRead(buildscriptSrcOld, name, cb);
+                                    final boolean read2 = maybeRead(buildscriptSrcNew, name, cb);
+                                    return read1 || read2;
                                 };
                         final Out1<Printable<?>> getBody = Immutable.immutable1(out);
-                        if (buildscriptSrc.exists()) {
-                            // Use src/gradle/key path to look for files to use to assemble a build script for us.
-                            // since we don't need any such thing yet, just leaving a space here for it to be done later.
+                        final In1<File> processBuildsrc = srcDir -> {
+                            if (srcDir.exists()) {
+                                // Use src/gradle/key path to look for files to use to assemble a build script for us.
+                                // since we don't need any such thing yet, just leaving a space here for it to be done later.
 
-                            maybeRead(buildscriptSrc, "imports", (imports, file) -> {
-                                for (String s : imports.split("[\\n\\r]+")) {
-                                    out.addImport(s);
-                                }
-                            });
-                            final Out1<Printable<?>> getBuildscript = out::getBuildscript;
-                            maybeAdd.io("buildscript.start", getBuildscript);
-                            maybeAdd.io("buildscript", getBuildscript);
-                            maybeAdd.io("buildscript.end", getBuildscript);
-
-                            final In2<String, File> addPlugin = (plugins, file) -> {
-                                out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
-                                for (String s : plugins.split("[\\n\\r]+")) {
-                                    if (!s.startsWith("//")) {
-                                        out.addPlugin(s);
+                                maybeRead(srcDir, "imports", (imports, file) -> {
+                                    for (String s : imports.split("[\\n\\r]+")) {
+                                        out.addImport(s);
                                     }
-                                }
-                                out.getPlugins().println();
-                            };
-                            maybeRead(buildscriptSrc, "plugins.start", addPlugin);
-                            maybeRead(buildscriptSrc, "plugins", addPlugin);
-                            maybeRead(buildscriptSrc, "plugins.end", addPlugin);
+                                });
+                                final Out1<Printable<?>> getBuildscript = out::getBuildscript;
+                                maybeAdd.io("buildscript.start", getBuildscript);
+                                maybeAdd.io("buildscript", getBuildscript);
+                                maybeAdd.io("buildscript.end", getBuildscript);
 
-                            maybeAdd.io("body.start", getBody);
-                            maybeAdd.io("body", getBody);
-                        }
+                                final In2<String, File> addPlugin = (plugins, file) -> {
+                                    out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                    for (String s : plugins.split("[\\n\\r]+")) {
+                                        if (!s.startsWith("//")) {
+                                            out.addPlugin(s);
+                                        }
+                                    }
+                                    out.getPlugins().println();
+                                };
+                                maybeRead(srcDir, "plugins.start", addPlugin);
+                                maybeRead(srcDir, "plugins", addPlugin);
+                                maybeRead(srcDir, "plugins.end", addPlugin);
+
+                                maybeAdd.io("body.start", getBody);
+                                maybeAdd.io("body", getBody);
+                            }
+                        };
+                        processBuildsrc.in(buildscriptSrcOld);
+                        processBuildsrc.in(buildscriptSrcNew);
 
                         out.println("// GenStart " + getClass().getName());
                         out.println("ext.xapiModern = 'true'");
@@ -365,8 +372,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         // To start, setup the sourceset!
                         String srcSetName = project.isMultiplatform() ? "test".equals(key) ? "test" : "main" : key;
                         out.println("// setup sourcesets");
-                        LocalVariable main = out.addVariable(SourceSet.class, srcSetName, true);
-                        LocalVariable test = out.addVariable(SourceSet.class, "test", true);
+                        LocalVariable main = out.addVariable(SourceSet.class.getSimpleName(), srcSetName, true);
+                        LocalVariable test = out.addVariable(SourceSet.class.getSimpleName(), "test", true);
                         main.setInitializerPattern("sourceSets.maybeCreate('$1')", srcSetName);
                         test.setInitializerPattern("sourceSets.maybeCreate('$1')", "test");
                         main.invoke("java.setSrcDirs($2)", "[]");
@@ -387,8 +394,13 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         if (moduleSourceDir.isDirectory()) {
                             for (String sourceDir : moduleSourceDir.list()) {
                                 switch (sourceDir) {
-                                    case "java":
                                     case "groovy":
+                                        main.access("groovy.srcDir(\"$2/$3\")",
+                                                moduleSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                sourceDir
+                                        );
+                                        break;
+                                    case "java":
                                     case "kotlin":
                                         main.access("java.srcDir(\"$2/$3\")",
                                                 moduleSourceDir.getPath().replace(rootDir, "$rootDir"),
@@ -417,8 +429,13 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         if (moduleTestSourceDir.isDirectory()) {
                             for (String sourceDir : moduleTestSourceDir.list()) {
                                 switch (sourceDir) {
-                                    case "java":
                                     case "groovy":
+                                        test.access("groovy.srcDir(\"$2/$3\")",
+                                                moduleTestSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                sourceDir
+                                        );
+                                        break;
+                                    case "java":
                                     case "kotlin":
                                         test.access("java.srcDir(\"$2/$3\")",
                                                 moduleTestSourceDir.getPath().replace(rootDir, "$rootDir"),
@@ -445,9 +462,15 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             view.getLogger().info("Processing dependency {}:{}:{} -> {}", project, plat, mod, dependency);
 
                             PlatformModule platMod = dependency.getCoords();
+                            final boolean isSourceSkipped = dependency.getCoords() == PlatformModule.RAW && dependency.getType() == DependencyType.external;
 
                             final IndexNode node;
                             final ModuleIdentity depIdent;
+                            // if there is closureConfig, then we must render parentheses around the dependency contents
+                            // so we can follow it up with (...) { $closureConfig }
+                            final String closureConfig = dependency.getClosureConfig();
+                            final boolean hasClosureConfig = closureConfig != null && !closureConfig.isEmpty();
+                            final String separator = hasClosureConfig ? "( " : " ";
                             switch (dependency.getType()) {
                                 case internal:
                                     final PlatformModule internalCoords = PlatformModule.parse(dependency.getName());
@@ -484,15 +507,16 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                             final ClosureBuffer depOut = dependencies.out1();
                             boolean withSource = false;
+                            final boolean includeSourceDependencies = !isSourceSkipped && isSourcePublished;
                             switch (dependency.getTransitivity()) {
                                 case api:
                                     depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "api" : key + "Api"
                                     );
-                                    if (isSourcePublished) {
+                                    if (includeSourceDependencies) {
                                         withSource = true;
-                                        dependenciesSources.out1().print("api ");
+                                        dependenciesSources.out1().print("api").print(separator);
                                     }
                                     break;
                                 case compile_only:
@@ -500,12 +524,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "compileOnly" : key + "CompileOnly"
                                     );
-                                    if (isSourcePublished) {
+                                    if (includeSourceDependencies) {
                                         withSource = true;
                                         if (dependency.getType() == DependencyType.external) {
-                                            dependenciesSources.out1().print("compileOnly ");
+                                            dependenciesSources.out1().print("compileOnly").print(separator);
                                         } else {
-                                            dependenciesSources.out1().print("api ");
+                                            dependenciesSources.out1().print("api").print(separator);
                                         }
                                     }
                                     break;
@@ -514,12 +538,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                             project.isMultiplatform() || "main".equals(key) ?
                                                     "implementation" : key + "Implementation"
                                     );
-                                    if (isSourcePublished) {
+                                    if (includeSourceDependencies) {
                                         withSource = true;
                                         if (dependency.getType() == DependencyType.external) {
-                                            dependenciesSources.out1().print("implementation ");
+                                            dependenciesSources.out1().print("implementation").print(separator);
                                         } else {
-                                            dependenciesSources.out1().print("api ");
+                                            dependenciesSources.out1().print("api").print(separator);
                                         }
                                     }
                                     break;
@@ -550,7 +574,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 default:
                                     throw new IllegalArgumentException("transitivity " + dependency.getTransitivity() + " is not supported!");
                             }
-                            depOut.print(" ");
+                            depOut.print(separator);
                             PlatformModule dependencyCoords = null;
                             switch (dependency.getType()) {
                                 case unknown:
@@ -572,7 +596,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     final String unparsed = QualifiedModule.unparse(dependencyCoords);
                                     // this is gross. need to consider deeply nested structures...
                                     if (index.isVirtual(view, path, dependencyCoords)) {
-                                        path = path + ":" + unparsed;
+//                                        path = path + ":" + unparsed;
+                                        path = path + "-" + unparsed;
                                     } else if (index.isMultiPlatform(view, path, dependencyCoords)) {
                                         // multi-platform needs to convert to a subproject dependency.
                                         path = path + "-" + unparsed;
@@ -582,7 +607,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 //                                    path = path + "\", configuration: \"" + unparsed + "Out";
                                         path = path.replace("-main", "");
                                     }
-                                    depOut.println("project(path: \"" + path + "\")");
+                                    depOut.print("project(path: \"" + path + "\")");
                                     if (withSource) {
                                         dependenciesSources.out1().println("project(path: \"" + path + "-sources\")");
                                     }
@@ -615,7 +640,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                             if (index.isMultiPlatform(view, id.getProjectPath(), id.getPlatformModule())) {
                                                 subPath = id.getProjectPath() + ":" + simpleSubName + "-" + id.getPlatformModule().toPlatMod();
                                             }
-                                            depOut.println("project(path: \"" + subPath + "\")");
+                                            depOut.print("project(path: \"" + subPath + "\")");
                                             if (withSource) {
                                                 dependenciesSources.out1().println("project(path: \"" + subPath + "-sources\")");
                                             }
@@ -624,7 +649,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                         depOut.println();
                                     } else {
 //                                        if (node.isLive()) {
-                                            depOut.println("project(path: \"" + path + "\")");
+                                            depOut.print("project(path: \"" + path + "\")");
                                             if (withSource) {
                                                 dependenciesSources.out1().println("project(path: \"" + path + "-sources\")");
                                             }
@@ -651,18 +676,39 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     }
                                     break;
                                 case external:
-                                    depOut.println("\"" + dependency.getGNV() + "\"");
-                                    // consider looking up externals in xindex to see if/how we should add sources dependencies
-                                    if (withSource) {
-                                        if (index.hasExternalSources(dependency)) {
-                                            dependenciesSources.out1().println("\"" + dependency.getGNV() + ":sources\"");
-                                        } else {
-                                            // the default operation is to just re-include external dependencies
-                                            dependenciesSources.out1().println("\"" + dependency.getGNV() + "\"");
+                                    if (dependency.getCoords() == PlatformModule.RAW) {
+                                        // do not quote raw dependencies, just print whatever the name is
+                                        depOut.print(dependency.getName());
+                                    } else {
+                                        depOut.print('"' + dependency.getGNV() + '"');
+                                        // consider looking up externals in xindex to see if/how we should add sources dependencies
+                                        if (withSource) {
+                                            if (index.hasExternalSources(dependency)) {
+                                                dependenciesSources.out1().println("\"" + dependency.getGNV() + ":sources\"");
+                                            } else {
+                                                // the default operation is to just re-include external dependencies
+                                                dependenciesSources.out1().println("\"" + dependency.getGNV() + "\"");
+                                            }
                                         }
                                     }
-                                    continue;
+                                    break;
                             } // end switch(dep.getType())
+                            if (hasClosureConfig) {
+                                depOut.println(" ) {")
+                                        .indent()
+                                        .printlns(closureConfig)
+                                        .outdent()
+                                        .println("}");
+                                if (includeSourceDependencies) {
+                                    dependenciesSources.out1().println(" ) {")
+                                            .indent()
+                                            .printlns(closureConfig)
+                                            .outdent()
+                                            .println("}");
+                                }
+                            } else {
+                                depOut.println();
+                            }
                         } // end for (dep :
 
                         // now, lets add some publishing!
