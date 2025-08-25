@@ -85,10 +85,23 @@ if (!extensions.findByName('installRebuild')) {
             def buildPlugin = tasks.create "buildProject_${mod.replace('.' as char, '_' as char)}", Exec, {
                 Exec exe ->
                     exe.workingDir = new File(xapiHome.toString(), "$mod".toString())
+                    Map<String, String> sysProps = [
+                            'xapi.changing' : 'false',
+                            'xapi.composite' : 'false',
+                    ]
+                    sysProps.putAll (System.properties.collectEntries {
+                        final Map.Entry<String, String> e ->
+                            return e.key.startsWith('xapi') ? e : null
+                    })
+
+                    Map<String, String> params = [ : ]
+                    params.putAll(gradle.startParameter.projectProperties)
                     exe.commandLine = ['bash', '-lc',
-                                       "./gradlew build -x test " +
-                                               "--parallel --build-cache " +
-                                               "-Dxapi.changing=false -Dxapi.composite=false"]
+                                       "./gradlew build -x test -x check " +
+                                               params.collect {final e -> "-P$e.key=$e.value"}.join(" ") + " " +
+                                               sysProps.collect {final e -> "-D$e.key=$e.value"}.join(" ") + " " +
+                                               "--parallel --build-cache "
+                    ]
                     exe.doFirst {
                         exe.logger.quiet('Command: "{}"', exe.commandLine.join('" "'))
                     }

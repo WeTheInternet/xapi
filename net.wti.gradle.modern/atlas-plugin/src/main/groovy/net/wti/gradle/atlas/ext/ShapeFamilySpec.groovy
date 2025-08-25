@@ -76,15 +76,22 @@ class ShapeFamilySpec implements Named {
     /// Named states (default/over/pressed/disabled...)
     final NamedDomainObjectContainer<StateSpec> states
 
+    /// Optional inset (px) applied when drawing family shapes.
+    /// Use a negative value to mean "use global default".
+    float insetPx = -1f
+
     ShapeFamilySpec(String name, Project project) {
         this.name = name
-        this.states = project.container(StateSpec) { new StateSpec(it) }
+        this.states = project.container(StateSpec) { final String state -> new StateSpec(state) }
     }
 
     @Override
     String getName() { name }
 
     // ---------- DSL sugar ----------
+
+    /// Set inset (px) for this family.
+    void inset(float px) { this.insetPx = px }
 
     void size(int w, int h) { this.width = w; this.height = h }
     void corner(int r) { this.radius = r }
@@ -108,5 +115,40 @@ class ShapeFamilySpec implements Named {
         cfg.delegate = s
         cfg.call(s)
         return s
+    }
+
+    /// Resolve the inset (in pixels) for this family.
+    /// A non-negative family-level inset overrides; otherwise use the provided global default,
+    /// and if that is null, fall back to 0.65f.
+    float resolveInsetPx(@SuppressWarnings('GrMethodMayBeStatic') Float globalDefault) {
+        if (insetPx >= 0f) return insetPx
+        final float base = (globalDefault != null ? globalDefault : 0.65f)
+        return Math.max(0f, base)
+    }
+
+    /// Resolve the base fill hex for a given state (state override > family fill).
+    String resolveFillHex(StateSpec st) {
+        return (st.overrideFill != null ? st.overrideFill : fillHex)
+    }
+
+    /// Resolve gradient lightening at the top for a given state.
+    float resolveTopLight(StateSpec st) {
+        return (st.overrideTopLight != null ? st.overrideTopLight : gradTopLight)
+    }
+
+    /// Resolve gradient darkening at the bottom for a given state.
+    float resolveBotDark(StateSpec st) {
+        return (st.overrideBotDark != null ? st.overrideBotDark : gradBotDark)
+    }
+
+    /// Resolve content padding for a given state (applies state deltas).
+    /// Returns (top, left, bottom, right) as an int[4].
+    int[] resolveContentPad(StateSpec st) {
+        int t = padTop, l = padLeft, b = padBottom, r = padRight
+        if (st.dPadTop    != null) t += st.dPadTop
+        if (st.dPadLeft   != null) l += st.dPadLeft
+        if (st.dPadBottom != null) b += st.dPadBottom
+        if (st.dPadRight  != null) r += st.dPadRight
+        return [t, l, b, r] as int[]
     }
 }

@@ -1,3 +1,5 @@
+import org.gradle.api.invocation.Gradle
+
 plugins {
     id 'java-library'
     id 'groovy'
@@ -64,6 +66,16 @@ test {
     systemProperty('xapiDryRun', 'false')
     doFirst {
         new File(buildDir, 'testRuntime.classpath').text = (tasks.test as Test).classpath.asPath
+    }
+    onlyIf {
+        Gradle g = gradle
+        while (g) {
+            if (g.startParameter.excludedTaskNames.contains('check')) {
+                return false
+            }
+            g = g.parent
+        }
+        return true
     }
 }
 

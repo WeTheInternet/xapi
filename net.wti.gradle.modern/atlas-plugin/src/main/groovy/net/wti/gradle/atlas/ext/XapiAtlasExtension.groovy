@@ -1,6 +1,7 @@
 package net.wti.gradle.atlas.ext
 
 import groovy.transform.CompileStatic
+import net.wti.gradle.atlas.images.AtlasNinePatchWriter
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
@@ -21,27 +22,33 @@ import org.gradle.api.provider.Provider
 ///
 /// 1. **pixels** — 1×1 utility pixels by name (e.g. `white`, `tooltipBg`)
 /// 2. **ninePatches** — explicit specs for single nine-patches (`NinePatchSpec`)
-/// 3. **families** — high-level widget families (`ShapeFamilySpec`) with states
+/// 3. **shapes** — explicit specs for high level shapes (`NinePatchSpec`)
+/// 4. **families** — high-level widget families (`ShapeFamilySpec`) with states
 ///
 /// Outputs are packed by BlueBox’s `PackTextures` into a `.atlas + .png`.
 ///
 /// #### Typical build layout
-/// - `build/xapi-atlas/pixels/`      (generated 1×1 PNGs)
-/// - `build/xapi-atlas/ninepatch/`   (generated .9.pngs from specs & families)
-/// - `build/xapi-atlas/packed/`      (TexturePacker output: `*.atlas` + page PNGs)
+/// - 'build/xapi-atlas/pixels/'     (generated 1×1 PNGs)
+/// - 'build/xapi-atlas/ninepatch/'  (generated .9.png from NinePatchSpec)
+/// - 'build/xapi-atlas/shapes/'     (generated .9.png from ShapeFamilySpec)
+/// - `build/xapi-atlas/packed/`     (TexturePacker output: `*.atlas` + page PNGs)
 ///
 /// Created by James X. Nelson (James@WeTheInter.net) on 20/08/2025 @ 01:24
 @CompileStatic
 class XapiAtlasExtension {
 
     // --------- Directories ---------
-    final Provider<Directory> pixelsDir
-    final Provider<Directory> ninePatchDir
-    final Provider<Directory> packedDir
-    final Property<Directory> outputDir
+    final DirectoryProperty ninePatchDir
+    final DirectoryProperty outputDir
+    final DirectoryProperty packedDir
+    final DirectoryProperty pixelsDir
+    final DirectoryProperty shapesDir
 
     // --------- Atlas file name ---------
     final Property<String> atlasName
+
+    // --------- Atlas configuration ---------
+    final Property<Float> defaultInsetPx
 
     // --------- Sources ---------
     final MapProperty<String, String> pixels                      /// name → hex (#rrggbb[aa])
@@ -49,14 +56,25 @@ class XapiAtlasExtension {
     final NamedDomainObjectContainer<ShapeFamilySpec> families    /// higher-level families
 
     XapiAtlasExtension(Project project) {
-        pixelsDir    = project.layout.buildDirectory.dir("xapi-atlas/pixels")
-        ninePatchDir = project.layout.buildDirectory.dir("xapi-atlas/ninepatch")
-        packedDir    = project.layout.buildDirectory.dir("xapi-atlas/packed")
+        ninePatchDir = project.objects.directoryProperty()
+        ninePatchDir.convention(project.layout.buildDirectory.dir("xapi-atlas/ninepatch"))
 
-        outputDir  = project.objects.property(Directory)
-                .convention(project.layout.buildDirectory.dir("resources/xapi/atlas"))
+        outputDir    = project.objects.directoryProperty()
+        outputDir.convention(project.layout.buildDirectory.dir("resources/xapi/atlas"))
+
+        packedDir    = project.objects.directoryProperty()
+        packedDir.convention(project.layout.buildDirectory.dir("xapi-atlas/packed"))
+
+        pixelsDir    = project.objects.directoryProperty()
+        pixelsDir.convention(project.layout.buildDirectory.dir("xapi-atlas/pixels"))
+
+        shapesDir    = project.objects.directoryProperty()
+        shapesDir.convention(project.layout.buildDirectory.dir("xapi-atlas/shapes"))
 
         atlasName = project.objects.property(String).convention("xapi-atlas")
+
+        defaultInsetPx = project.objects.property(Float)
+        defaultInsetPx.convention(AtlasNinePatchWriter.DEFAULT_INSET)
 
         pixels = project.objects.mapProperty(String, String).convention([
                 white: "#ffffffff",
@@ -109,6 +127,7 @@ class XapiAtlasExtension {
         v.strokeHex = base.strokeHex; v.strokePx = base.strokePx
         v.innerStrokeHex = base.innerStrokeHex; v.innerStrokePx = base.innerStrokePx
         v.shadowPx = base.shadowPx; v.shadowHex = base.shadowHex
+        v.insetPx = base.insetPx
 
         // copy states (shallow)
         base.states.each { s ->

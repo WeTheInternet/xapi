@@ -27,6 +27,7 @@ dependencies {
 
     /// libGDX asset helper plugin (BitmapFontTask + PackTexturesTask)  :contentReference[oaicite:0]{index=0}
     implementation 'com.github.blueboxware.gdx:com.github.blueboxware.gdx.gradle.plugin:1.5'
+    compileOnly "com.badlogicgames.gdx:gdx-tools:1.13.5" // we probably shouldn't need this, but we somehow do
 
     /// Tiny HTTP download helper that supports parallel downloads          :contentReference[oaicite:1]{index=1}
     implementation 'de.undercouch:gradle-download-task:5.6.0'
@@ -42,6 +43,16 @@ tasks.register('functionalTest', Test) {
     description = 'Runs the functional tests (Gradle TestKit + Spock).'
     testClassesDirs = sourceSets.functionalTest.output.classesDirs
     classpath       = sourceSets.functionalTest.runtimeClasspath
+    onlyIf {
+        Gradle g = gradle
+        while (g) {
+            if (g.startParameter.excludedTaskNames.contains('check')) {
+                return false
+            }
+            g = g.parent
+        }
+        return true
+    }
     useJUnitPlatform()
 }
 tasks.named('check') { dependsOn tasks.functionalTest }

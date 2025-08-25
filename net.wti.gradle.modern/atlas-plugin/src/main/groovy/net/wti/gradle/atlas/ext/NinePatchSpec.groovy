@@ -30,6 +30,10 @@ class NinePatchSpec implements Named {
     // Content insets -> markers (bottom/right). Defaults typical for small tooltips.
     int padTop = 6, padLeft = 8, padBottom = 6, padRight = 8
 
+    /// Optional inset for this *single* nine-patch (px).
+    /// If null, the global xapiAtlas.defaultInsetPx (or writer fallback) is used.
+    Float insetPx
+
     NinePatchSpec(String name) { this.name = name }
 
     @Override String getName() { name }
@@ -53,5 +57,21 @@ class NinePatchSpec implements Named {
 
     void contentPad(int top, int left, int bottom, int right) {
         this.padTop = top; this.padLeft = left; this.padBottom = bottom; this.padRight = right
+    }
+
+    /// Set inset for this spec (px).
+    void inset(float px) { this.insetPx = px }
+
+    /// Resolve the inset (in pixels) for this single nine-patch.
+    /// If this spec has an explicit inset, that always wins.
+    /// Otherwise, use the passed-in global default; if null, fall back to 0.65f.
+    float resolveInsetPx(@SuppressWarnings('GrMethodMayBeStatic') Float globalDefault) {
+        final float base = (globalDefault != null ? globalDefault : 0.65f)
+        return (insetPx != null ? Math.max(0f, insetPx) : Math.max(0f, base))
+    }
+
+    /// Return (top, left, bottom, right) content padding as an int[4].
+    int[] resolveContentPad() {
+        return [padTop, padLeft, padBottom, padRight] as int[]
     }
 }
