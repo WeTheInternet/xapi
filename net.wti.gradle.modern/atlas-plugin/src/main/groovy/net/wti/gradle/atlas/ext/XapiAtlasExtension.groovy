@@ -111,6 +111,12 @@ class XapiAtlasExtension {
     /**
      * Create a derived family by copying a base and applying overrides.
      * States are copied by name as shallow deltas.
+     *
+     * /// Note:
+     * /// We type the state-closure parameter as `StateSpec` and invoke methods on that
+     * /// explicit receiver to avoid Groovy resolving `gradient(...)` to the *owner*
+     * /// (`ShapeFamilySpec.gradient(float,float)`), which would autounbox nulls and
+     * /// cause NPEs. Using `it.gradient(Float,Float)` reliably targets `StateSpec`.
      */
     ShapeFamilySpec variant(String name, String from, @DelegatesTo(ShapeFamilySpec) Closure<?> cfg = {}) {
         final ShapeFamilySpec base = families.getByName(from)
@@ -129,14 +135,21 @@ class XapiAtlasExtension {
         v.shadowPx = base.shadowPx; v.shadowHex = base.shadowHex
         v.insetPx = base.insetPx
 
-        // copy states (shallow)
-        base.states.each { s ->
-            v.state(s.name) {
-                if (s.overrideFill)        fill(s.overrideFill)
-                if (s.overrideTopLight!=null || s.overrideBotDark!=null) gradient(s.overrideTopLight, s.overrideBotDark)
-                if (s.alpha!=null)         alpha(s.alpha)
+        // copy states (shallow; explicit receiver prevents owner-method overload capture)
+        base.states.each { StateSpec s ->
+            v.state(s.name) { StateSpec it ->
+                if (s.overrideFill) it.fill(s.overrideFill)
+
+                if (s.overrideTopLight != null || s.overrideBotDark != null) {
+                    it.gradient(s.overrideTopLight, s.overrideBotDark) // StateSpec.gradient(Float, Float)
+                }
+
+                if (s.alpha != null) {
+                    it.alpha(s.alpha) // guarded; no null unboxing
+                }
+
                 if (s.dPadTop!=null || s.dPadLeft!=null || s.dPadBottom!=null || s.dPadRight!=null) {
-                    padDelta(s.dPadTop?:0, s.dPadLeft?:0, s.dPadBottom?:0, s.dPadRight?:0)
+                    it.padDelta(s.dPadTop ?: 0, s.dPadLeft ?: 0, s.dPadBottom ?: 0, s.dPadRight ?: 0)
                 }
             }
         }

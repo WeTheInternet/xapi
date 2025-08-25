@@ -1,9 +1,16 @@
 package net.wti.gradle.atlas.ext
 
 import groovy.transform.CompileStatic
+import net.wti.gradle.atlas.images.AtlasNinePatchWriter
 import org.gradle.api.Named
 import org.gradle.api.Project
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
+
+import java.util.stream.Collectors
 
 ///
 /// ### ShapeFamilySpec
@@ -47,46 +54,57 @@ import org.gradle.api.NamedDomainObjectContainer
 @CompileStatic
 class ShapeFamilySpec implements Named {
 
-    private final String name
+
+    @Input
+    final String name
 
     // ---------- Geometry ----------
-    int width  = 16          /// interior width (excludes 1px border)
-    int height = 16          /// interior height (excludes 1px border)
-    int radius = 8           /// rounded corner radius
+    @Input int width  = 16          /// interior width (excludes 1px border)
+    @Input int height = 16          /// interior height (excludes 1px border)
+    @Input int radius = 8           /// rounded corner radius
 
     // ---------- Nine-slice (non-stretch margins) ----------
-    int splitLeft = 6, splitRight = 6, splitTop = 6, splitBottom = 6
+    @Input int splitLeft = 6
+    @Input int splitRight = 6
+    @Input int splitTop = 6
+    @Input int splitBottom = 6
 
     // ---------- Content padding (bottom/right markers) ----------
-    int padTop = 0, padLeft = 0, padBottom = 0, padRight = 0
+    @Input int padTop = 0
+    @Input int padLeft = 0
+    @Input int padBottom = 0
+    @Input int padRight = 0
 
     // ---------- Look (base) ----------
-    String fillHex = "#2b2e3aff"     /// base fill color
-    float  gradTopLight = 0.12f       /// +% to lighten top of gradient
-    float  gradBotDark  = -0.08f      /// -% to darken bottom of gradient
-    String strokeHex = "#00000066"    /// outer stroke color (nullable)
-    int    strokePx  = 1              /// outer stroke thickness
+    @Input String fillHex = "#2b2e3aff"
+    @Input float  gradTopLight = 0.12f
+    @Input float  gradBotDark  = -0.08f
+    @Input @Optional String strokeHex = "#00000066"    /// nullable is allowed
+    @Input int    strokePx  = 1
+    @Input @Optional String innerStrokeHex = null
+    @Input int    innerStrokePx  = 0
+    @Input int    shadowPx = 0
+    @Input String shadowHex = "#00000040"
 
-    String innerStrokeHex = null      /// optional inner stroke color
-    int    innerStrokePx  = 0         /// inner stroke thickness (0 disables)
+    /// Optional inset (px) applied when drawing family shapes. -1f = “use global default”.
+    @Input float insetPx = -1f
 
-    int    shadowPx = 0               /// soft offset shadow (px)
-    String shadowHex = "#00000040"    /// shadow color
-
-    /// Named states (default/over/pressed/disabled...)
+    /** Live container for DSL authoring — not an input. */
+    @Internal
     final NamedDomainObjectContainer<StateSpec> states
 
-    /// Optional inset (px) applied when drawing family shapes.
-    /// Use a negative value to mean "use global default".
-    float insetPx = -1f
+    /** Deterministic view exposed to Gradle as the nested input. */
+//    @Nested
+//    final Map<String, StateSpec> statesForInputs = new java.util.TreeMap<>()
 
     ShapeFamilySpec(String name, Project project) {
         this.name = name
         this.states = project.container(StateSpec) { final String state -> new StateSpec(state) }
-    }
 
-    @Override
-    String getName() { name }
+        // Mirror container changes into the deterministic map:
+//        states.all { StateSpec s -> statesForInputs.put(s.name, s) }
+//        states.whenObjectRemoved { StateSpec s -> statesForInputs.remove(s.name) }
+    }
 
     // ---------- DSL sugar ----------
 
@@ -94,19 +112,25 @@ class ShapeFamilySpec implements Named {
     void inset(float px) { this.insetPx = px }
 
     void size(int w, int h) { this.width = w; this.height = h }
+
     void corner(int r) { this.radius = r }
 
     void split(int l, int r, int t, int b) {
         this.splitLeft = l; this.splitRight = r; this.splitTop = t; this.splitBottom = b
     }
+
     void pad(int t, int l, int b, int r) {
         this.padTop = t; this.padLeft = l; this.padBottom = b; this.padRight = r
     }
 
     void fill(String hex) { this.fillHex = hex }
+
     void gradient(float topLight, float botDark) { this.gradTopLight = topLight; this.gradBotDark = botDark }
+
     void stroke(String hex, int px = 1) { this.strokeHex = hex; this.strokePx = px }
+
     void innerStroke(String hex, int px = 1) { this.innerStrokeHex = hex; this.innerStrokePx = px }
+
     void shadow(int px, String hex = "#00000040") { this.shadowPx = px; this.shadowHex = hex }
 
     StateSpec state(String name, @DelegatesTo(StateSpec) Closure<?> cfg = {}) {
@@ -122,7 +146,7 @@ class ShapeFamilySpec implements Named {
     /// and if that is null, fall back to 0.65f.
     float resolveInsetPx(@SuppressWarnings('GrMethodMayBeStatic') Float globalDefault) {
         if (insetPx >= 0f) return insetPx
-        final float base = (globalDefault != null ? globalDefault : 0.65f)
+        final float base = (globalDefault != null ? globalDefault : AtlasNinePatchWriter.DEFAULT_INSET)
         return Math.max(0f, base)
     }
 
@@ -145,10 +169,23 @@ class ShapeFamilySpec implements Named {
     /// Returns (top, left, bottom, right) as an int[4].
     int[] resolveContentPad(StateSpec st) {
         int t = padTop, l = padLeft, b = padBottom, r = padRight
-        if (st.dPadTop    != null) t += st.dPadTop
-        if (st.dPadLeft   != null) l += st.dPadLeft
+        if (st.dPadTop != null) t += st.dPadTop
+        if (st.dPadLeft != null) l += st.dPadLeft
         if (st.dPadBottom != null) b += st.dPadBottom
-        if (st.dPadRight  != null) r += st.dPadRight
+        if (st.dPadRight != null) r += st.dPadRight
         return [t, l, b, r] as int[]
+    }
+
+    // translate our NamedDomainObjectContainer to a cacheable list
+    @Nested
+    List<StateSpec> getStatesSnapshotOrDefault() {
+        // if empty, synthesize a default state that does nothing, so outputs are stable
+        if (states.isEmpty()) {
+            return Collections.singletonList(new StateSpec('default'))
+        }
+        // deterministic order for fingerprint stability:
+        return states.stream()
+                .sorted(Comparator.comparing({ StateSpec s -> s.name }))
+                .collect(Collectors.toList())
     }
 }

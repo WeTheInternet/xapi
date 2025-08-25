@@ -2,6 +2,8 @@ package net.wti.gradle.atlas.ext
 
 import groovy.transform.CompileStatic
 import org.gradle.api.Named
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 
 ///
 /// ### StateSpec
@@ -50,24 +52,32 @@ import org.gradle.api.Named
 @CompileStatic
 class StateSpec implements Named {
 
-    private final String name
+    @Input
+    final String name
 
     /// Optional: replace base fill color for this state (e.g. `'#3452b8ff'`).
+    @Input @Optional
     String overrideFill = null
 
     /// Optional: override top/bottom gradient modifiers (percent deltas).
-    /// Positive = lighter, negative = darker. Example: `0.12f` means +12%.
+    @Input @Optional
     Float overrideTopLight = null
+    @Input @Optional
     Float overrideBotDark  = null
 
-    /// Optional: multiply whole image alpha for **interior** pixels.
-    /// Typical range `0.0 .. 1.0`; writer clamps out-of-range values.
+    /// Optional: multiply whole image alpha (e.g. `0.6f` → 60% opacity).
+    @Input @Optional
     Float alpha = null
 
     /// Optional: change **content padding** by a delta (top, left, bottom, right).
-    /// This affects the **bottom/right** 9-patch markers (content area).
-    /// Positive values *reduce* content area on that side (push inward).
-    Integer dPadTop = null, dPadLeft = null, dPadBottom = null, dPadRight = null
+    @Input @Optional
+    Integer dPadTop = null
+    @Input @Optional
+    Integer dPadLeft = null
+    @Input @Optional
+    Integer dPadBottom = null
+    @Input @Optional
+    Integer dPadRight = null
 
     StateSpec(String name) { this.name = name }
 
@@ -127,4 +137,5 @@ class StateSpec implements Named {
                 baseRight  + deltaRight()
         }
     }
+
 }

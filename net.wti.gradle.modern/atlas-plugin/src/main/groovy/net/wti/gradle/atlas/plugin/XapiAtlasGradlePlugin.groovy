@@ -8,10 +8,18 @@ import net.wti.gradle.atlas.ext.ShapeFamilySpec
 import net.wti.gradle.atlas.ext.StateSpec
 import net.wti.gradle.atlas.ext.XapiAtlasExtension
 import net.wti.gradle.atlas.images.AtlasNinePatchWriter
+import net.wti.gradle.atlas.tasks.GenerateAtlasFamiliesTask
+import net.wti.gradle.atlas.tasks.GenerateAtlasNinePatchesTask
+import net.wti.gradle.atlas.tasks.GenerateAtlasPixelsTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.file.CopySpec
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileCollection
+import org.gradle.api.plugins.BasePlugin
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.AbstractCopyTask
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
 
@@ -28,9 +36,9 @@ import static org.gradle.language.base.plugins.LifecycleBasePlugin.BUILD_TASK_NA
 ///
 /// 1) `generateAtlasPixels`    — 1×1 PNGs from `xapiAtlas.pixels`
 /// 2) `generateAtlasNinePatches` — low-level .9 from `xapiAtlas.ninePatches`
-/// 3) `generateAtlasShapes`    — high-level .9 from `xapiAtlas.families`
-/// 4) `packXapiAtlas`          — TexturePacker stage (atlas + page PNGs)
-/// 5) `copyXapiAtlas`          — copies atlas + PNGs to your resources dir
+/// 3) `generateAtlasFamilies`    — high-level .9 from `xapiAtlas.families`
+/// 4) `packXapiAtlas`            — TexturePacker stage (atlas + page PNGs)
+/// 5) `copyXapiAtlas`            — copies atlas + PNGs to your resources dir
 ///
 /// The plugin is intentionally headless (Java2D) and `@CompileStatic`.
 ///
@@ -41,83 +49,45 @@ class XapiAtlasGradlePlugin implements Plugin<Project> {
 
     @Override
     void apply(final Project project) {
+        project.plugins.apply(BasePlugin)
         project.plugins.apply(GdxPlugin)
         final XapiAtlasExtension ext = project.extensions.create('xapiAtlas', XapiAtlasExtension, project)
 
         // 1 — 1×1 pixels (color pallette)
-        final TaskProvider<Task> generateAtlasPixels = project.tasks.register('generateAtlasPixels') { t ->
-            t.group = 'xapi-atlas'
-            t.description = 'Generate 1x1 utility pixels from hex colors.'
-            t.outputs.dir(ext.pixelsDir)
-            t.doLast {
-                final File outDir = ext.pixelsDir.get().asFile
-                outDir.mkdirs()
-                Map<String, String> map = ext.pixels.get()
-                if (map.isEmpty()) map = [white: "#ffffffff"]
-                map.each { String name, String hex ->
-                    final File png = new File(outDir, "${name}.png")
-                    png.parentFile.mkdirs()
-                    final BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
-                    img.setRGB(0, 0, AtlasNinePatchWriter.parseHexToARGB(hex))
-                    ImageIO.write(img, "png", png)
-                    t.logger.lifecycle("Generated 1x1 pixel ${name} (${hex}) -> ${png}")
-                }
-            }
+        final TaskProvider<GenerateAtlasPixelsTask> generateAtlasPixels = project.tasks.register('generateAtlasPixels', GenerateAtlasPixelsTask) {
+            final GenerateAtlasPixelsTask t ->
+                applyCommonSettings(t)
+                t.description = 'Generate 1x1 utility pixels from hex colors.'
+                t.outputDir.set(ext.pixelsDir)
+                t.pixels.set(ext.pixels)
         }
 
         // 2 — low-level .9 (NinePatchSpec)
-        final TaskProvider<Task> generateAtlasNinePatches = project.tasks.register('generateAtlasNinePatches') { t ->
-            t.group = 'xapi-atlas'
-            t.description = 'Generate .9.png files from NinePatchSpec entries.'
-            t.outputs.dir(ext.ninePatchDir)
-            t.dependsOn(generateAtlasPixels)
-            t.doLast {
-                final File outDir = ext.ninePatchDir.get().asFile
-                outDir.mkdirs()
-                ext.ninePatches.each { NinePatchSpec spec ->
-                    final File png = new File(outDir, "${spec.name}.9.png")
-                    AtlasNinePatchWriter.writeSimpleNinePatch(png, spec, spec.resolveInsetPx(ext.defaultInsetPx.get()))
-                    t.logger.lifecycle("Generated nine-patch ${spec.name} -> ${png}")
-                }
-            }
+        final TaskProvider<GenerateAtlasNinePatchesTask> generateAtlasNinePatches = project.tasks.register('generateAtlasNinePatches', GenerateAtlasNinePatchesTask) {
+            final GenerateAtlasNinePatchesTask t ->
+                applyCommonSettings(t)
+                t.description = 'Generate .9.png files from NinePatchSpec entries.'
+                t.outputDir.set(ext.ninePatchDir)
+                t.ninePatches.set(project.providers.provider ({ ext.ninePatches.toList() })) // snapshot!
         }
 
         // 3 — high-level .9 (ShapeFamilySpec)
-        final TaskProvider<Task> generateAtlasShapes = project.tasks.register('generateAtlasShapes') { t ->
-            t.group = 'xapi-atlas'
-            t.description = 'Generate .9.png files from ShapeFamilySpec families.'
-            t.outputs.dir(ext.shapesDir)
-            t.dependsOn(generateAtlasPixels)
-            t.doLast {
-                final File outDir = ext.shapesDir.get().asFile
-                outDir.mkdirs()
-                ext.families.each { ShapeFamilySpec fam ->
-                    if (fam.states.empty) {
-                        // sensible defaults if user defined no states
-                        fam.state('default') {}
-                        fam.state('over')    { gradient(fam.gradTopLight * 1.5f as float, fam.gradBotDark * 0.6f as float) }
-                        fam.state('pressed') { gradient(fam.gradTopLight * 0.5f as float, fam.gradBotDark * 1.8f as float); padDelta(1,0,-1,0) }
-                        fam.state('disabled'){ alpha 0.55f }
-                    }
-                    fam.states.each { StateSpec st ->
-                        final String baseName = (st.name == 'default') ? fam.name : "${fam.name}-${st.name}"
-                        final File png = new File(outDir, "${baseName}.9.png")
-                        AtlasNinePatchWriter.writeRoundedNinePatch(png, fam, st, fam.resolveInsetPx(ext.defaultInsetPx.get()))
-                        t.logger.lifecycle("Generated shape ${baseName} -> ${png.name} (${fam.width}x${fam.height}, r=${fam.radius})")
-                    }
-                }
-            }
+        final TaskProvider<GenerateAtlasFamiliesTask> generateAtlasFamilies = project.tasks.register('generateAtlasFamilies', GenerateAtlasFamiliesTask) {
+            final GenerateAtlasFamiliesTask t ->
+                t.group = 'xapi-atlas'
+                applyCommonSettings(t)
+                t.description = 'Generate .9.png files from ShapeFamilySpec families.'
+                t.outputDir.set(ext.shapesDir)
+                t.families.set(ext.families) // snapshot!
         }
 
         // 4 — pack atlas
         final TaskProvider<PackTextures> packXapiAtlas = project.tasks.register('packXapiAtlas', PackTextures) { p ->
             p.group = 'xapi-atlas'
             p.description = 'Pack generated pixels and nine-patches into a texture atlas.'
-            p.dependsOn(generateAtlasPixels, generateAtlasNinePatches, generateAtlasShapes)
-
-            p.from(ext.ninePatchDir)
-            p.from(ext.pixelsDir)
-            p.from(ext.shapesDir)
+            addTaskOutputs(project, p, generateAtlasPixels)
+            addTaskOutputs(project, p, generateAtlasNinePatches)
+            addTaskOutputs(project, p, generateAtlasFamilies)
             p.into(ext.packedDir)
 
             p.packFileName = "${ext.atlasName.get()}.atlas"
@@ -134,7 +104,7 @@ class XapiAtlasGradlePlugin implements Plugin<Project> {
         project.tasks.register('copyXapiAtlas', Copy) { c ->
             c.group = 'xapi-atlas'
             c.description = 'Copy atlas (.atlas + .png pages) into resources directory.'
-            c.dependsOn packXapiAtlas
+            addTaskOutputs(project, c, packXapiAtlas)
             c.from({ ext.packedDir.get() })
             c.include "${ext.atlasName.get()}.atlas"
             c.include "${ext.atlasName.get()}*.png"   // supports multi-page atlases
@@ -143,10 +113,19 @@ class XapiAtlasGradlePlugin implements Plugin<Project> {
         }
 
         // convenience: ensure packing happens on `build`
-        if (project.tasks.names.contains(BUILD_TASK_NAME)) {
-            project.tasks.named(BUILD_TASK_NAME).configure {
-                it.dependsOn(packXapiAtlas)
-            }
+        project.tasks.named(BUILD_TASK_NAME).configure {
+            it.dependsOn(packXapiAtlas)
         }
+    }
+
+    static void applyCommonSettings(Task task) {
+        task.group = 'xapi-atlas'
+        task.mustRunAfter('clean')
+    }
+
+    static void addTaskOutputs(final Project p, AbstractCopyTask c, TaskProvider<? extends Task> fileProvider) {
+        final Provider<FileCollection> files = p.provider({fileProvider.get().outputs.files})
+        c.inputs.files(files)
+        c.from( files.map { it.singleFile})
     }
 }
