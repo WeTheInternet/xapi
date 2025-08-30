@@ -42,7 +42,7 @@ public class DelegatingOutputStream extends OutputStream {
     @Override
     public void close() throws IOException {
         super.close();
-        done.close();
+        done.done();
     }
 
     private void spy(int i) {

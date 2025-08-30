@@ -43,7 +43,7 @@ public class DelegatingInputStream extends InputStream implements StreamDelegate
     @Override
     public void close() throws IOException {
         super.close();
-        done.close();
+        done.done();
     }
 
     private void spy(int i) {

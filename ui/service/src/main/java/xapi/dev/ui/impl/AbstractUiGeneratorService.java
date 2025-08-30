@@ -248,7 +248,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     public void runPhase(ComponentBuffer component, String id) {
         try(
             @SuppressWarnings("unused") // autoclosed
-            Do ondone = tools().startRound(id, component.getGeneratedComponent())
+            Do.Closeable ondone = tools().startRound(id, component.getGeneratedComponent())
         ) {
             this.phase = id;
             final MappedIterable<UiImplementationGenerator> impls = this.impls.out1();

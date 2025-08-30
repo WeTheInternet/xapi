@@ -88,7 +88,7 @@ public class BytecodeAdapterService implements
           IsClass asClass;
           try {
             if (X_Log.loggable(LogLevel.DEBUG)) {
-              X_Log.debug("Converting",cls.get0(),"to",location);
+              X_Log.debug(BytecodeAdapterService.class, "Converting",cls.get0(),"to",location);
             }
             asClass = new ClassAdapter(new CtClassType(location.openStream(),
                 classPool.out1()));

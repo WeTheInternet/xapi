@@ -70,4 +70,20 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
         c.getTimeZone().getOffset(c.getTimeInMillis()) / 60000);
   }
 
+    public String timestampHuman() {
+        return timestampHuman(millis());
+    }
+
+    public String timestampHuman(double millis) {
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis((long) millis);
+        return X_String.toHumanTimestamp(
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH) + 1,
+                c.get(Calendar.DATE),
+                c.get(Calendar.HOUR_OF_DAY),
+                c.get(Calendar.MINUTE));
+    }
+
+
 }

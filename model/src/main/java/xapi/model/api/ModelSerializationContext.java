@@ -95,7 +95,7 @@ public class ModelSerializationContext {
   }
 
   private static final AutoCloseable doNothing = ()->{};
-  public Do fixManifest(final Class<?> subtype) {
+  public Do.Closeable fixManifest(final Class<?> subtype) {
     if (manifest == null) {
       return Do.NOTHING;
     }

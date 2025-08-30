@@ -207,7 +207,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         }
     }
 
-    public Do startRound(String id, GeneratedUiComponent component) {
+    public Do.Closeable startRound(String id, GeneratedUiComponent component) {
         clearTasks(roundStartListener);
         return this::finishRound;
     }

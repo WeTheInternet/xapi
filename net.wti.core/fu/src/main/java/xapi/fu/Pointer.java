@@ -45,7 +45,7 @@ public interface Pointer <T> extends In1<T>, Out1<T>, In1Out1<T, T> {
     return out1();
   }
 
-  default Do borrow(final T value) {
+  default Do.Closeable borrow(final T value) {
     final T current = out1();
 
     return () -> {

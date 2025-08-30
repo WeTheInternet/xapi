@@ -10,9 +10,18 @@ import xapi.fu.api.Generate;
  * Created on 07/11/15.
  */
 @FunctionalInterface
-public interface Do extends AutoCloseable {
+public interface Do {
 
-    Do NOTHING = new Do() {
+    interface Closeable extends Do, AutoCloseable {
+
+        @Override
+        @DoNotOverride("override done() instead")
+        default void close() { // erases exceptions
+            done();
+        }
+    }
+
+    Closeable NOTHING = new Closeable() {
         @Override
         public final void done() {
         }
@@ -62,14 +71,8 @@ public interface Do extends AutoCloseable {
         };
     }
 
-    @Override
-    @DoNotOverride("override done() instead")
-    default void close() { // erases exceptions
-        done();
-    }
-
-    default AutoCloseable closeable() {
-        return this;
+    default Closeable closeable() {
+        return this instanceof Closeable ? (Closeable) this : this::done;
     }
 
     @DoNotOverride("override doAfter() instead")

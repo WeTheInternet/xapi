@@ -3,12 +3,15 @@
  */
 package xapi.model.tools;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import xapi.annotation.model.KeyOnly;
 import xapi.collect.X_Collect;
-import xapi.collect.api.*;
+import xapi.collect.api.ClassTo;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.api.StringTo;
 import xapi.collect.proxy.api.CollectionProxy;
 import xapi.collect.proxy.impl.MapOf;
+import xapi.debug.X_Debug;
 import xapi.dev.source.CharBuffer;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.Do;
@@ -27,9 +30,7 @@ import xapi.model.api.*;
 import xapi.model.impl.ModelSerializationHints;
 import xapi.model.service.ModelService;
 import xapi.prop.X_Properties;
-import xapi.reflect.X_Reflect;
 import xapi.source.lex.CharIterator;
-import xapi.debug.X_Debug;
 import xapi.source.lex.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
@@ -43,6 +44,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.*;
+
+import static xapi.log.X_Log.logLevel;
+import static xapi.log.api.LogLevel.DEBUG;
 
 public class ModelSerializerDefault <M extends Model> implements ModelSerializer<M>{
 
@@ -171,12 +175,38 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     return buffer.toSource();
   }
 
-  @Override
+    // Small helper to preview remaining input when reading
+    private static String preview(CharIterator src, int max) {
+        try {
+            final String s = src.toString();
+            if (s == null) {
+                return "<null>";
+            }
+            return s.length() <= max ? s : s.substring(0, max);
+        } catch (Throwable t) {
+            return "<unavailable>";
+        }
+    }
+
+
+    @Override
   public CharBuffer modelToString(final Class<? extends Model> modelType, final M model, final ModelSerializationContext ctx, boolean keyOnly) {
     final CharBuffer out = new CharBuffer();
     ctx.getBuffer().addToEnd(out);
-    write(model, out, ctx);
-    assert model == null || model.equals(modelFromString(modelType, CharIterator.forString(out.toSource()),
+      if (logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class,
+                  "modelToString begin: type=", modelType, " keyOnly=", keyOnly,
+                  " ctx.clientToServer=", ctx.isClientToServer(),
+                  " ctx.manifest=", ctx.getManifest());
+      }
+      write(model, out, ctx);
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          final String src = out.toSource();
+          X_Log.debug(ModelSerializerDefault.class,
+                  "modelToString end: size=", src.length(), " bufferPreview='",
+                  src.substring(0, Math.min(128, src.length())), "'");
+      }
+      assert model == null || model.equals(modelFromString(modelType, CharIterator.forString(out.toSource()),
         new ModelDeserializationContext(ctx.getService().create(modelType).absorbAndReturnSelf(model), ctx.getService(), ctx.getManifest()), keyOnly)) :
         "Model serialization failure; Bad serialization for " + modelType + " : " + model + ":\n" + out.toSource()+"\n!=" + model;
     return out;
@@ -191,13 +221,29 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     if (model == null) {
       X_Log.warn(ModelSerializerDefault.class, new NotConfiguredCorrectly("Wrote null model"));
     } else {
-      for (final String key : ctx.getPropertyNames(model)) {
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class,
+                    "write model props: type=", model.getType(),
+                    " ctx.clientToServer=", ctx.isClientToServer(),
+                    " ctx.manifest=", ctx.getManifest());
+        }
+
+        for (final String key : ctx.getPropertyNames(model)) {
         if (preventSerialization(model, key, ctx)) {
+            X_Log.debug(ModelSerializerDefault.class,
+                    "preventSerialization SKIP: ", model.getType(), ".", key,
+                    " clientToServer=", ctx.isClientToServer());
           continue;
         }
         final Object value = model.getProperty(key);
         final Class<?> propertyType = model.getPropertyType(key);
-        writeObject(out, key, propertyType, value, primitives, ctx);
+            if (X_Log.logLevel().isLoggable(DEBUG)) {
+                X_Log.debug(ModelSerializerDefault.class,
+                        "writeObject: ", model.getType(), ".", key,
+                        " type=", propertyType, " null=", value == null);
+            }
+
+            writeObject(out, key, propertyType, value, primitives, ctx);
       }
     }
   }
@@ -206,14 +252,26 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   public void writeKey(final M model, final CharBuffer out, final ModelSerializationContext ctx) {
     final PrimitiveSerializer primitives = ctx.getPrimitives();
     if (model == null) {
-      out.append(primitives.serializeInt(-2));
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "writeKey: model=null -> -2");
+        }
+
+        out.append(primitives.serializeInt(-2));
       return;
     }
     final ModelKey modelKey = model.getKey();
     if (modelKey == null) {
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "writeKey: key=null -> -1");
+        }
+
       out.append(primitives.serializeInt(-1));
     } else {
       final String keyString = ctx.getService().keyToString(modelKey);
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "writeKey: key len=", keyString.length(), " -> 0 + string");
+        }
+
       out.append(primitives.serializeInt(0));
       out.append(primitives.serializeString(keyString));
     }
@@ -225,11 +283,14 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
     final ModelManifest manifest = ctx.getManifest();
     assert manifest.getMethodData(key) != null : "Invalid manifest; no data found for "+model.getType()+"."+key;
-    if (ctx.isClientToServer()) {
-      return !manifest.isClientToServerEnabled(key);
-    } else {
-      return !manifest.isServerToClientEnabled(key);
+    final boolean prevent = ctx.isClientToServer() ? !manifest.isClientToServerEnabled(key) : !manifest.isServerToClientEnabled(key);
+    if (prevent && X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class,
+                "preventSerialization: ", model.getType(), ".", key,
+                " c2s?=", ctx.isClientToServer(), " prevent=", prevent);
     }
+    return prevent;
+
   }
 
   protected boolean preventDeserialization(final M model, final String key, final ModelDeserializationContext ctx) {
@@ -238,11 +299,15 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
     final ModelManifest manifest = ctx.getManifest();
     assert manifest.getMethodData(key) != null : "Invalid manifest; no data found for "+model.getType()+"."+key;
-    if (ctx.isClientToServer()) {
-      return !manifest.isServerToClientEnabled(key);
-    } else {
-      return !manifest.isClientToServerEnabled(key);
+    final boolean prevent = ctx.isClientToServer() ? !manifest.isServerToClientEnabled(key) : !manifest.isClientToServerEnabled(key);
+    if (prevent && X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class,
+                "preventDeserialization: ", model.getType(), ".", key,
+                " c2s?=", ctx.isClientToServer(), " prevent=", prevent,
+                " subModel=", ctx.isSubModel(), " keyOnly=", ctx.isKeyOnly());
     }
+    return prevent;
+
   }
 
   protected boolean isSupportedEnumType(final Class<?> propertyType) {
@@ -272,11 +337,17 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   protected void writeArray(final CharBuffer out, final String propName, final Class<?> propertyType, final Object array, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (array == null) {
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class, "writeArray: ", propName, " -> null (-1)");
+      }
       out.append(primitives.serializeInt(-1));
       return;
     }
     final int len = Array.getLength(array);
-    final String length = primitives.serializeInt(len);
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class, "writeArray: ", propName, " len=", len, " childType=", propertyType.getComponentType());
+      }
+      final String length = primitives.serializeInt(len);
     out.append(length);
     final Class<?> childType = propertyType.getComponentType();
     if (childType.isPrimitive()) {
@@ -362,6 +433,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   }
   protected void writeIterable(final CharBuffer out, final String propName, final CollectionProxy collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (collection == null) {
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class, "writeIterable: ", propName, " -> null (-1)");
+      }
+
       out.append(primitives.serializeInt(-1));
       return;
     }
@@ -369,7 +444,11 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     final Class valueType = collection.valueType();
 
     int len = collection.size();
-    if (len == 0 && writeNullForEmpty()) {
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class, "writeIterable: ", propName, " len=", len, " keyType=", keyType, " valueType=", valueType);
+      }
+
+      if (len == 0 && writeNullForEmpty()) {
       out.append(primitives.serializeInt(-1));
       return;
     }
@@ -461,10 +540,17 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   protected void writeStringMap(final CharBuffer out, final StringTo<?> collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (collection == null) {
       // For null, we will check for class void and immediately return null.
-      out.append(primitives.serializeClass(void.class));
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "writeStringMap: -> void.class/null");
+        }
+
+        out.append(primitives.serializeClass(void.class));
       return;
     }
     final Class valueType = collection.valueType();
+    if (X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class, "writeStringMap: valueType=", valueType, " size=", collection.size());
+    }
 
     out.append(primitives.serializeClass(valueType));
     int len = collection.size();
@@ -488,17 +574,42 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       ModelDeserializationContext ctx
   ) {
 
-    int length = primitives.deserializeInt(src);
+
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class,
+                  "readIterable: prop=", propName,
+                  " propertyType=", propertyType,
+                  " ctx.clientToServer=", ctx.isClientToServer(),
+                  " keyOnly=", ctx.isKeyOnly(),
+                  " subModel=", ctx.isSubModel(),
+                  " preview='", preview(src, 96), "'");
+      }
+
+      int length = primitives.deserializeInt(src);
     if (length == -1) {
       // We are null
-      return null;
+
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "readIterable: null (-1)");
+        }
+
+        return null;
     }
     if (length == 0 && writeNullForEmpty()) {
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "readIterable: empty treated as null (flag on)");
+        }
       return null;
     }
 
     final Class keyType = primitives.deserializeClass(src);
     final Class valueType = primitives.deserializeClass(src);
+    if (X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class,
+                "readIterable header: length=", length, " keyType=", keyType, " valueType=", valueType,
+                " afterHeaderPreview='", preview(src, 96), "'");
+    }
+
     CollectionProxy result = newResult(propertyType, keyType, valueType);
     if (length == 0) {
       return result;
@@ -567,6 +678,12 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       PrimitiveSerializer primitives,
       ModelDeserializationContext ctx
   ) {
+    if (X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class,
+                "readStringMap: prop=", propName,
+                " propertyType=", propertyType,
+                " preview='", preview(src, 96), "'");
+    }
 
     final Class<?> valueType = primitives.deserializeClass(src);
     if (valueType.getName().equals("void")) {
@@ -577,7 +694,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     int length = primitives.deserializeInt(src);
     if (length == -1) {
       // We are null
-      return null;
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "readStringMap: null (-1)");
+        }
+        return null;
     }
     if (length == 0) {
       return map;
@@ -785,6 +905,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   })
   protected void writeModel(final CharBuffer out, final String propName, final Class<?> propertyType, final Model childModel, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (childModel == null) {
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class, "writeModel: ", propName, " -> null (-2)");
+      }
+
       out.append(primitives.serializeInt(-2));
       return;
     }
@@ -796,6 +920,16 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       keyOnly = manifest.isKeyOnly() || manifest.isKeyOnly(propName);
       autoSave = manifest.isAutoSave(propName);
     }
+
+    if (X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class,
+                "writeModel start: prop=", propName,
+                " type=", propertyType,
+                " keyOnly=", keyOnly, " autoSave=", autoSave,
+                " ctx.clientToServer=", ctx.isClientToServer(),
+                " ctx.manifest=", ctx.getManifest());
+    }
+
     final ModelSerializer serializer = newSerializer(Class.class.cast(propertyType), ctx);
     final CharBuffer was = ctx.getBuffer();
     ctx.setBuffer(out);
@@ -818,6 +952,18 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                 // when doing an autoSave on a ModelList, write the type of the list, then the amount, then the child keys.
                 ModelList list = (ModelList) childModel;
                 final ObjectTo<ModelKey, Model> vals = list.getModels();
+
+                if (X_Log.logLevel().isLoggable(DEBUG)) {
+                    X_Log.debug(ModelSerializerDefault.class,
+                            "writeModel: ModelList keyOnly write keys; count=", (vals == null ? 0 : vals.size()));
+                }
+
+                if (X_Log.logLevel().isLoggable(DEBUG)) {
+                    X_Log.debug(ModelSerializerDefault.class,
+                            "writeModel: ModelList header; modelType=", list.getModelType(),
+                            " size=", (vals == null ? 0 : vals.size()));
+                }
+
                 // loop through the child models, serializing them all in parallel
                 final List<Out1<Model>> waits = new ArrayList<>();
                 final ModelService svc = ctx.getService();
@@ -849,7 +995,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                     if (X_Time.nowMillis() - start.millis() > 100) {
                       X_Log.info(ModelSerializerDefault.class, "Took more than 100ms (", X_Time.diff(start) ,") to save children ",
                               vals.keys(), " ");
-                    } else if (X_Log.logLevel().isLoggable(LogLevel.DEBUG)) {
+                    } else if (logLevel().isLoggable(DEBUG)) {
                       X_Log.info(ModelSerializerDefault.class, "Took ", X_Time.diff(start) ," to save childre ", vals.keys(), " ");
                     }
                 }
@@ -862,7 +1008,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                   final Model child = result.block();
                   if (X_Time.nowMillis() - start.millis() > 100) {
                     X_Log.info(ModelSerializerDefault.class, "Took more than 100ms (", X_Time.diff(start) ,") to save child ", child.getKey(), " ");
-                  } else if (X_Log.logLevel().isLoggable(LogLevel.DEBUG)) {
+                  } else if (logLevel().isLoggable(DEBUG)) {
                     X_Log.info(ModelSerializerDefault.class, "Took ", X_Time.diff(start) ," to save child ", child.getKey(), " ");
                   }
                   childModel.absorb(child);
@@ -879,6 +1025,9 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
             serializer.writeKey(value, out, ctx);
           }
         } else {
+            if (X_Log.logLevel().isLoggable(DEBUG)) {
+                X_Log.debug(ModelSerializerDefault.class, "writeModel: keyOnly write key for ", childModel.getType());
+            }
             serializer.writeKey(childModel, out, ctx);
         }
       } else if (ModelList.class.isAssignableFrom(propertyType)) {
@@ -886,7 +1035,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         final ObjectTo<String, ? extends Model> mods = list == null ? null : list.getModels();
         if (mods != null) {
             final Class modelType = list.getModelType();
-            try (final Do ignored = ctx.fixManifest(modelType)) {
+            try (final Do.Closeable ignored = ctx.fixManifest(modelType)) {
                 for (Model value : mods.values()) {
                     serializer.modelToString(modelType, value, ctx, keyOnly);
                 }
@@ -909,7 +1058,16 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   @Override
   @SuppressWarnings("unchecked")
   public M modelFromString(final Class<? extends Model> modelType, final CharIterator src, final ModelDeserializationContext ctx, boolean keyOnly) {
-    final PrimitiveSerializer primitives = ctx.getPrimitives();
+    if (X_Log.logLevel().isLoggable(DEBUG)) {
+        X_Log.debug(ModelSerializerDefault.class,
+                "modelFromString begin: type=", modelType,
+                " keyOnly=", keyOnly,
+                " ctx.clientToServer=", ctx.isClientToServer(),
+                " ctx.manifest=", ctx.getManifest(),
+                " preview='", preview(src, 96), "'");
+    }
+
+      final PrimitiveSerializer primitives = ctx.getPrimitives();
     final int modelState = primitives.deserializeInt(src);
     if (modelState == -2) {
       return null;
@@ -930,7 +1088,9 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       hints.setClientToServer(ctx.isClientToServer());
       while (listSize --> 0) {
         final Model nextKid = ctx.getService().deserialize(listType, src, hints);
-        mods.put(nextKid.key(), nextKid);
+          if (nextKid != null) {
+            mods.put(nextKid.key(), nextKid);
+        }
       }
       return (M)result;
     }
@@ -1111,7 +1271,17 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       "unchecked", "rawtypes"
   })
   protected Object readObject(final Class propertyType, final String propName, final CharIterator src, final PrimitiveSerializer primitives, final ModelDeserializationContext ctx) {
-    if (propertyType == String.class) {
+
+      if (X_Log.logLevel().isLoggable(DEBUG)) {
+          X_Log.debug(ModelSerializerDefault.class,
+                  "readObject: prop=", propName, " type=", propertyType,
+                  " ctx.clientToServer=", ctx.isClientToServer(),
+                  " keyOnly=", ctx.isKeyOnly(),
+                  " subModel=", ctx.isSubModel(),
+                  " preview='", preview(src, 96), "'");
+      }
+
+      if (propertyType == String.class) {
       return readString(src, primitives);
     } else if (isModelType(propertyType)) {
       // We have an inner model to read!

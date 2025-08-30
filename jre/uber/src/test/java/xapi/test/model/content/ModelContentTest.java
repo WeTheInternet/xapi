@@ -58,7 +58,7 @@ public class ModelContentTest extends ModelTextTest implements ModelContent {
   }
 
   /**
-   * @see xapi.model.content.ModelContent#setRelated(xapi.model.content.ModelContent[])
+   * @see xapi.model.content.ModelContent#setRelated(xapi.model.api.ModelList)
    */
   @Override
   public ModelContent setRelated(final ModelList<ModelContent> related) {
@@ -70,15 +70,15 @@ public class ModelContentTest extends ModelTextTest implements ModelContent {
    * @see xapi.model.content.ModelContent#getChildren()
    */
   @Override
-  public ModelContent[] getChildren() {
+  public ModelList<ModelContent> getChildren() {
     return getProperty("children");
   }
 
   /**
-   * @see xapi.model.content.ModelContent#setChildren(xapi.model.content.ModelContent[])
+   * @see xapi.model.content.ModelContent#setChildren(xapi.model.api.ModelList)
    */
   @Override
-  public ModelContent setChildren(final ModelContent[] children) {
+  public ModelContent setChildren(final ModelList<ModelContent> children) {
     setProperty("children", children);
     return this;
   }

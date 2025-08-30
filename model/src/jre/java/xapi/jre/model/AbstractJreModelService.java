@@ -8,6 +8,7 @@ import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.data.MapLike;
+import xapi.fu.data.SetLike;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.model.api.*;
@@ -86,7 +87,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     final ModelManifest manifest;
     final Dictionary<String, Object> values;
     final MapLike<String, In3<String, Object, Object>> callbacks;
-    In3<String, Object, Object> globalChange;
+    final SetLike<In3<String, Object, Object>> globalChange;
     ModelKey key;
 
     public ModelInvocationHandler(final Class<? extends Model> modelClass) {
@@ -101,7 +102,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
       this.manifest = manifest;
       this.values = values;
       this.callbacks = X_Jdk.mapHash();
-      globalChange = In3.ignored();
+      this.globalChange = X_Jdk.setLinked();
     }
 
     @Override
@@ -159,8 +160,12 @@ public abstract class AbstractJreModelService extends AbstractModelService {
           }
           return null;
         case "onGlobalChange":
-          this.globalChange = this.globalChange.useAfterMe((In3)args[0]);
-          return proxy;
+            //noinspection rawtypes
+            final In3 handler = (In3) args[0];
+            //noinspection unchecked
+            this.globalChange.add(handler);
+            //noinspection unchecked
+          return Do.of(()->globalChange.remove(handler));
         case "getPropertyType":
           final String name = (String) args[0];
           return manifest.getMethodData(name).getType();
@@ -302,7 +307,9 @@ public abstract class AbstractJreModelService extends AbstractModelService {
       callbacks.getMaybe(key).readIfPresent(cb->{
         cb.in(key, was, is);
       });
-      globalChange.in(key, was, is);
+        for (In3<String, Object, Object> callback : globalChange) {
+            callback.in(key, was, is);
+        }
     }
 
 

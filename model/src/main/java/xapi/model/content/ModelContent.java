@@ -26,8 +26,11 @@ public interface ModelContent extends ModelText, HasVotes, HasAuthor {
   /**
    * @return an array of direct child nodes.
    */
-  ModelContent[] getChildren();
-  ModelContent setChildren(ModelContent[] children);
+  ModelList<ModelContent> getChildren();
+  default ModelList<ModelContent> children() {
+      return getOrCreateModelList(ModelContent.class, this::getChildren, this::setChildren);
+  }
+  ModelContent setChildren(ModelList<ModelContent> children);
 
   String getPermaLink();
   ModelContent setPermaLink(String permalink);

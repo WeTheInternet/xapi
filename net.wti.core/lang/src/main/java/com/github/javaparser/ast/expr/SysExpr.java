@@ -29,7 +29,7 @@ public class SysExpr extends Expression {
 
     private final Out1<? extends Node>[] nodes;
     private GenericFactory genericFactory;
-    private In2Out1<Node, Object, Do> universalListener;
+    private In2Out1<Node, Object, Do.Closeable> universalListener;
 
     private VoidFactory voidFactory;
 
@@ -120,7 +120,7 @@ public class SysExpr extends Expression {
         final In3Out1 factory = genericFactory.io(vis, arg);
         return (v, n, a) -> {
             try (
-                Do undo = universalListener.io(n, a)
+                Do.Closeable undo = universalListener.io(n, a)
             ){
                 return (R)factory.io(v, n, a);
             }
@@ -131,7 +131,7 @@ public class SysExpr extends Expression {
         final In3 factory = voidFactory.io(vis, arg);
         return (v, n, a) -> {
             try (
-                Do undo = universalListener.io(n, a)
+                Do.Closeable undo = universalListener.io(n, a)
             ) {
                 factory.in(v, n, a);
             }
@@ -144,13 +144,13 @@ public class SysExpr extends Expression {
         v.visit(this, arg);
     }
 
-    public <A, S extends A> SysExpr addUniversalListener(Class<S> argType, In2Out1<Node, A, Do> callback) {
-        final In2Out1<Node, Object, Do> was = universalListener;
+    public <A, S extends A> SysExpr addUniversalListener(Class<S> argType, In2Out1<Node, A, Do.Closeable> callback) {
+        final In2Out1<Node, Object, Do.Closeable> was = universalListener;
         universalListener = (node, arg) -> {
-            final Do toUndo = was.io(node, arg);
+            final Do.Closeable toUndo = was.io(node, arg);
             if (argType.isInstance(arg) || arg == null) {
-                final Do undo = callback.io(node, (A) arg);
-                return toUndo.doAfter(undo);
+                final Do.Closeable undo = callback.io(node, (A) arg);
+                return toUndo.doAfter(undo).closeable();
             }
             return toUndo;
         };
@@ -165,7 +165,7 @@ public class SysExpr extends Expression {
         if (nodes.length == 1) {
             final Node node = nodes[0].out1();
         try (
-            Do undo = universalListener.io(node, arg)
+            Do.Closeable undo = universalListener.io(node, arg)
             ) {
                 R r = callback.io(node, arg);
                 return r;
@@ -173,7 +173,7 @@ public class SysExpr extends Expression {
         }
         JsonContainerExpr json = JsonContainerExpr.jsonArray(nodes().map(n->(Expression)n));
         try (
-            Do undo = universalListener.io(json, arg)
+            Do.Closeable undo = universalListener.io(json, arg)
         ) {
             R r = callback.io(json, arg);
             return r;
@@ -188,7 +188,7 @@ public class SysExpr extends Expression {
             final Node n = node.out1();
             if (filter.filter1(n)) {
                 try (
-                    final Do undo = universalListener.io(n, arg)
+                    final Do.Closeable undo = universalListener.io(n, arg)
                 ){
                     callback.in(n);
                 }

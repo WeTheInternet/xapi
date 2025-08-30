@@ -5,7 +5,9 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.*;
+import xapi.fu.data.SetLike;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.java.X_Jdk;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -71,7 +73,7 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
 
   private static StringTo<Object> defaultValues = X_Collect.newStringMap(Object.class);
   private StringTo<In2<Object, Object>> changeListeners = X_Collect.newStringMap(In2.class);
-  private IntTo<In3<String, Object, Object>> globalChangeListeners = X_Collect.newSet(In3.class);
+  private SetLike<In3<String, Object, Object>> globalChangeListeners = X_Jdk.setLinked();
   protected StringTo<Object> map;
   protected Model parent;
   protected ModelKey key;
@@ -162,7 +164,7 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   @Override
   public void fireChangeEvent(String key, Object was, Object value) {
     changeListeners.getMaybe(key).readIfPresent(In1.in2Adapter(was, value));
-    for (In3<String, Object, Object> callback : globalChangeListeners.forEach()) {
+    for (In3<String, Object, Object> callback : globalChangeListeners) {
       callback.in(key, was, value);
     }
   }
@@ -179,8 +181,9 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   }
 
   @Override
-  public synchronized void onGlobalChange(In3<String, Object, Object> callback) {
+  public synchronized Do onGlobalChange(In3<String, Object, Object> callback) {
     globalChangeListeners.add(callback);
+    return ()->globalChangeListeners.remove(callback);
   }
 
   protected AbstractModel createNew() {

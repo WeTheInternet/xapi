@@ -364,7 +364,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
                 return undo.doAfter(()->{
                     ctx.setFirstOfRange(wasFirst);
                     ctx.setInRange(false);
-                });
+                }).closeable();
             });
             sysExpr.addVoidListener(null, ApiGeneratorContext.class, (vis, node, ctx) -> {
                 undos.getMaybe(filterName).readIfPresent(Do::done);

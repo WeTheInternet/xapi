@@ -27,4 +27,14 @@ public class TimeServiceDefault extends AbstractTimeService {
   public String timestamp(double millis) {
     return new Date((long)millis).toString();
   }
+
+    @Override
+    public String timestampHuman() {
+        return timestamp();
+    }
+
+    @Override
+    public String timestampHuman(final double millis) {
+        return timestamp(millis);
+    }
 }

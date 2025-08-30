@@ -72,7 +72,7 @@ function has_args() {
     fi
     return 0
 }
-has_args || args="build xapiPublish testClasses -x test -x check"
+has_args || args="build xapiPublish testClasses -x test -x check -x javadoc"
 
 echo "Running all builds' gradlew $args"
 echo "Running main build w/ arguments: $main_args $args"

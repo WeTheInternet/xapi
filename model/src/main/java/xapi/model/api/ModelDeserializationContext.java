@@ -99,14 +99,21 @@ public class ModelDeserializationContext {
   public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final ModelSerializationHints hints) {
     final ModelService svc = getService();
     final ModelDeserializationContext ctx;
-    if (manifest == null) {
-        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, getManifest());
-    } else {
-        final ModelManifest childType = svc.findManifest(propertyType);
-        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
-        ctx.setKeyOnly(hints.isKeyOnly());
-        ctx.setClientToServer(hints.isClientToServer());
-    }
+    // Always resolve the child's manifest; even if the parent has none, the child should not be "manifest-less"
+    final ModelManifest childType = svc.findManifest(propertyType);
+    ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
+    // Propagate hints consistently
+    ctx.setKeyOnly(hints.isKeyOnly());
+    ctx.setClientToServer(hints.isClientToServer());
+//
+//      if (manifest == null) {
+//        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, getManifest());
+//    } else {
+//        final ModelManifest childType = svc.findManifest(propertyType);
+//        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
+//        ctx.setKeyOnly(hints.isKeyOnly());
+//        ctx.setClientToServer(hints.isClientToServer());
+//    }
     ctx.subModel = true;
     return ctx;
   }

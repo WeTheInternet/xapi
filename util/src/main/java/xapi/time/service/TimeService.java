@@ -90,5 +90,18 @@ public interface TimeService extends Moment{
    */
   String timestamp(double millis);
 
+    /**
+     * @return A human readable timestamp in the format:
+     * "Mon, Jan 15, 2024 @ 9:30am"
+     */
+    String timestampHuman();
+
+    /**
+     * @param millis The epoch milliseconds to format
+     * @return A human readable timestamp in the format:
+     * "Mon, Jan 15, 2024 @ 9:30am"
+     */
+    String timestampHuman(double millis);
+
 
 }

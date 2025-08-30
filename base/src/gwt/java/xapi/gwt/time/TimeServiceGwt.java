@@ -24,7 +24,10 @@ public class TimeServiceGwt extends AbstractTimeService {
   private final Lazy<DateTimeFormat> formatter = Lazy.deferred1(
       ()->DateTimeFormat.getFormat(PredefinedFormat.ISO_8601));
 
-  @Override
+    private final Lazy<DateTimeFormat> humanFormatter = Lazy.deferred1(
+            () -> DateTimeFormat.getFormat("MMM d, yyyy h:mm:ss a"));
+
+    @Override
   public String timestamp() {
     return timestamp(Duration.currentTimeMillis());
   }
@@ -34,7 +37,17 @@ public class TimeServiceGwt extends AbstractTimeService {
     return formatter.out1().format(new Date((long)millis));
   }
 
-  @Override
+    @Override
+    public String timestampHuman() {
+        return timestampHuman(Duration.currentTimeMillis());
+    }
+
+    @Override
+    public String timestampHuman(double millis) {
+        return humanFormatter.out1().format(new Date((long) millis));
+    }
+
+    @Override
   public void runLater(final Runnable runnable) {
     Scheduler.get().scheduleDeferred(new ScheduledCommand() {
       @Override

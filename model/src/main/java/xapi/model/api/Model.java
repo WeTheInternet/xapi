@@ -151,16 +151,16 @@ public interface Model {
     /**
      * @param callback - A function which receives propKey,oldValue,newValue as arguments.
      */
-    void onGlobalChange(In3<String, Object, Object> callback);
+    Do onGlobalChange(In3<String, Object, Object> callback);
 
-    default void globalChange(In3<String, Object, Object> callback) {
-        onGlobalChange(callback);
+    default Do globalChange(In3<String, Object, Object> callback) {
+        Do undo = onGlobalChange(callback);
         for (Entry<String, Object> prop : getProperties()) {
             if (prop.getValue() != null) {
                 callback.in(prop.getKey(), null, prop.getValue());
             }
         }
-
+        return undo;
     }
 
     Model removeProperty(String key);

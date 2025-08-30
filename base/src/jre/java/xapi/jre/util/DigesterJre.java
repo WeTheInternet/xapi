@@ -64,7 +64,7 @@ public class DigesterJre implements Digester {
   }
 
   /**
-   * @see xapi.util.api.Digester#toHexString(byte[])
+   * @see xapi.util.api.Digester#digest(byte[])
    */
   @Override
   public String toString(final byte[] bytes) {

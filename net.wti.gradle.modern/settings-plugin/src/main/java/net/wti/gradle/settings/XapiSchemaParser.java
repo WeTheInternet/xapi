@@ -1424,7 +1424,7 @@ public interface XapiSchemaParser {
                                         ComposableXapiVisitor<Object> descender = whenMissingFail(XapiSchemaParser.class)
                                                 .withJsonMapOnly((json, ignore) -> {
                                                     for (JsonPairExpr childPair : json.getPairs()) {
-                                                        try (Do lease = platValue.borrow(childPair.getKeyString())) {
+                                                        try (Do.Closeable lease = platValue.borrow(childPair.getKeyString())) {
                                                             childPair.getValueExpr().accept(vis, null);
                                                         }
                                                     }
@@ -1439,7 +1439,7 @@ public interface XapiSchemaParser {
                                         descender = whenMissingFail(XapiSchemaParser.class)
                                                 .withJsonMapOnly((json, ignore) -> {
                                                     for (JsonPairExpr childPair : json.getPairs()) {
-                                                        try (Do lease = modValue.borrow(childPair.getKeyString())) {
+                                                        try (Do.Closeable lease = modValue.borrow(childPair.getKeyString())) {
                                                             childPair.getValueExpr().accept(vis, null);
                                                         }
                                                     }

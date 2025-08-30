@@ -112,7 +112,7 @@ wrapper {
 
 idea {
     module {
-        excludeDirs = [mvnRepo, buildRoot] as Set
+        excludeDirs = files(mvnRepo, buildRoot, 'build') as Set
     }
 }
 

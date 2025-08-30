@@ -184,6 +184,14 @@ public class X_Time {
     return service.timestamp(millis);
   }
 
+  public static String timestampHuman() {
+    return service.timestampHuman();
+  }
+
+  public static String timestampHuman(double millis) {
+    return service.timestampHuman(millis);
+  }
+
   public static String printSinceBirth() {
     return print(now().millis() - birth());
   }
