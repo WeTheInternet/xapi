@@ -89,31 +89,28 @@ public class ModelDeserializationContext {
   }
 
   public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final String propName) {
+      return createChildContext(propertyType, propertyType, propName);
+  }
+  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final Class<? extends Model> componentType, final String propName) {
     final ModelSerializationHints hints = new ModelSerializationHints();
     if (manifest != null) {
       hints.setKeyOnly(manifest.isKeyOnly(propName));
       hints.setClientToServer(manifest.isClientToServerEnabled(propName));
     }
-    return createChildContext(propertyType, hints);
+    return createChildContext(propertyType, componentType, hints);
   }
   public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final ModelSerializationHints hints) {
+      return createChildContext(propertyType, propertyType, hints);
+  }
+  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final Class<? extends Model> componentType, final ModelSerializationHints hints) {
     final ModelService svc = getService();
     final ModelDeserializationContext ctx;
     // Always resolve the child's manifest; even if the parent has none, the child should not be "manifest-less"
-    final ModelManifest childType = svc.findManifest(propertyType);
+    final ModelManifest childType = svc.findManifest(componentType);
     ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
     // Propagate hints consistently
     ctx.setKeyOnly(hints.isKeyOnly());
     ctx.setClientToServer(hints.isClientToServer());
-//
-//      if (manifest == null) {
-//        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, getManifest());
-//    } else {
-//        final ModelManifest childType = svc.findManifest(propertyType);
-//        ctx = new ModelDeserializationContext(svc.create(propertyType), svc, childType);
-//        ctx.setKeyOnly(hints.isKeyOnly());
-//        ctx.setClientToServer(hints.isClientToServer());
-//    }
     ctx.subModel = true;
     return ctx;
   }

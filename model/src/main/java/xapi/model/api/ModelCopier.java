@@ -28,7 +28,7 @@ public class ModelCopier {
                 }
                 if (Model.class.isAssignableFrom(propType)) {
                     Model myModel = (Model) myVal;
-                    assert propType == myModel.getPropertyType(e.getKey());
+                    assert propType == model.getPropertyType(e.getKey());
                     // perform deeper absorb, to avoid clearing references...
                     myModel.absorb((Model) yourVal, append);
                     return;

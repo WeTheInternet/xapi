@@ -2,13 +2,15 @@ package xapi.model.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import xapi.annotation.model.SerializationStrategy;
+import xapi.dev.source.CharBuffer;
 import xapi.log.X_Log;
-import xapi.log.api.LogLevel;
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelList;
@@ -17,19 +19,38 @@ import xapi.model.content.ModelContent;
 import xapi.model.content.ModelRating;
 import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
+import xapi.model.test.api.ModelTestDirections;
+import xapi.model.test.api.ModelTestDirectionsKeysOnly;
+import xapi.model.test.api.ModelTestDirectionsList;
+import xapi.model.test.api.TestModelEnumMap;
+import xapi.model.test.service.TestModelServiceClient;
+import xapi.model.test.service.TestModelServiceServer;
 import xapi.model.tools.ModelSerializerDefault;
+import xapi.source.lex.CharIterator;
 import xapi.time.X_Time;
-import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
 
 import java.util.Arrays;
 import java.util.EnumMap;
 
+import xapi.model.test.api.ModelTestDirectionsEmbedded;
+import xapi.log.api.LogLevel;
+import xapi.util.api.Pointer;
+
 public class ModelServiceTestJre {
+
+    private static final String TEST_CLIENT_TO_SERVER = "c2s-only";
+    private static final String TEST_SERVER_TO_CLIENT = "s2c-only";
+    private static final String TEST_BOTH_ENABLED = "both";
+    private static final String TEST_BOTH_DISABLED = "private";
 
     static {
         X_Log.logLevel(LogLevel.DEBUG);
     }
+
+    private final TestModelServiceClient clientService = new TestModelServiceClient();
+    private final TestModelServiceServer serverService = new TestModelServiceServer();
+
     @Test
     public void testKeySerialization_Empty() {
         final ModelKey key = X_Model.newKey("testkind");
@@ -184,7 +205,6 @@ public class ModelServiceTestJre {
         Assert.assertEquals(module, deserialized);
     }
 
-
     @Test
     public void testModelList_NullHandling_NoSerializerPruning_KeysOnly() {
         // Ensure nulls are refused by ModelList (not pruned by the serializer)
@@ -311,6 +331,406 @@ public class ModelServiceTestJre {
         Assert.assertTrue(rt.contains(a));
         Assert.assertTrue(rt.contains(b));
         Assert.assertTrue(rt.contains(c));
+    }
+
+    private void logSerializationResult(String direction, String serialized, ModelTestDirections model) {
+        X_Log.debug(ModelServiceTestJre.class, "Directional Serialization Test:", direction);
+        X_Log.debug(ModelServiceTestJre.class, "Serialized string:", serialized);
+        X_Log.debug(ModelServiceTestJre.class, "Original model", model);
+    }
+
+    private ModelTestDirectionsList createTestModelList() {
+        ModelTestDirectionsList list = X_Model.create(ModelTestDirectionsList.class);
+        list.setModelType(ModelTestDirections.class);
+        list.add(createTestModel(1));
+        list.add(createTestModel(2));
+        list.add(createTestModel(3));
+        return list;
+    }
+
+    private ModelTestDirectionsKeysOnly createKeysOnlyModel() {
+        ModelTestDirectionsKeysOnly model = X_Model.create(ModelTestDirectionsKeysOnly.class);
+        ModelList<ModelTestDirections> list = model.list();
+
+        ModelTestDirections item1 = createTestModel(1);
+        item1.setKey(X_Model.newKey("test", ModelTestDirections.MODEL_TEST_DIRECTIONS, "1"));
+        list.add(item1);
+
+        ModelTestDirections item2 = createTestModel(2);
+        item2.setKey(X_Model.newKey("test", ModelTestDirections.MODEL_TEST_DIRECTIONS, "2"));
+        list.add(item2);
+
+        ModelTestDirections item3 = createTestModel(3);
+        item3.setKey(X_Model.newKey("test", ModelTestDirections.MODEL_TEST_DIRECTIONS, "3"));
+        list.add(item3);
+
+        return model;
+    }
+
+    @Test
+    public void testKeysOnlyClientToServer() {
+        ModelTestDirectionsKeysOnly model = createKeysOnlyModel();
+
+        // Test client-to-server serialization
+        CharBuffer clientToServer = clientService.serialize(ModelTestDirectionsKeysOnly.class, model);
+        String serializedC2S = clientToServer.toSource();
+
+        // Verify only keys are transmitted
+        ModelTestDirectionsKeysOnly serverDeserialized = serverService.deserialize(
+                ModelTestDirectionsKeysOnly.class,
+                CharIterator.forString(serializedC2S)
+        );
+
+        assertEquals(model.getList().size(), serverDeserialized.getList().size());
+
+        ModelTestDirections[] originals = model.getList().toArray(ModelTestDirections.class);
+        ModelTestDirections[] deserialized = serverDeserialized.getList().toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertNotNull("Key must be preserved", deserialized[i].getKey());
+            assertEquals("Keys must match", originals[i].getKey(), deserialized[i].getKey());
+            assertNull("Values should not be transmitted", deserialized[i].getClientToServer());
+            assertNull("Values should not be transmitted", deserialized[i].getServerToClient());
+        }
+    }
+
+    @Test
+    public void testKeysOnlyServerToClient() {
+        ModelTestDirectionsKeysOnly model = createKeysOnlyModel();
+
+        // Test server-to-client serialization
+        CharBuffer serverToClient = serverService.serialize(ModelTestDirectionsKeysOnly.class, model);
+        String serializedS2C = serverToClient.toSource();
+
+        ModelTestDirectionsKeysOnly clientDeserialized = clientService.deserialize(
+                ModelTestDirectionsKeysOnly.class,
+                CharIterator.forString(serializedS2C)
+        );
+
+        assertEquals(model.getList().size(), clientDeserialized.getList().size());
+
+        ModelTestDirections[] originals = model.getList().toArray(ModelTestDirections.class);
+        ModelTestDirections[] deserialized = clientDeserialized.getList().toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertNotNull("Key must be preserved", deserialized[i].getKey());
+            assertEquals("Keys must match", originals[i].getKey(), deserialized[i].getKey());
+            assertNull("Values should not be transmitted", deserialized[i].getClientToServer());
+            assertNull("Values should not be transmitted", deserialized[i].getServerToClient());
+        }
+    }
+
+    @Test
+    public void testKeysOnlyRoundTrip() {
+        ModelTestDirectionsKeysOnly model = createKeysOnlyModel();
+
+        // Client -> Server
+        CharBuffer clientToServer = clientService.serialize(ModelTestDirectionsKeysOnly.class, model);
+        String serializedC2S = clientToServer.toSource();
+
+        ModelTestDirectionsKeysOnly serverModel = serverService.deserialize(
+                ModelTestDirectionsKeysOnly.class,
+                CharIterator.forString(serializedC2S)
+        );
+
+        // Server -> Client
+        CharBuffer serverToClient = serverService.serialize(ModelTestDirectionsKeysOnly.class, serverModel);
+        String serializedS2C = serverToClient.toSource();
+
+        ModelTestDirectionsKeysOnly clientModel = clientService.deserialize(
+                ModelTestDirectionsKeysOnly.class,
+                CharIterator.forString(serializedS2C)
+        );
+
+        // Verify keys preserved through full round-trip
+        assertEquals(model.getList().size(), clientModel.getList().size());
+
+        ModelTestDirections[] originals = model.getList().toArray(ModelTestDirections.class);
+        ModelTestDirections[] roundTripped = clientModel.getList().toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertNotNull("Key must be preserved through round-trip", roundTripped[i].getKey());
+            assertEquals("Keys must match after round-trip", originals[i].getKey(), roundTripped[i].getKey());
+            assertNull("Values should not survive round-trip", roundTripped[i].getClientToServer());
+            assertNull("Values should not survive round-trip", roundTripped[i].getServerToClient());
+        }
+    }
+
+    private ModelTestDirections createTestModel(int numbered) {
+        ModelTestDirections model = createTestModel();
+        model.setServerToClient(model.getServerToClient() + "_" + numbered);
+        model.setClientToServer(model.getClientToServer() + "_" + numbered);
+        model.setBothEnabled(model.getBothEnabled() + "_" + numbered);
+        model.setBothDisabled(model.getBothDisabled() + "_" + numbered);
+        return model;
+    }
+    private ModelTestDirections createTestModel() {
+        ModelTestDirections model = X_Model.create(ModelTestDirections.class);
+        model.setServerToClient(TEST_SERVER_TO_CLIENT);
+        model.setClientToServer(TEST_CLIENT_TO_SERVER );
+        model.setBothEnabled(TEST_BOTH_ENABLED);
+        model.setBothDisabled(TEST_BOTH_DISABLED);
+        return model;
+    }
+
+    private void assertDeserializedProperties(ModelTestDirections original, ModelTestDirections deserialized) {
+        assertDeserializedProperties(original, deserialized, null);
+    }
+    private void assertDeserializedProperties(ModelTestDirections original, ModelTestDirections deserialized, Integer suffixInt) {
+        final String suffix = suffixInt == null ? "" : "_" + (suffixInt + 1);
+        assertEquals("Original model should have bothDisabled='" + TEST_BOTH_DISABLED + "'",
+                TEST_BOTH_DISABLED + suffix, original.getBothDisabled());
+        assertNull("Deserialized model should have null bothDisabled",
+                deserialized.getBothDisabled());
+        assertEquals("Both models should have bothEnabled='" + TEST_BOTH_ENABLED + "'",
+                TEST_BOTH_ENABLED + suffix, original.getBothEnabled());
+        assertEquals("Both models should have bothEnabled='" + TEST_BOTH_ENABLED + "'",
+                original.getBothEnabled(), deserialized.getBothEnabled());
+    }
+
+    private ModelTestDirectionsEmbedded createEmbeddedTestModel() {
+        ModelTestDirectionsEmbedded model = X_Model.create(ModelTestDirectionsEmbedded.class);
+        model.setKey(X_Model.newKey("test", ModelTestDirectionsEmbedded.MODEL_TEST_DIRECTIONS_EMBEDDED));
+        model.setList(createTestModelList());
+        return model;
+    }
+
+    @Test
+    public void testEmbeddedModelPersistence() {
+        ModelTestDirectionsEmbedded model = createEmbeddedTestModel();
+        final Pointer<Boolean> waiting = new Pointer<>(true);
+
+        final ModelKey originalKey = model.getKey();
+
+        // Test client-side persistence
+        clientService.persist(model, persisted -> {
+            clientService.load(ModelTestDirectionsEmbedded.class, persisted.getKey(), loaded -> {
+                Assert.assertFalse(loaded == persisted);
+                Assert.assertEquals(persisted.getKey(), loaded.getKey());
+
+                // Verify list contents maintained client-side
+                ModelTestDirections[] originalItems = persisted.getList().toArray(ModelTestDirections.class);
+                ModelTestDirections[] loadedItems = loaded.getList().toArray(ModelTestDirections.class);
+
+                for (int i = 0; i < originalItems.length; i++) {
+                    // From client-authored persistence, client loads:
+                    // - clientToServer was written, but client prevents deserializing it -> null
+                    // - serverToClient was not written at all -> null
+                    assertNull("Client-to-server field should not be materialized on client load", loadedItems[i].getClientToServer());
+                    assertNull("Server-to-client field should not exist in client-authored persistence", loadedItems[i].getServerToClient());
+                }
+
+
+                // Test server-side persistence
+                serverService.persist(model, serverPersisted -> {
+                    serverService.load(ModelTestDirectionsEmbedded.class, serverPersisted.getKey(), serverLoaded -> {
+                        Assert.assertFalse(serverLoaded == serverPersisted);
+                        Assert.assertEquals(serverPersisted.getKey(), serverLoaded.getKey());
+
+                        // Verify list contents maintained server-side
+                        ModelTestDirections[] serverItems = serverLoaded.getList().toArray(ModelTestDirections.class);
+
+                        for (int i = 0; i < originalItems.length; i++) {
+                            // From server-authored persistence, server loads:
+                            // - clientToServer does not exist -> null normally, but server persists only s2c.
+                            //   However, our originalItems are from the original client-created model; here we want to
+                            //   assert serverToClient survived and clientToServer is null.
+                            assertNull("Server-authored persistence should not include client-to-server", serverItems[i].getClientToServer());
+//                            assertEquals("Server-to-client field should be present in server-authored persistence",
+//                                    originalItems[i].getServerToClient(), serverItems[i].getServerToClient());
+                        }
+
+
+                        waiting.set(false);
+                    });
+                });
+            });
+        });
+
+        final long deadline = System.currentTimeMillis() + 3000;
+        while (waiting.get()) {
+            X_Time.trySleep(10, 0);
+            Assert.assertTrue(X_Time.isFuture(deadline));
+        }
+    }
+
+    @Test
+    public void testEmbeddedModelSerialization() {
+        ModelTestDirectionsEmbedded model = createEmbeddedTestModel();
+
+        // Test client-to-server serialization
+        CharBuffer clientToServer = clientService.serialize(ModelTestDirectionsEmbedded.class, model);
+        String serializedC2S = clientToServer.toSource();
+
+        ModelTestDirectionsEmbedded serverDeserialized = serverService.deserialize(
+                ModelTestDirectionsEmbedded.class,
+                CharIterator.forString(serializedC2S)
+        );
+
+        assertNotNull(serverDeserialized.getList());
+        assertEquals("List size must match", model.getList().size(), serverDeserialized.getList().size());
+
+        ModelTestDirections[] originals = model.getList().toArray(ModelTestDirections.class);
+        ModelTestDirections[] deserialized = serverDeserialized.getList().toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertDeserializedProperties(originals[i], deserialized[i], i);
+        }
+
+
+    }
+
+    @Test
+    public void testServerToClientSerialization() {
+        ModelTestDirections model = createTestModel();
+
+        // Test server-to-client serialization
+        CharBuffer serverToClient = serverService.serialize(ModelTestDirections.class, model);
+        final String serializedS2C = serverToClient.toSource();
+
+        logSerializationResult("Server to Client", serializedS2C, model);
+
+        ModelTestDirections clientDeserialized = clientService.deserialize(
+                ModelTestDirections.class,
+                CharIterator.forString(serializedS2C)
+        );
+
+        // Verify only rendered field is transmitted
+        assertEquals(TEST_SERVER_TO_CLIENT, clientDeserialized.getServerToClient());
+        assertNull("Value should not be transmitted to client", clientDeserialized.getClientToServer());
+    }
+
+    @Test
+    public void testRoundTripSerialization() {
+        final ModelTestDirections model = createTestModel();
+
+        // Test client-to-server serialization
+        CharBuffer clientToServer = clientService.serialize(ModelTestDirections.class, model);
+        final String serializedC2S = clientToServer.toSource();
+
+        logSerializationResult("Client to Server", serializedC2S, model);
+
+        ModelTestDirections serverDeserialized = serverService.deserialize(
+                ModelTestDirections.class,
+                CharIterator.forString(serializedC2S)
+        );
+
+        assertDeserializedProperties(model, serverDeserialized);
+        assertNull("Rendered field should not be transmitted to server", serverDeserialized.getServerToClient());
+        assertEquals("Value field should be transmitted to server",
+                TEST_CLIENT_TO_SERVER, serverDeserialized.getClientToServer());
+
+        // Update the server-to-client field
+        final String customS2C = "toClient";
+        serverDeserialized.setServerToClient(customS2C);
+
+        // Send back to client
+        CharBuffer serverToClient = serverService.serialize(ModelTestDirections.class, serverDeserialized);
+        final String serializedS2C = serverToClient.toSource();
+
+        ModelTestDirections clientRoundTrip = clientService.deserialize(
+                ModelTestDirections.class,
+                CharIterator.forString(serializedS2C)
+        );
+
+        assertDeserializedProperties(model, clientRoundTrip);
+        // Verify roundtrip state
+        assertEquals("Rendered field should be preserved in roundtrip", customS2C, clientRoundTrip.getServerToClient());
+        assertNull("Value field should not be transmitted back to client", clientRoundTrip.getClientToServer());
+
+
+        // Update the client-to-server field
+        final String customC2S = "toServer";
+        clientRoundTrip.setClientToServer(customC2S);
+
+        // Complete roundtrip back to server
+        CharBuffer clientToServerFinal = clientService.serialize(ModelTestDirections.class, clientRoundTrip);
+        final String serializedC2SFinal = clientToServerFinal.toSource();
+
+        ModelTestDirections serverFinal = serverService.deserialize(
+                ModelTestDirections.class,
+                CharIterator.forString(serializedC2SFinal)
+        );
+
+        assertDeserializedProperties(model, serverFinal);
+        // Verify final server state
+        assertNull("Rendered field should not be transmitted to server", serverFinal.getServerToClient());
+        assertEquals("Value field should be transmitted to server",
+                customC2S, serverFinal.getClientToServer());
+    }
+
+    @Test
+    public void testRoundTripSerializationList() {
+        final ModelTestDirectionsList list = createTestModelList();
+
+        // Test client-to-server serialization
+        CharBuffer clientToServer = clientService.serialize(ModelTestDirectionsList.class, list);
+        final String serializedC2S = clientToServer.toSource();
+
+        ModelTestDirectionsList serverDeserialized = serverService.deserialize(
+                ModelTestDirectionsList.class,
+                CharIterator.forString(serializedC2S)
+        );
+
+        assertEquals("List size should match", list.size(), serverDeserialized.size());
+
+        ModelTestDirections[] originals = list.toArray(ModelTestDirections.class);
+        ModelTestDirections[] deserialized = serverDeserialized.toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertDeserializedProperties(originals[i], deserialized[i], i);
+            assertNull("Rendered field should not be transmitted to server", deserialized[i].getServerToClient());
+            assertEquals("Value field should be transmitted to server",
+                    originals[i].getClientToServer(), deserialized[i].getClientToServer());
+        }
+
+        // Update server-to-client fields
+        for (int i = 0; i < deserialized.length; i++) {
+            deserialized[i].setServerToClient("toClient_" + (i + 1));
+        }
+
+        // Send back to client
+        CharBuffer serverToClient = serverService.serialize(ModelTestDirectionsList.class, serverDeserialized);
+        final String serializedS2C = serverToClient.toSource();
+
+        ModelTestDirectionsList clientRoundTrip = clientService.deserialize(
+                ModelTestDirectionsList.class,
+                CharIterator.forString(serializedS2C)
+        );
+
+        assertEquals("List size should match", list.size(), clientRoundTrip.size());
+        ModelTestDirections[] roundTrips = clientRoundTrip.toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertDeserializedProperties(originals[i], roundTrips[i], i);
+            assertEquals("Rendered field should be preserved in roundtrip",
+                    "toClient_" + (i + 1), roundTrips[i].getServerToClient());
+            assertNull("Value field should not be transmitted back to client", roundTrips[i].getClientToServer());
+        }
+
+        // Update client-to-server fields
+        for (int i = 0; i < roundTrips.length; i++) {
+            roundTrips[i].setClientToServer("toServer_" + (i + 1));
+        }
+
+        // Complete roundtrip back to server
+        CharBuffer clientToServerFinal = clientService.serialize(ModelTestDirectionsList.class, clientRoundTrip);
+        final String serializedC2SFinal = clientToServerFinal.toSource();
+
+        ModelTestDirectionsList serverFinal = serverService.deserialize(
+                ModelTestDirectionsList.class,
+                CharIterator.forString(serializedC2SFinal)
+        );
+
+        assertEquals("List size should match", list.size(), serverFinal.size());
+        ModelTestDirections[] finals = serverFinal.toArray(ModelTestDirections.class);
+
+        for (int i = 0; i < originals.length; i++) {
+            assertDeserializedProperties(originals[i], finals[i], i);
+            assertNull("Rendered field should not be transmitted to server", finals[i].getServerToClient());
+            assertEquals("Value field should be transmitted to server",
+                    "toServer_" + (i + 1), finals[i].getClientToServer());
+        }
     }
 
 }

@@ -254,7 +254,6 @@ public abstract class AbstractModelService implements ModelService
     return stringType == null ? null : findManifest(stringType);
   }
   protected ModelManifest findManifest(final String type) {
-
     return null;
   }
 

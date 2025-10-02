@@ -16,6 +16,7 @@ main.java.setSrcDirs([]);
 main.resources.setSrcDirs([]);
 test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
+main.java.srcDir("$rootDir/model/src/jreTestTools/java")
 
 dependencies {
     api project(path: ":util-main")

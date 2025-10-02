@@ -1,4 +1,4 @@
-package xapi.model.test;
+package xapi.model.test.api;
 
 import xapi.annotation.model.IsModel;
 import xapi.annotation.model.SerializationStrategy;

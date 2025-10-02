@@ -71,6 +71,8 @@
                         project: { ":dev:template" : main },
                         @transitive(test)
                         external : "junit:junit:4.13",
+                        @transitive(test)
+                        project : { "model" : "jre:testTools" },
 
                     }
                 /main>,

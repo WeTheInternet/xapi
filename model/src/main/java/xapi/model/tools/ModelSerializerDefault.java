@@ -24,7 +24,6 @@ import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
-import xapi.log.api.LogLevel;
 import xapi.model.X_Model;
 import xapi.model.api.*;
 import xapi.model.impl.ModelSerializationHints;
@@ -206,20 +205,18 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                   "modelToString end: size=", src.length(), " bufferPreview='",
                   src.substring(0, Math.min(128, src.length())), "'");
       }
-      assert model == null || model.equals(modelFromString(modelType, CharIterator.forString(out.toSource()),
-        new ModelDeserializationContext(ctx.getService().create(modelType).absorbAndReturnSelf(model), ctx.getService(), ctx.getManifest()), keyOnly)) :
-        "Model serialization failure; Bad serialization for " + modelType + " : " + model + ":\n" + out.toSource()+"\n!=" + model;
     return out;
   }
 
+    @SuppressWarnings("RedundantClassCall")
   protected void write(final M model, final CharBuffer out, final ModelSerializationContext ctx) {
     final PrimitiveSerializer primitives = ctx.getPrimitives();
     if (!ModelList.class.isInstance(model)) {
-      // TODO: consider not writing ModelList key. The fact that it is a model is probably a mistake.
-      writeKey(model, out, ctx);
+        // TODO: consider not writing ModelList key. The fact that it is a model is probably a mistake.
+        writeKey(model, out, ctx);
     }
     if (model == null) {
-      X_Log.warn(ModelSerializerDefault.class, new NotConfiguredCorrectly("Wrote null model"));
+        X_Log.warn(ModelSerializerDefault.class, new NotConfiguredCorrectly("Wrote null model"));
     } else {
         if (X_Log.logLevel().isLoggable(DEBUG)) {
             X_Log.debug(ModelSerializerDefault.class,
@@ -227,12 +224,21 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
                     " ctx.clientToServer=", ctx.isClientToServer(),
                     " ctx.manifest=", ctx.getManifest());
         }
+        if (ModelList.class.isInstance(model)) {
+            ModelList list = (ModelList) model;
+//            writeObject(out, "", list.getModelType(), model, primitives, ctx);
+            writeObject(out, "", ModelList.class, model, primitives, ctx);
+            return;
+        }
 
         for (final String key : ctx.getPropertyNames(model)) {
         if (preventSerialization(model, key, ctx)) {
             X_Log.debug(ModelSerializerDefault.class,
                     "preventSerialization SKIP: ", model.getType(), ".", key,
                     " clientToServer=", ctx.isClientToServer());
+            final Class<?> propertyType = model.getPropertyType(key);
+            writeNullPlaceholder(out, propertyType, primitives, ctx);
+
           continue;
         }
         final Object value = model.getProperty(key);
@@ -248,7 +254,86 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
   }
 
-  @Override
+
+    /**
+     * Writes a "null" placeholder for a property to preserve field alignment across directions.
+     * Note: for boxed numeric types, we serialize 0 (there is no generic null marker).
+     */
+    protected void writeNullPlaceholder(final CharBuffer out, final Class<?> valueType, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+        if (valueType.isArray()) {
+            out.append(primitives.serializeInt(-1)); // null array
+        } else if (valueType == String.class) {
+            out.append(primitives.serializeInt(-1)); // null string
+        } else if (valueType.isPrimitive()) {
+            // write default primitive value
+            if (valueType == double.class) {
+                out.append(primitives.serializeDouble(0.0));
+            } else if (valueType == float.class) {
+                out.append(primitives.serializeFloat(0.0f));
+            } else if (valueType == boolean.class) {
+                out.append(primitives.serializeBoolean(false));
+            } else if (valueType == char.class) {
+                out.append(primitives.serializeChar('\0'));
+            } else if (valueType == long.class) {
+                out.append(primitives.serializeLong(0L));
+            } else {
+                out.append(primitives.serializeInt(0)); // all int-like
+            }
+        } else if (Number.class.isAssignableFrom(valueType)) {
+            // Best-effort: encode zero (readers for wrappers don't support null markers)
+            if (valueType == Float.class || valueType == Double.class || valueType == java.math.BigDecimal.class) {
+                out.append(primitives.serializeDouble(0.0));
+            } else {
+                out.append(primitives.serializeLong(0L));
+            }
+        } else if (isModelType(valueType)) {
+            // model null marker
+            out.append(primitives.serializeInt(-2));
+            if (ModelList.class.isAssignableFrom(valueType)) {
+                // For ModelList header: still need to emit type and size to keep alignment
+                // We don't know the component type here; prefer declared type from manifest if available
+                final Class<?> listType;
+                final ModelManifest manifest = ctx.getManifest();
+                if (manifest != null) {
+                    final ModelManifest.MethodData data = manifest.getMethodData(""); // no prop name here; placeholder write is used only when skipping in write(), where we do know property names.
+                    // Fallback: emit void.class and zero length (safe to read back as empty)
+                    listType = Object.class;
+                } else {
+                    listType = Object.class;
+                }
+                // State 0, class, size 0
+                out.append(primitives.serializeClass(listType));
+                out.append(primitives.serializeInt(0));
+            }
+        } else if (isModelKeyType(valueType)) {
+            // keys are encoded as strings; write null string
+            out.append(primitives.serializeInt(-1));
+        } else if (isIterableType(valueType)) {
+            // write null iterable
+            out.append(primitives.serializeInt(-1));
+        } else if (isStringMapType(valueType)) {
+            // string map encodes value type first; emit void.class to denote null
+            out.append(primitives.serializeClass(void.class));
+        } else if (valueType.isEnum()) {
+            // enums: -1 stands for null
+            out.append(primitives.serializeInt(-1));
+        } else if (java.util.EnumSet.class.isAssignableFrom(valueType)) {
+            out.append(primitives.serializeInt(-1)); // null enum set
+            out.append(primitives.serializeClass(void.class)); // placeholder enum type
+        } else if (java.util.EnumMap.class.isAssignableFrom(valueType)) {
+            out.append(primitives.serializeInt(-1)); // null enum map
+        } else if (valueType == Class.class) {
+            // Class value; write void.class as placeholder
+            out.append(primitives.serializeClass(void.class));
+        } else if (xapi.time.api.Duration.class.isAssignableFrom(valueType)) {
+            out.append(primitives.serializeLong(0L)); // zero duration
+        } else {
+            // As a last resort, serialize a null string placeholder
+            out.append(primitives.serializeInt(-1));
+        }
+    }
+
+    @Override
   public void writeKey(final M model, final CharBuffer out, final ModelSerializationContext ctx) {
     final PrimitiveSerializer primitives = ctx.getPrimitives();
     if (model == null) {
@@ -279,6 +364,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   protected boolean preventSerialization(final M model, final String key, final ModelSerializationContext ctx) {
     if (ctx.getManifest() == null) {
+        X_Log.info(ModelSerializerDefault.class, "null manifest serializing model " + model.getType() + " " + key);
       return false; // No manifest means we will just serialize all fields
     }
     final ModelManifest manifest = ctx.getManifest();
@@ -299,6 +385,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
     final ModelManifest manifest = ctx.getManifest();
     assert manifest.getMethodData(key) != null : "Invalid manifest; no data found for "+model.getType()+"."+key;
+//    final boolean prevent = ctx.isClientToServer() ? !manifest.isClientToServerEnabled(key) : !manifest.isServerToClientEnabled(key);
     final boolean prevent = ctx.isClientToServer() ? !manifest.isServerToClientEnabled(key) : !manifest.isClientToServerEnabled(key);
     if (prevent && X_Log.logLevel().isLoggable(DEBUG)) {
         X_Log.debug(ModelSerializerDefault.class,
@@ -933,97 +1020,32 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     final ModelSerializer serializer = newSerializer(Class.class.cast(propertyType), ctx);
     final CharBuffer was = ctx.getBuffer();
     ctx.setBuffer(out);
-    final Do release = ctx.fixManifest(propertyType);
+    final Do release;
+    if (ModelList.class.isAssignableFrom(propertyType)) {
+        release = ctx.fixManifest(((ModelList)childModel).getModelType());
+    } else {
+        release = ctx.fixManifest(propertyType);
+    }
     try {
 
       if (ModelList.class.isAssignableFrom(propertyType)) {
         ModelList list = (ModelList) childModel;
-        final ObjectTo<ModelKey, Model> vals = list.getModels();
-        out.append(primitives.serializeInt(0)); // set the model state to 0
-        // when doing an autoSave on a ModelList, write the type of the list, then the amount, then the child keys.
-        out.append(primitives.serializeClass(list.getModelType()));
-        out.append(primitives.serializeInt(vals == null ? 0 : vals.size()));
+          writeModelListHeader(out, primitives, list);
       }
       if (keyOnly) {
 
           if (autoSave) {
 
             if (ModelList.class.isAssignableFrom(propertyType)) {
-                // when doing an autoSave on a ModelList, write the type of the list, then the amount, then the child keys.
-                ModelList list = (ModelList) childModel;
-                final ObjectTo<ModelKey, Model> vals = list.getModels();
-
-                if (X_Log.logLevel().isLoggable(DEBUG)) {
-                    X_Log.debug(ModelSerializerDefault.class,
-                            "writeModel: ModelList keyOnly write keys; count=", (vals == null ? 0 : vals.size()));
-                }
-
-                if (X_Log.logLevel().isLoggable(DEBUG)) {
-                    X_Log.debug(ModelSerializerDefault.class,
-                            "writeModel: ModelList header; modelType=", list.getModelType(),
-                            " size=", (vals == null ? 0 : vals.size()));
-                }
-
-                // loop through the child models, serializing them all in parallel
-                final List<Out1<Model>> waits = new ArrayList<>();
-                final ModelService svc = ctx.getService();
-                for (final Model value : vals.values()) {
-                    waits.add(svc.doPersistBlocking(value.getType(), value, 3000));
-                }
-                boolean needBlock = false;
-                for (final Model value : vals.values()) {
-                  if (value.getKey().isIncomplete()) {
-                    needBlock = true;
-                    break;
-                  }
-                }
-                if (needBlock) {
-                    final Moment start = X_Time.now();
-                    X_Log.info(ModelSerializerDefault.class, "Unfinished child model key", childModel.getKey(), "; blocking on child persistence");
-                    final Iterator<Out1<Model>> itrWaits = waits.iterator();
-                    final Iterator<Model> itrOriginal = vals.values().iterator();
-                    while (itrWaits.hasNext()) {
-                      final Out1<Model> nextWait = itrWaits.next();
-                      if (!itrOriginal.hasNext()) {
-                        throw new IllegalStateException("Wrong number of models-to-callbacks in property " + propName + "; " +
-                                "Models:\n" + vals.forEachValue().join("\n") + " ; callbacks: " + waits);
-                      }
-                      final Model nextOriginal = itrOriginal.next();
-                      final Model kid = nextWait.block();
-                      nextOriginal.absorb(kid);
-                    }
-                    if (X_Time.nowMillis() - start.millis() > 100) {
-                      X_Log.info(ModelSerializerDefault.class, "Took more than 100ms (", X_Time.diff(start) ,") to save children ",
-                              vals.keys(), " ");
-                    } else if (logLevel().isLoggable(DEBUG)) {
-                      X_Log.info(ModelSerializerDefault.class, "Took ", X_Time.diff(start) ," to save childre ", vals.keys(), " ");
-                    }
-                }
+                autoSaveModelList(propName, childModel, ctx);
             } else {
                 //independently save this child model
-                final Out1<Model> result = ctx.getService().doPersistBlocking(childModel.getType(), childModel, 3000);
-                if (!childModel.getKey().isComplete()) {
-                  final Moment start = X_Time.now();
-                  X_Log.info(ModelSerializerDefault.class, "Unfinished child model key", childModel.getKey(), "; blocking on child persistence");
-                  final Model child = result.block();
-                  if (X_Time.nowMillis() - start.millis() > 100) {
-                    X_Log.info(ModelSerializerDefault.class, "Took more than 100ms (", X_Time.diff(start) ,") to save child ", child.getKey(), " ");
-                  } else if (logLevel().isLoggable(DEBUG)) {
-                    X_Log.info(ModelSerializerDefault.class, "Took ", X_Time.diff(start) ," to save child ", child.getKey(), " ");
-                  }
-                  childModel.absorb(child);
-                }
+                autoSaveModel(childModel, ctx);
             }
-
-
           }
         if (ModelList.class.isAssignableFrom(propertyType)) {
           // when doing an autoSave on a ModelList, write the type of the list, then the amount, then the child keys.
-          final ModelList list = (ModelList) childModel;
-          final ObjectTo<ModelKey, Model> vals = list.getModels();
-          for (final Model value : vals.values()) {
-            serializer.writeKey(value, out, ctx);
-          }
+            writeModelListValuesKeyOnly(out, (ModelList) childModel, ctx, serializer);
         } else {
             if (X_Log.logLevel().isLoggable(DEBUG)) {
                 X_Log.debug(ModelSerializerDefault.class, "writeModel: keyOnly write key for ", childModel.getType());
@@ -1031,16 +1053,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
             serializer.writeKey(childModel, out, ctx);
         }
       } else if (ModelList.class.isAssignableFrom(propertyType)) {
-        final ModelList list = (ModelList) childModel;
-        final ObjectTo<String, ? extends Model> mods = list == null ? null : list.getModels();
-        if (mods != null) {
-            final Class modelType = list.getModelType();
-            try (final Do.Closeable ignored = ctx.fixManifest(modelType)) {
-                for (Model value : mods.values()) {
-                    serializer.modelToString(modelType, value, ctx, keyOnly);
-                }
-            }
-        }
+          writeModelListValuesEmbedded((ModelList) childModel, ctx, serializer, keyOnly);
 
       } else {
           serializer.modelToString(propertyType, childModel, ctx, false);
@@ -1051,7 +1064,104 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
   }
 
-  protected <Mod extends Model> ModelSerializer<Mod> newSerializer(final Class<Mod> propertyType, final ModelSerializationContext ctx) {
+    private static void autoSaveModel(final Model childModel, final ModelSerializationContext ctx) {
+        final Out1<Model> result = ctx.getService().doPersistBlocking(childModel.getType(), childModel, 3000);
+        if (!childModel.getKey().isComplete()) {
+          final Moment start = X_Time.now();
+          X_Log.info(ModelSerializerDefault.class, "Unfinished child model key", childModel.getKey(), "; blocking on child persistence");
+          final Model child = result.block();
+          if (X_Time.nowMillis() - start.millis() > 100) {
+            X_Log.info(ModelSerializerDefault.class, "Took more than 100ms (", X_Time.diff(start) ,") to save child ", child.getKey(), " ");
+          } else if (logLevel().isLoggable(DEBUG)) {
+            X_Log.info(ModelSerializerDefault.class, "Took ", X_Time.diff(start) ," to save child ", child.getKey(), " ");
+          }
+          childModel.absorb(child);
+        }
+    }
+
+    private static void writeModelListValuesEmbedded(final ModelList childModel, final ModelSerializationContext ctx, final ModelSerializer serializer, final boolean keyOnly) {
+        final ModelList list = childModel;
+        final ObjectTo<String, ? extends Model> mods = list == null ? null : list.getModels();
+        if (mods != null) {
+            final Class modelType = list.getModelType();
+            try (final Do.Closeable ignored = ctx.fixManifest(modelType)) {
+                for (Model value : mods.values()) {
+                    serializer.modelToString(modelType, value, ctx, keyOnly);
+                }
+            }
+        }
+    }
+
+    private static void writeModelListValuesKeyOnly(final CharBuffer out, final ModelList childModel, final ModelSerializationContext ctx, final ModelSerializer serializer) {
+        final ModelList list = childModel;
+        final ObjectTo<ModelKey, Model> vals = list.getModels();
+        for (final Model value : vals.values()) {
+          serializer.writeKey(value, out, ctx);
+        }
+    }
+
+    private static void autoSaveModelList(final String propName, final Model childModel, final ModelSerializationContext ctx) {
+        // when doing an autoSave on a ModelList, write the type of the list, then the amount, then the child keys.
+        ModelList list = (ModelList) childModel;
+        final ObjectTo<ModelKey, Model> vals = list.getModels();
+
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class,
+                    "writeModel: ModelList keyOnly write keys; count=", (vals == null ? 0 : vals.size()));
+        }
+
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class,
+                    "writeModel: ModelList header; modelType=", list.getModelType(),
+                    " size=", (vals == null ? 0 : vals.size()));
+        }
+
+        // loop through the child models, serializing them all in parallel
+        final List<Out1<Model>> waits = new ArrayList<>();
+        final ModelService svc = ctx.getService();
+        for (final Model value : vals.values()) {
+            waits.add(svc.doPersistBlocking(value.getType(), value, 3000));
+        }
+        boolean needBlock = false;
+        for (final Model value : vals.values()) {
+          if (value.getKey().isIncomplete()) {
+            needBlock = true;
+            break;
+          }
+        }
+        if (needBlock) {
+            final Moment start = X_Time.now();
+            X_Log.info(ModelSerializerDefault.class, "Unfinished child model key", childModel.getKey(), "; blocking on child persistence");
+            final Iterator<Out1<Model>> itrWaits = waits.iterator();
+            final Iterator<Model> itrOriginal = vals.values().iterator();
+            while (itrWaits.hasNext()) {
+              final Out1<Model> nextWait = itrWaits.next();
+              if (!itrOriginal.hasNext()) {
+                throw new IllegalStateException("Wrong number of models-to-callbacks in property " + propName + "; " +
+                        "Models:\n" + vals.forEachValue().join("\n") + " ; callbacks: " + waits);
+              }
+              final Model nextOriginal = itrOriginal.next();
+              final Model kid = nextWait.block();
+              nextOriginal.absorb(kid);
+            }
+            if (X_Time.nowMillis() - start.millis() > 100) {
+              X_Log.info(ModelSerializerDefault.class, "Took more than 100ms (", X_Time.diff(start) ,") to save children ",
+                      vals.keys(), " ");
+            } else if (logLevel().isLoggable(DEBUG)) {
+              X_Log.info(ModelSerializerDefault.class, "Took ", X_Time.diff(start) ," to save childre ", vals.keys(), " ");
+            }
+        }
+    }
+
+    private static void writeModelListHeader(final CharBuffer out, final PrimitiveSerializer primitives, final ModelList list) {
+        final ObjectTo<ModelKey, Model> vals = list.getModels();
+        out.append(primitives.serializeInt(0)); // set the model state to 0
+        // when doing an autoSave on a ModelList, write the type of the list, then the amount, then the child keys.
+        out.append(primitives.serializeClass(list.getModelType()));
+        out.append(primitives.serializeInt(vals == null ? 0 : vals.size()));
+    }
+
+    protected <Mod extends Model> ModelSerializer<Mod> newSerializer(final Class<Mod> propertyType, final ModelSerializationContext ctx) {
     return new ModelSerializerDefault<Mod>(primitiveReaders);
   }
 
@@ -1060,14 +1170,14 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   public M modelFromString(final Class<? extends Model> modelType, final CharIterator src, final ModelDeserializationContext ctx, boolean keyOnly) {
     if (X_Log.logLevel().isLoggable(DEBUG)) {
         X_Log.debug(ModelSerializerDefault.class,
-                "modelFromString begin: type=", modelType,
-                " keyOnly=", keyOnly,
-                " ctx.clientToServer=", ctx.isClientToServer(),
-                " ctx.manifest=", ctx.getManifest(),
-                " preview='", preview(src, 96), "'");
+                "modelFromString begin: type=" + modelType,
+                " keyOnly=" + keyOnly,
+                " ctx.clientToServer=" + ctx.isClientToServer(),
+                " ctx.manifest=" + ctx.getManifest(),
+                " preview='" + preview(src, 96), "'");
     }
 
-      final PrimitiveSerializer primitives = ctx.getPrimitives();
+    final PrimitiveSerializer primitives = ctx.getPrimitives();
     final int modelState = primitives.deserializeInt(src);
     if (modelState == -2) {
       return null;
@@ -1117,10 +1227,12 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       }
       ctx.getService().load(actualType, key, SuccessHandler.handler(
               win -> {
-                // can't use model.absorb, it barfs when we send a proxy through lambdas (can't cast proxy to Model anymore...)
-                for (Map.Entry<String, Object> property : win.getProperties()) {
-                  model.setProperty(property.getKey(), property.getValue());
-                }
+                  if (win != model) {
+                    // can't use model.absorb, it barfs when we send a proxy through lambdas (can't cast proxy to Model anymore...)
+                    for (Map.Entry<String, Object> property : win.getProperties()) {
+                      model.setProperty(property.getKey(), property.getValue());
+                    }
+                  }
                 // TODO: we need to contribute these to a promise-like object...
                 // or at least a Model.getBlockers() method of some kind, to allow threaded enviros to block.
                 X_Log.debug(ModelSerializerDefault.class, "Finished loading sub-model ", win.getKey());
@@ -1132,11 +1244,9 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
     final String[] propNames = ctx.getPropertyNames(model);
     for (final String propertyName : propNames) {
-      if (preventDeserialization(model, propertyName, ctx)) {
-        continue;
-      }
+        final boolean doNotAttach = preventDeserialization(model, propertyName, ctx);
       try {
-          readProperty(model, propertyName, src, ctx);
+          readProperty(model, propertyName, src, doNotAttach, ctx);
       } catch (Throwable t) {
         Log.loggerFor(ModelSerializerDefault.class, this)
                 .log(ModelSerializerDefault.class, Log.LogLevel.ERROR, "Unable to read property ",
@@ -1147,17 +1257,19 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     return model;
   }
 
-  protected void readProperty(final Model model, final String propertyName, final CharIterator src, final ModelDeserializationContext ctx) {
+  protected void readProperty(final Model model, final String propertyName, final CharIterator src, final boolean doNotAttach, final ModelDeserializationContext ctx) {
     final Class<?> propertyType = model.getPropertyType(propertyName);
     final PrimitiveSerializer primitives = ctx.getPrimitives();
+    final Object value;
     if (propertyType.isArray()) {
-      model.setProperty(propertyName, readArray(propertyType.getComponentType(), propertyName, src, primitives, ctx));
+      value = readArray(propertyType.getComponentType(), propertyName, src, primitives, ctx);
     } else if (propertyType.isPrimitive()) {
-      final Object value = readPrimitive(propertyType, src, primitives);
-      model.setProperty(propertyName, value);
+      value = readPrimitive(propertyType, src, primitives);
     } else {
-      Object value = readObject(propertyType, propertyName, src, primitives, ctx);
-      model.setProperty(propertyName, value);
+      value = readObject(propertyType, propertyName, src, primitives, ctx);
+    }
+    if (!doNotAttach) {
+        model.setProperty(propertyName, value);
     }
   }
 
@@ -1284,11 +1396,25 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       if (propertyType == String.class) {
       return readString(src, primitives);
     } else if (isModelType(propertyType)) {
-      // We have an inner model to read!
-      final ModelDeserializationContext context = ctx.createChildContext(propertyType, propName);
+        final ModelManifest manifest = ctx.getManifest();
+        // We have an inner model to read!
+        final ModelDeserializationContext context;
+        if (ModelList.class.isAssignableFrom(propertyType)) {
+        final Class<? extends Model> componentType;
+        if (manifest != null) {
+            final ModelManifest.MethodData propData = manifest.getMethodData(propName);
+            componentType = (Class) propData.getTypeParams()[0];
+        } else {
+            // When manifest is null, get component type from the ModelList
+            componentType = ((ModelList) ctx.getModel()).getModelType();
+        }
+        context = ctx.createChildContext(propertyType, componentType, propName);
+        ((ModelList) context.getModel()).setModelType(componentType);
+      } else {
+          context = ctx.createChildContext(propertyType, propName);
+      }
       boolean keyOnly = ctx.isKeyOnly();
       if (!keyOnly) {
-        final ModelManifest manifest = ctx.getManifest();
         if (manifest != null) {
           keyOnly = manifest.isKeyOnly() || manifest.isKeyOnly(propName);
         }

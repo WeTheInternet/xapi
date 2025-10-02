@@ -447,15 +447,24 @@ public class ModelManifest {
   }
 
   public boolean isClientToServerEnabled(final String name) {
+      if (name.isEmpty()) {
+          return true;
+      }
     return getMethodData(name).c2sEnabled;
   }
 
   public boolean isKeyOnly(final String name) {
+      if (name.isEmpty()) {
+          return false;
+      }
     final MethodData methodData = getMethodData(name);
     return methodData.keyOnly;
   }
 
   public boolean isAutoSave(final String name) {
+      if (name.isEmpty()) {
+          return false;
+      }
     final MethodData methodData = getMethodData(name);
     return methodData.autoSave;
   }
@@ -465,23 +474,38 @@ public class ModelManifest {
   }
 
   public boolean isServerToClientEnabled(final String name) {
+      if (name.isEmpty()) {
+          return true;
+      }
     return getMethodData(name).s2cEnabled;
   }
 
   public boolean isServerToClientEncrypted(final String name) {
+      if (name.isEmpty()) {
+          return false;
+      }
     return getMethodData(name).s2cEncrypted;
   }
 
   public boolean isSerializationObfuscated(final String name) {
+      if (name.isEmpty()) {
+          return false;
+      }
     return getMethodData(name).obfuscated;
   }
 
   public PersistenceStrategy getPersistenceStrategy(final String name) {
+      if (name.isEmpty()) {
+          return PersistenceStrategy.Local;
+      }
     return getMethodData(name).persistenceStrategy;
   }
 
   @SuppressWarnings("unchecked")
   public Class<? extends ValidatesValue<?>>[] getValidatorTypes(final String name) {
+      if (name.isEmpty()) {
+          return new Class[0];
+      }
     return getMethodData(name).validators.toArray(new Class[0]);
   }
 

@@ -138,7 +138,7 @@ public class ModelServiceGwtTest
 
             content.setKey(received.getKey());
 
-            assertArrayEquals(content.getChildren(), received.getChildren());
+            assertArrayEquals(content.getChildren().toArray(ModelContent.class), received.getChildren().toArray(ModelContent.class));
             assertArrayEquals(content.getRelated().toArray(ModelContent.class), received.getRelated().toArray(ModelContent.class));
             assertArrayEquals(content.getUpvotes(), received.getUpvotes());
             assertArrayEquals(content.getDownvotes(), received.getDownvotes());

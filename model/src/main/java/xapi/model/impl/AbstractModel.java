@@ -343,7 +343,8 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   }
 
   public static String toStringForModel(final Model m) {
-    final StringBuilder b = new StringBuilder(m.getType()+"(\n");
+    final String maybeNewline = System.getProperty("xapi.model.newline", "\n");
+    final StringBuilder b = new StringBuilder(m.getType()).append("(").append(maybeNewline);
     if (m.getKey() != null) {
       b.append("<").append(m.getKey()).append(">: ");
     }
@@ -357,7 +358,7 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
       }
       b.append('\t');
     }
-    return b.append("\n)").toString();
+    return b.append(maybeNewline).append(")").toString();
   }
   /**
    * @param b

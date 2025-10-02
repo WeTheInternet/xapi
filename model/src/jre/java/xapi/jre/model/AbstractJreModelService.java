@@ -439,7 +439,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     return new ModelInvocationHandler(modelClass);
   }
 
-  protected ModelManifest getOrMakeModelManifest(final Class<? extends Model> cls) {
+  public ModelManifest getOrMakeModelManifest(final Class<? extends Model> cls) {
     final ModelModule module = getModelModule();
     if (module != null) {
       final String typeName = getTypeName(cls);
