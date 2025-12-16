@@ -1,0 +1,137 @@
+<xapi-dsl
+  name        = "test-dsl"
+  packageName = "net.wti.complex"
+  version     = "0.2"
+  rootTag     = "root"
+  description = "Moderately complex test DSL with lists, maps, and listOrMap patterns."
+
+  elements = [
+
+    // Root element definition
+    <element-def
+      name        = "root"
+      description = "Root element of the test DSL."
+
+      attributes = {
+        // simple scalars
+        name        : <string  required = true />,
+        enabled     : <bool required = false default = true />,
+        version     : <string  required = false />,
+
+        // list of tags
+        tags        : <list
+                        element = <string />
+                        required = false
+                      />,
+
+        // "listOrMap" style: either an array of names or a map from name -> child config
+        children    : <list-or-map
+                        listElement = <element-ref name = "child" />
+                        mapValue    = <element-ref name = "child" />
+                        required    = false
+                      />
+      }
+
+      elements = {
+        // Allow nested <child> elements as direct children
+        child : <element-ref name = "child" />
+      }
+    /element-def>,
+
+    // Child element definition
+    <element-def
+      name        = "child"
+      description = "A child element inside root."
+
+      attributes = {
+        id          : <string  required = true />,
+        kind        : <enum
+                        required = false
+                        values   = [ "alpha", "beta", "gamma" ]
+                      />,
+
+        // list of labels
+        labels      : <list
+                        element  = <string />
+                        required = false
+                      />,
+
+        // map of arbitrary attributes (string -> string)
+        props       : <map
+                        keyType   = "string"
+                        valueType = "string"
+                        required  = false
+                      />
+      }
+
+      elements = {
+        // Child can contain an optional <config> element
+        config : <element-ref name = "config" />
+      }
+    /element-def>,
+
+    // Config element definition
+    <element-def
+      name        = "config"
+      description = "Per-child configuration blob."
+
+      attributes = {
+        // A 'settings' field that can be either:
+        // - a list of <setting> elements
+        // - a map from key -> <setting> element
+        settings : <list-or-map
+                     listElement = <element-ref name = "setting" />
+                     mapValue    = <element-ref name = "setting" />
+                     required    = false
+                   />,
+        // Raw JSON-ish config
+        raw      : <json required = false />
+      }
+
+      elements = {
+        setting : <element-ref name = "setting" />
+      }
+    /element-def>,
+
+    // Setting element definition
+    <element-def
+      name        = "setting"
+      description = "Key/value-style configuration entry."
+
+      attributes = {
+        key   : <string  required = true />,
+        value : <string  required = false />,
+        type  : <enum
+                  required = false
+                  values   = [ "string", "int", "bool", "json" ]
+                />
+      }
+
+      elements = { }
+    /element-def>,
+
+    // Example of a top-level collection element
+    <element-def
+      name        = "registry"
+      description = "A registry of named roots."
+
+      attributes = {
+        // Either:
+        //   roots = [ <root ... />, <root ... /> ]
+        // or
+        //   roots = { main: <root ... />, test: <root ... /> }
+        roots : <list-or-map
+                  listElement = <element-ref name = "root" />
+                  mapValue    = <element-ref name = "root" />
+                  required    = true
+                />
+      }
+
+      elements = {
+        // Also allow inline <root> children for convenience
+        root : <element-ref name = "root" />
+      }
+    /element-def>
+
+  ]
+/xapi-dsl>

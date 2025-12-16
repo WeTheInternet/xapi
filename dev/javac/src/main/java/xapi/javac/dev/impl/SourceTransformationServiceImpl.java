@@ -1,9 +1,9 @@
 package xapi.javac.dev.impl;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.ImportDeclaration;
+import net.wti.lang.parser.ast.PackageDeclaration;
+import net.wti.lang.parser.ast.expr.NameExpr;
 import com.sun.source.tree.CompilationUnitTree;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;

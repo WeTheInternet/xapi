@@ -1,13 +1,13 @@
 package xapi.test.elemental.bdd;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.expr.UiExpr;
-import com.github.javaparser.ast.plugin.UiTransformer;
-import com.github.javaparser.ast.stmt.BlockStmt;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiExpr;
+import net.wti.lang.parser.ast.plugin.UiTransformer;
+import net.wti.lang.parser.ast.stmt.BlockStmt;
 import com.sun.source.tree.CompilationUnitTree;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;

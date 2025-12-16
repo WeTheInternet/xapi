@@ -1,6 +1,6 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ast.expr.*;
+import net.wti.lang.parser.ast.expr.*;
 
 /**
  * A place to put extracted generic methods from UiTagGenerator (for reuse in non-ui related generators).

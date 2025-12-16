@@ -1,6 +1,6 @@
 package xapi.components.impl;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental.html.HTMLCollection;

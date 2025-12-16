@@ -1,8 +1,8 @@
 package xapi.server.api;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;

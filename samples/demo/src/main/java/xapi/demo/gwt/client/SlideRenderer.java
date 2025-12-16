@@ -1,11 +1,11 @@
 package xapi.demo.gwt.client;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
-import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.visitor.GenericVisitorAdapter;
 import de.mocra.cy.shared.ast.*;
 import xapi.demo.gwt.client.ui.BoxPosition;
 import xapi.demo.gwt.client.ui.BoxSize;

@@ -1,6 +1,6 @@
 package xapi.dev.api;
 
-import com.github.javaparser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.Expression;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.model.api.Model;

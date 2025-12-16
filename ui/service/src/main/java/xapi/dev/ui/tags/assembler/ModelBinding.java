@@ -1,7 +1,7 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.type.Type;
 import xapi.dev.lang.gen.GeneratedUiMember;
 
 /**

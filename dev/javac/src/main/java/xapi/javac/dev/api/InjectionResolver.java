@@ -1,6 +1,6 @@
 package xapi.javac.dev.api;
 
-import com.github.javaparser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.Expression;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import xapi.source.read.JavaModel.IsType;

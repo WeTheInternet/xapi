@@ -6,7 +6,7 @@ import net.wti.gradle.settings.api.*;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.tools.GradleFiles;
 import net.wti.gradle.tools.HasAllProjects;
-import net.wti.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
 import xapi.fu.*;
 import xapi.fu.log.Log;

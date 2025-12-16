@@ -1,7 +1,9 @@
 package xapi.dev.api;
 
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.JsonContainerExpr;
+import net.wti.lang.parser.ast.expr.JsonPairExpr;
 import xapi.collect.api.IntTo;
 import xapi.collect.simple.SimpleStack;
 import xapi.dev.lang.gen.ApiGeneratorContext;

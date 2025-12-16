@@ -1,12 +1,12 @@
 package xapi.dev.lang;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.expr.TemplateLiteralExpr;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.ApiGeneratorTools;
 import xapi.fu.Printable;

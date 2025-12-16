@@ -1,10 +1,8 @@
 package net.wti.gradle.schema.parser;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.visitor.CloneVisitor;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.require.api.DependencyKey;
 import net.wti.gradle.require.api.DependencyMap;
@@ -12,11 +10,11 @@ import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.*;
 import net.wti.gradle.schema.impl.DefaultSchemaPlatform;
-import net.wti.gradle.schema.map.*;
+import net.wti.gradle.schema.map.SchemaMap;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.system.service.GradleService;
+import net.wti.lang.parser.ast.expr.*;
 import org.gradle.api.GradleException;
-import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import xapi.fu.*;
@@ -36,7 +34,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.*;
 
-import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static net.wti.lang.parser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 import static net.wti.gradle.schema.api.QualifiedModule.UNKNOWN_VALUE;
 
 /**
@@ -211,15 +209,15 @@ public interface SchemaParser {
                     break;
                 case "name":
                     // the name of the root project, for use it paths
-                    meta.setName(attr.getStringExpression(false, true));
+                    meta.setName(attr.getString(false, true));
                     break;
                 case "group":
                     // the group of the project, for use in publishing / dependency references
-                    meta.setGroup(attr.getStringExpression(false, true));
+                    meta.setGroup(attr.getString(false, true));
                     break;
                 case "version":
                     // the group of the project, for use in publishing / dependency references
-                    meta.setVersion(attr.getStringExpression(false, true));
+                    meta.setVersion(attr.getString(false, true));
                     break;
                 case "require":
                 case "requires":

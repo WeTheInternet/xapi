@@ -1,6 +1,6 @@
 package xapi.jre.ui.impl;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import javafx.scene.control.Button;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;

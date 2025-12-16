@@ -1,9 +1,9 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.expr.AnnotationExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.lang.gen.ApiGeneratorContext;

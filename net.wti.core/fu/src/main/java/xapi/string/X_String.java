@@ -515,6 +515,16 @@ public class X_String {
     private static final String[] MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
+
+    public static String formatMonthDate(int month, int day) {
+        return MONTHS[month%12] + ", " + day;
+    }
+
+    public static String formatDayOfWeekDate(int dayOfWeek, int day) {
+        assert dayOfWeek < 7 : "Invalid dayOfWeek " + dayOfWeek + " expected 0-6 (sun-sat)";
+        return DAYS[dayOfWeek%7] + " " + numberWithOrdinal(day);
+    }
+
     /// Formats a timestamp into a human-readable format like "Mon, Jan 15, 2024 @ 9:30am"
     /// using Zeller's congruence formula to calculate the day of week
     ///

@@ -1,9 +1,8 @@
 package xapi.lang.parse
 
-import com.github.javaparser.JavaParser
-import com.github.javaparser.ast.expr.JsonContainerExpr
-import com.github.javaparser.ast.expr.UiAttrExpr
-import com.github.javaparser.ast.expr.UiContainerExpr
+import net.wti.lang.parser.JavaParser
+import net.wti.lang.parser.ast.expr.JsonContainerExpr
+import net.wti.lang.parser.ast.expr.UiContainerExpr
 import spock.lang.Specification
 
 /**

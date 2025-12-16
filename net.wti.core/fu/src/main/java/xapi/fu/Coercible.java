@@ -5,6 +5,7 @@ import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.ShouldOverride;
 import xapi.fu.has.HasResolution;
 
+import java.nio.file.Path;
 import java.util.Iterator;
 
 import static xapi.fu.Immutable.immutable1;
@@ -76,8 +77,9 @@ public interface Coercible {
         newline.map(s -> s + perIndent() ),
         emptyString
     );
-
-    if (obj instanceof Iterable){
+    if (obj instanceof Path) {
+        return obj.toString();
+    } else if (obj instanceof Iterable){
       Iterator i = ((Iterable)obj).iterator();
       if (i.hasNext()) {
         if (printEdges) {

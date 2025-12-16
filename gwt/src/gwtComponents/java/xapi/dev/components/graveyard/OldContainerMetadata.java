@@ -1,6 +1,6 @@
 package xapi.dev.components.graveyard;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.fifo.Fifo;
 import xapi.collect.api.StringTo;

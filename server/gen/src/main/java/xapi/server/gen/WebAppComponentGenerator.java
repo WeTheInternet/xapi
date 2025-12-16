@@ -1,6 +1,6 @@
 package xapi.server.gen;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;

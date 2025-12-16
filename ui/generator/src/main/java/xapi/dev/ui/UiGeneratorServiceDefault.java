@@ -1,7 +1,7 @@
 package xapi.dev.ui;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.api.ComponentBuffer;

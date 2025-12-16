@@ -1,6 +1,8 @@
 package xapi.time.impl;
 
 import xapi.annotation.inject.SingletonDefault;
+import xapi.time.api.TimeComponents;
+import xapi.time.api.TimeZoneInfo;
 import xapi.time.service.TimeService;
 
 import java.util.Date;
@@ -36,5 +38,22 @@ public class TimeServiceDefault extends AbstractTimeService {
     @Override
     public String timestampHuman(final double millis) {
         return timestamp(millis);
+    }
+
+    @Override
+    public double toStartOfWeek(final double epochMillis, final TimeZoneInfo zone) {
+        Date date = new Date((long) epochMillis);
+        // Get day of week (0-6, where 0 is Sunday)
+        @SuppressWarnings("deprecation")
+        int dayOfWeek = date.getDay();
+        // Calculate milliseconds to subtract to get to start of week (Sunday)
+        long millisToSubtract = dayOfWeek * 24L * 60L * 60L * 1000L;
+        // Subtract hours, minutes, seconds and millis of current day
+        @SuppressWarnings("deprecation")
+        long timeOfDay = (date.getHours() * 60L * 60L * 1000L) +
+                (date.getMinutes() * 60L * 1000L) +
+                (date.getSeconds() * 1000L) +
+                (long) epochMillis % 1000L;
+        return epochMillis - millisToSubtract - timeOfDay;
     }
 }

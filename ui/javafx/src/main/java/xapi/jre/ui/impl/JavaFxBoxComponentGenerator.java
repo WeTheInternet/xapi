@@ -1,8 +1,7 @@
 package xapi.jre.ui.impl;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import javafx.scene.layout.HBox;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import javafx.scene.layout.VBox;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;

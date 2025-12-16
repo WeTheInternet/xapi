@@ -1,11 +1,11 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.DynamicDeclarationExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.JsonContainerExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.Type;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 import xapi.collect.api.IntTo;

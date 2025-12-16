@@ -1,6 +1,6 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.api.UiComponentGenerator;

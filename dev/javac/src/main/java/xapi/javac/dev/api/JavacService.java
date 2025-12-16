@@ -1,6 +1,6 @@
 package xapi.javac.dev.api;
 
-import com.github.javaparser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.plugin.Transformer;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;

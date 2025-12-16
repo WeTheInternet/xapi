@@ -1,8 +1,8 @@
 package xapi.components.impl;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
 import elemental.dom.Element;
 import xapi.fu.In1Out1;
 import xapi.fu.Maybe;

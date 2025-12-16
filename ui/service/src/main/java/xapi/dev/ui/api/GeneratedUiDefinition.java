@@ -1,7 +1,7 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;

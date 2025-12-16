@@ -206,8 +206,13 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   protected final PrintBuffer createJavadoc() {
     if (javaDoc == null) {
       javaDoc = new PrintBuffer();
+      javaDoc.indent = origIndent;
     }
     return javaDoc;
+  }
+
+  public PrintBuffer getJavadoc() {
+      return createJavadoc();
   }
 
   public final Self setJavadoc(final String doc) {

@@ -1,8 +1,8 @@
 package xapi.test.server.bdd;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import cucumber.api.java.After;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;

@@ -395,6 +395,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             for (String sourceDir : moduleSourceDir.list()) {
                                 switch (sourceDir) {
                                     case "groovy":
+                                        out.addPlugin("groovy");
                                         main.access("groovy.srcDir(\"$2/$3\")",
                                                 moduleSourceDir.getPath().replace(rootDir, "$rootDir"),
                                                 sourceDir
@@ -430,6 +431,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             for (String sourceDir : moduleTestSourceDir.list()) {
                                 switch (sourceDir) {
                                     case "groovy":
+                                        out.addPlugin("groovy");
                                         test.access("groovy.srcDir(\"$2/$3\")",
                                                 moduleTestSourceDir.getPath().replace(rootDir, "$rootDir"),
                                                 sourceDir

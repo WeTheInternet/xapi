@@ -1,14 +1,14 @@
 package xapi.jre.ui.impl;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.LambdaExpr;
-import com.github.javaparser.ast.expr.MethodReferenceExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.Statement;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.body.Parameter;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.LambdaExpr;
+import net.wti.lang.parser.ast.expr.MethodReferenceExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.stmt.ExpressionStmt;
+import net.wti.lang.parser.ast.stmt.Statement;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;

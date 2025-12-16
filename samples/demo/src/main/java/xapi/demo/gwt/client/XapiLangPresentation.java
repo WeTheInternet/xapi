@@ -1,9 +1,9 @@
 package xapi.demo.gwt.client;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.exception.NotFoundException;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.exception.NotFoundException;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.components.impl.JsSupport;

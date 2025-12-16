@@ -1,16 +1,16 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.expr.MethodReferenceExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.MethodReferenceExpr;
+import net.wti.lang.parser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.expr.StringLiteralExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.components.graveyard.OldContainerMetadata;
 import xapi.fu.Maybe;
 
-import static com.github.javaparser.ASTHelper.extractAttrValue;
-import static com.github.javaparser.ASTHelper.extractStringValue;
+import static net.wti.lang.parser.ASTHelper.extractAttrValue;
+import static net.wti.lang.parser.ASTHelper.extractStringValue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

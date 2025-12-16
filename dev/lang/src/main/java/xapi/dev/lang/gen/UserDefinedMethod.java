@@ -1,11 +1,11 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.body.BodyDeclaration;
+import net.wti.lang.parser.ast.body.FieldDeclaration;
+import net.wti.lang.parser.ast.body.MethodDeclaration;
+import net.wti.lang.parser.ast.expr.DynamicDeclarationExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.type.Type;
 
 /**
  * A method created by a user via api= or impl= attributes.

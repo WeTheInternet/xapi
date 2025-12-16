@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.Expression;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 5/29/17.

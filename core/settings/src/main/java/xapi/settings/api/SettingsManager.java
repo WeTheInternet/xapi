@@ -1,6 +1,6 @@
 package xapi.settings.api;
 
-import com.github.javaparser.ast.expr.*;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.except.NotYetImplemented;
 import xapi.model.X_Model;
 import xapi.model.api.Model;

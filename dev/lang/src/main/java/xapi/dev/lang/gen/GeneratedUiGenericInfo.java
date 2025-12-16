@@ -1,6 +1,6 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ast.TypeParameter;
+import net.wti.lang.parser.ast.TypeParameter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.Maybe;

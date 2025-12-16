@@ -1,8 +1,8 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.lang.gen.GeneratedUiMember;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -21,7 +21,7 @@ import xapi.source.util.X_Modifier;
 import xapi.source.X_Source;
 import xapi.string.X_String;
 
-import static com.github.javaparser.ast.expr.AnnotationExpr.NULLABLE;
+import static net.wti.lang.parser.ast.expr.AnnotationExpr.NULLABLE;
 import static xapi.dev.ui.api.UiNamespace.*;
 import static xapi.source.util.X_Modifier.ABSTRACT;
 import static xapi.source.util.X_Modifier.PROTECTED;

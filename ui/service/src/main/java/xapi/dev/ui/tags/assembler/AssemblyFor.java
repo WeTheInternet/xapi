@@ -1,8 +1,8 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;

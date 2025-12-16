@@ -1,11 +1,11 @@
 package xapi.settings.impl;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ast.expr.JsonContainerExpr;
+import net.wti.lang.parser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.expr.StringLiteralExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import org.junit.Before;
 import org.junit.Test;
 import xapi.io.X_IO;
@@ -13,7 +13,6 @@ import xapi.settings.api.SettingsManager;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;

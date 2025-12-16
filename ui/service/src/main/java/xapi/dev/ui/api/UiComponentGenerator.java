@@ -1,8 +1,8 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.dev.lang.GeneratorAwareTransformer;
-import com.github.javaparser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.plugin.Transformer;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.ApiGeneratorTools;
 import xapi.dev.source.DomBuffer;

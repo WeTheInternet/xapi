@@ -1,16 +1,16 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.TypeArguments;
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.type.*;
-import com.github.javaparser.ast.type.PrimitiveType.Primitive;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.TypeArguments;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.body.Parameter;
+import net.wti.lang.parser.ast.stmt.ReturnStmt;
+import net.wti.lang.parser.ast.stmt.Statement;
+import net.wti.lang.parser.ast.type.*;
+import net.wti.lang.parser.ast.type.PrimitiveType.Primitive;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.lang.gen.AstMethodInvoker.AstMethodResult;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static net.wti.lang.parser.ast.expr.TemplateLiteralExpr.templateLiteral;
 import static xapi.fu.Immutable.immutable1;
 
 /**

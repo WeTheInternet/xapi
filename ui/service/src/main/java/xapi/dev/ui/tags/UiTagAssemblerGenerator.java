@@ -1,8 +1,8 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.BooleanLiteralExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.GeneratedJavaFile;
 import xapi.dev.lang.gen.GeneratedUiMember;

@@ -1,7 +1,7 @@
 package xapi.lang.oracle;
 
-import com.github.javaparser.ParseException;
-import com.github.javaparser.TokenMgrError;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.TokenMgrError;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.X_Fu;

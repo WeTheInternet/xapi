@@ -1,10 +1,10 @@
 package xapi.dev.elemental;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.plugin.UiTransformer;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.plugin.UiTransformer;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
 import xapi.fu.Debuggable;

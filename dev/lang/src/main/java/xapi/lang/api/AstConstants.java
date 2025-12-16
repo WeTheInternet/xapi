@@ -1,6 +1,6 @@
 package xapi.lang.api;
 
-import com.github.javaparser.ast.expr.*;
+import net.wti.lang.parser.ast.expr.*;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 8/9/18.

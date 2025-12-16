@@ -1,6 +1,6 @@
 package xapi.gradle.meta;
 
-import com.github.javaparser.ParseException;
+import net.wti.lang.parser.ParseException;
 import net.wti.gradle.internal.api.ProjectView;
 import net.wti.manifest.ManifestPlugin;
 import org.gradle.api.GradleException;

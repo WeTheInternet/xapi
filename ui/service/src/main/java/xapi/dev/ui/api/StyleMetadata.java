@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.CssContainerExpr;
+import net.wti.lang.parser.ast.expr.CssContainerExpr;
 
 import java.util.ArrayList;
 import java.util.Arrays;

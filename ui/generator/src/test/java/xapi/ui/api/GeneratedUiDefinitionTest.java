@@ -1,8 +1,8 @@
 package xapi.ui.api;
 
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.expr.AnnotationExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
 import org.junit.Test;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.UiGeneratorServiceDefault;

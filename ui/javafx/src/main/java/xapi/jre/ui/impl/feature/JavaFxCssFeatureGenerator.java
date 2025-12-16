@@ -1,10 +1,10 @@
 package xapi.jre.ui.impl.feature;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.CssContainerExpr;
-import com.github.javaparser.ast.expr.CssRuleExpr;
-import com.github.javaparser.ast.expr.CssSelectorExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.CssContainerExpr;
+import net.wti.lang.parser.ast.expr.CssRuleExpr;
+import net.wti.lang.parser.ast.expr.CssSelectorExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
 import xapi.collect.simple.SimpleStack;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;

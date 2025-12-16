@@ -1,7 +1,7 @@
 package xapi.jre.ui.impl.feature;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
 import javafx.geometry.Pos;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;

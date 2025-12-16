@@ -1,8 +1,8 @@
 package xapi.jre.ui.impl;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.api.UiComponentGenerator;

@@ -1,13 +1,13 @@
 package net.wti.gradle.schema.map;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.fu.In2;
 import xapi.fu.data.ListLike;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.java.X_Jdk;
 
-import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static net.wti.lang.parser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
 /**
  * An object-oriented facade over a {@code <preload />} xapi element:

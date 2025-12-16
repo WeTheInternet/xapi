@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.type.Type;
 import xapi.dev.lang.gen.GeneratedUiMember;
 
 /**

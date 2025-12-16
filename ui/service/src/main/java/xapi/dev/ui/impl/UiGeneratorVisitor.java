@@ -1,9 +1,9 @@
 package xapi.dev.ui.impl;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiBodyExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiBodyExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.api.UiComponentGenerator;

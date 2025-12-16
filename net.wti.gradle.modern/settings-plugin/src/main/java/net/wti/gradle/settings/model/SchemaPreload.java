@@ -1,14 +1,14 @@
 package net.wti.gradle.settings.model;
 
 
-import net.wti.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.fu.In2;
 import xapi.fu.data.ListLike;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.java.X_Jdk;
 
-import static net.wti.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static net.wti.lang.parser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
 ///
 /// An object-oriented facade over a {@code <preload />} xapi element:

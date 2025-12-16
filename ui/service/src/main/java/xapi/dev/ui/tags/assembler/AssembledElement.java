@@ -1,8 +1,8 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.dev.source.LocalVariable;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.ui.api.GeneratedUiBase;

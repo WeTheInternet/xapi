@@ -1,10 +1,10 @@
 package xapi.jre.ui.impl.feature;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.expr.BinaryExpr.Operator;
-import com.github.javaparser.ast.plugin.NodeTransformer;
-import com.github.javaparser.ast.plugin.Transformer;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.*;
+import net.wti.lang.parser.ast.expr.BinaryExpr.Operator;
+import net.wti.lang.parser.ast.plugin.NodeTransformer;
+import net.wti.lang.parser.ast.plugin.Transformer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;

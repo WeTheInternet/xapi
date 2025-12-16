@@ -1,7 +1,8 @@
 package com.github.javaparser
 
-import com.github.javaparser.ast.expr.JsonContainerExpr
-import com.github.javaparser.ast.expr.UiContainerExpr
+import net.wti.lang.parser.ast.expr.JsonContainerExpr
+import net.wti.lang.parser.ast.expr.UiContainerExpr
+import net.wti.lang.parser.JavaParser
 
 class ASTParserTest extends spock.lang.Specification {
     def "extra trailing comma works for json container with multiple pairs"() {

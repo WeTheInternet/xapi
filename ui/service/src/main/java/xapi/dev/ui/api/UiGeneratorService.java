@@ -1,8 +1,8 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.ReferenceType;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;

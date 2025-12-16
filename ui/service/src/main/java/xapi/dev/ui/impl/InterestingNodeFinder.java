@@ -1,10 +1,10 @@
 package xapi.dev.ui.impl;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.expr.UiExpr;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiExpr;
 import xapi.dev.ui.api.ComponentGraph;
 
 import java.util.ArrayList;

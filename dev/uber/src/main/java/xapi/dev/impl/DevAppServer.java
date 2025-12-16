@@ -1,7 +1,7 @@
 package xapi.dev.impl;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;

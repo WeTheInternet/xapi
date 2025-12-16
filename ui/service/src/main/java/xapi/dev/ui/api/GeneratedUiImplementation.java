@@ -1,9 +1,9 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.lang.gen.*;

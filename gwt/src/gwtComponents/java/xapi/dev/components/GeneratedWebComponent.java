@@ -1,8 +1,8 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.GeneratedTypeOwner;
 import xapi.dev.source.ClassBuffer;
@@ -25,7 +25,7 @@ import xapi.source.X_Source;
 
 import java.util.List;
 
-import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static net.wti.lang.parser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 import static xapi.fu.X_Fu.weakener;
 import static xapi.source.util.X_Modifier.PUBLIC;
 import static xapi.source.util.X_Modifier.STATIC;

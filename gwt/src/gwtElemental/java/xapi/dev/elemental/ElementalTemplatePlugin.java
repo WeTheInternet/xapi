@@ -1,13 +1,13 @@
 package xapi.dev.elemental;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.plugin.UiTranslatorPlugin;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.body.ClassOrInterfaceDeclaration;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.plugin.UiTranslatorPlugin;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.fu.Printable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;

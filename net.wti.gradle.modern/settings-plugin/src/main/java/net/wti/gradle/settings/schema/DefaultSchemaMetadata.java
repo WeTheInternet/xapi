@@ -2,9 +2,9 @@ package net.wti.gradle.settings.schema;
 
 
 import net.wti.gradle.settings.index.IndexNodePool;
-import net.wti.javaparser.ast.expr.Expression;
-import net.wti.javaparser.ast.expr.JsonPairExpr;
-import net.wti.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.JsonPairExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import net.wti.gradle.settings.api.DependencyType;
 import net.wti.gradle.settings.api.PlatformModule;
 import net.wti.gradle.settings.api.QualifiedModule;

@@ -7,12 +7,12 @@ import net.wti.gradle.settings.index.IndexNodePool;
 import net.wti.gradle.settings.index.LivenessReason;
 import net.wti.gradle.settings.schema.DefaultSchemaMetadata;
 import net.wti.gradle.tools.InternalGradleCache;
-import net.wti.javaparser.JavaParser;
-import net.wti.javaparser.ParseException;
-import net.wti.javaparser.ast.HasAnnotationExprs;
-import net.wti.javaparser.ast.expr.*;
-import net.wti.javaparser.ast.visitor.ComposableXapiVisitor;
-import net.wti.javaparser.ast.visitor.DumpVisitor;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.ast.HasAnnotationExprs;
+import net.wti.lang.parser.ast.expr.*;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.visitor.DumpVisitor;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import xapi.constants.X_Namespace;
@@ -35,7 +35,7 @@ import java.util.*;
 
 import static net.wti.gradle.settings.api.QualifiedModule.UNKNOWN_VALUE;
 import static net.wti.gradle.tools.InternalGradleCache.buildOnce;
-import static net.wti.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static net.wti.lang.parser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
 
 /**
  * Converts schema.xapi files into {@link DefaultSchemaMetadata} classes.
@@ -225,29 +225,29 @@ public interface XapiSchemaParser {
                     break;
                 case "name":
                     // the name of the root project, for use it paths
-                    meta.setName(attr.getStringExpression(false, true));
+                    meta.setName(attr.getString(false, true));
                     break;
                 case "group":
                     // the group of the project, for use in publishing / dependency references
-                    meta.setGroup(attr.getStringExpression(false, true));
+                    meta.setGroup(attr.getString(false, true));
                     break;
                 case "version":
                     // the group of the project, for use in publishing / dependency references
-                    meta.setVersion(attr.getStringExpression(false, true));
+                    meta.setVersion(attr.getString(false, true));
                     break;
                 case "require":
                 case "requires":
                     addRequires(meta, PlatformModule.UNKNOWN, attr.getExpression());
                     break;
                 case "inherit":
-                    boolean inherit = Boolean.parseBoolean(attr.getStringExpression(false, true));
+                    boolean inherit = Boolean.parseBoolean(attr.getString(false, true));
                     meta.setInherit(inherit);
                     break;
                 case "description":
-                    meta.setDescription(attr.getStringExpression(false, true));
+                    meta.setDescription(attr.getString(false, true));
                     break;
                 case "path":
-                    meta.setDiskPath(attr.getStringExpression(false, true));
+                    meta.setDiskPath(attr.getString(false, true));
                     break;
                 default:
                     throw new UnsupportedOperationException("Attributes named " + attr.getNameString() + " are not (yet) supported");

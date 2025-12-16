@@ -1,14 +1,14 @@
 package xapi.dev.ui.impl;
 
-import com.github.javaparser.ast.TypeArguments;
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.TypeArguments;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.body.Parameter;
+import net.wti.lang.parser.ast.expr.AnnotationExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.type.Type;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.GeneratedTypeParameter;
 import xapi.dev.lang.gen.GeneratedUiModel;

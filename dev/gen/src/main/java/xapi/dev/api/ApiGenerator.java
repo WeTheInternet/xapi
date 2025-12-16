@@ -1,7 +1,7 @@
 package xapi.dev.api;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.Node;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ast.Node;
 import xapi.annotation.compile.Generated;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.dev.lang.gen.ApiGeneratorContext;

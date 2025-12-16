@@ -1,23 +1,23 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.expr.BinaryExpr.Operator;
-import com.github.javaparser.ast.plugin.Transformer;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.VoidType;
-import com.github.javaparser.ast.type.WellKnownTypes;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
-import com.github.javaparser.ast.visitor.TransformVisitor;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.expr.*;
+import net.wti.lang.parser.ast.expr.BinaryExpr.Operator;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.stmt.BlockStmt;
+import net.wti.lang.parser.ast.stmt.ExpressionStmt;
+import net.wti.lang.parser.ast.stmt.ReturnStmt;
+import net.wti.lang.parser.ast.stmt.Statement;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.type.VoidType;
+import net.wti.lang.parser.ast.type.WellKnownTypes;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.visitor.TransformVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
@@ -39,7 +39,7 @@ import xapi.string.X_String;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static net.wti.lang.parser.ast.expr.TemplateLiteralExpr.templateLiteral;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/22/16.

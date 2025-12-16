@@ -1,10 +1,10 @@
 package xapi.dev.ui.impl;
 
-import com.github.javaparser.ast.expr.CssExpr;
-import com.github.javaparser.ast.expr.MethodReferenceExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.CssExpr;
+import net.wti.lang.parser.ast.expr.MethodReferenceExpr;
+import net.wti.lang.parser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.collect.simple.SimpleStack;
 import xapi.dev.ui.api.ComponentGraph;
 import xapi.fu.In1Out1;

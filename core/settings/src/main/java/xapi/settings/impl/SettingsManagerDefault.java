@@ -1,6 +1,6 @@
 package xapi.settings.impl;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.settings.api.SettingsManager;
 
 /**

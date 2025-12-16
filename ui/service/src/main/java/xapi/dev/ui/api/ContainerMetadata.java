@@ -1,10 +1,10 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.plugin.NodeTransformer;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.expr.StringLiteralExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.plugin.NodeTransformer;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.collect.fifo.Fifo;

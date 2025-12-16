@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.Node;
+import net.wti.lang.parser.ast.Node;
 import xapi.source.X_Source;
 
 /**

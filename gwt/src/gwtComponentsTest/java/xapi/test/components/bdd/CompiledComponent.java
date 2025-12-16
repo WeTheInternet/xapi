@@ -1,7 +1,7 @@
 package xapi.test.components.bdd;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.body.ClassOrInterfaceDeclaration;
 import xapi.dev.components.WebComponentFactoryGenerator;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.gwtc.api.GwtManifest;

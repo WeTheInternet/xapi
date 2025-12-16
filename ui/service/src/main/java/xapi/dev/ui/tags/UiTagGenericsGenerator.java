@@ -1,9 +1,9 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.JsonContainerExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;

@@ -1,7 +1,7 @@
 package xapi.dev.ui.impl;
 
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.ui.api.ComponentGraph;
 import xapi.fu.Do;
 import xapi.fu.In2;

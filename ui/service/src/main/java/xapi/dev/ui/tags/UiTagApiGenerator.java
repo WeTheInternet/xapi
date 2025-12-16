@@ -1,7 +1,7 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.expr.*;
+import net.wti.lang.parser.ast.body.ClassOrInterfaceDeclaration;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.GeneratedJavaFile;
 import xapi.dev.lang.gen.GeneratedTypeOwner;

@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.plugin.NodeTransformer;
+import net.wti.lang.parser.ast.plugin.NodeTransformer;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;

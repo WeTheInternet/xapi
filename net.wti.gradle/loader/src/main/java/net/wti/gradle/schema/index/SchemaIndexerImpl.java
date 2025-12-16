@@ -1,6 +1,6 @@
 package net.wti.gradle.schema.index;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.require.api.PlatformModule;
@@ -11,9 +11,6 @@ import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.schema.api.SchemaIndex;
 import net.wti.gradle.schema.spi.SchemaIndexer;
 import net.wti.gradle.schema.spi.SchemaProperties;
-import net.wti.gradle.system.tools.GradleCoerce;
-import org.gradle.api.GradleException;
-import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
 import org.gradle.util.GFileUtils;
 import xapi.fu.*;

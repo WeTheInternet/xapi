@@ -1,6 +1,6 @@
 package xapi.server.gen;
 
-import com.github.javaparser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.Expression;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.AbstractClasspathProvider;

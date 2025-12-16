@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 

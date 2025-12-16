@@ -1,11 +1,11 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodReferenceExpr;
-import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.expr.DynamicDeclarationExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.MethodReferenceExpr;
+import net.wti.lang.parser.ast.visitor.ModifierVisitorAdapter;
+import net.wti.lang.parser.ast.body.*;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.GeneratedJavaFile;
 import xapi.dev.source.ClassBuffer;
@@ -20,7 +20,7 @@ import xapi.debug.X_Debug;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static net.wti.lang.parser.ast.expr.TemplateLiteralExpr.templateLiteral;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/28/18.

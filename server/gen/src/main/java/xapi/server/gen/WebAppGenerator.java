@@ -1,7 +1,7 @@
 package xapi.server.gen;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;

@@ -1,8 +1,8 @@
 package xapi.lang.parse
 
-import com.github.javaparser.JavaParser
-import com.github.javaparser.ast.expr.Expression
-import com.github.javaparser.ast.expr.UiContainerExpr
+import net.wti.lang.parser.JavaParser
+import net.wti.lang.parser.ast.expr.Expression
+import net.wti.lang.parser.ast.expr.UiContainerExpr
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/20/18 @ 3:59 AM.

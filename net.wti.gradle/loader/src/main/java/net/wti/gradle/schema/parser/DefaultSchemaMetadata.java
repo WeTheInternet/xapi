@@ -1,9 +1,8 @@
 package net.wti.gradle.schema.parser;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.JsonPairExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.JsonPairExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import net.wti.gradle.require.api.DependencyType;
 import net.wti.gradle.require.api.PlatformModule;
 import net.wti.gradle.schema.api.QualifiedModule;

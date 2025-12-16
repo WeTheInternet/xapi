@@ -1,10 +1,10 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ast.HasAnnotationExprs;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.visitor.DumpVisitor;
+import net.wti.lang.parser.ast.HasAnnotationExprs;
+import net.wti.lang.parser.ast.expr.AnnotationExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.visitor.DumpVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.dev.source.CanAddImports;

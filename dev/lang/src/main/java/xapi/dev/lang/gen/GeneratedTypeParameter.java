@@ -1,8 +1,8 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.ReferenceType;
 import xapi.string.X_String;
 
 import java.util.EnumMap;

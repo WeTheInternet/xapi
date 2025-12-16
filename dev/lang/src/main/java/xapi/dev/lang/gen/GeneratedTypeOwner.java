@@ -1,7 +1,7 @@
 package xapi.dev.lang.gen;
 
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.fu.Maybe;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;

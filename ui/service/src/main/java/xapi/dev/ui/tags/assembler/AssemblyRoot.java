@@ -1,7 +1,6 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.ui.api.component.HasChildren;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/26/18.

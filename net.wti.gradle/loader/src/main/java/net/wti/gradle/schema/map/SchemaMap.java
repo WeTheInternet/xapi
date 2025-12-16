@@ -1,7 +1,7 @@
 package net.wti.gradle.schema.map;
 
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
 import net.wti.gradle.api.MinimalProjectView;
 import net.wti.gradle.internal.ProjectViewInternal;
 import net.wti.gradle.require.api.DependencyType;
@@ -14,14 +14,11 @@ import net.wti.gradle.schema.index.SchemaIndexerImpl;
 import net.wti.gradle.schema.parser.DefaultSchemaMetadata;
 import net.wti.gradle.schema.parser.SchemaParser;
 import net.wti.gradle.schema.api.SchemaIndex;
-import net.wti.gradle.schema.api.SchemaIndexReader;
 import net.wti.gradle.schema.spi.SchemaProperties;
 import net.wti.gradle.settings.ProjectDescriptorView;
 import net.wti.gradle.settings.RootProjectView;
 import net.wti.gradle.system.service.GradleService;
-import org.gradle.api.GradleException;
 import org.gradle.api.UnknownDomainObjectException;
-import org.gradle.api.initialization.Settings;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
 import xapi.fu.data.MapLike;
@@ -30,7 +27,6 @@ import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.gradle.fu.LazyString;
 import xapi.string.X_String;
 
 import java.io.File;

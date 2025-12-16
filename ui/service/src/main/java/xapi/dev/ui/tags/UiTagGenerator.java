@@ -1,8 +1,8 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.visitor.ModifierVisitorAdapter;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
@@ -25,8 +25,8 @@ import xapi.util.X_Util;
 
 import java.util.Locale;
 
-import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static net.wti.lang.parser.ast.expr.StringLiteralExpr.stringLiteral;
+import static net.wti.lang.parser.ast.expr.TemplateLiteralExpr.templateLiteral;
 import static xapi.collect.X_Collect.MUTABLE_INSERTION_ORDERED;
 import static xapi.collect.X_Collect.newMap;
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;

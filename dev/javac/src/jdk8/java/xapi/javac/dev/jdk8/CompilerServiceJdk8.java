@@ -1,8 +1,8 @@
 package xapi.javac.dev.jdk8;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.expr.NameExpr;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.PackageDeclaration;
+import net.wti.lang.parser.ast.expr.NameExpr;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;

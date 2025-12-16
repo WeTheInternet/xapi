@@ -1,9 +1,9 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.ReferenceType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;

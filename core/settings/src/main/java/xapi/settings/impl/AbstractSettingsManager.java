@@ -1,11 +1,11 @@
 package xapi.settings.impl;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.JsonPairExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.JsonContainerExpr;
+import net.wti.lang.parser.ast.expr.JsonPairExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;

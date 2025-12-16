@@ -1,7 +1,7 @@
 package xapi.dev.ui.impl;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
 import xapi.fu.Do;
 import xapi.fu.In2;
 import xapi.fu.Mutable;

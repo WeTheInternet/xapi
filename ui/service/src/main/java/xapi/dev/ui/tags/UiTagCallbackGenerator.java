@@ -1,7 +1,7 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.*;
+import net.wti.lang.parser.ast.body.MethodDeclaration;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;

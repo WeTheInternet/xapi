@@ -1,8 +1,10 @@
 package xapi.gwt.time;
 
+import com.google.gwt.i18n.client.TimeZone;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.fu.Lazy;
 import xapi.platform.GwtPlatform;
+import xapi.time.api.TimeZoneInfo;
 import xapi.time.impl.AbstractTimeService;
 import xapi.time.service.TimeService;
 
@@ -56,4 +58,14 @@ public class TimeServiceGwt extends AbstractTimeService {
       }
     });
   }
+
+    @Override
+    public TimeZoneInfo systemZone() {
+        final Date now = new Date();
+        final TimeZone zone = TimeZone.createTimeZone(now.getTimezoneOffset());
+        final String timeZoneId = zone.getISOTimeZoneString(now);
+        final String zoneName = zone.getShortName(now);
+        final boolean usesDst = zone.getStandardOffset() != zone.getOffset(now);
+        return new TimeZoneInfo(timeZoneId, zoneName, zone.getStandardOffset(), usesDst);
+    }
 }

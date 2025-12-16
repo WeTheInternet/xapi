@@ -1,12 +1,12 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.PrimitiveType;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.VoidType;
-import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.type.PrimitiveType;
+import net.wti.lang.parser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.type.Type;
+import net.wti.lang.parser.ast.type.VoidType;
+import net.wti.lang.parser.ast.visitor.ComposableXapiVisitor;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.lang.gen.ApiGeneratorContext;
 import xapi.dev.lang.gen.GeneratedUiMember;
 import xapi.dev.source.*;

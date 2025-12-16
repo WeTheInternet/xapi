@@ -1,7 +1,7 @@
 package xapi.javac.dev.template;
 
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.expr.TemplateLiteralExpr;
+import net.wti.lang.parser.ast.plugin.Transformer;
 import xapi.fu.Printable;
 import xapi.util.X_Template;
 

@@ -1,6 +1,6 @@
 package xapi.javac.dev.impl;
 
-import com.github.javaparser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.Expression;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.tree.EndPosTable;

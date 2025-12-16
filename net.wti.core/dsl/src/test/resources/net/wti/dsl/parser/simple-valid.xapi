@@ -1,0 +1,25 @@
+<root
+  name   = "example-root"
+  flag   = true
+  count  = 3
+  tags   = [ "one", "two", "three" ]
+  props  = {
+    first  : "alpha",
+    second : "beta"
+  }
+  settings = {
+    fast  : <setting key = "fast"  value = "true"  />,
+    color : <setting key = "color" value = "green" />
+  }
+>
+  // Inline child element using list + map + settings
+  <child
+    id    = "child-1"
+    tags  = [ "x", "y" ]
+    props = { foo : "bar" }
+    settings = [
+      <setting key = "mode"  value = "debug" />,
+      <setting key = "level" value = "42"    />
+    ]
+  />
+</root>

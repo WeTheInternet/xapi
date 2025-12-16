@@ -3,11 +3,19 @@ package xapi.jre.time;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.platform.AndroidPlatform;
 import xapi.platform.JrePlatform;
+import xapi.time.api.TimeComponents;
+import xapi.time.api.TimeZoneInfo;
 import xapi.time.impl.TimeServiceDefault;
 import xapi.time.service.TimeService;
 import xapi.string.X_String;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.locks.LockSupport;
 
 @JrePlatform
@@ -83,6 +91,45 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
                 c.get(Calendar.DATE),
                 c.get(Calendar.HOUR_OF_DAY),
                 c.get(Calendar.MINUTE));
+    }
+
+    @Override
+    public TimeZoneInfo systemZone() {
+        final TimeZone tz = TimeZone.getDefault();
+        final String id = tz.getID();
+        final boolean inDstNow = tz.inDaylightTime(new Date());
+        final String display = tz.getDisplayName(inDstNow, TimeZone.LONG);
+        final int rawOffset = tz.getRawOffset();
+        final boolean observesDst = tz.observesDaylightTime();
+        return new TimeZoneInfo(id, display, rawOffset, observesDst);
+    }
+
+    @Override
+    public String formatTime(final int hour24, final int minute) {
+        final boolean pm = hour24 >= 12;
+        int hour12 = hour24 % 12;
+        if (hour12 == 0) {
+            hour12 = 12;
+        }
+        final String ampm = pm ? "pm" : "am";
+        return String.format("%d:%02d %s", hour12, minute, ampm);
+    }
+
+    @Override
+    public double toStartOfWeek(final double epochMillis, final TimeZoneInfo zone) {
+        final Instant instant = Instant.ofEpochMilli((long) epochMillis);
+        ZoneId zoneId;
+        try {
+            zoneId = ZoneId.of(zone.getId());
+        } catch (Exception ignored) {
+            zoneId = ZoneOffset.ofTotalSeconds(zone.getOffsetAt(epochMillis) / 1000);
+        }
+        ZonedDateTime zdt = instant.atZone(zoneId);
+        // DayOfWeek: Mon=1..Sun=7; want Sunday start, so subtract value%7 days
+        int daysToSubtract = zdt.getDayOfWeek().getValue() % 7;
+        ZonedDateTime startOfWeek = zdt.minusDays(daysToSubtract)
+                .withHour(0).withMinute(0).withSecond(0).withNano(0);
+        return startOfWeek.toInstant().toEpochMilli();
     }
 
 

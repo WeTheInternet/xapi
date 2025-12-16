@@ -1,8 +1,8 @@
 package xapi.javac.dev.model;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.TypeDeclaration;
+import net.wti.lang.parser.JavaParser;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.body.TypeDeclaration;
 import com.sun.source.tree.CompilationUnitTree;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;

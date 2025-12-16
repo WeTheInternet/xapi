@@ -1,0 +1,88 @@
+<xapi-dsl
+  name        = "simple-dsl"
+  packageName = "net.wti.simple"
+  version     = "0.1"
+  description = "Small, focused DSL exercising one of each basic pattern."
+  rootTag     = "root"
+  elements = [
+    // Single root element with a few scalar attributes
+    <element-def
+      name        = "root"
+      description = "Root element of the simple DSL."
+
+      attributes = {
+        name   : <string  required = true />,
+        flag   : <bool    required = false default  = true />,
+        count  : <integer required = false />,
+
+        // list: tags = ["a", "b", "c"]
+        tags   : <list
+                   element  = <string />
+                   required = false
+                 />,
+
+        // map: props = { key: "value", ... }
+        props  : <map
+                   keyType   = "string"
+                   valueType = "string"
+                   required  = false
+                 />,
+
+        // listOrMap: settings = [<setting/>] or { name: <setting/> }
+        settings : <list-or-map
+                     listElement = <element-ref name = "setting" />
+                     mapValue    = <element-ref name = "setting" />
+                     required    = false
+                   />
+      }
+
+      elements = {
+        child : <element-ref name = "child" />
+      }
+    /element-def>,
+
+    // Child element with list + map style attributes
+    <element-def
+      name        = "child"
+      description = "Child element with list and map-style attributes."
+
+      attributes = {
+        id     : <string required = true />,
+
+        tags   : <list
+                   element  = <string />
+                   required = false
+                 />,
+
+        props  : <map
+                   keyType   = "string"
+                   valueType = "string"
+                   required  = false
+                 />,
+
+        settings : <list-or-map
+                     listElement = <element-ref name = "setting" />
+                     mapValue    = <element-ref name = "setting" />
+                     required    = false
+                   />
+      }
+
+      elements = {
+        setting : <element-ref name = "setting" />
+      }
+    /element-def>,
+
+    // Setting element: just a key/value pair
+    <element-def
+      name        = "setting"
+      description = "Key/value configuration entry."
+
+      attributes = {
+        key   : <string required = true  />,
+        value : <string required = false />
+      }
+
+      elements = { }
+    /element-def>
+  ]
+/xapi-dsl>

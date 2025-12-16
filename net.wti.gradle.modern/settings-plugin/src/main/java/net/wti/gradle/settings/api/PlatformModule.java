@@ -42,6 +42,7 @@ public class PlatformModule implements CharSequence {
         if (defaultModule.toString().equals(mod)) {
             return plat;
         }
+        // TODO: consider putting the module first, so each module + platform imeplementations are next to each other
         return plat + Character.toUpperCase(mod.charAt(0)) +
                 (mod.length() > 1 ? mod.substring(1) : "");
     }

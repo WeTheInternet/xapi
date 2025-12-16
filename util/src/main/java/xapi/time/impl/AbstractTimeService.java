@@ -1,6 +1,8 @@
 package xapi.time.impl;
 
 import xapi.time.api.Moment;
+import xapi.time.api.TimeComponents;
+import xapi.time.api.TimeZoneInfo;
 import xapi.time.service.TimeService;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,7 +52,33 @@ public abstract class AbstractTimeService extends ImmutableMoment implements Tim
     return new ImmutableMoment(tick());
   }
 
-  /**
+    @Override
+    public TimeComponents breakdown(final double epochMillis, final TimeZoneInfo zone) {
+        return new TimeComponents(epochMillis, zone);
+    }
+
+    @Override
+    public TimeZoneInfo systemZone() {
+        throw new UnsupportedOperationException("systemZone not supported in " + getClass().getSimpleName());
+    }
+
+    @Override
+    public String formatTime(final int hour24, final int minute) {
+        final boolean pm = hour24 >= 12;
+        int hour12 = hour24 % 12;
+        if (hour12 == 0) {
+            hour12 = 12;
+        }
+        final String ampm = pm ? "pm" : "am";
+        return hour12 + (minute < 10 ? "0" : "") + minute + " " + ampm;
+    }
+
+    @Override
+    public double toStartOfWeek(final double epochMillis, final TimeZoneInfo zone) {
+        throw new UnsupportedOperationException("startOfWeek not supported in " + getClass().getSimpleName());
+    }
+
+    /**
    * The number of slices between a millisecond,
    * valid until Wed Sep 07 2039 08:47:35 GMT-7,
    * which is the unix timestamp 0x200_0000_0000

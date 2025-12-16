@@ -1,24 +1,24 @@
 package xapi.dev.api;
 
-import com.github.javaparser.ASTHelper;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.AnnotationDeclaration;
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.EnumDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.TypeDeclaration;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.visitor.DumpVisitor;
-import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
-import com.github.javaparser.ast.visitor.VoidVisitor;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ASTHelper;
+import net.wti.lang.parser.ast.CompilationUnit;
+import net.wti.lang.parser.ast.ImportDeclaration;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.PackageDeclaration;
+import net.wti.lang.parser.ast.TypeParameter;
+import net.wti.lang.parser.ast.body.AnnotationDeclaration;
+import net.wti.lang.parser.ast.body.BodyDeclaration;
+import net.wti.lang.parser.ast.body.ClassOrInterfaceDeclaration;
+import net.wti.lang.parser.ast.body.EnumDeclaration;
+import net.wti.lang.parser.ast.body.FieldDeclaration;
+import net.wti.lang.parser.ast.body.MethodDeclaration;
+import net.wti.lang.parser.ast.body.TypeDeclaration;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.visitor.DumpVisitor;
+import net.wti.lang.parser.ast.visitor.ModifierVisitorAdapter;
+import net.wti.lang.parser.ast.visitor.VoidVisitor;
+import net.wti.lang.parser.ast.visitor.VoidVisitorAdapter;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.WeakHashMap;
 
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static net.wti.lang.parser.ast.expr.TemplateLiteralExpr.templateLiteral;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/17/16.

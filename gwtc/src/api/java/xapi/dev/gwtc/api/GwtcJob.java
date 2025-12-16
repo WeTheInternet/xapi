@@ -1,7 +1,7 @@
 package xapi.dev.gwtc.api;
 
-import com.github.javaparser.ParseException;
-import com.github.javaparser.SourcesHelper;
+import net.wti.lang.parser.ParseException;
+import net.wti.lang.parser.SourcesHelper;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;

@@ -1,7 +1,7 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiExpr;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Lazy;
 

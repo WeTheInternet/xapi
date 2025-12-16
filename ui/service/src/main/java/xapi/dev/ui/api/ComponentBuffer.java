@@ -1,10 +1,10 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.MethodCallExpr;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.dev.lang.gen.ApiGeneratorContext;

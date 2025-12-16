@@ -4,6 +4,8 @@ import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.Out1;
 import xapi.time.api.Moment;
+import xapi.time.api.TimeComponents;
+import xapi.time.api.TimeZoneInfo;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.service.TimeService;
 import xapi.string.X_String;
@@ -30,7 +32,7 @@ public class X_Time {
     return now().millis();
   }
 
-  public static double nowMillisLong() {
+  public static long nowMillisLong() {
     return now().millisLong();
   }
 
@@ -195,4 +197,48 @@ public class X_Time {
   public static String printSinceBirth() {
     return print(now().millis() - birth());
   }
+
+
+    /**
+     * Breaks down epoch milliseconds into components using system timezone.
+     */
+    public static TimeComponents breakdown(double epochMillis) {
+        return service.breakdown(epochMillis, service.systemZone());
+    }
+
+    /**
+     * Breaks down epoch milliseconds into components for a specific timezone.
+     */
+    public static TimeComponents breakdown(double epochMillis, TimeZoneInfo zone) {
+        return service.breakdown(epochMillis, zone);
+    }
+
+    /**
+     * @return the system's default timezone information
+     */
+    public static TimeZoneInfo systemZone() {
+        return service.systemZone();
+    }
+
+    /**
+     * Formats a time as "h:mm am/pm" (e.g., "3:45 pm")
+     */
+    public static String formatTime(int hour24, int minute) {
+        return service.formatTime(hour24, minute);
+    }
+
+    /**
+     * Returns the start of the week (Sunday 00:00) for the given moment in system timezone.
+     */
+    public static double toStartOfWeek(double epochMillis) {
+        return service.toStartOfWeek(epochMillis, service.systemZone());
+    }
+
+    /**
+     * Returns the start of the week (Sunday 00:00) for the given moment in specified timezone.
+     */
+    public static double toStartOfWeek(double epochMillis, TimeZoneInfo zone) {
+        return service.toStartOfWeek(epochMillis, zone);
+    }
+
 }

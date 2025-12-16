@@ -544,7 +544,15 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     return method;
   }
 
-  public final MethodBuffer createMethod(final int modifiers, final Class<?> returnType,
+    public PrintBuffer createStaticBlock() {
+        PrintBuffer buffer = constructors.printBefore("");
+        buffer.indent = indent;
+        buffer.println("// static initializer");
+        buffer.println("static {").indent();
+        return buffer;
+    }
+
+    public final MethodBuffer createMethod(final int modifiers, final Class<?> returnType,
       final String name, final String... params) {
     return createMethod(modifiers, returnType.getCanonicalName(), name, params);
   }

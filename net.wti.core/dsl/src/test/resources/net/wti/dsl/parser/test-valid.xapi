@@ -1,0 +1,77 @@
+/*
+  test-valid.xapi
+  A valid instance document for the more complex test-dsl.xapi.
+*/
+
+// A registry containing two named roots
+<registry
+  roots = {
+    main : <root
+      name    = "main-root"
+      enabled = true
+      version = "1.0.0"
+      tags    = [ "primary", "prod" ]
+      children = [
+        <child
+          id    = "child-1"
+          kind  = "alpha"
+          labels = [ "fast", "hot" ]
+          props  = {
+            role : "frontend",
+            zone : "us-east-1"
+          }
+        >
+          <config
+            settings = {
+              throttle : <setting key = "throttle" value = "100" />,
+              debug    : <setting key = "debug"    value = "false" />
+            }
+            raw = { "featureX" : true, "maxConnections" : 200 }
+          />
+        </child>,
+
+        <child
+          id    = "child-2"
+          kind  = "beta"
+          labels = [ "slow", "cold" ]
+          props  = {
+            role : "backend",
+            zone : "eu-west-1"
+          }
+        />
+      ]
+    />,
+    test : <root
+      name    = "test-root"
+      enabled = false
+      version = "1.0.0-SNAPSHOT"
+      tags    = [ "test", "staging" ]
+      children = {
+        "loader" : <child
+          id    = "loader"
+          kind  = "gamma"
+          labels = [ "utility" ]
+          props  = {
+            role : "loader",
+            zone : "local"
+          }
+        >
+          <config
+            settings = [
+              <setting key = "batchSize" value = "50" />,
+              <setting key = "retries"   value = "3"  />
+            ]
+          />
+        </child>
+      }
+    />
+  }
+>
+  // Also allow an inline root via elements section of registry
+  <root
+    name    = "inline-root"
+    enabled = true
+    version = "2.0.0"
+    tags    = [ "inline" ]
+  />
+</registry>

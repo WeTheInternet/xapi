@@ -1,0 +1,241 @@
+<xapi-dsl
+  name = "schema-xapi"
+  version = "0.1"
+
+  elements = [
+    <xapi-schema
+    description = "Root of a Gradle schema.xapi file."
+
+      attributes = {
+        name            : <string   required = false />,
+        group           : <string   required = false />,
+        version         : <string   required = false />,
+        multiplatform   : <boolean  required = false />,
+        virtual         : <boolean  required = false />,
+        parentPath      : <string   required = false />,
+        shortenPaths    : <boolean  required = false />,
+        applyTemplate   : <string   required = false />,
+        templates       : <config-map
+                             keyType   = "string"
+                             valueType = "xapi-schema"
+                             description = "Named, reusable template blocks."
+                           />,
+        repos           : <repositories />,
+        repositories    : <repositories />,
+        platforms       : <platforms />,
+        modules         : <modules />,
+        projects        : <projects />,
+        external        : <externals />,
+        defaultRepoUrl  : <stringOrMethod />,
+        schemaLocation  : <string   required = false />,
+        require         : <requires />,
+        requires        : <requires />,
+        inherit         : <boolean  required = false />,
+        description     : <string   required = false />,
+        path            : <string   required = false />
+      }
+
+      elements = {
+        // nested xapi-schema for child projects
+        xapi-schema : <xapi-schema />
+      }
+    /xapi-schema>,
+
+    <repositories
+      description = "Repository declarations: ui elements, method calls, or urls."
+      value = {
+        list : [
+          <repositoryElement />,
+          <methodCall />,
+          <string />
+        ]
+      }
+    /repositories>,
+
+    <repositoryElement
+      description = "Structured repository element like <maven url='...' name='...'>."
+      attributes = {
+        name : <string required = true />,
+        url  : <string required = true />
+      }
+    /repositoryElement>,
+
+    <platforms
+      description = "Platform list or map."
+      oneOf = [
+        <json-array  element = <platformElementOrName /> />,
+        <json-object entry   = <platformMapEntry />   />,
+        <platformElement />,
+        <string />
+      ]
+    /platforms>,
+
+    <platformElementOrName
+      oneOf = [
+        <platformElement />,
+        <string />
+      ]
+    /platformElementOrName>,
+
+    <platformElement
+      description = "A single platform, e.g. <gwt replace='main' published=true />."
+      attributes = {
+        published      : <boolean />,
+        needSource     : <boolean />,
+        publishSource  : <boolean />,
+        test           : <boolean />,
+        replace        : <stringOrList />,
+        replaces       : <stringOrList />,
+        requires       : <requires />,
+        require        : <requires />,
+        modules        : <modules />
+      }
+    /platformElement>,
+
+    <modules
+      description = "Module list, map, or single name."
+      oneOf = [
+        <json-array  element = <moduleElementOrName /> />,
+        <json-object entry   = <moduleMapEntry />       />,
+        <moduleElement />,
+        <string />
+      ]
+    /modules>,
+
+    <moduleElementOrName
+      oneOf = [
+        <moduleElement />,
+        <string />
+      ]
+    /moduleElementOrName>,
+
+    <moduleElement
+      description = "A single module, e.g. <main requires=[api,spi]/>."
+      attributes = {
+        published   : <boolean />,
+        test        : <boolean />,
+        force       : <boolean />,
+        requires    : <requires />,
+        require     : <requires />,
+        include     : <stringOrList />,
+        includes    : <stringOrList />,
+        forPlatform : <string />
+      }
+    /moduleElement>,
+
+    <moduleMapEntry
+      description = "Map entry: moduleName : requiresExpr."
+      key   = <string />,
+      value = <requiresOrEmpty />
+    /moduleMapEntry>,
+
+    <projects
+      description = "Child projects; supports mode keys multiplatform/single/virtual."
+      value = {
+        oneOf = [
+          <json-array element = <projectElementOrName /> />,
+          <json-object
+            entry = <projectModeEntry />
+          />
+        ]
+      }
+    /projects>,
+
+    <projectElementOrName
+      oneOf = [
+        <projectElement />,
+        <string />
+      ]
+    /projectElementOrName>,
+
+    <projectElement
+      description = "Child project container."
+      attributes = {
+        name         : <string required = false />,
+        multiplatform: <boolean />,
+        virtual      : <boolean />,
+        parentPath   : <string />
+      }
+      elements = {
+        xapi-schema : <xapi-schema />
+      }
+    /projectElement>,
+
+    <projectModeEntry
+      description = "Map key in projects: multiplatform, single, virtual."
+      keyOneOf = [ "multiplatform", "multi", "single", "standalone", "singleplatform", "virtual" ]
+      value    = <json-array element = <projectElementOrName /> />
+    /projectModeEntry>,
+
+    <externals
+      description = "External preload declarations and other external specs."
+      value = <json-array element = <externalElement /> />
+    /externals>,
+
+    <externalElement
+      description = "External declarations; currently only <preload> is special."
+      oneOf = [
+        <preload />,
+        <ui-container name='*' />
+      ]
+    /externalElement>,
+
+    <preload
+      description = "Preload external artifacts into local repo."
+      attributes = {
+        name       : <string required = true />,
+        url        : <string required = false />,
+        version    : <string required = false />,
+        platforms  : <stringOrList required = false />,
+        modules    : <stringOrList required = false />,
+        inherited  : <boolean required = false />
+      }
+      elements = {
+        artifacts : <config-map
+          keyType   = "string"   // groupId
+          valueType = "stringOrList"  // artifactIds
+        />
+      }
+    /preload>,
+
+    <requires
+      description = "Dependency map used by projects, modules, and platforms."
+      oneOf = [
+        // Simple internal list: [ 'api', 'spi' ]
+        <json-array  element = <stringOrNamedElement /> />,
+        // Typed map: { project: [...], internal:[...], external:[...] }
+        <json-object entry = <requiresEntry /> />
+      ]
+    /requires>,
+
+    <requiresEntry
+      description = "One key in a requires map."
+      keyOneOf = [
+        "project", "internal", "external", "unknown",
+        "platform", "module"
+      ]
+      value = <json-arrayOrObject />
+    /requiresEntry>,
+
+    <stringOrNamedElement
+      oneOf = [
+        <string />,
+        <ui-container name='*' />
+      ]
+    /stringOrNamedElement>,
+
+    <stringOrList
+      oneOf = [
+        <string />,
+        <json-array element = <string /> />
+      ]
+    /stringOrList>,
+
+    <stringOrMethod
+      oneOf = [
+        <string />,
+        <methodCall />
+      ]
+    /stringOrMethod>
+  ]
+/xapi-dsl>

@@ -1,6 +1,6 @@
 package xapi.dev.ui.tags.assembler;
 
-import com.github.javaparser.ast.expr.*;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.lang.gen.ApiGeneratorContext;

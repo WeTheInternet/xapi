@@ -1,6 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.body.Parameter;
+import net.wti.lang.parser.ast.body.Parameter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.lang.gen.GeneratedTypeParameter;

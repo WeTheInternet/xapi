@@ -1,10 +1,10 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.expr.Expression;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.Type;
 import elemental.dom.Element;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;

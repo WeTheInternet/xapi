@@ -1,9 +1,9 @@
 package xapi.dev.ui;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.plugin.NodeTransformer;
-import com.github.javaparser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.Node;
+import net.wti.lang.parser.ast.plugin.NodeTransformer;
+import net.wti.lang.parser.ast.plugin.Transformer;
+import net.wti.lang.parser.ast.expr.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.ui.api.ComponentBuffer;

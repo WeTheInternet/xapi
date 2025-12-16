@@ -1,11 +1,11 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
+import net.wti.lang.parser.ast.body.Parameter;
+import net.wti.lang.parser.ast.expr.UiAttrExpr;
+import net.wti.lang.parser.ast.expr.UiContainerExpr;
+import net.wti.lang.parser.ast.type.ClassOrInterfaceType;
+import net.wti.lang.parser.ast.type.ReferenceType;
+import net.wti.lang.parser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.lang.gen.*;
@@ -25,7 +25,7 @@ import xapi.log.X_Log;
 import xapi.source.util.X_Modifier;
 import xapi.string.X_String;
 
-import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
+import static net.wti.lang.parser.ast.expr.StringLiteralExpr.stringLiteral;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/6/17.

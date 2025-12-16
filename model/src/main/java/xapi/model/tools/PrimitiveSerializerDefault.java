@@ -113,6 +113,11 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     '0', '>', '.', ',', '-', '\'', '"', '/', '*', '(',
     ')',  ':', ';', '!', '+', '=', '#', '$', '%', '&',
     '<', '\t'
+          // note, there are plenty of values in here that are illegal on windows file systems.
+          // since I don't use or care about windows, I'm not bothering with this.
+          // If someone ever wants it, they would need to subclass JreModelService,
+          // to massage the filenames used when long keys are serialized to disk as filenames
+          // (or, you know, use some other key-value store as a backend).
   };
 
   /**
@@ -172,7 +177,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       5,  3, 18, 24,  8,   6,  1, 12, 20, 14,  // 110 - 120
    //  n   o   p   q   r    s   t   u   v   w
 
-      23, 17, 25, 27, 29,  28, 30,              // 120 - 130
+      23, 17, 25, 27, 29,  28, 30,              // 120 - 127
    //  x   y   z   {   |    }   ~
 
   };

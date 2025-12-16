@@ -373,6 +373,139 @@ public class Producer {}
         result.task(':producer2:compileTestJava').outcome == TaskOutcome.SUCCESS
     }
 
+    def "Platform-level requires are applied across a chain of replacing platforms"() {
+        given:
+        // Three platforms in a replacement chain: main -> impl -> sample.
+        // Each layer adds its own external requires at the *platform* level.
+        // The sample platform's requires should be visible to all of its modules.
+        customSchema = """
+<xapi-schema
+    platforms = [
+        // base platform, with its own requires
+        <main
+            requires = {
+                external : "junit:junit:4.13.2"
+            }
+        /main>,
+
+        // impl extends main, adds more requires
+        <impl replace = "main"
+            requires = {
+                external : "org.hamcrest:hamcrest-core:1.3"
+            }
+        /impl>,
+
+        // sample extends impl, adds yet another requires
+        <sample replace = "impl"
+            requires = {
+                external : "org.assertj:assertj-core:3.25.3"
+            }
+        /sample>
+    ]
+    modules = [
+        // a simple single-module project; this module should see all platform-level requires
+        main
+    ]
+    projects = [
+        <sampleProject
+            // use all three platforms for this project
+            multiplatform = true
+            platforms = [ main, impl, sample ]
+            modules = [ main ]
+        /sampleProject>
+    ]
+</xapi-schema>
+"""
+        // Apply Java plugin to generated projects
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+
+        // Add code that uses junit on the *sample* platform's main module.
+        // If platform-level requires on sample aren't applied to its modules
+        // (or if the replacement chain breaks them), this will fail to compile.
+        withProject(':sampleProject') {
+            TestProject proj ->
+                proj.sourceFile("main", "com.example", "UsesPlatformRequires") << """
+package com.example;
+
+import org.junit.Assert;
+
+public class UsesPlatformRequires {
+    public void check() {
+        Assert.assertTrue(true);
+    }
+}
+"""
+        }
+
+        // The Gradle module name for the main archive of a multiplatform project
+        // is `<project>-main`. Compiling it exercises the platform graph.
+        BuildResult result = runSucceed(":sampleProject-main:compileJava", "-i")
+
+        expect:
+        result.task(':sampleProject-main:compileJava').outcome == TaskOutcome.SUCCESS
+    }
+
+    def "Project-level requires are applied to all modules across replacing platforms"() {
+        given:
+        // Same platform chain main -> impl -> sample, but this time the requires = {}
+        // are declared on the project itself instead of on the platform declarations.
+        // The project-level requires should still be visible to all modules on each platform.
+        customSchema = """
+<xapi-schema
+    platforms = [
+        main,
+        <impl replace = "main" />,
+        <sample replace = "impl" />
+    ]
+    modules = [
+        main
+    ]
+    projects = [
+        <sampleProject
+            multiplatform = true
+            platforms = [ main, impl, sample ]
+            modules = [ main ]
+            requires = {
+                // project-level external requirement that should apply
+                // to the main module on all platforms (including sample)
+                external : "junit:junit:4.13.2"
+            }
+        /sampleProject>
+    ]
+</xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+
+        // Use junit from the sample platform's main module.
+        // This verifies that project-level requires are correctly applied
+        // when there is a chain of replacing platforms.
+        withProject(':sampleProject') {
+            TestProject proj ->
+                proj.sourceFile("main", "com.example", "UsesProjectRequires") << """
+package com.example;
+
+import org.junit.Assert;
+
+public class UsesProjectRequires {
+    public void check() {
+        Assert.assertTrue(true);
+    }
+}
+"""
+        }
+
+        BuildResult result = runSucceed(":sampleProject-main:compileJava", "-i")
+
+        expect:
+        result.task(':sampleProject-main:compileJava').outcome == TaskOutcome.SUCCESS
+    }
+
     @Override
     XapiSchemaIndexerTest selfSpec() {
         return this
