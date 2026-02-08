@@ -1,6 +1,6 @@
 <xapi-schema
     inherit = false
-    platforms = [ main ]
+    platforms = [ <main publishSource=true /> ]
     modules = [ main ]
     projects = {
         standalone : [

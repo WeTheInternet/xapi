@@ -9,7 +9,7 @@ public interface DslNodeBuilder<T extends DslNode> extends DslNode {
 
     /**
      * Freeze the builder into an immutable snapshot node.
-     *
+     * <p>
      * Implementations should:
      *  - validate builder invariants where appropriate,
      *  - defensively copy and/or wrap internal collections to prevent mutation after freezing.

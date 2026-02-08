@@ -6,7 +6,7 @@
     platforms = [
         // main,
         <gwt published = true
-            // replaces = main
+            // replace = main
             modules = [
                 <elemental
                     description = "Xapi - GWT Elemental implementation"

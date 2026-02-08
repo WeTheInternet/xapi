@@ -18,6 +18,7 @@ import org.gradle.api.logging.Logging;
 import xapi.constants.X_Namespace;
 import xapi.fu.*;
 import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.data.MultiList;
 import xapi.fu.data.SetLike;
 import xapi.fu.itr.*;
@@ -1282,9 +1283,76 @@ public interface XapiSchemaParser {
             platforms.add(new UiContainerExpr("main"));
             metadata.setPlatforms(platforms);
         }
+
+        final String defaultPlatform = project.getDefaultPlatformName();
+
+        // If the target project is NOT multiplatform, we must not introduce extra platforms via inheritance
+        // (doing so makes downstream code treat the project like multiplatform, changing gradle path resolution).
+        if (!project.isMultiplatform()) {
+            UiContainerExpr keep = null;
+            for (UiContainerExpr plat : platforms) {
+                if (defaultPlatform.equals(plat.getName())) {
+                    keep = plat;
+                    break;
+                }
+            }
+            if (keep == null) {
+                keep = new UiContainerExpr(defaultPlatform);
+            }
+            platforms = X_Jdk.list();
+            platforms.add(keep);
+            metadata.setPlatforms(platforms);
+        }
+
+        final DefaultSchemaMetadata parent = metadata.getParent();
+
+        // Track which platforms were explicitly declared in *this* metadata before we add inherited ones.
+        final SetLike<String> declaredHere = X_Jdk.setLinked();
+        final MapLike<String, UiContainerExpr> platformsByName = X_Jdk.mapOrderedInsertion();
+        for (UiContainerExpr plat : platforms) {
+            declaredHere.add(plat.getName());
+            platformsByName.put(plat.getName(), plat);
+        }
+
+        // Merge inherited platform definitions from the entire ancestor chain (closest parent first).
+        // IMPORTANT: For monoplatform projects, we only merge into the default platform.
+        if (parent != null && project.isInherit()) {
+            for (DefaultSchemaMetadata ancestor = parent; ancestor != null; ancestor = ancestor.getParent()) {
+                final ListLike<UiContainerExpr> ancestorPlatforms = ancestor.getPlatforms();
+                if (ancestorPlatforms == null) {
+                    continue;
+                }
+                for (UiContainerExpr ancestorPlat : ancestorPlatforms) {
+                    final String platName = ancestorPlat.getName();
+
+                    if (!project.isMultiplatform() && !defaultPlatform.equals(platName)) {
+                        continue;
+                    }
+
+                    UiContainerExpr target = platformsByName.get(platName);
+
+                    if (target == null) {
+                        // (a) missing platform: only legal to add when multiplatform (or it's the default platform).
+                        target = new UiContainerExpr(platName);
+                        platforms.add(target);
+                        platformsByName.put(platName, target);
+                    }
+
+                    mergePlatformAst(target, ancestorPlat);
+                }
+            }
+        }
+
         final ListLike<SchemaPlatform> added = X_Jdk.listArray();
-        final Logger LOG = Logging.getLogger(XapiSchemaParser.class);
+
         for (UiContainerExpr platform : platforms) {
+
+            // Hard stop: if somehow we still have extra platforms in a singleplatform project, skip them.
+            if (!project.isMultiplatform() && !defaultPlatform.equals(platform.getName())) {
+                System.out.println("SKIPPING PLATFORM " + platform.getName() + " from " + project.getPath() + " because != " + defaultPlatform);
+                continue;
+            }
+
             String name = platform.getName();
             if (!project.isMultiplatform()) {
                 if (!project.getDefaultPlatformName().equals(name)) {
@@ -1292,16 +1360,16 @@ public interface XapiSchemaParser {
                 }
             }
             boolean published = platform.getAttribute("published")
-                    .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                    .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn("main".equals(name));
             boolean needSource = platform.getAttribute("needSource")
-                    .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                    .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn("gwt".equals(name));
             boolean publishSource = platform.getAttribute("publishSource")
-                    .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                    .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn("gwt".equals(name));
             boolean test = platform.getAttribute("test")
-                    .mapIfPresent( attr -> "true".equals(attr.getStringExpression(false)))
+                    .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn(false);
             final SetLike<String> replace = X_Jdk.setLinked();
             In1<Maybe<UiAttrExpr>> processReplace = replaceAttr -> {
@@ -1362,6 +1430,119 @@ public interface XapiSchemaParser {
                 publishChildrenSource(project, platform, onceSource);
             }
         }
+    }
+
+
+    /**
+     * Merge source platform AST into target platform AST.
+     * - requires/require are additive (merged into a single attribute expression)
+     * - all other attributes are "closest to source wins" (only set if missing on target)
+     *
+     * Important: we clone expressions from source before attaching them to target, to avoid reparenting AST nodes.
+     */
+    default void mergePlatformAst(final UiContainerExpr target, final UiContainerExpr source) {
+        // Merge requires (additive)
+        mergeRequiresAttr(target, source, "requires");
+        mergeRequiresAttr(target, source, "require");
+
+        // Merge replace/replaces as UNARY closest-wins (and mutually exclusive):
+        // - if target already has either, do nothing
+        // - else, take whichever of replace/replaces exists on source
+        if (!target.hasAttribute("replace")) {
+            if (source.hasAttribute("replace")) {
+                final Maybe<UiAttrExpr> rep = source.getAttribute("replace");
+                rep.readIfPresent(attr -> {
+                    final Expression expr = attr.getExpression();
+                    if (expr != null) {
+                        target.addAttribute("replace", expr.clone());
+                    }
+                });
+            }
+        }
+
+        // Any other attrs: closest-wins.
+        for (UiAttrExpr attr : source.getAttributes()) {
+            final String name = attr.getNameString();
+
+            if ("requires".equals(name) || "require".equals(name) || "replace".equals(name) || "replaces".equals(name)) {
+                continue;
+            }
+            if (target.hasAttribute(name)) {
+                continue;
+            }
+            final Expression expr = attr.getExpression();
+            if (expr != null) {
+                target.addAttribute(name, expr.clone());
+            }
+        }
+    }
+
+    default void mergeRequiresAttr(final UiContainerExpr target, final UiContainerExpr source, final String attrName) {
+        if (!source.hasAttribute(attrName)) {
+            return;
+        }
+        final Maybe<UiAttrExpr> srcAttr = source.getAttribute(attrName);
+        if (!srcAttr.isPresent()) {
+            return;
+        }
+        final Expression srcExpr = srcAttr.get().getExpression();
+        if (srcExpr == null) {
+            return;
+        }
+
+        if (!target.hasAttribute(attrName)) {
+            target.addAttribute(attrName, srcExpr.clone());
+            return;
+        }
+
+        final Maybe<UiAttrExpr> tgtAttr = target.getAttribute(attrName);
+        if (!tgtAttr.isPresent()) {
+            // defensive: should not happen if hasAttribute is true, but keep behavior safe.
+            target.addAttribute(attrName, srcExpr.clone());
+            return;
+        }
+
+        final Expression tgtExpr = tgtAttr.get().getExpression();
+        if (tgtExpr == null) {
+            // If target exists but has null expression, replace it with a cloned parent expression.
+            tgtAttr.get().setExpression(srcExpr.clone());
+            return;
+        }
+
+        // Additive merge: attempt structural merge for JsonContainerExpr; otherwise, keep closest (target) and skip.
+        mergeRequiresExpressionInPlace(tgtAttr.get(), srcExpr);
+    }
+
+    default void mergeRequiresExpressionInPlace(final UiAttrExpr targetAttr, final Expression parentExpr) {
+        final Expression childExpr = targetAttr.getExpression();
+        if (childExpr instanceof JsonContainerExpr && parentExpr instanceof JsonContainerExpr) {
+            final JsonContainerExpr childJson = (JsonContainerExpr) childExpr;
+            final JsonContainerExpr parentJson = (JsonContainerExpr) parentExpr;
+
+            // Gross but effective: append parent's pairs into child's container.
+            // Downstream dependency extraction already iterates through all pairs/values, so duplicates are tolerated there,
+            // and we avoid having multiple UiAttrExpr entries with the same name.
+            for (JsonPairExpr pair : parentJson.getPairs()) {
+                childJson.getPairs().add((JsonPairExpr)pair.clone());
+            }
+            return;
+        }
+
+        // Fallback: can't structurally merge; leave child expression as "closest wins".
+        // (If you want stricter behavior, we can throw here instead.)
+    }
+
+    default UiContainerExpr findPlatformDef(final DefaultSchemaMetadata metadata, final String name) {
+        final ListLike<UiContainerExpr> plats = metadata == null ? null : metadata.getPlatforms();
+        if (plats == null) {
+            return null;
+        }
+        for (UiContainerExpr plat : plats) {
+            if (plat != null && name.equals(plat.getName())) {
+                return plat;
+            }
+        }
+        return null;
     }
 
     default void insertModuleIncludes(SchemaModule module, String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr) {

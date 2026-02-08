@@ -85,7 +85,7 @@ public final class DslSchemaElement extends ImmutableDslSchemaObject {
     }
 
     /**
-     * @return immutable map of attribute name -> attribute schema.
+     * @return immutable map of attribute name -&gt; attribute schema.
      */
     public Map<String, DslSchemaAttribute> getAttributesByName() {
         return attributesByName;
@@ -99,7 +99,7 @@ public final class DslSchemaElement extends ImmutableDslSchemaObject {
     }
 
     /**
-     * @return immutable map of child tag -> child type descriptor.
+     * @return immutable map of child tag -&gt; child type descriptor.
      */
     public Map<String, DslType> getChildrenByTag() {
         return childrenByTag;

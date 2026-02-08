@@ -85,7 +85,6 @@
         publishSource  : <boolean />,
         test           : <boolean />,
         replace        : <stringOrList />,
-        replaces       : <stringOrList />,
         requires       : <requires />,
         require        : <requires />,
         modules        : <modules />

@@ -18,6 +18,7 @@
             <api
                 inherit = false
                 platforms = <main
+                    publishSource=true
                     modules = <main
                         requires = {
                             @transitive
@@ -30,6 +31,7 @@
             /api>,
             <components
                 inherit = false
+                platforms = <main publishSource=true />
                 description = "Xapi - UI component types"
                 requires = {
                     project : ":ui:service",
@@ -46,6 +48,7 @@
             <generator
                 inherit = false
                 platforms = <main
+                    publishSource=true
                     modules = <main
                         description = "Xapi - Core UI Generator"
                         requires = {
@@ -73,6 +76,7 @@
             <javafx
                 inherit = false
                 platforms = <main
+                    publishSource=true
                     modules = <main
                         description = "Xapi - JavaFx UI"
                         requires = {
@@ -131,7 +135,7 @@
                         ]
                     /main>,
                     <gwt
-                        replaces = main
+                        replace = main
                         modules = [
                             <main
                                 requires = {
