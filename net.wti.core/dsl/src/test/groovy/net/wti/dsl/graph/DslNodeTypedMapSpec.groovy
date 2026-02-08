@@ -31,16 +31,14 @@ final class DslNodeTypedMapSpec extends Specification {
         ])
 
         and:
-        def v1 = new DslValueString(src, stringType, "a")
-        def v2 = new DslValueString(src, stringType, "b")
-        def v3 = new DslValueString(src, stringType, "c")
-
+        DslValueString v1 = new DslValueString(src, stringType, "a")
+        DslValueString v2 = new DslValueString(src, stringType, "b")
+        DslValueString v3 = new DslValueString(src, stringType, "c")
+        def e1 = new DslNodeTypedMap.Entry("project", v1)
+        def e2 = new DslNodeTypedMap.Entry("project", v2)
+        def e3 = new DslNodeTypedMap.Entry("project", v3)
         when:
-        def node = new DslNodeTypedMapImmutable(src, schema, [
-                new DslNodeTypedMapImmutable.Entry("project", v1),
-                new DslNodeTypedMapImmutable.Entry("project", v2),
-                new DslNodeTypedMapImmutable.Entry("project", v3),
-        ])
+        def node = new DslNodeTypedMapImmutable(src, schema, [e1,e2,e3])
 
         then:
         node.getEntries()*.key == ["project", "project", "project"]
@@ -63,7 +61,7 @@ final class DslNodeTypedMapSpec extends Specification {
 
         when:
         new DslNodeTypedMapImmutable(src, schema, [
-                new DslNodeTypedMapImmutable.Entry("nope", v),
+                new DslNodeTypedMap.Entry("nope", v),
         ])
 
         then:
