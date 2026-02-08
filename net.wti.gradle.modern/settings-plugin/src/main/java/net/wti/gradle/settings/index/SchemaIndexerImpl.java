@@ -9,6 +9,7 @@ import net.wti.gradle.tools.HasAllProjects;
 import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
 import xapi.fu.*;
+import xapi.fu.data.ListLike;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 
@@ -18,6 +19,9 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static net.wti.gradle.tools.GradleFiles.*;
+import static xapi.fu.Out1.newOut1;
+import static xapi.fu.log.Log.LogLevel.DEBUG;
+import static xapi.fu.log.Log.LogLevel.TRACE;
 import static xapi.string.X_String.isNotEmptyTrimmed;
 
 /**
@@ -432,7 +436,6 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             futures.add(future[0]);
         }
     }
-
     @SuppressWarnings("ResultOfMethodCallIgnored")
     protected void writeIndex(
             MinimalProjectView view,
@@ -440,49 +443,135 @@ public class SchemaIndexerImpl implements SchemaIndexer {
             HasAllProjects map
     ) {
 //        final File indexDir = index.getIndexDir();
+        final Log log = Log.firstLog(this, map, index, view); // none of these objects, by default implement Log, but you can intercept them to add Log interface
+
+        // Keep common strings/constants in locals (minor win, but also makes log text consistent).
+        final String FILE_PREFIX = "file://";
+
+        log.log(SchemaIndexerImpl.class, DEBUG, newOut1(() ->
+                "writeIndex: begin buildName=" + index.getBuildName() +
+                        " indexDir=" + FILE_PREFIX + index.getDirIndex() +
+                        " byPpm=" + FILE_PREFIX + index.getDirByPpm() +
+                        " byGnv=" + FILE_PREFIX + index.getDirByGnv() +
+                        " projects=" + map.getAllProjects().size()
+        ));
+
         for (SchemaProject project : map.getAllProjects()) {
             File projectDir = index.calcProjectDir(project);
             projectDir.mkdirs();
+
+            log.log(SchemaIndexerImpl.class, DEBUG, newOut1(() ->
+                    "writeIndex: project=" + project.getPathGradle() +
+                            " indexPath=" + project.getPathIndex() +
+                            " publishedName=" + project.getPublishedName() +
+                            " projectDir=" + FILE_PREFIX + project.getView().getProjectDir() +
+                            " multi=" + project.isMultiplatform() +
+                            " inherit=" + project.isInherit() +
+                            " virtual=" + project.isVirtual() +
+                            " platforms=[" + project.getAllPlatforms().map(SchemaPlatform::getName).join(",") + "]" +
+                            " modules=[" + project.getAllModules().map(SchemaModule::getName).join(",") + "]"
+            ));
+
             // hm... we should use index.getReader(), so we can pre-prime our reader (save a set of disk reads later)
             if (!projectDir.isDirectory()) {
                 throw new IllegalStateException("Unable to create index project directory " + projectDir);
             }
+
             for (SchemaPlatform platform : project.getAllPlatforms()) {
                 if (!project.isMultiplatform()) {
                     if (!platform.getName().equals(project.getDefaultPlatformName())) {
+                        log.log(SchemaIndexerImpl.class, TRACE, newOut1(() ->
+                                "writeIndex: skip platform=" + platform.getName() +
+                                        " for monoplatform project=" + project.getPathGradle() +
+                                        " defaultPlatform=" + project.getDefaultPlatformName()
+                        ));
                         continue;
                     }
                 }
-                String groupResolved = properties.resolvePattern(platform.getPublishPattern(), index, project.getPublishedName(), platform.getName(), "");
+
+                final String groupResolved = properties.resolvePattern(
+                        platform.getPublishPattern(),
+                        index,
+                        project.getPublishedName(),
+                        platform.getName(),
+                        ""
+                );
+
+                log.log(SchemaIndexerImpl.class, DEBUG, newOut1(() ->
+                        "writeIndex: platform=" + platform.getName() +
+                                " replace=" + platform.getReplace() +
+                                " disabled=" + platform.isDisabled() +
+                                " publishPattern=" + platform.getPublishPattern() +
+                                " groupResolved=" + groupResolved
+                ));
 
                 // modules should probably come from the platform, not the project...
                 for (SchemaModule module : project.getAllModules()) {
                     if (!project.isMultiplatform()) {
                         if (!module.getName().equals(project.getDefaultModuleName())) {
+                            log.log(SchemaIndexerImpl.class, TRACE, newOut1(() ->
+                                    "writeIndex: skip module=" + module.getName() +
+                                            " for monoplatform project=" + project.getPathGradle() +
+                                            " defaultModule=" + project.getDefaultModuleName()
+                            ));
                             continue;
                         }
                     }
+
                     // setup a publishing target.
-                    String configName = PlatformModule.unparse(platform.getName(), module.getName());
+                    final String configName = PlatformModule.unparse(platform.getName(), module.getName());
 
                     // Let our SchemaProperties decide how to resolve names (so end user can override at will)
-                    String nameResolved = properties.resolvePattern(module.getPublishPattern(), index, project.getPublishedName(), platform.getName(), module.getName());
+                    final String nameResolved = properties.resolvePattern(
+                            module.getPublishPattern(),
+                            index,
+                            project.getPublishedName(),
+                            platform.getName(),
+                            module.getName()
+                    );
 
-                    Log.firstLog(this, map, index, view) // none of these objects, by default implement Log, but you can intercept them to add Log interface
-                            .log(SchemaIndexerImpl.class, LogLevel.TRACE, Out1.newOut1( ()-> // make the string below lazily-computed
-                                    groupResolved+":"+nameResolved+":" + map.getVersion() +
-                                            " -> " +
-                                            project.getPublishedName() +":" + platform.getName()+":"+module.getName()+"?" + platform.isPublished() + ":" + module.isPublished()
-                            ));
-                    String version = map.getVersion();
-                    Lazy<File> versionDir = index.getDirGNV(groupResolved, nameResolved, version);
+                    log.log(SchemaIndexerImpl.class, TRACE, newOut1(() ->
+                            "writeIndex: module=" + module.getName() +
+                                    " include=[" + module.getInclude().join(",") + "]" +
+                                    " published=" + module.isPublished() +
+                                    " test=" + module.isTest() +
+                                    " force=" + module.isForce() +
+                                    " modulePublishPattern=" + module.getPublishPattern() +
+                                    " configName=" + configName +
+                                    " nameResolved=" + nameResolved
+                    ));
 
+                    // make the string below lazily-computed
+                    log.log(SchemaIndexerImpl.class, DEBUG, newOut1(() ->
+                            groupResolved + ":" + nameResolved + ":" + map.getVersion() +
+                                    " -> " +
+                                    project.getPublishedName() + ":" + platform.getName() + ":" + module.getName() +
+                                    "?" + platform.isPublished() + ":" + module.isPublished()
+                    ));
+
+                    final String version = map.getVersion();
+                    final Lazy<File> versionDir = index.getDirGNV(groupResolved, nameResolved, version);
 
                     // Check for sources, so we can record that this module is "live"
-                    File srcDir = new File(project.getView().getProjectDir(), "src/" + configName);
-                    boolean hasSrc = hasSources(srcDir);
-                    File moduleDir = new File(projectDir, configName);
+                    final File srcDir = new File(project.getView().getProjectDir(), "src/" + configName);
+                    final boolean hasSrc = hasSources(srcDir);
+                    final File moduleDir = new File(projectDir, configName);
                     final File sourcesFile = new File(moduleDir, "sources");
+
+                    // Ok, we now have a coords/group/name/version directory, place our dependency information there.
+                    // Capture deps once so we can:
+                    //  - avoid materializing coord dirs for modules with no sources and no deps
+                    //  - still materialize coord dirs for modules with sources (even if no deps)
+                    final ListLike<SchemaDependency> deps = project.getDependenciesOf(platform, module);
+
+                    log.log(SchemaIndexerImpl.class, DEBUG, Out1.newOut1(() ->
+                            "writeIndex: sourcesCheck ppm=" + project.getPathIndex() + ":" + configName +
+                            " srcDir=" + FILE_PREFIX + srcDir +
+                            " hasSources=" + hasSrc +
+                            " depCount=" + deps.size() +
+                            " sourcesFile=" + FILE_PREFIX + sourcesFile
+                    ));
+
                     if (hasSrc) {
                         // yay! record that this module has sources.
                         writeFile(sourcesFile, srcDir.getAbsolutePath());
@@ -490,12 +579,35 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                         sourcesFile.delete();
                     }
 
-                    // Ok, we now have a coords/group/name/version directory, place our dependency information there.
-                    for (SchemaDependency dep : project.getDependenciesOf(platform, module)) {
+                    // Only materialize the coord/<group>/<name>/<version>/ directory when this module matters:
+                    // - it has sources (even if it has no deps), OR
+                    // - it has deps (even if it has no sources).
+                    //
+                    // This prevents dead modules (no sources + no deps) from creating coord entries.
+                    final boolean shouldMaterializeCoord = hasSrc || deps.isNotEmpty();
+                    final Out1<File> realizedCoordDir = shouldMaterializeCoord
+                            ? versionDir
+                            : Out1.null1();
+
+                    log.log(SchemaIndexerImpl.class, DEBUG, Out1.newOut1(() ->
+                            "writeIndex: coordMaterialize=" + shouldMaterializeCoord +
+                            (shouldMaterializeCoord ? " coordDir=" + FILE_PREFIX + realizedCoordDir.out1() : "")
+                    ));
+
+                    for (SchemaDependency dep : deps) {
+                        log.log(SchemaIndexerImpl.class, TRACE, newOut1(() ->
+                                "writeIndex: dep type=" + dep.getType() +
+                                        " name=" + dep.getName() +
+                                        " coords=" + dep.getCoords() +
+                                        " trans=" + dep.getTransitivity() +
+                                        " gnv=" + dep.getGNV() +
+                                        " extraGnv=" + dep.getExtraGnv()
+                        ));
+
                         switch (dep.getType()) {
                             case unknown:
-                            case project:
-                                File projectDeps = new File(versionDir.out1(), "project");
+                            case project: {
+                                File projectDeps = new File(realizedCoordDir.out1(), "project");
                                 if (!projectDeps.isDirectory() && !projectDeps.mkdirs() && !projectDeps.isDirectory()) {
                                     // we should throw some generic "can't write files" error here...
                                     throw new IllegalStateException("Unable to create project directory " + projectDeps + "; check disk usage and filesystem permissions");
@@ -507,15 +619,16 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                 // record incoming/outgoing edges
                                 recordEdges(view, project, platform, module, dep, index);
                                 break;
-                            case internal:
-                                File internalDeps = new File(versionDir.out1(), "internal");
+                            }
+                            case internal: {
+                                File internalDeps = new File(realizedCoordDir.out1(), "internal");
                                 if (!internalDeps.isDirectory() && !internalDeps.mkdirs() && !internalDeps.isDirectory()) {
                                     // we should throw some generic "can't write files" error here...
                                     throw new IllegalStateException("Unable to create projects directory " + internalDeps + "; check disk usage and filesystem permissions");
                                 }
-                                name = dep.getName();
+                                String name = dep.getName();
                                 String mangledName = PlatformModule.parse(name).toPlatMod();
-                                depFile = new File(internalDeps, mangledName);
+                                File depFile = new File(internalDeps, mangledName);
                                 // hm, we have nothing interesting to write into internal dependencies, the filename is a key...
                                 touch(depFile);
                                 if (!depFile.isFile()) {
@@ -523,22 +636,25 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                 }
                                 recordEdges(view, project, platform, module, dep, index);
                                 break;
-                            case external:
+                            }
+                            case external: {
                                 String depGroup = dep.getGroup();
                                 String depVersion = dep.getVersion();
-                                name = dep.getName();
+                                String name = dep.getName();
                                 final String extraGnv = dep.getExtraGnv();
                                 // hm... this is where we should probably record something that can wait to try to resolve
                                 // an external dependency w/ metadata from previously-indexed sub-builds.
                                 // Only if there is no sub-build which, by schema.xapi, claims a G:N[:V],
                                 // will we simply write out the full "g:n:v[:extras]" structure;
                                 // otherwise, we should convert this dependency to a "foreign" layer
-                                depFile = new File(versionDir.out1(), depGroup + ":" + name +  ":" + depVersion +
-                                        (isNotEmptyTrimmed(extraGnv) ? ":" + extraGnv : ""));
+                                File depFile = new File(
+                                        realizedCoordDir.out1(),
+                                        depGroup + ":" + name + ":" + depVersion + (isNotEmptyTrimmed(extraGnv) ? ":" + extraGnv : "")
+                                );
                                 extractCoords(platform, module, dep, depFile);
                                 break;
+                            }
                         }
-
                     } // end all getDependenciesOf(platform, module)
 
                     // all modules should record a little state about themselves into the index,
@@ -557,7 +673,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     final File forceFile = new File(modDir, "force");
                     final File liveFile = new File(modDir, "live");
                     if (module.isTest()) {
-                        writeFile( testFile, "true");
+                        writeFile(testFile, "true");
                     } else if (testFile.exists()){
                         testFile.delete();
                     }
@@ -578,7 +694,10 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                 } // end all modules
             } // end all platforms
         } // end all projects
+
+        log.log(SchemaIndexerImpl.class, DEBUG, newOut1(() -> "writeIndex: end"));
     }
+
 
     private void recordEdges(final MinimalProjectView view, final SchemaProject project, final SchemaPlatform platform, final SchemaModule module, final SchemaDependency dep, final SchemaIndexBuilder index) {
         // record in/ and out/ edges for each project:platform:module -> p:p:m pairing.

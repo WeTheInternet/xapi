@@ -452,7 +452,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     String nameResolved = properties.resolvePattern(module.getPublishPattern(), index, project.getPublishedName(), platform.getName(), module.getName());
 
                     Log.firstLog(this, map, index, view) // none of these objects, by default implement Log, but you can intercept them to add Log interface
-                        .log(SchemaIndexerImpl.class, LogLevel.TRACE, Out1.newOut1( ()-> // make the string below lazily-computer
+                        .log(SchemaIndexerImpl.class, LogLevel.TRACE, Out1.newOut1( ()-> // make the string below lazily-computed
                             groupResolved+":"+nameResolved+":" + map.getVersion() +
                              " -> " +
                             project.getPublishedName() +":" + platform.getName()+":"+module.getName()+"?" + platform.isPublished() + ":" + module.isPublished()

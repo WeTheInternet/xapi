@@ -1,6 +1,7 @@
 package xapi.fu.java;
 
 import xapi.fu.In1Out1;
+import xapi.fu.IsImmutable;
 import xapi.fu.data.*;
 import xapi.fu.api.GwtIncompatible;
 
@@ -83,6 +84,13 @@ public class X_Jdk {
         return toMap(new LinkedHashMap<>());
     }
 
+    public static <K, V> MapLike<K, V> mapImmutable(final MapLike<K, V> map) {
+        if (map instanceof IsImmutable) {
+            return map;
+        }
+        return new ImmutableMapLike<>(map);
+    }
+
     public static <K, V> MapLike<K, V> mapOrderedKey() {
         return toMap(new TreeMap<>());
     }
@@ -112,6 +120,10 @@ public class X_Jdk {
         return toList(defaultList());
     }
 
+    public static <V> ListLike<V> listImmutable(ListLike<V> source) {
+        return source instanceof IsImmutable ? source : new ImmutableListLike<>(source);
+    }
+
     public static <V> ListLike<V> listArray() {
         return toList(new ArrayList<>());
     }
@@ -122,6 +134,10 @@ public class X_Jdk {
 
     public static <V> SetLike<V> set() {
         return toSet(defaultSet());
+    }
+
+    public static <V> SetLike<V> setImmutable(SetLike<V> source) {
+        return source instanceof IsImmutable ? source : new ImmutableSetLike<>(source);
     }
 
     public static <V> SetLike<V> setHash() {
@@ -146,6 +162,10 @@ public class X_Jdk {
 
     public static <V> SetLike<V> setLinkedSynchronized() {
         return toSet(Collections.synchronizedSet(new LinkedHashSet<V>()));
+    }
+
+    public static <V> CollectionLike<V> collectionImmutable(CollectionLike<V> source) {
+        return source instanceof IsImmutable ? source : new ImmutableCollectionLike<>(source);
     }
 
     public static boolean isEmpty(Collection<?> resources) {

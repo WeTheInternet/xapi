@@ -38,6 +38,9 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
         return this;
     }
 
+    default SizedIterable<T> readOnly() {
+        return new ImmutableSizedIterable<>(this);
+    }
     static <T> SizedIterable<T> of(Out1<Integer> size, Iterable<T> itr) {
         return new SizedIterable<T>() {
             @Override

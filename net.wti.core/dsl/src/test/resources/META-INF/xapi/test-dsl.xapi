@@ -2,7 +2,7 @@
   name        = "test-dsl"
   packageName = "net.wti.complex"
   version     = "0.2"
-  rootTag     = "root"
+  rootTag     = "registry"
   description = "Moderately complex test DSL with lists, maps, and listOrMap patterns."
 
   elements = [

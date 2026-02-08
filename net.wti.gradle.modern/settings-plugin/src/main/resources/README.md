@@ -121,20 +121,6 @@ Typical declarations:
 /xapi-schema>
 ```
 
-or:
-
-```xapi
-<xapi-schema
-    platforms = {
-        main : "",
-        dev  : "main",
-        prod : "main",
-    }
-    modules = [ main ]
-    projects = [ app ]
-/xapi-schema>
-```
-
 #### 1.3.1 Platform attributes
 
 - `name`  

@@ -1,0 +1,20 @@
+<xapi-dsl
+  name        = "schema-attrs-conflict-required"
+  packageName = "net.wti.schema"
+  version     = "0.1"
+  rootTag     = "a"
+
+  attributes = {
+    name : <string required=true />
+  }
+
+  elements = [
+    <element-def
+      name = "a"
+      attributes = {
+        name : <string required=false />
+      }
+      elements = { }
+    /element-def>
+  ]
+/xapi-dsl>

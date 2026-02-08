@@ -385,7 +385,7 @@ public final class JavaParser {
 
     private static interface PathDebugger {
         static void debugPath(String path) {
-            Log.defaultLogger().log(JavaParser.class, LogLevel.TRACE, "Parsing file", path);
+            Log.defaultLogger().log(JavaParser.class, LogLevel.DEBUG, "Parsing file", path);
         }
     }
 

@@ -8,11 +8,7 @@ dependencies {
     api project(':xapi-lang-core')
     api project(':xapi-fu')
     implementation project(':xapi-gen')
-    testImplementation project(':xapi-lang-core')
-    testImplementation gradleTestKit()
-    testImplementation 'org.spockframework:spock-core:2.4-groovy-3.0', {
-        exclude module: 'groovy-all'
-    }
+    testImplementation project(':xapi-dsl-test')
 }
 
 tasks.withType(Test).configureEach {

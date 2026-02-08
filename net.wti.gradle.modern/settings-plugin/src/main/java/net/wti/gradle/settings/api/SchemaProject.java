@@ -111,7 +111,16 @@ public class SchemaProject implements Named, HasPath {
         } else {
             modules.add((result = module));
         }
+
         for (SchemaProject child : children.mappedValues()) {
+            if (!child.isInherit()) {
+                Log.tryLog(SchemaProject.class, this, Log.LogLevel.TRACE,
+                        "Not propagating module ", module.getName(),
+                        " from ", getPathGradle(),
+                        " into non-inheriting child ", child.getPathGradle()
+                );
+                continue;
+            }
             if (child.isMultiplatform()) {
                 child.addModule(module);
             } else if (module.getName().equals(child.getDefaultModuleName())) {
@@ -131,7 +140,16 @@ public class SchemaProject implements Named, HasPath {
         } else {
             platforms.add((result = platform));
         }
+
         for (SchemaProject child : children.mappedValues()) {
+            if (!child.isInherit()) {
+                Log.tryLog(SchemaProject.class, this, Log.LogLevel.TRACE,
+                        "Not propagating platform ", result.getName(),
+                        " from ", getPathGradle(),
+                        " into non-inheriting child ", child.getPathGradle()
+                );
+                continue;
+            }
             child.addPlatform(result);
         }
         return result;
@@ -424,4 +442,3 @@ public class SchemaProject implements Named, HasPath {
     }
 
 }
-

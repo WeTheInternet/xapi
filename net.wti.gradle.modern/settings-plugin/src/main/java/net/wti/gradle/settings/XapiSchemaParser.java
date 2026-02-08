@@ -761,7 +761,7 @@ public interface XapiSchemaParser {
                 }
                 ).flatten(In1Out1.identity()).cached();
                 Log.loggerFor(XapiSchemaParser.class, this)
-                        .log(XapiSchemaParser.class, LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
+                        .log(XapiSchemaParser.class, LogLevel.DEBUG, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
                 for (final SchemaDependency dep : extracted) {
                     // need to validate that dependencies point to valid targets!
                     final IndexNode consumerNode = consumerFactory.io(mod);

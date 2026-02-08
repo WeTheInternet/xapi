@@ -1,6 +1,7 @@
 package xapi.fu.itr;
 
 import xapi.fu.In1Out1;
+import xapi.fu.IsImmutable;
 import xapi.fu.Out1;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasSize;
@@ -121,6 +122,10 @@ public interface SizedIterator<T> extends Iterator<T>, HasSize, HasItems {
                 source.remove();
             }
         };
+    }
+
+    default SizedIterator<T> readOnly() {
+        return new ImmutableSizedIterator<>(this);
     }
 
     /**

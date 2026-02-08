@@ -664,7 +664,7 @@ public interface SchemaParser {
                     extractDependencies(localCopy, expr, project, mod)
                 ).flatten(In1Out1.identity()).cached();
                 Log.loggerFor(SchemaParser.class, this)
-                        .log(SchemaParser.class, LogLevel.TRACE, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
+                        .log(SchemaParser.class, LogLevel.DEBUG, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
                 for (SchemaDependency dep : extracted) {
                     insertDependencies(project, metadata, mod, dep);
                 }

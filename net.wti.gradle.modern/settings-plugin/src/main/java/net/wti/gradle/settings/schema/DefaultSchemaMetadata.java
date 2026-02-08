@@ -333,9 +333,9 @@ public class DefaultSchemaMetadata implements SchemaMetadata {
     }
 
     public void addDependency(DependencyType type, PlatformModule into, JsonPairExpr from) {
-        Log.firstLog(into, this).log(Log.LogLevel.TRACE, DefaultSchemaMetadata.class,
+        Log.firstLog(into, this).log(Log.LogLevel.DEBUG, DefaultSchemaMetadata.class,
                 lazyToString(this::getPath), "adding dependency ", type, " into ", into, " : ",
-                lazyToString(from::toSource).map(s->new LazyString(s.toString().replace("\n", " ")))
+                lazyToString(()->from.toString().replace("\n", " "))
         );
 
         // hm... we should just be storing ast for the requires= of a top-level xapi-schema.

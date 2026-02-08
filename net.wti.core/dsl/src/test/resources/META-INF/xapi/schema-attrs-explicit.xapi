@@ -1,0 +1,30 @@
+<xapi-dsl
+  name        = "schema-attrs-explicit"
+  packageName = "net.wti.schema"
+  version     = "0.1"
+  rootTag     = "a"
+
+  attributes = {
+    name   : <string required=true />,
+    labels : <list element=<string /> required=false />
+  }
+
+  elements = [
+    <element-def
+      name = "a"
+      attributes = {
+        name   : <string required=true />,
+        labels : <list element=<string /> required=false />
+      }
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name = "b"
+      attributes = {
+        name : <string required=true />
+      }
+      elements = { }
+    /element-def>
+  ]
+/xapi-dsl>

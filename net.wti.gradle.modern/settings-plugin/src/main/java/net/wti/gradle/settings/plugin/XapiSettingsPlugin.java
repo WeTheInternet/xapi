@@ -192,8 +192,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                     settings.include(gradlePath);
                     if (dir.isDirectory()) {
                         final ProjectDescriptor p = settings.project(gradlePath);
+                        p.setProjectDir(dir);
                         if (new File(dir, project.getName() + ".gradle").exists()) {
-                            p.setProjectDir(dir);
                             p.setBuildFileName(project.getName() + ".gradle");
                         } else if (new File(dir, project.getName() + ".gradle.kts").exists()) {
                             p.setProjectDir(dir);
@@ -300,11 +300,16 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             proj.setProjectDir(gradleSourceDir);
                             proj.setBuildFileName(buildFileName);
                             proj.setName(modKey);
-                            view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}", projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
+                            view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}",
+                                    projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
 //                            }
                         } else {
                             // intentionally not using Monoplatform; it blends into Multiplatform too easily in logs
                             view.getLogger().info("Singleplatform {} -> {} file://{} @ {}", project.getPathGradle(), modKey, userBuildFile, key);
+                            // Schema is source of truth: ensure the singleplatform descriptor uses the generated output build file.
+                            final ProjectDescriptor proj = settings.project(gradlePrefix);
+                            proj.setProjectDir(gradleSourceDir);
+                            proj.setBuildFileName(buildFileName);
                         }
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically

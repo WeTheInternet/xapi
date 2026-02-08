@@ -32,6 +32,58 @@ class XapiSchemaIndexerTest extends AbstractSchemaTest<XapiSchemaIndexerTest> {
         println "running in file://$indexDir.parent"
     }
 
+    def "inherit=false does not inherit extra platforms into index"() {
+        given:
+        customSchema = """
+<xapi-schema
+    platforms = [
+        main,
+        <dev replace = "main" />,
+        <prod replace = "main" />,
+    ]
+    modules = [
+        api, spi,
+        <main include = [ api, spi ] /main>,
+    ]
+    projects = [
+        <producer2
+            inherit = false
+            platforms = [ main ]
+        /producer2>
+    ]
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+
+        // ensure the project exists on disk so the index has a place to look
+        withProject(':producer2') { TestProject proj ->
+            proj.file("src/gradle/api/buildscript.start") << "// marker"
+        }
+
+        when:
+        // Trigger something that causes settings plugin to run & index to be written
+        runSucceed("tasks", "-i")
+
+        then:
+        // No producer2-dev / producer2-prod coordinate dirs should exist anywhere in coord index.
+        File coordDir = new File(indexDir, "coord")
+        assert coordDir.isDirectory()
+
+        def bad = []
+        coordDir.eachFileRecurse { File f ->
+            if (f.isDirectory()) {
+                def n = f.name
+                if (n.startsWith("producer2-") && (n.endsWith("-dev") || n.endsWith("-prod"))) {
+                    bad << f
+                }
+            }
+        }
+        assert bad.isEmpty() : "Found unexpected inherited platforms in coord index:\\n" + bad.join("\\n")
+    }
+
     def "A schema is written for a single module project"() {
         given:
 
@@ -105,7 +157,6 @@ class XapiSchemaIndexerTest extends AbstractSchemaTest<XapiSchemaIndexerTest> {
             ]
         /producer1>,
         <producer2
-            inherit = false
             platforms = [ main ] // only one platform
         /producer2>,
 
@@ -414,7 +465,7 @@ public class Producer {}
             modules = [ main ]
         /sampleProject>
     ]
-</xapi-schema>
+/xapi-schema>
 """
         // Apply Java plugin to generated projects
         pluginList = ['java']
@@ -442,7 +493,7 @@ public class UsesPlatformRequires {
 
         // The Gradle module name for the main archive of a multiplatform project
         // is `<project>-main`. Compiling it exercises the platform graph.
-        BuildResult result = runSucceed(":sampleProject-main:compileJava", "-i")
+        BuildResult result = runSucceed(":sampleProject-main:compileJava", "-i", "-Dxapi.log.level=TRACE")
 
         expect:
         result.task(':sampleProject-main:compileJava').outcome == TaskOutcome.SUCCESS
@@ -475,7 +526,7 @@ public class UsesPlatformRequires {
             }
         /sampleProject>
     ]
-</xapi-schema>
+/xapi-schema>
 """
         pluginList = ['java']
         withProject(':') {}

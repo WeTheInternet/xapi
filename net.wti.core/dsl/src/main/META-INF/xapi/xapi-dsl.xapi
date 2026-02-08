@@ -1,0 +1,403 @@
+/*
+ * xapi-dsl.xapi
+ *
+ * Bootstrapping schema for the “xapi-dsl dsl” itself.
+ *
+ * This file is written with the *future / ideal* implementation in mind:
+ *  - types are expressed as a small type-expression language
+ *  - we model one()/many()/typedMap()/namedElement()/element()/typeRef()
+ *  - map + typedMap are instruction-lists (ordered entries, repeatable keys)
+ *
+ * It is OK if the current generator/parser can’t fully consume this yet;
+ * treat it as the target schema we are aiming to implement.
+ */
+
+<xapi-dsl
+  name        = "xapi-dsl"
+  packageName = "net.wti.dsl.schema"
+  version     = "0.1"
+  rootTag     = "xapi-dsl"
+  description = "Schema of the xapi-dsl DSL definition language itself."
+  rootDirectory = <string required = false />
+  // The rootDirectory attribute is intended as a generic multi-file base dir;
+  // it may be overridden by build context (e.g. Gradle root project).
+  // If absent, build/analyze contexts decide a default.
+  elements = [
+
+    // ------------------------------------------------------------
+    // Root: <xapi-dsl ... />
+    // ------------------------------------------------------------
+    <element-def
+      name        = "xapi-dsl"
+      description = "Root element describing a DSL schema."
+
+      attributes = {
+        name        : <string required = true  />,
+        packageName : <qualifiedName required = false />,
+        version     : <string required = false />,
+        description : <string required = false />,
+        rootTag     : <name   required = true  />,
+
+        // Optional base directory for resolving referenced sources (multi-file parsing).
+        rootDirectory : <string required = false />,
+
+        // Type aliases:
+        //   types = [ <type-alias name=Foo type=<string/> />, ... ]
+        // or (eventually) types = typedMap({ Foo: <string/>, Bar: one(<string/>, <name/>) })
+        types : many(
+          <type-alias />
+        ),
+
+        // Element declarations (schema):
+        elements : many(
+          <element-def />
+        )
+      }
+
+      elements = {
+        // Allow either attribute-form or nested element-form
+        type-alias  : <type-alias />,
+        element-def : <element-def />
+      }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Type alias: reusable named type expression
+    // ------------------------------------------------------------
+    <element-def
+      name        = "type-alias"
+      description = "A named alias for a type expression."
+
+      attributes = {
+        name        : <name required = true />,
+        description : <string required = false />,
+
+        // The aliased type expression.
+        type : <type-expr required = true />
+      }
+
+      elements = {
+        // allow <type-alias name=Foo> <string/> </type-alias>
+        type-expr : <type-expr />
+      }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Element definition: declares tag, attributes, and children
+    // ------------------------------------------------------------
+    <element-def
+      name        = "element-def"
+      description = "Definition of one element/tag in a DSL."
+
+      attributes = {
+        name        : <name required = true />,
+        description : <string required = false />,
+
+        // Attribute declarations.
+        // Ideal / future: typedMap({ attrName: <attribute-def .../> , ... })
+        // For now we allow repeated keys and treat this as instruction-list semantics.
+        attributes : typedMap({
+          // Key is the attribute name, value is an <attribute-def/> payload.
+          // The value carries its own 'name' too; we keep it redundant for now
+          // because it makes diagnostics friendlier and allows list form as well.
+          entry : <attribute-def />
+        }),
+
+        // Child element declarations (what children are allowed).
+        // Ideal / future: typedMap({ childTag: <element-ref name=.../> , ... })
+        elements : typedMap({
+          entry : <element-ref />
+        })
+      }
+
+      elements = {
+        attribute-def : <attribute-def />,
+        element-ref   : <element-ref />
+      }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Attribute definition: name + type (+ required/default)
+    // ------------------------------------------------------------
+    <element-def
+      name        = "attribute-def"
+      description = "Definition of one attribute on an element."
+
+      attributes = {
+        name        : <name required = true />,
+        description : <string required = false />,
+
+        // Required flag: default false.
+        required : <bool required = false default = false />,
+
+        // Default value: free-form JSON-ish; interpretation is type-specific.
+        // (We can tighten this later once we add a json primitive type.)
+        default : <json required = false />,
+
+        // The type expression describing this attribute's value.
+        type : <type-expr required = true />
+      }
+
+      elements = {
+        type-expr : <type-expr />
+      }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Element reference: refers to another element type by name
+    // ------------------------------------------------------------
+    <element-def
+      name        = "element-ref"
+      description = "Reference to an element type by name."
+
+      attributes = {
+        name : <name required = true />
+      }
+
+      elements = { }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Type expression (sum type / union of all type nodes)
+    //
+    // This is the core "future" type language for schema definition.
+    //
+    // For now, we model it as: one(<type-node-1/>, <type-node-2/>, ...)
+    // rather than a separate union() construct.
+    // ------------------------------------------------------------
+    <element-def
+      name        = "type-expr"
+      description = "A type expression node. Exactly one type node must be supplied."
+
+      // In the future, we want this to accept either:
+      //  - a single primitive element (<string/>, <name/>, <bool/>...)
+      //  - a type constructor element (<one/>, <many/>, <typedMap/>...)
+      //  - a type reference (<typeRef name=Foo/>)
+      //
+      // We model this as one(...) over the concrete type nodes.
+      //
+      // NOTE: We are using element() (static tag) forms for the nodes themselves,
+      // not namedElement(...); these are schema tags, not self-keying runtime items.
+      attributes = {
+        value : one(
+          <string-type />,
+          <name-type />,
+          <qualifiedName-type />,
+          <bool-type />,
+          <int-type />,
+          <namePair-type />,
+
+          <typeRef-type />,
+          <element-type />,
+          <namedElement-type />,
+
+          <one-type />,
+          <many-type />,
+          <map-type />,
+          <typedMap-type />
+        )
+      }
+
+      elements = {
+        // Allow nested element form too.
+        string-type        : <string-type />,
+        name-type          : <name-type />,
+        qualifiedName-type : <qualifiedName-type />,
+        bool-type          : <bool-type />,
+        int-type           : <int-type />,
+        namePair-type      : <namePair-type />,
+
+        typeRef-type       : <typeRef-type />,
+        element-type       : <element-type />,
+        namedElement-type  : <namedElement-type />,
+
+        one-type           : <one-type />,
+        many-type          : <many-type />,
+        map-type           : <map-type />,
+        typedMap-type      : <typedMap-type />
+      }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Primitive type nodes
+    // ------------------------------------------------------------
+    <element-def
+      name        = "string-type"
+      description = "Primitive type: string."
+      attributes = { }
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name        = "name-type"
+      description = "Primitive type: name (java identifier)."
+      attributes = { }
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name        = "qualifiedName-type"
+      description = "Primitive type: qualifiedName (dot-separated identifiers)."
+      attributes = { }
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name        = "bool-type"
+      description = "Primitive type: bool."
+      attributes = { }
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name        = "int-type"
+      description = "Primitive type: int."
+      attributes = { }
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name        = "namePair-type"
+      description = "Primitive type: namePair. Accepts \"a:b\" or { a: b } where both sides are <name>."
+      attributes = { }
+      elements = { }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Type reference node
+    // ------------------------------------------------------------
+    <element-def
+      name        = "typeRef-type"
+      description = "Reference to a named type alias."
+
+      attributes = {
+        name : <name required = true />
+      }
+
+      elements = { }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Element type nodes
+    // ------------------------------------------------------------
+    <element-def
+      name        = "element-type"
+      description = "Static-tag element type: element(\"typeName\")."
+
+      attributes = {
+        name : <name required = true />
+      }
+
+      elements = { }
+    /element-def>,
+
+    <element-def
+      name        = "namedElement-type"
+      description = "Self-keying element type: namedElement(\"typeName\")."
+
+      attributes = {
+        name : <name required = true />
+      }
+
+      elements = { }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Composition / container type nodes
+    //
+    // These model the invocation-style constructors we want:
+    //   one(T1, T2, ...)
+    //   many(T1, T2, ...)
+    //   map(V1, V2, ...)
+    //   typedMap({ key: typeExpr, ... })
+    //
+    // Here we represent them as elements with child type-exprs.
+    // (The schema language is still xapi; the parser can later accept method call syntax too.)
+    // ------------------------------------------------------------
+    <element-def
+      name        = "one-type"
+      description = "one(T1, T2, ...): exactly one value; multiple args imply union."
+
+      attributes = { }
+
+      elements = {
+        // child type expressions
+        type : <type-expr />
+      }
+    /element-def>,
+
+    <element-def
+      name        = "many-type"
+      description = "many(T1, T2, ...): list; singleton lifting allowed; multiple args imply union."
+
+      attributes = { }
+
+      elements = {
+        type : <type-expr />
+      }
+    /element-def>,
+
+    <element-def
+      name        = "map-type"
+      description = "map(V1, V2, ...): instruction-list map. Keys are string-ish; values match union; ordered; repeatable keys."
+
+      attributes = { }
+
+      elements = {
+        valueType : <type-expr />
+      }
+    /element-def>,
+
+    <element-def
+      name        = "typedMap-type"
+      description = "typedMap({ key: typeExpr, ... }): instruction-list typed map; keys restricted; ordered; repeatable keys."
+
+      attributes = { }
+
+      elements = {
+        // One entry per key in the typed map schema.
+        // Repeatable and ordered; builder stores entries list.
+        entry : <typedMap-entry />
+      }
+    /element-def>,
+
+    <element-def
+      name        = "typedMap-entry"
+      description = "One key in a typedMap schema: key name + value type."
+
+      attributes = {
+        key  : <name required = true />,
+        type : <type-expr required = true />
+      }
+
+      elements = {
+        type-expr : <type-expr />
+      }
+    /element-def>,
+
+    // ------------------------------------------------------------
+    // Future / generic multi-file parsing support
+    // ------------------------------------------------------------
+    <element-def
+      name        = "source-ref"
+      description =
+        "Optional generic mechanism for multi-file parsing: references another .xapi file to be parsed as some element type."
+
+      attributes = {
+        // name of the logical ref (often the same as the target element name)
+        name : <name required = true />,
+
+        // directory / filename / path controls; interpretation is analyzer/build-context-specific
+        directory : <string required = false />,
+        filename  : <string required = false />,
+        path      : <string required = false />,
+
+        // element type expected at root of referenced file
+        asElement : <name required = false />
+      }
+
+      elements = { }
+    /element-def>
+
+  ]
+/xapi-dsl>

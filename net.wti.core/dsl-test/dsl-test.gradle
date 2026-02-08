@@ -1,0 +1,20 @@
+plugins {
+    id 'groovy'
+    id 'java-library'
+}
+
+// this module is a place to put reusable "xapi dsl" testing utilities.
+// This allows the test framework to be published as a "standard module"
+
+// For consumers of xapi-settings plugin, this can be easily autowired with a `testTools` module,
+// but net.wti.core provides the building blocks of xapi-settings,
+// so we must make due with "standard practices" like explicit standalone "-test" utility modules.
+
+repositories.mavenCentral()
+dependencies {
+    api project(':xapi-lang-core')
+    api gradleTestKit()
+    api 'org.spockframework:spock-core:2.4-groovy-3.0', {
+        exclude module: 'groovy-all'
+    }
+}

@@ -23,7 +23,7 @@ import static xapi.fu.log.Log.printLevel;
 public interface Log extends Debuggable {
 
   enum LogLevel {
-    ALL, DEBUG, TRACE, INFO, WARN, ERROR
+    ALL, TRACE, DEBUG, INFO, WARN, ERROR
     ;
 
     public boolean isLoggable(LogLevel level) {
