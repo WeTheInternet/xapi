@@ -8,7 +8,7 @@ plugins {
 }
 String xapiHome = "$rootDir.parent"
 apply from: "$xapiHome/gradle/xapi-env.gradle"
-//repositories.mavenCentral()
+repositories.mavenCentral()
 
 
 // force-realize a jar task for java-gradle-plugin to configure eagerly.

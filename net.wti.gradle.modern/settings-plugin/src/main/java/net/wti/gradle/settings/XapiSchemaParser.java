@@ -763,7 +763,14 @@ public interface XapiSchemaParser {
                 ).flatten(In1Out1.identity()).cached();
                 Log.loggerFor(XapiSchemaParser.class, this)
                         .log(XapiSchemaParser.class, LogLevel.DEBUG, metadata.getPath(), " adding deps ", extracted, " to platform ", mod);
+                final SetLike<String> seenDeps = X_Jdk.setLinked();
+
                 for (final SchemaDependency dep : extracted) {
+                    final String depKey = dependencyDedupeKey(dep);
+                    if (!seenDeps.addIfMissing(depKey)) {
+
+                        continue;
+                    }
                     // need to validate that dependencies point to valid targets!
                     final IndexNode consumerNode = consumerFactory.io(mod);
                     map.whenResolved(()->{
@@ -801,6 +808,16 @@ public interface XapiSchemaParser {
             // do not insert new code here w/o considering the early continue; above
         }
 
+    }
+
+    default String dependencyDedupeKey(final SchemaDependency dep) {
+        // Keep this stable + conservative; include anything that changes semantics.
+        return String.valueOf(dep.getType()) + '|' +
+                dep.getCoords() + '|' +
+                dep.getTransitivity() + '|' +
+                dep.getGNV() + '|' +
+                dep.getExtraGnv() + '|' +
+                dep.getClosureConfig();
     }
 
     default SizedIterable<String> extractName(Expression expr) {
@@ -1348,14 +1365,24 @@ public interface XapiSchemaParser {
         for (UiContainerExpr platform : platforms) {
 
             // Hard stop: if somehow we still have extra platforms in a singleplatform project, skip them.
-            if (!project.isMultiplatform() && !defaultPlatform.equals(platform.getName())) {
-                System.out.println("SKIPPING PLATFORM " + platform.getName() + " from " + project.getPath() + " because != " + defaultPlatform);
-                continue;
+
+            if (!project.isMultiplatform()) {
+                if (!platform.getName().equals(defaultPlatform)) {
+                    Log.firstLog(this, project, metadata).log(XapiSchemaParser.class, LogLevel.DEBUG,
+                            "loadPlatforms(): skipping non-default platform for singleplatform project. project=", project.getPathGradle(),
+                            " platform=", platform.getName(),
+                            " defaultPlatform=", defaultPlatform,
+                            " schema=", metadata.getSchemaLocation()
+                    );
+                    continue;
+                }
             }
 
             String name = platform.getName();
-            if (!project.isMultiplatform()) {
-                if (!project.getDefaultPlatformName().equals(name)) {
+            if (!project.isMultiplatform())
+            {
+                if (!project.getDefaultPlatformName().equals(name))
+                {
                     continue;
                 }
             }
@@ -1372,8 +1399,10 @@ public interface XapiSchemaParser {
                     .mapIfPresent(attr -> "true".equals(attr.getStringExpression(false)))
                     .ifAbsentReturn(false);
             final SetLike<String> replace = X_Jdk.setLinked();
-            In1<Maybe<UiAttrExpr>> processReplace = replaceAttr -> {
-                if (replaceAttr.isPresent()) {
+            In1<Maybe<UiAttrExpr>> processReplace = replaceAttr ->
+            {
+                if (replaceAttr.isPresent())
+                {
                     final ComposableXapiVisitor<Object> addRequire = whenMissingFail(XapiSchemaParser.class);
                     addRequire.nameOrString(replace::add);
                     replaceAttr.get().getExpression().accept(addRequire, metadata);
@@ -1570,7 +1599,6 @@ public interface XapiSchemaParser {
     default boolean isSynthetic(Expression e) {
         return Boolean.TRUE.equals(e.getExtra(X_Namespace.KEY_SYNTHETIC));
     }
-
     default void insertModuleRequires(String platform, DefaultSchemaMetadata metadata, UiAttrExpr attr, In1<In1<SchemaModule>> moduleSource) {
         final Expression toRequire = attr.getExpression();
         final Pointer<String> platValue = Pointer.pointerTo(platform);
@@ -1580,70 +1608,153 @@ public interface XapiSchemaParser {
         final In1<SchemaModule> insertModule = mod -> {
             modValue.in(mod.getName());
             ComposableXapiVisitor<Object> vis = whenMissingFail(XapiSchemaParser.class, () -> "Illegal contents for a require=... attribute");
-            toRequire.accept(vis
-                            .withJsonContainerRecurse(In2.ignoreAll())
-                            .withJsonPairTerminal((pair, ctx)->{
-                                switch (pair.getKeyString()) {
-                                    case "unknown":
-                                    case "project":
-                                        metadata.getDepsProject()
-                                                .get(keyBuilder.out1())
-                                                .add(pair.getValueExpr());
-                                        break;
-                                    case "internal":
-                                        metadata.getDepsInternal()
-                                                .get(keyBuilder.out1())
-                                                .add(pair.getValueExpr());
-                                        break;
-                                    case "external":
-                                        metadata.getDepsExternal()
-                                                .get(keyBuilder.out1())
-                                                .add(pair.getValueExpr());
-                                        break;
-                                    case "platform":
-                                        // expect map-only children
-                                        ComposableXapiVisitor<Object> descender = whenMissingFail(XapiSchemaParser.class)
-                                                .withJsonMapOnly((json, ignore) -> {
-                                                    for (JsonPairExpr childPair : json.getPairs()) {
-                                                        try (Do.Closeable lease = platValue.borrow(childPair.getKeyString())) {
-                                                            childPair.getValueExpr().accept(vis, null);
-                                                        }
-                                                    }
-                                                    // do not recurse, we sent the children to main visitor (vis) already.
-                                                    return false;
-                                                });
-                                        pair.getValueExpr().accept(descender, null);
-                                        return;
-                                    case "module":
-                                        // platform / module is handled like: platform { gwt: { module : { api : [ ... ] } } }
-                                        // expect map-only children
-                                        descender = whenMissingFail(XapiSchemaParser.class)
-                                                .withJsonMapOnly((json, ignore) -> {
-                                                    for (JsonPairExpr childPair : json.getPairs()) {
-                                                        try (Do.Closeable lease = modValue.borrow(childPair.getKeyString())) {
-                                                            childPair.getValueExpr().accept(vis, null);
-                                                        }
-                                                    }
-                                                    // do not recurse, we sent the children to main visitor (vis) already.
-                                                    return false;
-                                                });
-                                        pair.getValueExpr().accept(descender, null);
-                                        return;
-                                    default:
-                                        try {
-                                            Integer.parseInt(pair.getKeyString());
-                                            metadata.getDepsInternal()
-                                                    .get(keyBuilder.out1())
-                                                    .add(pair.getValueExpr());
-                                        } catch (NumberFormatException failed) {
-                                            throw new UnsupportedOperationException(pair.getKeyString() + " is not a valid requires = {} key");
-                                        }
+
+            // Reusable handler for ALL requires expressions (platform-level + module-level).
+            // This ensures we always use the same visitor logic for pair.getKeyString().
+            vis.withJsonContainerRecurse(In2.ignoreAll())
+                    .withJsonPairTerminal((pair, ctx)->{
+                        switch (pair.getKeyString()) {
+                            case "unknown":
+                            case "project": {
+                                metadata.getDepsProject()
+                                        .get(keyBuilder.out1())
+                                        .add(clonePairForStorage(pair));
+                                break;
+                            }
+                            case "internal": {
+                                metadata.getDepsInternal()
+                                        .get(keyBuilder.out1())
+                                        .add(clonePairForStorage(pair));
+                                break;
+                            }
+                            case "external": {
+                                metadata.getDepsExternal()
+                                        .get(keyBuilder.out1())
+                                        .add(clonePairForStorage(pair));
+                                break;
+                            }
+                            case "platform":
+                                // expect map-only children
+                                ComposableXapiVisitor<Object> descender = whenMissingFail(XapiSchemaParser.class)
+                                        .withJsonMapOnly((json, ignore) -> {
+                                            for (JsonPairExpr childPair : json.getPairs()) {
+                                                try (Do.Closeable lease = platValue.borrow(childPair.getKeyString())) {
+                                                    childPair.getValueExpr().accept(vis, null);
+                                                }
+                                            }
+                                            // do not recurse, we sent the children to main visitor (vis) already.
+                                            return false;
+                                        });
+                                pair.getValueExpr().accept(descender, null);
+                                return;
+                            case "module":
+                                // platform / module is handled like: platform { gwt: { module : { api : [ ... ] } } }
+                                // expect map-only children
+                                descender = whenMissingFail(XapiSchemaParser.class)
+                                        .withJsonMapOnly((json, ignore) -> {
+                                            for (JsonPairExpr childPair : json.getPairs()) {
+                                                try (Do.Closeable lease = modValue.borrow(childPair.getKeyString())) {
+                                                    childPair.getValueExpr().accept(vis, null);
+                                                }
+                                            }
+                                            // do not recurse, we sent the children to main visitor (vis) already.
+                                            return false;
+                                        });
+                                pair.getValueExpr().accept(descender, null);
+                                return;
+                            default:
+                                try {
+                                    Integer.parseInt(pair.getKeyString());
+                                    metadata.getDepsInternal()
+                                            .get(keyBuilder.out1())
+                                            .add(pair.getValueExpr());
+                                } catch (NumberFormatException failed) {
+                                    throw new UnsupportedOperationException(pair.getKeyString() + " is not a valid requires = {} key");
                                 }
-                            })
-                    , null); // end toRequire.accept
+                        }
+                    });
+
+            // First: apply platform-level requires to this module.
+            // IMPORTANT: Also apply requires across a replace= chain (main -> impl -> sample, etc).
+            // The replacement chain is *not* inheritance; it is a platform relationship.
+            applyPlatformRequiresChain(metadata, platValue.out1(), vis);
+
+            // Next: apply module-level requires (these add on top of platform-level).
+            if (toRequire != null) {
+                toRequire.accept(vis, null);
+            }
         };
         moduleSource.in(insertModule);
     }
+
+    /**
+     * Store the whole JsonPairExpr (key + value + annotations), not just its value,
+     * so that later extraction sees @transitive(...) and friends.
+     *
+     * We clone to avoid reparenting AST nodes across merged platform/module expressions.
+     */
+    default Expression clonePairForStorage(final JsonPairExpr pair) {
+        if (pair == null) {
+            return null;
+        }
+        // JsonPairExpr is an Expression and implements HasAnnotationExprs, which loadDependencies/extractDependencies understand.
+        return (Expression) pair.clone();
+    }
+
+    default void applyPlatformRequiresChain(final DefaultSchemaMetadata metadata, final String platformName, final ComposableXapiVisitor<Object> vis) {
+        if (metadata == null || platformName == null) {
+            return;
+        }
+        final SetLike<String> seen = X_Jdk.setLinked();
+        final ListLike<UiContainerExpr> chain = X_Jdk.list();
+
+        String cur = platformName;
+        while (cur != null && seen.addIfMissing(cur)) {
+            final UiContainerExpr def = findPlatformDef(metadata, cur);
+            if (def == null) {
+                break;
+            }
+            chain.add(def);
+
+            // Follow replace/replaces to predecessor platform
+            String next = null;
+            final Maybe<UiAttrExpr> replace = def.getAttribute("replace").isPresent() ? def.getAttribute("replace") : def.getAttribute("replaces");
+            if (replace.isPresent()) {
+                try {
+                    next = replace.get().getString(false, true);
+                } catch (Throwable ignored) {
+                    next = null;
+                }
+            }
+            cur = next;
+        }
+
+        // Avoid applying the exact same platform object twice (identity-based).
+        final SetLike<UiContainerExpr> applied = X_Jdk.setHashIdentity();
+
+        for (int i = chain.size(); i-- > 0; ) {
+            final UiContainerExpr platformDef = chain.get(i);
+            if (!applied.addIfMissing(platformDef)) {
+                continue;
+            }
+            platformDef.getAttribute("requires")
+                    .mapIfPresent(UiAttrExpr::getExpression)
+                    .readIfPresent(expr -> {
+                        if (expr != null) {
+                            expr.accept(vis, null);
+                        }
+                    });
+
+            platformDef.getAttribute("require")
+                    .mapIfPresent(UiAttrExpr::getExpression)
+                    .readIfPresent(expr -> {
+                        if (expr != null) {
+                            expr.accept(vis, null);
+                        }
+                    });
+        }
+    }
+
 
 
     default void extractModuleForPlatform(final String platformName, final DefaultSchemaMetadata metadata, UiAttrExpr uiAttrExpr, final boolean platformPublished) {

@@ -30,8 +30,8 @@ dependencies {
     implementation project(path: ":collect-api")
     testImplementation project(path: ":base-gwtTestTools")
     testImplementation project(path: ":base-gwt")
-    implementation "net.wetheinter:gwt-user:2.8.0"
-    implementation "net.wetheinter:gwt-dev:2.8.0"
+    compileOnly "net.wetheinter:gwt-user:2.8.0"
+    compileOnly "net.wetheinter:gwt-dev:2.8.0"
     implementation "net.wti.core:xapi-fu:0.5.1"
     implementation "com.google.elemental2:elemental2-core:1.0.0-RC1"
     implementation "com.google.jsinterop:base:1.0.0-RC1"

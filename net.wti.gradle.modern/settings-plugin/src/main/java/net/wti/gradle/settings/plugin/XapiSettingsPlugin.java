@@ -357,6 +357,35 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 maybeRead(srcDir, "plugins", addPlugin);
                                 maybeRead(srcDir, "plugins.end", addPlugin);
 
+                                final In2<String, File> addRepo = (repos, file) -> {
+                                    final ClosureBuffer repoBlock = out.startClosure("repositories");
+                                    repoBlock.print("// GenInclude repositories from file://").println(file.getAbsolutePath());
+                                    for (String raw : repos.split("[\\n\\r]+")) {
+                                        final String line = raw == null ? "" : raw.trim();
+                                        if (line.isEmpty() || line.startsWith("//")) {
+                                            continue;
+                                        }
+                                        // Supported forms:
+                                        // 1) name=protocol://url.path
+                                        // 2) pass-through groovy, like: mavenLocal() / mavenCentral() / maven { ... }
+                                        final int eq = line.indexOf('=');
+                                        if (eq > 0 && line.indexOf("://", eq + 1) != -1) {
+                                            final String name = line.substring(0, eq).trim();
+                                            final String url = line.substring(eq + 1).trim();
+                                            repoBlock
+                                                    .startClosure("maven")
+                                                    .println("name = \"" + name.replace("\"", "\\\"") + "\"")
+                                                    .println("url = \"" + url.replace("\"", "\\\"") + "\"");
+                                        } else {
+                                            repoBlock.println(line);
+                                        }
+                                    }
+                                    repoBlock.println();
+                                };
+                                maybeRead(srcDir, "repositories.start", addRepo);
+                                maybeRead(srcDir, "repositories", addRepo);
+                                maybeRead(srcDir, "repositories.end", addRepo);
+
                                 maybeAdd.io("body.start", getBody);
                                 maybeAdd.io("body", getBody);
                             }
@@ -779,7 +808,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             if (isSourcePublished) {
                                 srcMod.printlns(
                                         "File allSrcDir = layout.buildDirectory.dir(\"allSrc\").get().asFile\n" +
-                                        "TaskProvider<Sync> copySource = tasks.register('copySource', Sync).configure {\n" +
+                                        "TaskProvider<Sync> copySource = tasks.register('copySource', Sync)\n" +
+                                        "copySource.configure {\n" +
                                         "    Sync s ->\n" +
                                         "        s.destinationDir = allSrcDir\n" +
                                         "        s.from(project.provider({\n" +
@@ -788,7 +818,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                         "}\n" +
                                         "sourceSets.main.java.setSrcDirs([])\n" +
                                         "sourceSets.main.resources.setSrcDirs([])\n" +
-                                        "sourceSets.main.resources.srcDir(allSrcDir)\n" +
+                                        "sourceSets.main.resources.srcDir(allSrcDir)\n\n" +
+                                        "def generatedFiles = files(allSrcDir).builtBy(copySource)\n" +
+                                        "configurations.implementation.dependencies.add(project.dependencies.create(generatedFiles))\n" +
                                         "java.withSourcesJar()\n" +
                                         "tasks.named('processResources').configure {\n" +
                                         "  dependsOn \"copySource\"\n" +

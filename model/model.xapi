@@ -27,7 +27,11 @@
                 @transitive(false)
                 external : "net.wetheinter:gwt-user:2.8.0",
                 @transitive(false)
-                external : "net.wetheinter:gwt-dev:2.8.0"
+                external : "net.wetheinter:gwt-dev:2.8.0",
+                @transitive("test")
+                external : "net.wetheinter:gwt-user:2.8.0",
+                @transitive("test")
+                external : "net.wetheinter:gwt-dev:2.8.0",
             }
             modules = [
                 <main

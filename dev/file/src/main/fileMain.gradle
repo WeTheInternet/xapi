@@ -31,10 +31,6 @@ dependencies {
     implementation project(path: ":util-main")
     testImplementation project(path: ":base-testTools")
     annotationProcessor project(path: ":base-api")
-    implementation project(path: ":io-main")
-    implementation project(path: ":inject-main")
-    implementation project(path: ":util-main")
-    testImplementation project(path: ":base-testTools")
 }
 
 repositories {

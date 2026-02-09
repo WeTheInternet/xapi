@@ -19,7 +19,7 @@ import static xapi.gradle.fu.LazyString.lazyToString;
 
 /**
  * Example schema.xapi (edited snapshot of xapi project's main schema.xapi:
- * <pre>
+ * <pre><code>
  * <xapi-schema
  *
  *     defaultRepoUrl = mavenCentral()
@@ -90,7 +90,7 @@ import static xapi.gradle.fu.LazyString.lazyToString;
  *     ]
  *
  * /xapi-schema>
- * </pre>
+ * </code></pre>
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 29/07/19 @ 5:09 AM.
  */

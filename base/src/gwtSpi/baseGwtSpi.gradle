@@ -18,8 +18,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 
 dependencies {
-    implementation "net.wetheinter:gwt-user:2.8.0"
-    implementation "net.wetheinter:gwt-dev:2.8.0"
+    compileOnly "net.wetheinter:gwt-user:2.8.0"
+    compileOnly "net.wetheinter:gwt-dev:2.8.0"
     api project(path: ":base-spi")
     api project(":base-gwtSpi-sources")
 }

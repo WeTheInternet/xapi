@@ -1251,10 +1251,11 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 			return null;
 		}
 		final NameExpr name = (NameExpr) visit(n.getName(), arg);
-		final Expression expr = (Expression) n.getExpression().accept(this, arg);
-		return copyExtras(n,
-			new UiAttrExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, n.isAttribute(), expr)
-		);
+		final Expression expr = n.getExpression() == null ? null : (Expression) n.getExpression().accept(this, arg);
+		final List<AnnotationExpr> annotations = visit(n.getAnnotations(), arg);
+		UiAttrExpr r = new UiAttrExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, n.isAttribute(), expr);
+		r.setAnnotations(annotations);
+		return copyExtras(n, r);
 	}
 
 	@Override
@@ -1288,11 +1289,11 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
         }
         final Expression key = getExpression(n.getKeyExpr(), arg);
         final Expression value = getExpression(n.getValueExpr(), arg);
+        final List<AnnotationExpr> annotations = visit(n.getAnnotations(), arg);
 
-	    return copyExtras(n,
-		    new JsonPairExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
-            		key, value)
-	    );
+        JsonPairExpr r = new JsonPairExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), key, value);
+        r.setAnnotations(annotations);
+	    return copyExtras(n, r);
     }
 
     @Override
@@ -1369,10 +1370,14 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		if (n == null) {
 			return null;
 		}
-		final BodyDeclaration body = (BodyDeclaration)n.getBody().accept(this, arg);
-            return copyExtras(n,
-                new DynamicDeclarationExpr(n.getBeginLine(), n.getBeginColumn(),
-			n.getEndLine(), n.getEndColumn(), body)
-            );
+		final BodyDeclaration body = n.getBody() == null ? null : (BodyDeclaration) n.getBody().accept(this, arg);
+		final List<AnnotationExpr> annotations = visit(n.getAnnotations(), arg);
+		final Comment comment = cloneNodes(n.getComment(), arg);
+
+		final DynamicDeclarationExpr r = new DynamicDeclarationExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), body);
+		r.setAnnotations(annotations);
+		r.setComment(comment);
+
+		return copyExtras(n, r);
 	}
 }

@@ -95,11 +95,7 @@
                         @transitive
                         external : "net.sourceforge.htmlunit:htmlunit:2.19",
                         @transitive
-                        external : "net.wetheinter:gwt-user:2.8.0",
-                        @transitive
                         external : "net.wetheinter:gwt-elemental:2.8.0",
-                        @transitive
-                        external : "net.wetheinter:gwt-dev:2.8.0",
                     }
                 /testTools>,
             ]

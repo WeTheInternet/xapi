@@ -97,6 +97,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
             _ * getExtensions() >> convention
             _ * getGradle() >> Mock(GradleInternal) {
                 _ * getSettings() >> settings
+                _ * getExtensions() >> convention
                 _ * getServices() >> Mock(ServiceRegistry) {
                     _ * get(_) >> { args ->
                         return Mock(args[0])

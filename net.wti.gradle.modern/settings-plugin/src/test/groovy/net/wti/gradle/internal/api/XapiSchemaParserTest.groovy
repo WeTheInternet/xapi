@@ -136,7 +136,7 @@ class GwtMain {
                 return XapiSchemaParserTest.this
             }
         }
-        DefaultSchemaMetadata metadata = parser.parseSchema(this, nodes, explicitPlatform)
+        DefaultSchemaMetadata metadata = parser.parseSchema(this, null)
         expect:
         metadata.getModules().size() == 6
         metadata.getPlatforms().size() == 3 // main, jre, gwt

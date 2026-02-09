@@ -35,8 +35,10 @@ dependencies {
     testImplementation project(path: ":model-jre")
     testImplementation project(path: ":io-jre")
     testImplementation project(path: ":inject-jre")
-    implementation "net.wetheinter:gwt-user:2.8.0"
-    implementation "net.wetheinter:gwt-dev:2.8.0"
+    compileOnly "net.wetheinter:gwt-user:2.8.0"
+    compileOnly "net.wetheinter:gwt-dev:2.8.0"
+    testImplementation "net.wetheinter:gwt-user:2.8.0"
+    testImplementation "net.wetheinter:gwt-dev:2.8.0"
     implementation "net.wti.core:xapi-gen:$version"
     testImplementation "junit:junit:4.13"
     testImplementation "net.sourceforge.htmlunit:htmlunit:2.19"

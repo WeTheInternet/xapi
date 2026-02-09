@@ -142,6 +142,32 @@ public class RootProjectView extends ProjectDescriptorView {
         if (superFind != null) {
             return superFind;
         }
-        return rootGradleProps.out1().get(key);
+
+        final Object rootVal = rootGradleProps.out1().get(key);
+        if (rootVal != null) {
+            return rootVal;
+        }
+
+        // Fallback: also consult ~/.gradle/gradle.properties (user home)
+        // (We can't assume this was already merged into Settings at this point.)
+        return userGradleProps().get(key);
     }
+
+    private Properties userGradleProps() {
+        // cache once per Gradle instance (RootProjectView is already per-Settings/Gradle)
+        return buildOnce(getGradle(), "_xapiUserGradleProps", g -> {
+            Properties prop = new Properties();
+            final File userHome = g.getGradleUserHomeDir();
+            final File userFile = new File(userHome, "gradle.properties");
+            if (userFile.isFile()) {
+                try {
+                    prop.load(Files.newInputStream(userFile.toPath()));
+                } catch (IOException e) {
+                    throw new GradleException("Unable to read props file " + userFile.getPath(), e);
+                }
+            }
+            return prop;
+        });
+    }
+
 }
