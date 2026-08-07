@@ -520,6 +520,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     f = new File(f, key.getKind());
     // nest hierarchical keys in a directory structure
     f = resolveParents(f, key.getParent());
+    f = new File(f, key.getId());
     if (!f.exists()) {
       callback.onSuccess(null);
       return;
