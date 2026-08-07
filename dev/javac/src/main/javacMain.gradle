@@ -7,6 +7,7 @@ plugins {
 
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
+version = '0.5.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
 // setup sourcesets
@@ -22,6 +23,7 @@ main.java.srcDir("$rootDir/dev/javac/src/main/java")
 main.resources.srcDir("$rootDir/dev/javac/src/main/resources")
 
 dependencies {
+    annotationProcessor project(path: ":base-api")
     api project(path: ":core:scope")
     api project(path: ":collect-main")
     api project(path: ":util-main")

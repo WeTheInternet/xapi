@@ -97,8 +97,8 @@ public class ModelServiceGwt extends AbstractModelService
       }
 
       @Override
-      protected boolean isIterableType(Class<?> propertyType) {
-        return super.isIterableType(propertyType);
+      protected boolean isCollectionProxy(Class<?> propertyType) {
+        return super.isCollectionProxy(propertyType);
       }
     };
   }

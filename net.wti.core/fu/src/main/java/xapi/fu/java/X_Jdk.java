@@ -64,6 +64,10 @@ public class X_Jdk {
         return new SetAdapter<>(map, null);
     }
 
+    public static <V, P> SetLike<V> toSet(Map<V, P> map, P placeholder) {
+        return new SetAdapter<>(map, placeholder);
+    }
+
     public static <K, V> MapLike<K, V> mapHash() {
         return toMap(new HashMap<>());
     }
@@ -145,7 +149,7 @@ public class X_Jdk {
     }
 
     public static <V> SetLike<V> setHashConcurrent() {
-        return toSet(new ConcurrentHashMap<>());
+        return toSet(new ConcurrentHashMap<>(), "");
     }
 
     public static <V> SetLike<V> setHashIdentity() {

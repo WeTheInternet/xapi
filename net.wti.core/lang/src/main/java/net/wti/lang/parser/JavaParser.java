@@ -41,15 +41,14 @@ import net.wti.lang.parser.ast.expr.JsonContainerExpr;
 import net.wti.lang.parser.ast.expr.UiContainerExpr;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.In2;
+import xapi.fu.data.ListLike;
+import xapi.fu.java.X_Jdk;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 import xapi.source.X_Source;
 import xapi.string.X_String;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -125,6 +124,11 @@ public final class JavaParser {
         return parse(in, encoding, considerComments, ASTParser::RootUiContainer);
     }
 
+    public static ListLike<UiContainerExpr> parseXapiMany(final InputStream in,
+                                                         final String encoding, boolean considerComments) throws ParseException {
+        return parseMany(in, encoding, considerComments, ASTParser::RootUiContainer);
+    }
+
     public static <T extends Node> T parse(final InputStream in,
                                            final String encoding,
                                            boolean considerComments,
@@ -149,6 +153,60 @@ public final class JavaParser {
                 insertComments(cu,code);
             }
             return cu;
+        } catch (IOException ioe){
+            throw new ParseException(ioe.getMessage());
+        }
+    }
+
+    public static <T extends Node> ListLike<T> parseMany(final InputStream in,
+                                           final String encoding,
+                                           boolean considerComments,
+                                           In1Out1Unsafe<ASTParser, T> parseMethod) throws ParseException {
+        try {
+            // We are going to read in the full source input stream first,
+            //
+            String code = null;
+            final InputStream in1;
+            final ListLike<T> results = X_Jdk.listArray();
+            if (considerComments) {
+                code = SourcesHelper.streamToString(in, encoding);
+                // since we already drained the input stream,
+                // we need to rescope it onto this string (and allow real input to be released).
+                in1 = SourcesHelper.stringToStream(code, encoding);
+            } else {
+                in1 = in;
+            }
+            final ASTParser parser = new ASTParser(in1, encoding);
+            Token prevToken = null;
+            while(true) {
+                try {
+                    T cu = parseMethod.io(parser);
+                    results.add(cu);
+                } catch (Exception ex) {
+                    //noinspection ConstantValue
+                    if (ex instanceof ParseException) {
+                        // we expect an EOF at the end of a well-formatted document.
+                        final Token next = ((ParseException) ex).currentToken.next;
+                        if (next != null && next.kind == ASTParserConstants.EOF) {
+                            break;
+                        }
+                    }
+                    throw ex;
+                }
+                if (prevToken == parser.token) {
+                    // this is abnormal: we ran the parseMethod, but the token did not advance.
+                    Log.tryLog(JavaParser.class, null, LogLevel.WARN,
+                            "Parser got stuck on the same token, [" + prevToken + "] at ",
+                            prevToken.beginLine + ":" + prevToken.beginColumn);
+                    break;
+                }
+                prevToken = parser.token;
+            }
+
+            if (considerComments){
+                insertComments(code, results);
+            }
+            return results;
         } catch (IOException ioe){
             throw new ParseException(ioe.getMessage());
         }
@@ -676,8 +734,8 @@ public final class JavaParser {
         {
             return thereAreLinesBetween(b, a);
         }
-        int endOfA = a.getEndLine();
-        return b.getBeginLine()>(a.getEndLine()+1);
+        final int endOfA = a.getEndLine();
+        return b.getBeginLine()>(endOfA+1);
     }
 
     private static void insertComments(Node cu, String code) throws IOException {
@@ -691,6 +749,17 @@ public final class JavaParser {
             PositionUtils.sortByBeginPosition(comments);
 
             insertCommentsInNode(cu, comments);
+        }
+    }
+
+    private static void insertComments(String code, Iterable<? extends Node> nodes) throws IOException {
+        CommentsParser commentsParser = new CommentsParser();
+        CommentsCollection allComments = commentsParser.parse(code);
+
+        List<Comment> comments = allComments.getAll();
+        PositionUtils.sortByBeginPosition(comments);
+        for (Node node : nodes) {
+            insertCommentsInNode(node, comments);
         }
     }
 

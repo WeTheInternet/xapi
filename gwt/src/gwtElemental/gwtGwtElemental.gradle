@@ -7,6 +7,7 @@ plugins {
 
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
+version = '0.5.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
 // setup sourcesets

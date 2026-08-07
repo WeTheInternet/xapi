@@ -19,6 +19,9 @@ Task xapiPublish = tasks.create('xapiPublish')
 required.configure { it.dependsOn xapiPublish }
 xapiPublish.group = 'Publishing'
 xapiPublish.description = 'Publish jars to xapiLocal repository'
+// Bind to Maven Publish's repository lifecycle by name so it can realize every
+// publication task after publications and repositories finish configuring.
+xapiPublish.dependsOn 'publishAllPublicationsToXapiLocalRepository'
 tasks.withType(PublishToMavenRepository).configureEach {
     PublishToMavenRepository pub ->
         if (pub.name.contains("XapiLocal")) {

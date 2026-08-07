@@ -613,7 +613,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                     throw new IllegalStateException("Unable to create project directory " + projectDeps + "; check disk usage and filesystem permissions");
                                 }
                                 String name = dep.getName();
-                                File depFile = new File(projectDeps, name);
+                                File depFile = dependencyFile(projectDeps, name);
                                 // write platform:module coordinate into dependency file (incoming edge)
                                 extractCoords(platform, module, dep, depFile);
                                 // record incoming/outgoing edges
@@ -628,7 +628,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                 }
                                 String name = dep.getName();
                                 String mangledName = PlatformModule.parse(name).toPlatMod();
-                                File depFile = new File(internalDeps, mangledName);
+                                File depFile = dependencyFile(internalDeps, mangledName);
                                 // hm, we have nothing interesting to write into internal dependencies, the filename is a key...
                                 touch(depFile);
                                 if (!depFile.isFile()) {
@@ -647,10 +647,10 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                                 // Only if there is no sub-build which, by schema.xapi, claims a G:N[:V],
                                 // will we simply write out the full "g:n:v[:extras]" structure;
                                 // otherwise, we should convert this dependency to a "foreign" layer
-                                File depFile = new File(
-                                        realizedCoordDir.out1(),
-                                        depGroup + ":" + name + ":" + depVersion + (isNotEmptyTrimmed(extraGnv) ? ":" + extraGnv : "")
-                                );
+                                final String dependencyCoordinate =
+                                        depGroup + ":" + name + ":" + depVersion +
+                                                (isNotEmptyTrimmed(extraGnv) ? ":" + extraGnv : "");
+                                File depFile = dependencyFile(realizedCoordDir.out1(), dependencyCoordinate);
                                 extractCoords(platform, module, dep, depFile);
                                 break;
                             }
@@ -775,6 +775,18 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         writeFile(depFile, platType + ":" + modType);
     }
 
+    private File dependencyFile(final File directory, final String logicalName) {
+        final String portableName = SchemaPathCodec.encodeFileName(logicalName);
+        final File portableFile = new File(directory, portableName);
+        if (!portableName.equals(logicalName)) {
+            final File legacyFile = new File(directory, logicalName);
+            if (directory.equals(legacyFile.getParentFile()) && legacyFile.isFile() && !legacyFile.delete()) {
+                throw new IllegalStateException("Unable to remove legacy schema index file " + legacyFile);
+            }
+        }
+        return portableFile;
+    }
+
     protected String guessBuildName(File rootDir) {
         // TODO: check w/ git
         return rootDir.getAbsoluteFile().getName();
@@ -784,4 +796,3 @@ public class SchemaIndexerImpl implements SchemaIndexer {
         return nodes;
     }
 }
-

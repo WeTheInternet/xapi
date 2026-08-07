@@ -308,7 +308,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         } else if (isModelKeyType(valueType)) {
             // keys are encoded as strings; write null string
             out.append(primitives.serializeInt(-1));
-        } else if (isIterableType(valueType)) {
+        } else if (isCollectionProxy(valueType)) {
             // write null iterable
             out.append(primitives.serializeInt(-1));
         } else if (isStringMapType(valueType)) {
@@ -327,6 +327,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             out.append(primitives.serializeClass(void.class));
         } else if (xapi.time.api.Duration.class.isAssignableFrom(valueType)) {
             out.append(primitives.serializeLong(0L)); // zero duration
+        } else if (valueType == Boolean.class) {
+            // Class value; write void.class as placeholder
+            out.append(primitives.serializeInt(-1));
         } else {
             // As a last resort, serialize a null string placeholder
             out.append(primitives.serializeInt(-1));
@@ -414,8 +417,12 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         return ModelKey.class.isAssignableFrom(propertyType);
     }
 
-    protected boolean isIterableType(final Class<?> propertyType) {
+    protected boolean isCollectionProxy(final Class<?> propertyType) {
         return CollectionProxy.class.isAssignableFrom(propertyType);
+    }
+
+    protected boolean isSizedIterable(final Class<?> propertyType) {
+        return SizedIterable.class.isAssignableFrom(propertyType);
     }
 
     protected boolean isStringMapType(final Class<?> propertyType) {
@@ -485,6 +492,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             for (int i = 0; i < len; i++) {
                 writeString(out, (String) Array.get(array, i), primitives);
             }
+        } else if (childType == Boolean.class) {
+            for (int i = 0; i < len; i++) {
+                final Boolean val = (Boolean) Array.get(array, i);
+                out.append(primitives.serializeInt(val == null ? -1 : val ? 1 : 0));
+            }
         } else if (isSupportedEnumType(childType)) {
             // We are going to assume a homogenous array type...
             assert childType != Enum.class : getClass() + " does not support Enum[] values from model " + propertyType;
@@ -523,10 +535,10 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         }
     }
 
-    protected void writeIterable(final CharBuffer out, final String propName, final CollectionProxy collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+    protected void writeCollectionProxy(final CharBuffer out, final String propName, final CollectionProxy collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
         if (collection == null) {
             if (X_Log.logLevel().isLoggable(DEBUG)) {
-                X_Log.debug(ModelSerializerDefault.class, "writeIterable: ", propName, " -> null (-1)");
+                X_Log.debug(ModelSerializerDefault.class, "writeCollectionProxy: ", propName, " -> null (-1)");
             }
 
             out.append(primitives.serializeInt(-1));
@@ -537,7 +549,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
 
         int len = collection.size();
         if (X_Log.logLevel().isLoggable(DEBUG)) {
-            X_Log.debug(ModelSerializerDefault.class, "writeIterable: ", propName, " len=", len, " keyType=", keyType, " valueType=", valueType);
+            X_Log.debug(ModelSerializerDefault.class, "writeCollectionProxy: ", propName, " len=", len, " keyType=", keyType, " valueType=", valueType);
         }
 
         if (len == 0 && writeNullForEmpty()) {
@@ -624,6 +636,48 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         } else {
             throw new IllegalStateException("Unsupported key type " + keyType + " in model serializer: " + getClass());
         }
+    }
+
+    protected void writeSizedIterable(final CharBuffer out, final String propName, final SizedIterable collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+        if (collection == null) {
+            if (X_Log.logLevel().isLoggable(DEBUG)) {
+                X_Log.debug(ModelSerializerDefault.class, "writeSizedIterable: ", propName, " -> null (-1)");
+            }
+
+            out.append(primitives.serializeInt(-1));
+            return;
+        }
+        int len = collection.size();
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class, "writeSizedIterable: ", propName, " len=", len);
+        }
+
+        if (len == 0 && writeNullForEmpty()) {
+            out.append(primitives.serializeInt(-1));
+            return;
+        }
+        final String length = primitives.serializeInt(len);
+        out.append(length);
+        if (len == 0) {
+            return;
+        }
+        for (final Object o : collection) {
+            if (o == null) {
+                out.append(primitives.serializeInt(-1));
+            } else {
+                final Class<?> itemType = getItemType(collection, o);
+                writeObject(out, propName, itemType, o, primitives, ctx);
+            }
+        }
+    }
+
+    private Class<?> getItemType(final SizedIterable collection, final Object o) {
+        // look for "simpler" / known types:
+        if (o instanceof Model) {
+            return X_Model.getService().typeToClass(((Model) o).getType());
+        }
+        // I'm sure there's a lot of use cases we may need to clear up, but this is good enough for now.
+        return o.getClass();
     }
 
     private boolean writeNullForEmpty() {
@@ -765,6 +819,54 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         return result;
     }
 
+    protected Object readSizedIterable(
+            Class propertyType,
+            String propName,
+            CharIterator src,
+            PrimitiveSerializer primitives,
+            ModelDeserializationContext ctx
+    ) {
+        if (X_Log.logLevel().isLoggable(DEBUG)) {
+            X_Log.debug(ModelSerializerDefault.class,
+                    "readSizedIterable: prop=", propName,
+                    " propertyType=", propertyType,
+                    " ctx.clientToServer=", ctx.isClientToServer(),
+                    " keyOnly=", ctx.isKeyOnly(),
+                    " subModel=", ctx.isSubModel(),
+                    " preview='", preview(src, 96), "'");
+        }
+
+        int length = primitives.deserializeInt(src);
+        if (length == -1) {
+            // We are null
+            if (X_Log.logLevel().isLoggable(DEBUG)) {
+                X_Log.debug(ModelSerializerDefault.class, "readSizedIterable: null (-1)");
+            }
+
+            return null;
+        }
+        if (length == 0 && writeNullForEmpty()) {
+            if (X_Log.logLevel().isLoggable(DEBUG)) {
+                X_Log.debug(ModelSerializerDefault.class, "readSizedIterable: empty treated as null (flag on)");
+            }
+            return null;
+        }
+
+        CollectionLike result = newCollectionLike(propertyType);
+        if (length == 0) {
+            return result;
+        }
+
+        // Go through each item, reading them from stream.
+        for (int i = 0; i < length; i++) {
+            final Class<?> valueType = primitives.deserializeClass(src);
+            Object value = readObject(valueType, propName, src, primitives, ctx);
+            result.add(value);
+        }
+
+        return result;
+    }
+
     protected Object readStringMap(
             Class propertyType,
             String propName,
@@ -812,6 +914,14 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         }
         final In2Out1<Class, Class, Object> factory = collectionFactories.get(collectionType);
         return (CollectionProxy) factory.io(keyType, valueType);
+    }
+
+    protected CollectionLike newCollectionLike(Class collectionType) {
+        if (collectionFactories.isEmpty()) {
+            initializeCollectionFactories(collectionFactories);
+        }
+        final In2Out1<Class, Class, Object> factory = collectionFactories.get(collectionType);
+        return (CollectionLike) factory.io(null, null);
     }
 
     protected void initializeCollectionFactories(ClassTo<In2Out1<Class, Class, Object>> factories) {
@@ -903,15 +1013,19 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             } else {
                 out.append(primitives.serializeLong(nonNullNumber.longValue()));
             }
+        } else if (Boolean.class.isAssignableFrom(valueType)) {
+            out.append(primitives.serializeInt(value == null ? -1 : (Boolean)value ? 1 : 0));
         } else if (isModelType(valueType)) {
             writeModel(out, propName, valueType, (Model) value, primitives, ctx);
         } else if (isModelKeyType(valueType)) {
             writeString(out, X_Model.keyToString((ModelKey) value), primitives);
-        } else if (isIterableType(valueType)) {
-            writeIterable(out, propName, (CollectionProxy) value, primitives, ctx);
+        } else if (isCollectionProxy(valueType)) {
+            writeCollectionProxy(out, propName, (CollectionProxy) value, primitives, ctx);
             // Figure out how to support either ComponentList, Allable, or some other not-CollectionProxy collection.
         } else if (isStringMapType(valueType)) {
             writeStringMap(out, (StringTo) value, primitives, ctx);
+        } else if (isSizedIterable(valueType)) {
+            writeSizedIterable(out, propName, (SizedIterable) value, primitives, ctx);
         } else if (valueType == Class.class) {
             out.append(primitives.serializeClass((Class) value));
         } else if (Duration.class.isAssignableFrom(valueType)) {
@@ -1453,13 +1567,17 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
                 // need to do something... less bad here
                 return BigDecimal.valueOf((double) primitives.deserializeDouble(src));
             }
-
+        } else if (Boolean.class == propertyType) {
+            final int val = primitives.deserializeInt(src);
+            return val == -1 ? null : val == 1;
         } else if (propertyType.isArray()) {
             return readArray(propertyType.getComponentType(), propName, src, primitives, ctx);
-        } else if (isIterableType(propertyType)) {
+        } else if (isCollectionProxy(propertyType)) {
             return readIterable(propertyType, propName, src, primitives, ctx);
         } else if (isStringMapType(propertyType)) {
             return readStringMap(propertyType, propName, src, primitives, ctx);
+        } else if (isSizedIterable(propertyType)) {
+            return readSizedIterable(propertyType, propName, src, primitives, ctx);
         } else if (propertyType.isEnum()) {
             // No great way to deserialize enums without reflection, so lets leave a hook for environments
             // where reflection is not possible or preferable can implement a mapping of enum class to enum values[]...

@@ -14,6 +14,7 @@ import net.wti.gradle.tools.InternalGradleCache;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
+import org.gradle.api.Project;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.logging.Logger;
@@ -133,6 +134,26 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
     private void prepareProjects(final RootProjectView view, final SchemaIndex fullIndex, final SchemaProperties properties, Settings settings, SchemaMap map) {
         SchemaIndexReader index = fullIndex.getReader();
+        final CharSequence declaredVersion = fullIndex.getVersion();
+        final String schemaVersion;
+        final String versionAssignment;
+        if (declaredVersion == null) {
+            schemaVersion = null;
+            versionAssignment = null;
+        } else {
+            final String normalizedVersion = declaredVersion.toString().trim();
+            if (normalizedVersion.isEmpty() || QualifiedModule.UNKNOWN_VALUE.equals(normalizedVersion)) {
+                schemaVersion = null;
+                versionAssignment = null;
+            } else {
+                schemaVersion = normalizedVersion;
+                versionAssignment = "version = " + quoteGroovyString(schemaVersion);
+            }
+        }
+        if (schemaVersion != null) {
+            final Action<Project> applySchemaVersion = project -> project.setVersion(schemaVersion);
+            settings.getGradle().beforeProject(applySchemaVersion);
+        }
 
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
@@ -395,6 +416,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         out.println("// GenStart " + getClass().getName());
                         out.println("ext.xapiModern = 'true'");
+                        if (versionAssignment != null) {
+                            out.println(versionAssignment);
+                        }
                         // for now, we're just going to forcibly use java-library.
                         // we can add an optional switch to disable this if it's ever needed
                         out.addPlugin("java-library");
@@ -422,6 +446,12 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             view.getLogger().info("Setting up transitive source project for {}", userBuildFile);
                             srcMod.addPlugin("java-library");
                             srcMod.addPlugin("maven-publish");
+                            if (versionAssignment != null) {
+                                srcMod.println(versionAssignment);
+                            }
+                            // Source-only siblings participate in Java variant matching too.
+                            // Keep their advertised runtime compatible with their Java 8 consumers.
+                            srcMod.println("java.toolchain.languageVersion = JavaLanguageVersion.of(8)");
                         }
 
                         // lets have a look at the types of source dirs to decide what sourcesets to create.
@@ -971,6 +1001,39 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             return true;
         }
         return false;
+    }
+
+    private static String quoteGroovyString(final String value) {
+        final StringBuilder quoted = new StringBuilder(value.length() + 2).append('\'');
+        for (int i = 0; i < value.length(); i++) {
+            final char c = value.charAt(i);
+            switch (c) {
+                case '\\':
+                    quoted.append("\\\\");
+                    break;
+                case '\'':
+                    quoted.append("\\'");
+                    break;
+                case '\r':
+                    quoted.append("\\r");
+                    break;
+                case '\n':
+                    quoted.append("\\n");
+                    break;
+                case '\t':
+                    quoted.append("\\t");
+                    break;
+                case '\b':
+                    quoted.append("\\b");
+                    break;
+                case '\f':
+                    quoted.append("\\f");
+                    break;
+                default:
+                    quoted.append(c);
+            }
+        }
+        return quoted.append('\'').toString();
     }
 
     private static String getPlatform(Settings settings) {

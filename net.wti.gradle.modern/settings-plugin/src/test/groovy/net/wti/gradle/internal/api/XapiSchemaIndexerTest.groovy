@@ -2,6 +2,7 @@ package net.wti.gradle.internal.api
 
 import net.wti.gradle.settings.XapiSchemaParser
 import net.wti.gradle.settings.api.SchemaMap
+import net.wti.gradle.settings.api.SchemaPathCodec
 import net.wti.gradle.settings.api.SchemaProperties
 import net.wti.gradle.settings.index.IndexNodePool
 import net.wti.gradle.settings.index.SchemaIndex
@@ -323,8 +324,21 @@ public class Producer {}
         }
         // no code for producer module...
         BuildResult result = runSucceed(":consumer-spi:compileJava", "-i")
+        def illegalIndexNames = []
+        def logicalDependencyNames = []
+        new File(indexDir, 'coord').eachFileRecurse { File indexed ->
+            if (!SchemaPathCodec.isPortableFileName(indexed.name)) {
+                illegalIndexNames << indexed
+            }
+            if (indexed.isFile()) {
+                logicalDependencyNames << SchemaPathCodec.decodeFileName(indexed.name)
+            }
+        }
         expect:
         result.task(':consumer-spi:compileJava').outcome == TaskOutcome.SUCCESS
+        illegalIndexNames.isEmpty()
+        logicalDependencyNames.contains(':ui:producer')
+        logicalDependencyNames.contains('junit:junit:4.13')
     }
     def "A single module dependency is targeted correctly from a main module"() {
         given:
@@ -666,6 +680,156 @@ public class ProduceMe {}
         // This log line comes from XapiSettingsPlugin when it decides to create the `-sources` sibling project.
         result.output.contains("Setting up transitive source project")
     }
+
+    def "Schema version is emitted into normal and synthetic source project scripts"() {
+        given:
+        customSchema = """
+<xapi-schema
+    name = "versioned-build"
+    version = "1.51"
+    platforms = [
+        <main published = true publishSource = true /main>
+    ]
+    modules = [ main ]
+    projects = [
+        <producer
+            inherit = false
+            multiplatform = false
+            platforms = [ main ]
+            modules = [ main ]
+        /producer>
+    ]
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+        withProject(':producer') { proj ->
+            proj.sourceFile("main", "com.test", "Producer") << """
+package com.test;
+public class Producer {}
+"""
+        }
+
+        when:
+        runSucceed("tasks", "-i", "-Dxapi.log.level=INFO")
+
+        then:
+        File producerDir = new File(rootDir, "producer")
+        File normalScript = new File(producerDir, "producer.gradle")
+        File sourceScript = new File(producerDir, "build/srcModMain/producer-sources.gradle")
+        assert normalScript.isFile() : "Missing generated project script ${normalScript.absolutePath}"
+        assert sourceScript.isFile() : "Missing generated source project script ${sourceScript.absolutePath}"
+        assert hasVersionAssignment(normalScript, "1.51")
+        assert hasVersionAssignment(sourceScript, "1.51")
+        assert sourceScript.readLines().count {
+            it.trim() == "java.toolchain.languageVersion = JavaLanguageVersion.of(8)"
+        } == 1
+    }
+
+    def "Schema version is applied to every Gradle project"() {
+        given:
+        customSchema = """
+<xapi-schema
+    name = "versioned-build"
+    version = "2.34"
+    platforms = [
+        <main published = true publishSource = true /main>
+    ]
+    modules = [ main ]
+    projects = [
+        <producer
+            inherit = false
+            multiplatform = false
+            platforms = [ main ]
+            modules = [ main ]
+        /producer>
+    ]
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+        settingsFile << """
+include ':manual:leaf'
+"""
+        file('manual/leaf/build.gradle').text = ''
+        buildFile.text = """
+tasks.register('assertSchemaVersions') {
+    doLast {
+        def versions = rootProject.allprojects.collectEntries { [(it.path): it.version.toString()] }
+        def expectedProjects = [':', ':manual', ':manual:leaf', ':producer', ':producer-sources']
+        assert versions.keySet().containsAll(expectedProjects) : versions
+        assert versions.values().every { it == '2.34' } : versions
+    }
+}
+"""
+        withProject(':producer') { proj ->
+            proj.sourceFile("main", "com.test", "Producer") << """
+package com.test;
+public class Producer {}
+"""
+        }
+
+        expect:
+        runSucceed('assertSchemaVersions').task(':assertSchemaVersions').outcome == TaskOutcome.SUCCESS
+    }
+
+    def "Unknown schema version is omitted from generated project scripts"() {
+        given:
+        customSchema = """
+<xapi-schema
+    name = "unversioned-build"
+    platforms = [ main ]
+    modules = [ main ]
+    projects = [
+        <producer
+            inherit = false
+            multiplatform = false
+            platforms = [ main ]
+            modules = [ main ]
+        /producer>
+    ]
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+        settingsFile << """
+include ':manual:leaf'
+"""
+        file('manual/leaf/build.gradle').text = ''
+        buildFile.text = """
+tasks.register('assertNoSchemaVersions') {
+    doLast {
+        def versions = rootProject.allprojects.collectEntries { [(it.path): it.version.toString()] }
+        def expectedProjects = [':', ':manual', ':manual:leaf', ':producer']
+        assert versions.keySet().containsAll(expectedProjects) : versions
+        assert versions.values().every { it == 'unspecified' } : versions
+    }
+}
+"""
+        withProject(':producer') { proj ->
+            proj.sourceFile("main", "com.test", "Producer") << """
+package com.test;
+public class Producer {}
+"""
+        }
+
+        when:
+        def result = runSucceed('assertNoSchemaVersions', "-i", "-Dxapi.log.level=INFO")
+
+        then:
+        result.task(':assertNoSchemaVersions').outcome == TaskOutcome.SUCCESS
+        File normalScript = new File(rootDir, "producer/producer.gradle")
+        assert normalScript.isFile() : "Missing generated project script ${normalScript.absolutePath}"
+        assert !normalScript.readLines().any { it ==~ /^\s*version\s*=.*$/ }
+        assert !normalScript.text.contains("UNKNOWN")
+    }
+
     def "Platform-level @transitive(test) requires are inherited across replace= chain and compiled in test scope"() {
         given:
         customSchema = """
@@ -832,6 +996,13 @@ class MainCodeTest {
 { System.out.println(MainCode.class); }
 }
 """
+        }
+    }
+
+    private static boolean hasVersionAssignment(File script, String version) {
+        script.readLines().any { String line ->
+            def matcher = line =~ /^\s*version\s*=\s*(['"])(.*)\1\s*$/
+            matcher.matches() && matcher.group(2) == version
         }
     }
 }

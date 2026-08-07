@@ -4,6 +4,7 @@ plugins {
 }
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
 ext.xapiModern = 'true'
+version = '0.5.1'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 repositories.mavenCentral()
@@ -73,6 +74,12 @@ if (JavaVersion.current().isJava9Compatible()) {
     java9.java.srcDir("src/main/java9")
     dependencies.add(java9.compileOnlyConfigurationName, project.files(configurations.runtimeClasspath))
     dependencies.add(java9.compileOnlyConfigurationName, project.files(configurations.compileClasspath))
+    tasks.named(java9.compileJavaTaskName, JavaCompile).configure {
+        javaCompiler = javaToolchains.compilerFor {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+        options.release = 9
+    }
     gradle.projectsEvaluated {
         tasks.named('jar', Jar).configure({ jar ->
             jar.manifest.attributes['Multi-Release'] = 'true'

@@ -8,8 +8,11 @@ import xapi.collect.api.StringTo;
 import xapi.collect.proxy.api.CollectionProxy;
 import xapi.fu.*;
 import xapi.fu.api.DoNotOverride;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.SetLike;
 import xapi.fu.has.HasLock;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.java.X_Jdk;
 import xapi.model.X_Model;
 
 import java.util.Map.Entry;
@@ -81,6 +84,14 @@ public interface Model {
 
     default <T, G extends T> IntTo<T> getOrCreateList(Class<G> type, Out1<IntTo<T>> getter, In1<IntTo<T>> setter) {
         return getOrCreate(getter, () -> X_Collect.newList(type), setter);
+    }
+
+    default <T> ListLike<T> getOrCreateList(Out1<ListLike<T>> getter, In1<ListLike<T>> setter) {
+        return getOrCreate(getter, X_Jdk::listArray, setter);
+    }
+
+    default <T> SetLike<T> getOrCreateSet(Out1<SetLike<T>> getter, In1<SetLike<T>> setter) {
+        return getOrCreate(getter, X_Jdk::setLinked, setter);
     }
 
     default <T extends Model, G extends T> ModelList<T> getOrCreateModelList(Class<G> type, Out1<ModelList<T>> getter, In1<ModelList<T>> setter) {

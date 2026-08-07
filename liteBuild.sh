@@ -39,8 +39,8 @@ while (( arg_len > 0 )); do
       main_args="$main_args $to_main"
       arg_len=$(( arg_len - 1 ))
       ;;
-   --no-tool|-nT)
-      echo "Skipping tool build"
+   --fast|-f|--no-tool|-nT)
+      echo "Fast mode: skipping prerequisite tool builds"
       skip_tools=y
       ;;
    --java11|--jdk11|-j11)
@@ -78,17 +78,19 @@ echo "Running all builds' gradlew $args"
 echo "Running main build w/ arguments: $main_args $args"
 
 function do_it() {
+    if [ "$skip_tools" == n ]; then
 
-    pushd net.wti.core > /dev/null
-    echo "invoking ./gradlew $args in $(pwd)"
-    ./gradlew $args
-    popd > /dev/null
+        pushd net.wti.core > /dev/null
+        echo "invoking ./gradlew $args in $(pwd)"
+        ./gradlew $args
+        popd > /dev/null
 
 
-    pushd net.wti.gradle.modern > /dev/null
-    echo "invoking ./gradlew $args in $(pwd)"
-    ./gradlew $args
-    popd > /dev/null
+        pushd net.wti.gradle.modern > /dev/null
+        echo "invoking ./gradlew $args in $(pwd)"
+        ./gradlew $args
+        popd > /dev/null
+    fi
 
 
     ./gradlew $main_args $args -Dxapi.composite=false

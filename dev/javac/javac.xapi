@@ -12,6 +12,8 @@
                 /api>,
                 <main
                     requires = {
+                        @transitive(annotation_processor)
+                        project : { base : api },
                         @transitive
                         internal : api,
                         @transitive

@@ -10,18 +10,41 @@ Sync ijCheat = tasks.create('ijCheat', Sync) {
         s.destinationDir(layout.buildDirectory.dir('ijCheat').get().asFile)
 }
 
+final File legacyGradleZip = new File(rootDir.parentFile, '.xapi-bootstrap/gradle/gradle-5.1-x-24.zip')
+final List<String> legacyGradleLibNames = [
+        'gradle-core-api-5.3.1.jar',
+        'gradle-core-5.3.1.jar',
+        'gradle-model-core-5.3.1.jar',
+        'gradle-base-services-5.3.1.jar',
+        'commons-lang-2.6.jar',
+]
+final Provider<Directory> legacyGradleLibDir = layout.buildDirectory.dir('legacyGradleLibs')
+final TaskProvider<Sync> extractLegacyGradleClasspath = tasks.register('extractLegacyGradleClasspath', Sync) {
+    Sync sync ->
+        sync.from(provider { zipTree(legacyGradleZip) }) {
+            include legacyGradleLibNames.collect { "gradle-5.1-x-24/lib/$it" }
+            eachFile { details -> details.path = details.name }
+            includeEmptyDirs = false
+        }
+        sync.into(legacyGradleLibDir)
+        sync.doFirst {
+            if (!legacyGradleZip.isFile()) {
+                throw new GradleException("Missing portable legacy Gradle seed $legacyGradleZip; extract the XApi bootstrap bundle first")
+            }
+        }
+}
+final FileCollection legacyGradleClasspath = files(legacyGradleLibNames.collect {
+    String name -> legacyGradleLibDir.map { Directory dir -> dir.file(name) }
+}).builtBy(extractLegacyGradleClasspath)
+
 dependencies {
-    // the gloves are off... dirty hack just to make it go.
-    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-core-api-5.3.1.jar'))
-    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-core-5.3.1.jar'))
-    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-model-core-5.3.1.jar'))
-    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/gradle-base-services-5.3.1.jar'))
-    compileOnly files(new File(rootDir.parentFile.parentFile, 'gradle/gradle-X-rebase-backup/lib/commons-lang-2.6.jar'))
+    // Temporary bridge: compile legacy shims against the exact libraries from the
+    // verified customized Gradle distribution included in the bootstrap bundle.
+    compileOnly legacyGradleClasspath
     compileOnly ijCheat.outputs.files
 }
 
 tasks.named('compileJava').configure {
     Task t ->
-        t.dependsOn ijCheat
+        t.dependsOn ijCheat, extractLegacyGradleClasspath
 }
-

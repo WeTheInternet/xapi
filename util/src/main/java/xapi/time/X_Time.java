@@ -57,15 +57,27 @@ public class X_Time {
 
   /**
    * Advances {@link #threadStart()} to current time.
-   *
+   * <p>
    * This will be called automatically when any task scheduled through X_Time
    * begins its execution cycle; whenever a process wakes from sleep or gets
    * pulled off a work queue and ran, the current moment will advance.
    *
+   * @return the current timestamp; guaranteed to be a higher number than last time it was called.
+   *
    *
    */
-  public static void tick() {
-    service.tick();
+  public static double tick() {
+    return service.tick();
+  }
+
+
+    /**
+     * Returns the same timestamp as the last time {@link #tick()} was called.
+     *
+     * @return the last timestamp from a tick() call
+     */
+    public static double lastTick() {
+    return service.lastTick();
   }
   /**
    * Creates an immutable copy of a moment.

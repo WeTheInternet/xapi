@@ -39,8 +39,8 @@ while (( arg_len > 0 )); do
       main_args="$main_args $to_main"
       arg_len=$(( arg_len - 1 ))
       ;;
-   --no-tool|-nT)
-      echo "Skipping tool build"
+   --fast|-f|--no-tool|-nT)
+      echo "Fast mode: skipping prerequisite tool builds"
       skip_tools=y
       ;;
    --java11|--jdk11|-j11)
@@ -77,8 +77,42 @@ has_args || args="build xapiPublish testClasses -x test -x check -x javadoc"
 echo "Running all builds' gradlew $args"
 echo "Running main build w/ arguments: $main_args $args"
 
+function is_java8_home() {
+    local candidate="$1"
+    local version_output
+    [[ -n "$candidate" && -x "$candidate/bin/java" ]] || return 1
+    version_output="$("$candidate/bin/java" -version 2>&1)" || return 1
+    [[ "$version_output" =~ version\ \"(1\.8|8)([\._\"]|$) ]]
+}
+
+function find_java8_home() {
+    local candidate
+    for candidate in \
+        "${XAPI_JAVA8_HOME:-}" \
+        "${JAVA8_HOME:-}" \
+        "${JDK8_HOME:-}" \
+        "${JAVA_HOME_8_X64:-}" \
+        "${JAVA_HOME:-}" \
+        /opt/jvm/jdk8u322-b06 \
+        /usr/lib/jvm/java-8-openjdk-amd64
+    do
+        if is_java8_home "$candidate"; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
 function do_it() {
     if [ "$skip_tools" == n ]; then
+        local java8_home
+        if ! java8_home="$(find_java8_home)"; then
+            echo "A Java 8 JDK is required for the two legacy Gradle stages." >&2
+            echo "Set XAPI_JAVA8_HOME to its installation directory and rerun." >&2
+            return 2
+        fi
+        echo "Using Java 8 from $java8_home for legacy Gradle stages"
 
         pushd net.wti.core > /dev/null
         echo "invoking ./gradlew $args in $(pwd)"
@@ -94,13 +128,13 @@ function do_it() {
         pushd net.wti.gradle.tools > /dev/null
         # the tools will install themselves to local repo whenever we build them.
         echo "invoking ./gradlew $args in $(pwd)"
-        ./gradlew $args
+        JAVA_HOME="$java8_home" PATH="$java8_home/bin:$PATH" ./gradlew $args
         popd > /dev/null
 
 
         pushd net.wti.gradle > /dev/null
         echo "invoking ./gradlew $args in $(pwd)"
-        ./gradlew $args
+        JAVA_HOME="$java8_home" PATH="$java8_home/bin:$PATH" ./gradlew $args
         popd > /dev/null
     fi
 
