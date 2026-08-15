@@ -762,6 +762,64 @@ public class Producer {}
         assert !script.text.contains(rootDir.absolutePath)
     }
 
+    def "Generated source directories are stable and unchanged scripts are not rewritten"() {
+        given:
+        customSchema = """
+<xapi-schema
+    name = "stable-generated-scripts"
+    platforms = [
+        <main published = true publishSource = true /main>
+    ]
+    modules = [ main ]
+    projects = [
+        <producer
+            inherit = false
+            multiplatform = false
+            platforms = [ main ]
+            modules = [ main ]
+        /producer>
+    ]
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+        withProject(':producer') { proj ->
+            ['resources', 'java', 'groovy'].each { sourceDir ->
+                proj.file("src/main/${sourceDir}/marker") << sourceDir
+                proj.file("src/test/${sourceDir}/marker") << sourceDir
+            }
+        }
+
+        when:
+        runSucceed('tasks')
+
+        then:
+        File producerDir = new File(rootDir, 'producer')
+        File script = new File(producerDir, 'producer.gradle')
+        File sourceScript = new File(producerDir, 'build/srcModMain/producer-sources.gradle')
+        assert script.isFile()
+        assert sourceScript.isFile()
+        assert script.text.indexOf('main.groovy.srcDir("$rootDir/producer/src/main/groovy")') <
+                script.text.indexOf('main.java.srcDir("$rootDir/producer/src/main/java")')
+        assert script.text.indexOf('main.java.srcDir("$rootDir/producer/src/main/java")') <
+                script.text.indexOf('main.resources.srcDir("$rootDir/producer/src/main/resources")')
+        assert script.text.indexOf('test.groovy.srcDir("$rootDir/producer/src/test/groovy")') <
+                script.text.indexOf('test.java.srcDir("$rootDir/producer/src/test/java")')
+        assert script.text.indexOf('test.java.srcDir("$rootDir/producer/src/test/java")') <
+                script.text.indexOf('test.resources.srcDir("$rootDir/producer/src/test/resources")')
+        assert script.setLastModified(1_000L)
+        assert sourceScript.setLastModified(1_000L)
+
+        when:
+        runSucceed('tasks')
+
+        then:
+        assert script.lastModified() == 1_000L
+        assert sourceScript.lastModified() == 1_000L
+    }
+
     def "Schema version is applied to every Gradle project"() {
         given:
         customSchema = """

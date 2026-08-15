@@ -21,8 +21,8 @@ test.java.setSrcDirs([]);
 test.resources.setSrcDirs([]);
 main.java.srcDir("$rootDir/util/src/main/java")
 main.resources.srcDir("$rootDir/util/src/main/resources")
-test.java.srcDir("$rootDir/util/src/test/java")
 test.groovy.srcDir("$rootDir/util/src/test/groovy")
+test.java.srcDir("$rootDir/util/src/test/java")
 
 dependencies {
     annotationProcessor project(path: ":base-api")

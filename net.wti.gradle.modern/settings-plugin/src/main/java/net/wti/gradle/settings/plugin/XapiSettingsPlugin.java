@@ -34,6 +34,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.Arrays;
 
 /**
  * XapiSettingsPlugin:
@@ -457,7 +458,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         // lets have a look at the types of source dirs to decide what sourcesets to create.
                         if (moduleSourceDir.isDirectory()) {
-                            for (String sourceDir : moduleSourceDir.list()) {
+                            for (String sourceDir : sortedDirectoryNames(moduleSourceDir)) {
                                 switch (sourceDir) {
                                     case "groovy":
                                         out.addPlugin("groovy");
@@ -493,7 +494,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             }
                         }
                         if (moduleTestSourceDir.isDirectory()) {
-                            for (String sourceDir : moduleTestSourceDir.list()) {
+                            for (String sourceDir : sortedDirectoryNames(moduleTestSourceDir)) {
                                 switch (sourceDir) {
                                     case "groovy":
                                         out.addPlugin("groovy");
@@ -886,11 +887,11 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 .println(userBuildFile.getPath().replace(settings.getSettingsDir().getPath(), "$rootDir"));
                         // all done writing generated project
                         final String finalSrc = out.toSource();
-                        GradleFiles.writeFile(userBuildFile, finalSrc);
-                        GradleFiles.writeFile(lastGeneratedFile, finalSrc);
+                        writeGeneratedFileIfChanged(userBuildFile, finalSrc);
+                        writeGeneratedFileIfChanged(lastGeneratedFile, finalSrc);
                         if (isSourcePublished) {
                             final String finalSrcMod = srcMod.toSource();
-                            GradleFiles.writeFile(sourceBuildFile, finalSrcMod);
+                            writeGeneratedFileIfChanged(sourceBuildFile, finalSrcMod);
                             settings.include(projectName + "-sources");
                             final ProjectDescriptor sourceMod = settings.project(projectName + "-sources");
                             sourceMod.setProjectDir(sourceBuildFile.getParentFile());
@@ -1002,6 +1003,21 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             return true;
         }
         return false;
+    }
+
+    private static String[] sortedDirectoryNames(final File dir) {
+        final String[] names = dir.list();
+        if (names == null) {
+            return new String[0];
+        }
+        Arrays.sort(names);
+        return names;
+    }
+
+    private static void writeGeneratedFileIfChanged(final File file, final String contents) {
+        if (!file.isFile() || !GradleFiles.readFile(file).equals(contents)) {
+            GradleFiles.writeFile(file, contents);
+        }
     }
 
     /**
