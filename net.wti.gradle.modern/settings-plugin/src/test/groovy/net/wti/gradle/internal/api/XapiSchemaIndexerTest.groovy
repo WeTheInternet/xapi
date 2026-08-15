@@ -728,6 +728,40 @@ public class Producer {}
         } == 1
     }
 
+    def "Generated include comments use a root-relative path"() {
+        given:
+        customSchema = """
+<xapi-schema
+    name = "include-path-build"
+    platforms = [ main ]
+    modules = [ main ]
+    projects = [
+        <producer
+            inherit = false
+            multiplatform = false
+            platforms = [ main ]
+            modules = [ main ]
+        /producer>
+    ]
+/xapi-schema>
+"""
+        pluginList = ['java']
+        withProject(':') {}
+        doWork()
+        pluginList = []
+        withProject(':producer') { proj ->
+            proj.file('src/gradle/main/body.start') << '// included before generated content\n'
+        }
+
+        when:
+        runSucceed('tasks')
+
+        then:
+        File script = new File(rootDir, 'producer/producer.gradle')
+        assert script.text.contains('// GenInclude body.start from file://$rootDir/producer/src/gradle/main/body.start')
+        assert !script.text.contains(rootDir.absolutePath)
+    }
+
     def "Schema version is applied to every Gradle project"() {
         given:
         customSchema = """

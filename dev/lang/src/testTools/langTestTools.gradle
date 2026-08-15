@@ -1,5 +1,5 @@
 plugins {
-    // GenInclude plugin from file:///opt/xapi/dev/lang/src/gradle/testTools/plugins
+    // GenInclude plugin from file://$rootDir/dev/lang/src/gradle/testTools/plugins
     id	"groovy"
     id	"java-library"
     id	"maven-publish"

@@ -1,5 +1,5 @@
 plugins {
-    // GenInclude plugin from file:///opt/xapi/gwt/src/gradle/gwtElemental/plugins
+    // GenInclude plugin from file://$rootDir/gwt/src/gradle/gwtElemental/plugins
     id('xapi-tools-jar')
     id	"java-library"
     id	"maven-publish"

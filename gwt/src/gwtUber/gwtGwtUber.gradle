@@ -1,5 +1,5 @@
 buildscript {
-    // GenInclude buildscript from file:///opt/xapi/gwt/src/gradle/gwtUber/buildscript
+    // GenInclude buildscript from file://$rootDir/gwt/src/gradle/gwtUber/buildscript
     buildscript {
         repositories {
             maven {
@@ -20,7 +20,7 @@ plugins {
     id	"maven-publish"
 }
 
-// GenInclude body.start from file:///opt/xapi/gwt/src/gradle/gwtUber/body.start
+// GenInclude body.start from file://$rootDir/gwt/src/gradle/gwtUber/body.start
 // See <xapi repo>/gwt/src/gwtUber/todo/TODO.md for details abour re-enabling this
 // apply plugin: xapi.gradle.meta.MetaPlugin
 // GenStart net.wti.gradle.settings.plugin.XapiSettingsPlugin
@@ -102,7 +102,7 @@ ext.publications.create("xapi", MavenPublication, {
         pub.groupId = "net.wetheinter"
 })
 // GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
-// GenInclude body.end from file:///opt/xapi/gwt/src/gradle/gwtUber/body.end
+// GenInclude body.end from file://$rootDir/gwt/src/gradle/gwtUber/body.end
 configurations {
     allDeps.extendsFrom runtimeClasspath
 }

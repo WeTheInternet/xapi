@@ -1,5 +1,5 @@
 plugins {
-    // GenInclude plugin from file:///opt/xapi/dev/javac/src/gradle/main/plugins
+    // GenInclude plugin from file://$rootDir/dev/javac/src/gradle/main/plugins
     id('xapi-tools-jar')
     id	"java-library"
     id	"maven-publish"

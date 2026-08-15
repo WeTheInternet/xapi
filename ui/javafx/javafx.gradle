@@ -68,7 +68,7 @@ ext.publications.create("xapi", MavenPublication, {
         pub.groupId = "net.wetheinter"
 })
 // GenEnd net.wti.gradle.settings.plugin.XapiSettingsPlugin
-// GenInclude body.end from file:///opt/xapi/ui/javafx/src/gradle/main/body.end
+// GenInclude body.end from file://$rootDir/ui/javafx/src/gradle/main/body.end
 dependencies {
     api files("$rootDir/ui/javafx/lib/jfxrt.jar")
 }

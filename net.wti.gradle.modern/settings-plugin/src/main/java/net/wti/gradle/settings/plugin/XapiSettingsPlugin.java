@@ -157,7 +157,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
-        final String rootDir = view.getProjectDir().getPath();
+        final File generationRoot = view.getProjectDir();
+        final String rootDir = generationRoot.getPath();
 
         view.getLogger().info("All projects ({}):\n{}", map.getAllProjects().size(),
                 map.getAllProjects().map(s->s.getPathGradle() + "@" + s.getPublishedName()).join("\n"));
@@ -342,7 +343,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 (name, buffer) -> {
                                     In2<String, File> cb = (script, file) -> {
                                             buffer.out1()
-                                                    .print("// GenInclude ").print(name).print(" from file://").println(file.getAbsolutePath())
+                                                    .print("// GenInclude ").print(name).print(" from ").println(generatedFileReference(generationRoot, file))
                                                     .printlns(script);
                                     };
                                     final boolean read1 = maybeRead(buildscriptSrcOld, name, cb);
@@ -366,7 +367,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 maybeAdd.io("buildscript.end", getBuildscript);
 
                                 final In2<String, File> addPlugin = (plugins, file) -> {
-                                    out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                    out.getPlugins().print("// GenInclude plugin from ").println(generatedFileReference(generationRoot, file));
                                     for (String s : plugins.split("[\\n\\r]+")) {
                                         if (!s.startsWith("//")) {
                                             out.addPlugin(s);
@@ -380,7 +381,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                                 final In2<String, File> addRepo = (repos, file) -> {
                                     final ClosureBuffer repoBlock = out.startClosure("repositories");
-                                    repoBlock.print("// GenInclude repositories from file://").println(file.getAbsolutePath());
+                                    repoBlock.print("// GenInclude repositories from ").println(generatedFileReference(generationRoot, file));
                                     for (String raw : repos.split("[\\n\\r]+")) {
                                         final String line = raw == null ? "" : raw.trim();
                                         if (line.isEmpty() || line.startsWith("//")) {
@@ -1001,6 +1002,19 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Keep generated comments stable when the same checkout is used from different worktree roots.
+     */
+    private static String generatedFileReference(final File rootDir, final File file) {
+        final String relativePath = rootDir.toPath()
+                .toAbsolutePath()
+                .normalize()
+                .relativize(file.toPath().toAbsolutePath().normalize())
+                .toString()
+                .replace(File.separatorChar, '/');
+        return "file://$rootDir/" + relativePath;
     }
 
     private static String quoteGroovyString(final String value) {
