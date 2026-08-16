@@ -3580,6 +3580,10 @@ Expression UiValue():
       // < block of="ui" />
       ( expression = UiContainer() ) |
 
+      // Signed numeric attributes are ordinary XApi values, including map coordinates.
+      LOOKAHEAD( "-" <INTEGER_LITERAL> )
+      expression = UnaryExpression() |
+
       // Any valid, simple java construct (including lambdas and method references).
       expression = FeatureExpression()
 )
