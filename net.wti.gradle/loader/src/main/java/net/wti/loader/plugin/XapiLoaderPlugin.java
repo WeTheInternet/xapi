@@ -231,7 +231,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                                 (name, buffer) -> {
                                     In2<String, File> cb = (script, file) ->
                                             buffer.out1()
-                                                    .print("// GenInclude ").print(name).print(" from file://").println(file.getAbsolutePath())
+                                                    .print("// GenInclude ").print(name).print(" from file://").println(toGenIncludePath(file, projectRoot))
                                                     .println(script)
                                     ;
                                     return maybeRead(projectSource, name, cb);
@@ -252,7 +252,7 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
                             maybeAdd.io("buildscript.end", getBuildscript);
 
                             final In2<String, File> addPlugin = (plugins, file) -> {
-                                out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                out.getPlugins().print("// GenInclude plugin from file://").println(toGenIncludePath(file, projectRoot));
                                 for (String s : plugins.split("[\\n\\r]+")) {
                                     if (!s.startsWith("//")) {
                                         out.addPlugin(s);
@@ -500,6 +500,19 @@ public class XapiLoaderPlugin implements Plugin<Settings> {
             return true;
         }
         return false;
+    }
+
+    private static String toGenIncludePath(final File file, final File rootDir) {
+        final String filePath = file.getAbsolutePath();
+        final String rootPath = rootDir.getAbsolutePath();
+        if (filePath.startsWith(rootPath)) {
+            String relativePath = filePath.substring(rootPath.length());
+            if (relativePath.startsWith(File.separator)) {
+                relativePath = relativePath.substring(1);
+            }
+            return "$rootDir/" + relativePath.replace(File.separatorChar, '/');
+        }
+        return filePath;
     }
 
     private static String getPlatform(Settings settings) {

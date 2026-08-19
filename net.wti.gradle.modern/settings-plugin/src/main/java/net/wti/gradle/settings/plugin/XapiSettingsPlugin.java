@@ -157,7 +157,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
-        final String rootDir = view.getProjectDir().getPath();
+        final File rootDirFile = view.getProjectDir();
+        final String rootDir = rootDirFile.getPath();
 
         view.getLogger().info("All projects ({}):\n{}", map.getAllProjects().size(),
                 map.getAllProjects().map(s->s.getPathGradle() + "@" + s.getPublishedName()).join("\n"));
@@ -342,7 +343,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 (name, buffer) -> {
                                     In2<String, File> cb = (script, file) -> {
                                             buffer.out1()
-                                                    .print("// GenInclude ").print(name).print(" from file://").println(file.getAbsolutePath())
+                                                    .print("// GenInclude ").print(name).print(" from file://").println(toGenIncludePath(file, rootDir))
                                                     .printlns(script);
                                     };
                                     final boolean read1 = maybeRead(buildscriptSrcOld, name, cb);
@@ -366,7 +367,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 maybeAdd.io("buildscript.end", getBuildscript);
 
                                 final In2<String, File> addPlugin = (plugins, file) -> {
-                                    out.getPlugins().print("// GenInclude plugin from file://").println(file.getAbsolutePath());
+                                    out.getPlugins().print("// GenInclude plugin from file://").println(toGenIncludePath(file, rootDir));
                                     for (String s : plugins.split("[\\n\\r]+")) {
                                         if (!s.startsWith("//")) {
                                             out.addPlugin(s);
@@ -380,7 +381,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                                 final In2<String, File> addRepo = (repos, file) -> {
                                     final ClosureBuffer repoBlock = out.startClosure("repositories");
-                                    repoBlock.print("// GenInclude repositories from file://").println(file.getAbsolutePath());
+                                    repoBlock.print("// GenInclude repositories from file://").println(toGenIncludePath(file, rootDir));
                                     for (String raw : repos.split("[\\n\\r]+")) {
                                         final String line = raw == null ? "" : raw.trim();
                                         if (line.isEmpty() || line.startsWith("//")) {
@@ -461,20 +462,20 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     case "groovy":
                                         out.addPlugin("groovy");
                                         main.access("groovy.srcDir(\"$2/$3\")",
-                                                moduleSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                toGenIncludePath(moduleSourceDir, rootDirFile),
                                                 sourceDir
                                         );
                                         break;
                                     case "java":
                                     case "kotlin":
                                         main.access("java.srcDir(\"$2/$3\")",
-                                                moduleSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                toGenIncludePath(moduleSourceDir, rootDirFile),
                                                 sourceDir
                                         );
                                         break;
                                     case "resources":
                                         main.access("resources.srcDir(\"$2/resources\")",
-                                                moduleSourceDir.getPath().replace(rootDir, "$rootDir")
+                                                toGenIncludePath(moduleSourceDir, rootDirFile)
                                         );
                                         break;
                                     default:
@@ -497,20 +498,20 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                     case "groovy":
                                         out.addPlugin("groovy");
                                         test.access("groovy.srcDir(\"$2/$3\")",
-                                                moduleTestSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                toGenIncludePath(moduleTestSourceDir, rootDirFile),
                                                 sourceDir
                                         );
                                         break;
                                     case "java":
                                     case "kotlin":
                                         test.access("java.srcDir(\"$2/$3\")",
-                                                moduleTestSourceDir.getPath().replace(rootDir, "$rootDir"),
+                                                toGenIncludePath(moduleTestSourceDir, rootDirFile),
                                                 sourceDir
                                         );
                                         break;
                                     case "resources":
                                         test.access("resources.srcDir(\"$2/resources\")",
-                                                moduleTestSourceDir.getPath().replace(rootDir, "$rootDir")
+                                                toGenIncludePath(moduleTestSourceDir, rootDirFile)
                                         );
                                         break;
                                     default:
@@ -1034,6 +1035,23 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             }
         }
         return quoted.append('\'').toString();
+    }
+
+    private static String toGenIncludePath(final File file, final File rootDir) {
+        return toGenIncludePath(file, rootDir.getAbsolutePath());
+    }
+
+    private static String toGenIncludePath(final File file, final String rootDir) {
+        final String filePath = file.getAbsolutePath();
+        final String rootPath = rootDir;
+        if (filePath.startsWith(rootPath)) {
+            String relativePath = filePath.substring(rootPath.length());
+            if (relativePath.startsWith(File.separator)) {
+                relativePath = relativePath.substring(1);
+            }
+            return "$rootDir/" + relativePath.replace(File.separatorChar, '/');
+        }
+        return filePath;
     }
 
     private static String getPlatform(Settings settings) {
