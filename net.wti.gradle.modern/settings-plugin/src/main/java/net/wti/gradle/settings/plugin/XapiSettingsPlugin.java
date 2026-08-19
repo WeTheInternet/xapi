@@ -34,6 +34,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.Arrays;
 
 /**
  * XapiSettingsPlugin:
@@ -457,7 +458,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                         // lets have a look at the types of source dirs to decide what sourcesets to create.
                         if (moduleSourceDir.isDirectory()) {
-                            for (String sourceDir : moduleSourceDir.list()) {
+                            for (String sourceDir : sortedDirEntries(moduleSourceDir)) {
                                 switch (sourceDir) {
                                     case "groovy":
                                         out.addPlugin("groovy");
@@ -493,7 +494,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             }
                         }
                         if (moduleTestSourceDir.isDirectory()) {
-                            for (String sourceDir : moduleTestSourceDir.list()) {
+                            for (String sourceDir : sortedDirEntries(moduleTestSourceDir)) {
                                 switch (sourceDir) {
                                     case "groovy":
                                         out.addPlugin("groovy");
@@ -1052,6 +1053,15 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             return "$rootDir/" + relativePath.replace(File.separatorChar, '/');
         }
         return filePath;
+    }
+
+    private static String[] sortedDirEntries(final File dir) {
+        final String[] sourceDirs = dir.list();
+        if (sourceDirs == null) {
+            return new String[0];
+        }
+        Arrays.sort(sourceDirs);
+        return sourceDirs;
     }
 
     private static String getPlatform(Settings settings) {
