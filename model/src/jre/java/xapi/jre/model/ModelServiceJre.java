@@ -67,6 +67,9 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   public boolean hasTransactionStore() { return transactions != null; }
 
   @Override
+  protected boolean isKeyOnlyHydrationEnabled() { return transactions == null; }
+
+  @Override
   @SuppressWarnings({
       "unchecked", "rawtypes"
   })
@@ -263,13 +266,18 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   @SuppressWarnings("unchecked")
   public <M extends Model> void query(final ModelManifest manifest, final ModelQuery<M> query,
       final SuccessHandler<ModelQueryResult<M>> callback) {
-    query(manifest, query, captured -> {}, callback);
+    queryTyped((Class<M>) manifest.getModelType(), manifest.getType(), query, captured -> {},
+        file -> decodeFile(null, manifest, file), callback);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <M extends Model> void query(final ModelManifest manifest, final ModelQuery<M> query,
       final In1<ModelQuery<M>> validation, final SuccessHandler<ModelQueryResult<M>> callback) {
+    if (transactions == null) {
+      fail(callback, new IllegalStateException("Validated queries require an attached transaction store"));
+      return;
+    }
     queryTyped((Class<M>) manifest.getModelType(), manifest.getType(), query, validation,
         file -> decodeFile(null, manifest, file), callback);
   }
@@ -299,6 +307,8 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
             if (target != null && !target.equals(captured.serialize(this, primitiveSerializer()))) {
               throw new IOException("Query validation changed its captured target");
             }
+            if (store != null) store.validateQueryInventory(ModelFileQueries.bucket(directory,
+                captured.getNamespace(), type, captured.getAncestor()).toPath(), false);
             return ModelFileQueries.typed(directory, type, modelClass, captured, store != null, decoder);
           });
         } catch (Throwable failure) {
@@ -328,8 +338,12 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       try {
         final ModelQueryResult<Model> result;
         try {
-          result = readScope(store, () -> ModelFileQueries.untyped(directory, captured, store != null,
-              file -> decodeFile(typeToClass(file.getParentFile().getName()), null, file)));
+          result = readScope(store, () -> {
+            if (store != null) store.validateQueryInventory(captured.getNamespace().isEmpty() ? directory.toPath()
+                : new File(directory, captured.getNamespace()).toPath(), true);
+            return ModelFileQueries.untyped(directory, captured, store != null,
+                file -> decodeFile(typeToClass(file.getParentFile().getName()), null, file));
+          });
         } catch (Throwable failure) {
           fail(callback, new ModelQueryFailureException(captured, directory.getPath(), failure));
           return;
@@ -359,7 +373,8 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   @SuppressWarnings("unchecked")
   private <M extends Model> ModelQuery<M> captureQuery(final ModelQuery<M> query,
       final FileModelTransactionStore store) throws IOException {
-    if (store == null) return query;
+    if (store == null) return (ModelQuery<M>) ModelQuery.deserialize(this, primitiveSerializer(),
+        new StringCharIterator(query.serialize(this, primitiveSerializer())));
     final ModelKey ancestor = query.getAncestor() == null ? null : captureKey(query.getAncestor());
     if (ancestor != null && !ancestor.getNamespace().equals(query.getNamespace())) {
       throw new IOException("Query namespace does not match its ancestor");

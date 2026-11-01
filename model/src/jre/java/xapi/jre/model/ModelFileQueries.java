@@ -41,8 +41,8 @@ final class ModelFileQueries {
     final File namespace = query.getNamespace().isEmpty() ? root : new File(root, query.getNamespace());
     rejectInternal(root, namespace);
     if (guarded) validateDirectory(root, namespace);
-    final File[] types = guarded ? guardedTypes(namespace) : namespace.listFiles(file -> file.isDirectory()
-        && !FileModelTransactionStore.INTERNAL_DIRECTORY.equals(file.getName())
+    final File[] types = guarded ? guardedTypes(root, namespace) : namespace.listFiles(file -> file.isDirectory()
+        && !isInternal(root, file)
         && !AtomicModelFile.isTemporary(file));
     if (types == null) {
       if (guarded && Files.exists(namespace.toPath(), LinkOption.NOFOLLOW_LINKS)) {
@@ -100,14 +100,19 @@ final class ModelFileQueries {
         .resolve(FileModelTransactionStore.INTERNAL_DIRECTORY))) throw new IOException("Reserved model metadata directory");
   }
 
-  private static File[] guardedTypes(final File directory) throws IOException {
+  private static boolean isInternal(final File root, final File file) {
+    return file.toPath().toAbsolutePath().normalize().equals(root.toPath().toAbsolutePath().normalize()
+        .resolve(FileModelTransactionStore.INTERNAL_DIRECTORY));
+  }
+
+  private static File[] guardedTypes(final File root, final File directory) throws IOException {
     final ArrayList<File> result = new ArrayList<>();
     final java.nio.file.DirectoryStream<Path> opened = openDirectory(directory);
     if (opened == null) return new File[0];
     try (java.nio.file.DirectoryStream<Path> entries = opened) {
       for (final Path entry : entries) {
         final File file = entry.toFile();
-        if (FileModelTransactionStore.INTERNAL_DIRECTORY.equals(file.getName()) || AtomicModelFile.isTemporary(file)) continue;
+        if (isInternal(root, file) || AtomicModelFile.isTemporary(file)) continue;
         final BasicFileAttributes attributes = Files.readAttributes(entry, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
         if (attributes.isSymbolicLink()) throw new IOException("Query type uses a symbolic link");
         if (attributes.isDirectory()) result.add(file);
@@ -124,7 +129,7 @@ final class ModelFileQueries {
       try (java.nio.file.DirectoryStream<Path> entries = opened) {
         for (final Path entry : entries) {
           final File file = entry.toFile();
-          if (AtomicModelFile.isTemporary(file) || FileModelTransactionStore.INTERNAL_DIRECTORY.equals(file.getName())) continue;
+          if (AtomicModelFile.isTemporary(file)) continue;
           final BasicFileAttributes attributes = Files.readAttributes(entry, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
           if (attributes.isDirectory()) continue;
           if (!attributes.isRegularFile()) throw new IOException("Query record is not a regular file");
@@ -134,7 +139,6 @@ final class ModelFileQueries {
       final File[] files = result.toArray(new File[0]); Arrays.sort(files, BY_NAME); return files;
     }
     final File[] files = directory.listFiles(file -> AtomicModelFile.isModelFile(file)
-        && !FileModelTransactionStore.INTERNAL_DIRECTORY.equals(file.getName())
         && (cursor == null || file.getName().compareTo(cursor) >= 0));
     if (files == null) {
       if (guarded && Files.exists(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) {

@@ -20,7 +20,9 @@ Unattached providers retain their ordinary single-record mode.
 Actual asynchronous load/query runnable bodies acquire the engine gate. Enumeration,
 file reads and deserialization finish inside it; successful/error callbacks run
 after it is released. The provider snapshots attached-mode query and key identities
-before dispatch. Original full key/ancestor chains are validated and copied without
+before dispatch. Deferred queries also capture their inputs in unattached legacy
+mode, so changing the original namespace/ancestor/cursor cannot redirect later IO.
+Original attached full key/ancestor chains are validated and copied without
 letting the wire codec normalize an inconsistent child's namespace into its parent's
 owner. Complete IDs/kinds, namespace agreement, depth/cycles and every custom key type
 are retained; query namespace must match its captured ancestor. A load of a missing protected file is a storage error, not the
@@ -28,7 +30,9 @@ ordinary missing-model result that would invite reseeding.
 
 `ModelServiceWithQueryValidation` is an optional thin capability in the existing
 model owner. Its `In1<ModelQuery<M>>` validator receives the exact captured query
-used for enumeration, immediately before it under the same read scope. The caller's
+used for enumeration, immediately before it under the same read scope. This strict
+capability rejects an unattached provider; ordinary manifest queries remain supported
+without delegating through the strict overload. The caller's
 mutable original is never supplied in attached mode. Validators must not change the
 target, invoke asynchronous IO or wait for a
 callback. Engine commit, legacy-write, recover and close attempts reentered from a
@@ -42,6 +46,20 @@ including after restart. Unprotected legacy writes are still single-record write
 without a transaction receipt. All typed, manifest and untyped query paths exclude
 reserved transaction metadata and temporary files. Guarded enumeration propagates
 storage/symlink errors rather than converting them into empty results.
+The reserved metadata directory is only `.xapi-transactions` immediately under the
+store root; the same basename remains a valid model file in a type bucket.
+
+Before enumerating an owned query, protected path bindings are reconciled under the
+same gate. A missing protected record, bucket or namespace is a storage failure.
+Typed queries check their exact ancestor bucket; untyped queries check the existing
+flat namespace/type shape, not arbitrary descendants. The entire selected bucket
+is validated before cursor/page filtering, so an earlier missing record does not
+become invisible on later pages. A missing record in another scope is not an error
+for this query. The initial implementation scans all protected binding metadata:
+O(total protected records) metadata work per query plus in-scope binding/presence
+checks, without loading all model bodies or introducing an index. Unreadable or
+corrupt metadata whose scope cannot be determined fails closed; no compaction or
+query-index performance guarantee is claimed.
 Attached legacy persist rejects serialized images exceeding the engine's 4 MiB
 record bound before any write; query decoding checks the file size before allocating
 its input buffer. Detached legacy mode keeps its existing size behavior. A clear
@@ -52,6 +70,12 @@ composition, serialization and scheduling. The engine owns transaction decisions
 recovery and shared scopes. No monitor is transferred across asynchronous callbacks.
 
 ## Remaining application integration
+
+Attached providers deserialize key-only references as key-bearing stubs exactly as
+encoded. They do not schedule hidden reference loads after the outer snapshot is
+returned. Child contexts inherit that policy; inline model/list values remain inline.
+Unattached/default providers retain legacy deferred hydration. Composed hydrated
+views belong in explicit caller-owned reads, not an implicit unbounded graph load.
 
 This capability does not automatically activate servers or create an HTTP bundle
 endpoint. Application startup must own/attach the global provider before in-process

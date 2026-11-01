@@ -101,6 +101,38 @@ public final class FileModelTransactionStore implements AutoCloseable {
     finally { operationDepth--; }
   }
 
+  /**
+   * Reconcile a query's entire logical bucket with protected bindings before pagination.
+   * A flat namespace query includes direct records under its immediate type buckets only.
+   * This intentionally scans all binding metadata; no persistent query index is claimed.
+   */
+  synchronized void validateQueryInventory(final Path directory, final boolean flatNamespace) throws IOException {
+    ready();
+    final Path scope = directory.toAbsolutePath();
+    if (!scope.equals(scope.normalize()) || !scope.startsWith(root) || scope.startsWith(internal)) {
+      throw new IOException("Invalid query inventory scope");
+    }
+    try (java.nio.file.DirectoryStream<Path> entries = Files.newDirectoryStream(revisions)) {
+      for (final Path entry : entries) {
+        if (AtomicModelFile.isTemporary(entry.toFile())) continue;
+        final DataInputStream fields = new DataInputStream(new ByteArrayInputStream(unchecked(readBounded(entry))));
+        final ModelStoreKey key;
+        try { key = new ModelStoreKey(ModelTransactionCodec.text(fields, 32768), ModelTransactionCodec.text(fields, 16384)); }
+        catch (IllegalArgumentException invalid) { throw new IOException("Corrupt protected model inventory", invalid); }
+        final long revision = fields.readLong();
+        if (revision <= 0 || revision > sequence || fields.available() != 0 || !metadata(key).equals(entry)) {
+          throw new IOException("Corrupt protected model inventory");
+        }
+        final Path file = root.resolve(key.relativePath());
+        final Path bucket = file.getParent();
+        if (!(flatNamespace ? bucket != null && scope.equals(bucket.getParent()) : scope.equals(bucket))) continue;
+        if (revision(key) != revision || !exists(destination(key))) {
+          throw new IOException("Protected query model is missing or inconsistent");
+        }
+      }
+    }
+  }
+
   public FileModelTransactionStore(final Path directory, final Faults faults) throws IOException {
     root = directory.toAbsolutePath().normalize();
     this.faults = java.util.Objects.requireNonNull(faults, "faults");
@@ -299,6 +331,15 @@ public final class FileModelTransactionStore implements AutoCloseable {
 
   private ModelStoreRecord record(final ModelStoreKey key) throws IOException {
     final Path destination = destination(key);
+    final long revision = revision(key);
+    if (!exists(destination)) {
+      if (revision != 0) throw new IOException("Protected model file is missing");
+      return new ModelStoreRecord(null, 0);
+    }
+    return new ModelStoreRecord(readBounded(destination), revision);
+  }
+
+  private long revision(final ModelStoreKey key) throws IOException {
     final Path metadata = metadata(key);
     long revision = 0;
     if (exists(metadata)) {
@@ -314,11 +355,7 @@ public final class FileModelTransactionStore implements AutoCloseable {
         || !Arrays.equals(metadataBytes(key, revision), readBounded(identity))) {
       throw new IOException("Canonical model identity binding mismatch");
     }
-    if (!exists(destination)) {
-      if (revision != 0) throw new IOException("Protected model file is missing");
-      return new ModelStoreRecord(null, 0);
-    }
-    return new ModelStoreRecord(readBounded(destination), revision);
+    return revision;
   }
 
   private byte[] metadataBytes(final ModelStoreKey key, final long revision) throws IOException {

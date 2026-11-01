@@ -19,6 +19,11 @@ public class ModelDeserializationContext {
   private boolean clientToServer;
   private boolean keyOnly;
   private boolean subModel;
+  private boolean keyOnlyHydrationEnabled = true;
+
+  /** False retains encoded reference stubs instead of scheduling loads that mutate returned models. */
+  public boolean isKeyOnlyHydrationEnabled() { return keyOnlyHydrationEnabled; }
+  public void setKeyOnlyHydrationEnabled(final boolean enabled) { keyOnlyHydrationEnabled = enabled; }
 
   public ModelDeserializationContext(final Model model, final ModelService service, final ModelManifest manifest) {
     this.model = model;
@@ -111,6 +116,7 @@ public class ModelDeserializationContext {
     // Propagate hints consistently
     ctx.setKeyOnly(hints.isKeyOnly());
     ctx.setClientToServer(hints.isClientToServer());
+    ctx.setKeyOnlyHydrationEnabled(keyOnlyHydrationEnabled);
     ctx.subModel = true;
     return ctx;
   }

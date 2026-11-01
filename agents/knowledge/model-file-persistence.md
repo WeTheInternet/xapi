@@ -20,7 +20,9 @@ durability is unconfirmed: callers must not treat it as proof of rejection.
 There is no operation receipt or conditional revision in this single-record API.
 
 Names matching `.xapi-write-*.tmp` are reserved, cannot be persisted/loaded as models,
-and are excluded from every built-in query. Existing models using this reserved
+and are excluded from every built-in query. Only the root `.xapi-transactions`
+directory is reserved for transaction metadata; the same basename under a model
+type remains an ordinary record. Existing models using the temporary-name reserved
 pattern require an explicit rename/migration before using this provider. Owned
 temporary files are removed on ordinary failures. Crash remnants are retained but
 query-invisible: automatic removal of another process's staging file would be unsafe

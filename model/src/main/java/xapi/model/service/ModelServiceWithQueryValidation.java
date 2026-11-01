@@ -16,6 +16,8 @@ public interface ModelServiceWithQueryValidation extends ModelService {
    * caller's mutable original. Validation must be synchronous, must not alter that target or mutate
    * storage, and must not wait for asynchronous work. The result/error callback runs after that
    * scope is released and may initiate another call.
+   * An implementation must reject this operation without an owned store/read gate; ordinary
+   * query overloads remain available for deliberately unguarded legacy providers.
    */
   <M extends Model> void query(ModelManifest manifest, ModelQuery<M> query,
       In1<ModelQuery<M>> validation, SuccessHandler<ModelQueryResult<M>> callback);
