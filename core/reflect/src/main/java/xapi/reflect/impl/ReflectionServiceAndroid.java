@@ -21,7 +21,10 @@ import java.util.Objects;
  * https://android.googlesource.com/platform/libcore/+/refs/tags/android-11.0.0_r1/ojluni/src/main/java/java/lang/invoke/MethodHandles.java
  * No hidden Lookup constructor or access override is used.
  *
- * <p>JVM tests exercise real handles but do not establish ART execution. An
+ * <p>Java 8 bytecode compatibility does not imply execution support on OpenJDK 8:
+ * its lookup rejects the declaring-interface special caller used here. Host tests
+ * exercise success with Java 17 and verify that Java 8 rejects this lookup; they
+ * do not establish ART execution. An
  * application's Android runtime verification must include its model proxies.
  */
 public class ReflectionServiceAndroid extends ReflectionServiceDefault {
