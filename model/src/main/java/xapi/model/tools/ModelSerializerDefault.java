@@ -1139,7 +1139,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             }
             if (keyOnly) {
 
-                if (autoSave) {
+                if (autoSave && ctx.isAutoSaveEnabled()) {
 
                     if (ModelList.class.isAssignableFrom(propertyType)) {
                         autoSaveModelList(propName, childModel, ctx);

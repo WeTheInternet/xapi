@@ -101,6 +101,30 @@ public final class FileModelTransactionStore implements AutoCloseable {
     finally { operationDepth--; }
   }
 
+  /** One cooperative read/create decision; no revision bindings or transaction receipt are added. */
+  synchronized CreatedImage createIfAbsent(final ModelStoreKey key, final byte[] proposed) throws IOException {
+    ready();
+    mutationAllowed();
+    if (proposed.length > xapi.model.service.ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES) {
+      throw new IOException("Conditional model image exceeds byte limit");
+    }
+    final byte[] image = proposed.clone();
+    final ModelStoreRecord existing = record(key);
+    if (existing.exists()) return new CreatedImage(false, existing.value());
+    // record() rejects corrupt bindings and a missing protected record before this branch.
+    // Other cooperating mutations cannot interleave. External filesystem writers are outside
+    // the store lease contract; ATOMIC_MOVE itself is not a filesystem-wide conditional insert.
+    atomicWrite(destination(key), image);
+    return new CreatedImage(true, image);
+  }
+
+  static final class CreatedImage {
+    final boolean created;
+    private final byte[] image;
+    CreatedImage(final boolean created, final byte[] image) { this.created = created; this.image = image.clone(); }
+    byte[] image() { return image.clone(); }
+  }
+
   /**
    * Reconcile a query's entire logical bucket with protected bindings before pagination.
    * A flat namespace query includes direct records under its immediate type buckets only.

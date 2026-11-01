@@ -16,6 +16,8 @@ import xapi.model.api.ModelModule;
 import xapi.model.api.ModelNotFoundException;
 import xapi.model.api.ModelQuery;
 import xapi.model.api.ModelQueryResult;
+import xapi.model.api.ModelCreateResult;
+import xapi.model.service.ModelServiceWithCreateIfAbsent;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.SuccessHandler;
 
@@ -46,7 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * imply that a write failed to reach the server; callers must reconcile uncertain
  * writes using their stable key rather than create replacement records.
  */
-public class ModelServiceHttp extends AbstractJreModelService {
+public class ModelServiceHttp extends AbstractJreModelService implements ModelServiceWithCreateIfAbsent {
 
     private final String endpoint;
     private final ModelModule module;
@@ -121,6 +123,34 @@ public class ModelServiceHttp extends AbstractJreModelService {
     @Override
     protected boolean isClientToServer() {
         return true;
+    }
+
+    @Override public boolean supportsCreateIfAbsent() { return true; }
+
+    @Override public <M extends Model> void createIfAbsent(final M model,
+            final SuccessHandler<ModelCreateResult<M>> callback) {
+        final ModelManifest manifest;
+        try { manifest = model == null ? null : requireManifest(model.getType()); }
+        catch (Throwable failure) { fail(callback, failure); return; }
+        createIfAbsent(manifest, model, callback);
+    }
+
+    @Override public <M extends Model> void createIfAbsent(final ModelManifest manifest, final M model,
+            final SuccessHandler<ModelCreateResult<M>> callback) {
+        final ModelCreateRequest request;
+        try {
+            request = new ModelCreateRequest(this, model == null ? null : requireManifest(model.getType()),
+                    manifest, model, isClientToServer());
+        } catch (Throwable failure) { fail(callback, failure); return; }
+        post("create", request.type, request.source, response -> {
+            if (response.statusCode() != 200 && response.statusCode() != 201) {
+                throw new IllegalStateException("Unexpected conditional-create status " + response.statusCode());
+            }
+            final M acknowledged;
+            try { acknowledged = request.decode(this, response.body().getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
+            catch (java.io.IOException invalid) { throw new IllegalStateException("Invalid conditional-create response", invalid); }
+            return new ModelCreateResult<>(response.statusCode() == 201, acknowledged);
+        }, callback, null); // A create 404 is failure, never missing state or permission to persist.
     }
 
     @Override
