@@ -8,8 +8,15 @@ import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
-/** Real JVM method handles on proxy receivers; not an ART/device test. */
+/**
+ * Host-JVM contract checks, not ART/device verification. Java 8 can load this
+ * adapter's bytecode but rejects its Android-style findSpecial caller lookup.
+ * Success cases execute on the supported modern host (verified with Java 17);
+ * Java 8 instead executes the explicit unsupported-runtime assertion.
+ */
 public class ReflectionServiceAndroidTest {
 
     public interface Parent {
@@ -41,6 +48,7 @@ public class ReflectionServiceAndroidTest {
 
     @Test
     public void invokesRealDefaultOnDynamicProxyWithoutRecursion() throws Exception {
+        requireModernHost();
         final Example receiver = proxy(new AtomicInteger());
         assertEquals("hello", service.invokeDefaultMethod(receiver, Example.class.getMethod("greeting")));
         assertEquals("hello", service.invokeDefaultMethod(receiver, Example.class.getMethod("greeting"), (Object[]) null));
@@ -49,6 +57,7 @@ public class ReflectionServiceAndroidTest {
 
     @Test
     public void resolvesInheritedDefaultAndDispatchesAbstractAccessor() throws Exception {
+        requireModernHost();
         final AtomicInteger abstractCalls = new AtomicInteger();
         final Example receiver = proxy(abstractCalls);
         assertEquals("from proxy!", service.invokeDefaultMethod(receiver,
@@ -58,6 +67,7 @@ public class ReflectionServiceAndroidTest {
 
     @Test
     public void preservesArrayArgumentsAndVoidReturn() throws Exception {
+        requireModernHost();
         final AtomicInteger abstractCalls = new AtomicInteger();
         final Example receiver = proxy(abstractCalls);
         assertEquals("a:b,c", service.invokeDefaultMethod(receiver,
@@ -68,11 +78,13 @@ public class ReflectionServiceAndroidTest {
 
     @Test
     public void inheritedNoReceiverConvenienceAlsoUsesAndroidDispatch() throws Exception {
+        requireModernHost();
         assertEquals("hello", service.invokeDefaultMethod(Example.class.getMethod("greeting")));
     }
 
     @Test
     public void preservesTargetRuntimeErrorsAndCheckedThrowable() throws Exception {
+        requireModernHost();
         final Example receiver = proxy(new AtomicInteger());
         final Method method = Example.class.getMethod("fail", Throwable.class);
         final RuntimeException runtime = new IllegalStateException("target runtime");
@@ -92,7 +104,36 @@ public class ReflectionServiceAndroidTest {
         assertTrue(failure(() -> service.invokeDefaultMethod(receiver, (Method) null)) instanceof NullPointerException);
         assertTrue(failure(() -> service.invokeDefaultMethod(receiver, Parent.class.getMethod("value"))) instanceof IllegalArgumentException);
         assertTrue(failure(() -> service.invokeDefaultMethod(receiver, Example.class.getMethod("staticMethod"))) instanceof IllegalArgumentException);
-        assertTrue(failure(() -> service.invokeDefaultMethod(receiver, method, "extra")) instanceof RuntimeException);
+
+    }
+
+    @Test
+    public void rejectsBadArityOnSupportedHost() throws Exception {
+        requireModernHost();
+        final Example receiver = proxy(new AtomicInteger());
+        assertTrue(failure(() -> service.invokeDefaultMethod(receiver,
+                Example.class.getMethod("greeting"), "extra")) instanceof RuntimeException);
+    }
+
+    @Test
+    public void java8RejectsAndroidSpecialCallerLookupBeforeProxyDispatch() throws Exception {
+        assumeTrue("Java 8 specifically lacks the Android-style special-caller lookup", java8());
+        final AtomicInteger abstractCalls = new AtomicInteger();
+        final Example receiver = proxy(abstractCalls);
+        final Throwable rejected = failure(() -> service.invokeDefaultMethod(receiver,
+                Example.class.getMethod("greeting")));
+        Throwable cause = rejected;
+        while (cause != null && !(cause instanceof IllegalAccessException)) cause = cause.getCause();
+        assertNotNull("Expected lookup access rejection, not a target-method failure", cause);
+        assertEquals(0, abstractCalls.get());
+    }
+
+    private static boolean java8() {
+        return "1.8".equals(System.getProperty("java.specification.version"));
+    }
+
+    private static void requireModernHost() {
+        assumeFalse("Java 8 bytecode compatibility does not imply Android lookup runtime support", java8());
     }
 
     private interface CheckedAction { void run() throws Exception; }
