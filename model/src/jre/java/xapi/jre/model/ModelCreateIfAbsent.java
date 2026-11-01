@@ -31,7 +31,7 @@ final class ModelCreateIfAbsent {
         final ModelCreateResult<M> result;
         try {
           final FileModelTransactionStore.CreatedImage chosen = store.createIfAbsent(key, request.image);
-          final M acknowledged = request.decode(service, chosen.image()); // Gate has been released.
+          final M acknowledged = request.decodeFileImage(service, chosen.image()); // Gate has been released.
           result = new ModelCreateResult<>(chosen.created, acknowledged);
         } catch (Throwable failure) {
           if (terminal.compareAndSet(false, true)) service.fail(callback, failure);

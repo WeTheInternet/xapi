@@ -208,4 +208,26 @@ public class ModelCreateIfAbsentTest {
       assertTrue(tooLarge.failure() instanceof IOException); assertTrue(fixture.service.operations.isEmpty()); assertFalse(Files.exists(fixture.root.resolve("child-a")));
     }
   }
+  @Test public void fileAcknowledgmentsPreserveServerOutboundFieldsForCreatedAndExistingImages() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      final xapi.model.test.api.ModelTestDirections candidate=fixture.service.create(xapi.model.test.api.ModelTestDirections.class);
+      candidate.setKey(new ModelKeyDefault("child-a",candidate.getType(),"directional")); candidate.setServerToClient("canonical-server-field"); candidate.setClientToServer("not-stored"); candidate.setBothEnabled("both");
+      final Result<ModelCreateResult<xapi.model.test.api.ModelTestDirections>> first=new Result<>(); fixture.service.createIfAbsent(candidate,first); fixture.service.drain();
+      assertEquals("canonical-server-field",first.success().getModel().getServerToClient()); assertEquals("both",first.value.getModel().getBothEnabled()); assertNull(first.value.getModel().getClientToServer());
+      candidate.setServerToClient("stale-caller"); final Result<ModelCreateResult<xapi.model.test.api.ModelTestDirections>> second=new Result<>(); fixture.service.createIfAbsent(candidate,second); fixture.service.drain();
+      assertFalse(second.success().isCreated()); assertEquals("canonical-server-field",second.value.getModel().getServerToClient());
+    }
+  }
+  @Test public void malformedUtf8ExistingImageFailsClosedWithoutChangingStoredBytes() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      final ModelText candidate=progress(fixture.service,"markerX"); final Result<ModelCreateResult<ModelText>> first=new Result<>(); fixture.service.createIfAbsent(candidate,first); fixture.service.drain(); first.success();
+      final Path path=fixture.root.resolve("child-a/text/day/1/brush-teeth"); final byte[] bytes=Files.readAllBytes(path);
+      final byte[] marker="markerX".getBytes(StandardCharsets.UTF_8); int found=-1;
+      for(int i=0;i<=bytes.length-marker.length;i++) { boolean same=true; for(int j=0;j<marker.length;j++)if(bytes[i+j]!=marker[j])same=false; if(same){found=i;break;} }
+      assertTrue(found>=0); bytes[found+marker.length-1]=(byte)0xff; Files.write(path,bytes);
+      final Result<ModelCreateResult<ModelText>> retry=new Result<>(); fixture.service.createIfAbsent(candidate,retry); fixture.service.drain();
+      assertTrue(retry.failure() instanceof java.io.IOException); assertArrayEquals(bytes,Files.readAllBytes(path));
+    }
+  }
+
 }

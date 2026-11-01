@@ -10,6 +10,8 @@ import xapi.source.lex.StringCharIterator;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.CodingErrorAction;
+import java.nio.ByteBuffer;
 
 /** Immutable policy/identity/image captured before either file or HTTP conditional-create work. */
 final class ModelCreateRequest {
@@ -46,9 +48,21 @@ final class ModelCreateRequest {
   }
 
   <M extends Model> M decode(final AbstractJreModelService service, final byte[] bytes) throws IOException {
+    return decode(service, bytes, clientToServer);
+  }
+
+  /** Stored bytes were serialized by this provider; decode as their receiving peer, not an HTTP response. */
+  <M extends Model> M decodeFileImage(final AbstractJreModelService service, final byte[] bytes) throws IOException {
+    return decode(service, bytes, !clientToServer);
+  }
+
+  private <M extends Model> M decode(final AbstractJreModelService service, final byte[] bytes,
+      final boolean receivingDirection) throws IOException {
     if (bytes.length > ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES) throw new IOException("Conditional model image exceeds byte limit");
-    final StringCharIterator chars = new StringCharIterator(new String(bytes, StandardCharsets.UTF_8));
-    final M model = service.deserializeCaptured(manifest, chars, clientToServer);
+    final String text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+        .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
+    final StringCharIterator chars = new StringCharIterator(text);
+    final M model = service.deserializeCaptured(manifest, chars, receivingDirection);
     if (model == null || chars.hasNext() || !type.equals(model.getType()) || model.getKey() == null
         || !type.equals(model.getKey().getKind())
         || !canonicalKey.equals(service.keyToString(ModelKeySnapshot.complete(model.getKey())))) {
