@@ -1064,6 +1064,11 @@ public interface XapiSchemaParser {
     }
 
     default void loadModules(SchemaProject project, DefaultSchemaMetadata metadata, final XapiSchemaParser parser) {
+        int depth = 0;
+        for (SchemaProject ancestor = project.getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+            depth++;
+        }
+        final int declarationDepth = depth;
         ListLike<UiContainerExpr> modules = metadata.getModules();
         if (modules == null) {
             modules = X_Jdk.list();
@@ -1202,6 +1207,17 @@ public interface XapiSchemaParser {
             module.getAttribute("require").mapIfPresent(UiAttrExpr::getExpression).readIfPresent(processRequire);
 
             final SchemaModule localMod = new SchemaModule(name, publishNamePattern, X_Jdk.setLinked(), published, test, force);
+            module.getAttribute("buildKind").readIfPresent(attr -> {
+                final SchemaModule.BuildKind kind = SchemaModule.BuildKind.fromSchema(attr.getStringExpression(false));
+                final Maybe<UiAttrExpr> forPlatform = module.getAttribute("forPlatform");
+                if (forPlatform.isPresent()) {
+                    final ComposableXapiVisitor<Object> visitor = whenMissingFail(XapiSchemaParser.class);
+                    visitor.nameOrStringOrType(platform -> localMod.updateBuildKind(platform, kind, declarationDepth));
+                    forPlatform.get().getExpression().accept(visitor, null);
+                } else {
+                    localMod.updateBuildKind(null, kind, declarationDepth);
+                }
+            });
             final SchemaModule result = insertModule(project, metadata, localMod, module);
 
 

@@ -34,6 +34,10 @@ import java.util.Map.Entry;
  */
 public class ModelManifest {
 
+  // A legacy manifest starts with a nonnegative property count. This version
+  // preserves generic component types; readers predating it need a legacy artifact.
+  private static final int FORMAT_WITH_TYPE_PARAMS = -1;
+
   public static class MethodData {
 
     private final String name;
@@ -233,9 +237,18 @@ public class ModelManifest {
       return name.hashCode() ^ type.hashCode();
     }
 
-    static CharBuffer serializeData(final CharBuffer out, final MethodData data, final PrimitiveSerializer primitives) {
+    static CharBuffer serializeData(final CharBuffer out, final MethodData data, final PrimitiveSerializer primitives,
+        final boolean withTypeParams) {
       out.append(primitives.serializeString(data.name));
       out.append(primitives.serializeClass(data.type));
+      if (withTypeParams) {
+        out.append(primitives.serializeInt(data.typeParams == null ? -1 : data.typeParams.length));
+        if (data.typeParams != null) {
+          for (final Class<?> typeParam : data.typeParams) {
+            out.append(primitives.serializeClass(typeParam));
+          }
+        }
+      }
       out.append(primitives.serializeBooleanArray(
         data.c2sEnabled,
         data.s2cEnabled,
@@ -268,10 +281,23 @@ public class ModelManifest {
       return out;
     }
 
-    static MethodData deserializeData(final CharIterator chars, final PrimitiveSerializer primitives) {
+    static MethodData deserializeData(final CharIterator chars, final PrimitiveSerializer primitives,
+        final boolean withTypeParams) {
       final String name = primitives.deserializeString(chars);
       final MethodData data = new MethodData(name);
       data.type = primitives.deserializeClass(chars);
+      if (withTypeParams) {
+        final int numTypeParams = primitives.deserializeInt(chars);
+        if (numTypeParams < -1) {
+          throw new IllegalArgumentException("Invalid model type parameter count: " + numTypeParams);
+        }
+        if (numTypeParams >= 0) {
+          data.typeParams = new Class<?>[numTypeParams];
+          for (int i = 0; i < numTypeParams; i++) {
+            data.typeParams[i] = primitives.deserializeClass(chars);
+          }
+        }
+      }
 
       final boolean[] bools = primitives.deserializeBooleanArray(chars);
 
@@ -332,14 +358,29 @@ public class ModelManifest {
     out.append(primitives.serializeString(manifest.type));
     out.append(primitives.serializeClass(manifest.modelType));
 
-    out.append(primitives.serializeInt(manifest.getPropertyNames().length));
+    final String[] properties = manifest.getPropertyNames();
+    boolean withTypeParams = false;
+    for (final String property : properties) {
+      final Class<?>[] typeParams = manifest.methodsByPropertyNames.get(property).typeParams;
+      if (typeParams != null && typeParams.length > 0) {
+        withTypeParams = true;
+        break;
+      }
+    }
+    // Leave nongeneric artifacts byte-for-byte compatible with existing readers.
+    // Generic artifacts require this reader on both peers; old generic artifacts
+    // can still be read, but must be re-exported to supply their missing metadata.
+    if (withTypeParams) {
+      out.append(primitives.serializeInt(FORMAT_WITH_TYPE_PARAMS));
+    }
+    out.append(primitives.serializeInt(properties.length));
     for (final String property : manifest.properties) {
       out.append(primitives.serializeString(property));
     }
 
     for (final String property : manifest.properties) {
       final MethodData data = manifest.methodsByPropertyNames.get(property);
-      MethodData.serializeData(out, data, primitives);
+      MethodData.serializeData(out, data, primitives, withTypeParams);
     }
 
     return out;
@@ -358,7 +399,16 @@ public class ModelManifest {
     final Class modelType = primitives.deserializeClass(chars);
     final ModelManifest manifest = new ModelManifest(typeName, modelType);
 
-    final int numProps = primitives.deserializeInt(chars);
+    int numProps = primitives.deserializeInt(chars);
+    final boolean withTypeParams = numProps == FORMAT_WITH_TYPE_PARAMS;
+    if (withTypeParams) {
+      numProps = primitives.deserializeInt(chars);
+    } else if (numProps < 0) {
+      throw new IllegalArgumentException("Unsupported model manifest format: " + numProps);
+    }
+    if (numProps < 0) {
+      throw new IllegalArgumentException("Invalid model property count: " + numProps);
+    }
     // need to make sure this property list is what fuels the order of properties returned by jre proxies
     manifest.properties = new String[numProps];
 
@@ -367,7 +417,7 @@ public class ModelManifest {
     }
 
     for (final String property : manifest.properties) {
-      final MethodData data = MethodData.deserializeData(chars, primitives);
+      final MethodData data = MethodData.deserializeData(chars, primitives, withTypeParams);
       manifest.methodsByPropertyNames.put(property, data);
     }
 

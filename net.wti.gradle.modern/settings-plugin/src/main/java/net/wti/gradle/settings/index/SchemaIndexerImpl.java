@@ -677,7 +677,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     } else if (testFile.exists()){
                         testFile.delete();
                     }
-                    if (module.isPublished()) {
+                    if (module.isPublished(platform.getName())) {
                         writeFile(publishFile, "true");
                     } else if (publishFile.exists()) {
                         publishFile.delete();

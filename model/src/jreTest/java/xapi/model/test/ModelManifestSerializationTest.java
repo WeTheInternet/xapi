@@ -1,0 +1,195 @@
+package xapi.model.test;
+
+import org.junit.Test;
+import xapi.dev.source.CharBuffer;
+import xapi.jre.model.ModelServiceJre;
+import xapi.model.api.*;
+import xapi.model.content.ModelContent;
+import xapi.model.content.ModelText;
+import xapi.model.impl.ModelUtil;
+import xapi.model.test.api.ModelTestDirections;
+import xapi.model.tools.ModelSerializerDefault;
+import xapi.model.tools.PrimitiveSerializerDefault;
+import xapi.source.lex.StringCharIterator;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+
+public class ModelManifestSerializationTest {
+
+    // Captured from the pre-versioned writer at dc259a6347603e73b60d758ce3b74c50c14d988f.
+    // This fixture really lacks generic metadata; reading it must not reconstruct a new schema.
+    private static final String LEGACY_MODULE = "Plegacy-generics-v0EFlegacy-genericsKLtestDirModhTxapi.model.test.api.ModelTestDirectionsWserverToClientWclientToServerCbothEnabledUbothDisabledGjava.lang.StringHcontent\\xapi.model.content.ModelContentItextItimeHupvotesDdownvotesSauthorHrelatedRchildrenDpermaLinkSdoubletT[Lxapi.model.content.ModelRating;Zxapi.model.user.ModelUserQxapi.model.api.ModelListAETIAOINASNATEEAEAE1T1OSNTEEEAEAE1T1ISNOTEEAEAE1T1NSNEEEEAEAE1T1HRRDLCUMWFGDSNOTEE1EAE1T1LYNOTEE1EAE1T1CPNOTEE1EAE1T1UPNOTEE1EAE1T1MBNOTEE1EAE1T1WVNOTEE1EAE1T1FVNOTEE1EAE1T1GSNOTEE1EAE1T1";
+    private static final String LEGACY_TEXT_MANIFEST = "Itext[xapi.model.content.ModelTextAItextItimeItextGjava.lang.StringNOTEE1EAE1T1ItimeSdoubleNOTEE1EAE1T1";
+
+    private final PrimitiveSerializer primitives = new PrimitiveSerializerDefault();
+
+    private static class ImportedService extends ModelServiceJre {
+        private final ModelModule module;
+
+        ImportedService(final String artifact) {
+            module = ModelSerializerDefault.deserializeModule(artifact);
+            for (final ModelManifest manifest : module.getManifests()) {
+                register(manifest.getModelType());
+                registerManifest(manifest);
+            }
+        }
+
+        @Override
+        public ModelModule getModelModule() {
+            return module;
+        }
+    }
+
+    private ModelModule module() {
+        final ModelModule module = new ModelModule();
+        module.setModuleName("generic-manifest-test");
+        module.setUuid("generic-manifest-test-v1");
+        module.addManifest(ModelUtil.createManifest(ModelContent.class));
+        module.addManifest(ModelUtil.createManifest(ModelText.class));
+        module.addManifest(ModelUtil.createManifest(ModelList.class));
+        module.addManifest(ModelUtil.createManifest(ModelTestDirections.class));
+        // Prove import uses the exported order, not another reflection pass.
+        Collections.reverse(Arrays.asList(module.getManifest("content").getPropertyNames()));
+        return module;
+    }
+
+    private String serialize(final ModelManifest manifest) {
+        return ModelManifest.serialize(new CharBuffer(), manifest, primitives).toSource();
+    }
+
+    private ModelManifest deserialize(final String serialized) {
+        final StringCharIterator input = new StringCharIterator(serialized);
+        final ModelManifest manifest = ModelManifest.deserialize(input, primitives);
+        assertFalse("Manifest decoder must consume exactly the manifest", input.hasNext());
+        return manifest;
+    }
+
+    @Test
+    public void readsFixedLegacyModuleWithoutInventingGenericMetadata() {
+        final StringCharIterator input = new StringCharIterator(LEGACY_MODULE);
+        final ModelModule loaded = ModelSerializerDefault.deserialize(input, primitives);
+        assertFalse(input.hasNext());
+        assertEquals("legacy-generics", loaded.getModuleName());
+        final ModelManifest content = loaded.getManifest("content");
+        assertArrayEquals(new String[]{"text", "time", "upvotes", "downvotes", "author", "related", "children", "permaLink"},
+                content.getPropertyNames());
+        assertEquals(ModelList.class, content.getMethodData("children").getType());
+        assertNull(content.getMethodData("children").getTypeParams());
+        assertDirections(loaded.getManifest(ModelTestDirections.MODEL_TEST_DIRECTIONS));
+        assertEquals(LEGACY_MODULE, ModelSerializerDefault.serialize(loaded));
+    }
+
+    @Test
+    public void keepsNongenericArtifactsByteCompatible() {
+        final ModelManifest manifest = ModelUtil.createManifest(ModelText.class);
+        assertEquals(LEGACY_TEXT_MANIFEST, serialize(manifest));
+        assertEquals(LEGACY_TEXT_MANIFEST, serialize(deserialize(LEGACY_TEXT_MANIFEST)));
+    }
+
+    @Test
+    public void modulePreservesConcreteParametersOrderAndPolicies() throws Exception {
+        final ModelModule authored = module();
+        // Exercise differing policies inside the versioned manifest itself.
+        authored.getManifest("content").getMethodData("children").addAnnotations(
+                ModelTestDirections.class.getMethod("getServerToClient").getAnnotations());
+        authored.getManifest("content").getMethodData("related").addAnnotations(
+                ModelTestDirections.class.getMethod("getClientToServer").getAnnotations());
+        final ModelModule imported = ModelSerializerDefault.deserializeModule(ModelSerializerDefault.serialize(authored));
+        for (final ModelManifest expected : authored.getManifests()) {
+            final ModelManifest actual = imported.getManifest(expected.getType());
+            assertArrayEquals(expected.getPropertyNames(), actual.getPropertyNames());
+            for (final String property : expected.getPropertyNames()) {
+                final Class<?>[] parameters = expected.getMethodData(property).getTypeParams();
+                // Legacy encoding intentionally keeps nongeneric manifests unchanged.
+                if (parameters != null && parameters.length > 0) {
+                    assertArrayEquals(property, parameters, actual.getMethodData(property).getTypeParams());
+                }
+                assertEquals(expected.getMethodData(property), actual.getMethodData(property));
+                assertEquals(expected.getClientToServerSerializationStrategy(property), actual.getClientToServerSerializationStrategy(property));
+                assertEquals(expected.getServerToClientSerializationStrategy(property), actual.getServerToClientSerializationStrategy(property));
+            }
+        }
+        assertArrayEquals(new Class<?>[]{ModelContent.class}, imported.getManifest("content").getMethodData("children").getTypeParams());
+        assertTrue(imported.getManifest("content").isServerToClientEnabled("children"));
+        assertFalse(imported.getManifest("content").isClientToServerEnabled("children"));
+        assertFalse(imported.getManifest("content").isServerToClientEnabled("related"));
+        assertTrue(imported.getManifest("content").isClientToServerEnabled("related"));
+        assertArrayEquals(new Class<?>[]{ModelKey.class, Model.class}, imported.getManifest("list").getMethodData("models").getTypeParams());
+        assertDirections(imported.getManifest(ModelTestDirections.MODEL_TEST_DIRECTIONS));
+    }
+
+    private void assertDirections(final ModelManifest manifest) {
+        assertTrue(manifest.isServerToClientEnabled("serverToClient"));
+        assertFalse(manifest.isClientToServerEnabled("serverToClient"));
+        assertFalse(manifest.isServerToClientEnabled("clientToServer"));
+        assertTrue(manifest.isClientToServerEnabled("clientToServer"));
+        assertTrue(manifest.isClientToServerEnabled("bothEnabled"));
+        assertTrue(manifest.isServerToClientEnabled("bothEnabled"));
+        assertFalse(manifest.isClientToServerEnabled("bothDisabled"));
+        assertFalse(manifest.isServerToClientEnabled("bothDisabled"));
+    }
+
+    @Test
+    public void versionedManifestPreservesNullAndEmptyParameterArrays() {
+        final ModelManifest authored = ModelUtil.createManifest(ModelContent.class);
+        authored.getMethodData("text").setTypeParams((Class<?>[]) null);
+        authored.getMethodData("time").setTypeParams(new Class<?>[0]);
+        final ModelManifest imported = deserialize(serialize(authored));
+        assertNull(imported.getMethodData("text").getTypeParams());
+        assertArrayEquals(new Class<?>[0], imported.getMethodData("time").getTypeParams());
+        assertArrayEquals(new Class<?>[]{ModelContent.class}, imported.getMethodData("children").getTypeParams());
+    }
+
+    @Test
+    public void importedModuleDecodesRealModelListChildren() {
+        final String artifact = ModelSerializerDefault.serialize(module());
+        final ImportedService sender = new ImportedService(artifact);
+        final ImportedService receiver = new ImportedService(artifact);
+        final ModelContent parent = sender.create(ModelContent.class);
+        parent.setKey(sender.newKey("family", "content", "parent"));
+        parent.setText("Packing \u2713\r\n");
+        final ModelContent child = sender.create(ModelContent.class);
+        child.setKey(parent.getKey().getChild("content", "child"));
+        child.setText("Toothbrush \u00e9");
+        final ModelList<ModelContent> children = sender.create(ModelList.class);
+        children.setModelType(ModelContent.class);
+        children.setKey(parent.getKey().getChild("list", "children"));
+        children.add(child);
+        parent.setChildren(children);
+
+        final String serialized = sender.serialize(ModelContent.class, parent).toSource();
+        final StringCharIterator input = new StringCharIterator(serialized);
+        final ModelContent loaded = receiver.deserialize(ModelContent.class, input);
+        assertFalse(input.hasNext());
+        assertEquals(parent.getText(), loaded.getText());
+        assertEquals(1, loaded.getChildren().size());
+        assertEquals(ModelContent.class, loaded.getChildren().getModelType());
+        assertEquals(child.getText(), loaded.getChildren().first().getText());
+        assertEquals(sender.keyToString(child.getKey()), receiver.keyToString(loaded.getChildren().first().getKey()));
+        assertEquals(sender.keyToString(parent.getKey()), receiver.keyToString(loaded.getKey()));
+        assertEquals(serialized, receiver.serialize(ModelContent.class, loaded).toSource());
+    }
+
+    @Test
+    public void rejectsUnknownVersionsAndInvalidCounts() {
+        final String header = primitives.serializeString("content") + primitives.serializeClass(ModelContent.class);
+        assertMalformed(header + primitives.serializeInt(-2), "Unsupported model manifest format");
+        assertMalformed(header + primitives.serializeInt(-1) + primitives.serializeInt(-1), "Invalid model property count");
+        final String property = header + primitives.serializeInt(-1) + primitives.serializeInt(1)
+                + primitives.serializeString("children") + primitives.serializeString("children")
+                + primitives.serializeClass(ModelList.class);
+        assertMalformed(property + primitives.serializeInt(-2), "Invalid model type parameter count");
+    }
+
+    private void assertMalformed(final String serialized, final String message) {
+        try {
+            deserialize(serialized);
+            fail("Malformed manifest was accepted");
+        } catch (final IllegalArgumentException expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().startsWith(message));
+        }
+    }
+}
