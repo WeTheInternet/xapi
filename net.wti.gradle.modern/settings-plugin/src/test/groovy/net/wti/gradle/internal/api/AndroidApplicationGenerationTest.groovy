@@ -1,6 +1,8 @@
 package net.wti.gradle.internal.api
 
 import net.wti.gradle.settings.api.SchemaModule
+import org.gradle.api.Plugin
+import org.gradle.api.Project
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Requires
@@ -94,6 +96,65 @@ gradle.beforeProject { p ->
         !new File(fixture, 'build/xindex/path/_app/android/publish').exists()
         new File(fixture, 'build/xindex/path/_app/main/publish').text == 'true'
         !new File(fixture, 'app/src/android/build/srcModAndroid').exists()
+    }
+
+    def 'root Android marker uses the renamed descriptor before consumer Java fallback'() {
+        given:
+        prepare()
+        write('settings.gradle', new File(fixture, 'settings.gradle').text
+                .replace('classpath files(', "classpath files('stub-plugins', "))
+        write('stub-plugins/META-INF/gradle-plugins/com.android.application.properties',
+                'implementation-class=' + MarkerProbeAndroidPlugin.name + '\n')
+        write('schema.xapi', '''<xapi-schema name="android-fixture" version="1.0" multiplatform=true
+            platforms=[main, jre, <android modules=[<main buildKind="android-application" />] />]
+            modules=[main]
+        />''')
+        write('src/main/java/fixture/Shared.java', 'package fixture; public class Shared {}')
+        write('src/jre/java/fixture/Jre.java', 'package fixture; public class Jre {}')
+        write('src/android/java/fixture/MainActivity.java', 'package fixture; public class MainActivity {}')
+        write('src/android/gradle/plugins', "id 'com.android.application'\n")
+        write('src/android/gradle/body.end', '''
+tasks.register('assertRootBuildKinds') {
+    doLast {
+        assert path == ':android-fixture-android:assertRootBuildKinds'
+        assert project.xapiBuildKind == 'android-application'
+        assert !plugins.hasPlugin('java')
+        assert !plugins.hasPlugin('java-library')
+        ['main', 'jre'].each { key ->
+            def sibling = project.project(":android-fixture-$key")
+            assert sibling.xapiBuildKind == 'java-library'
+            assert sibling.plugins.hasPlugin('java-library')
+        }
+    }
+}
+''')
+
+        when:
+        run(true, '--offline', ':android-fixture-android:assertRootBuildKinds')
+        def generated = ['main', 'jre', 'android'].collectEntries { key ->
+            [(key): new File(fixture, "src/$key/android-fixture${key.capitalize()}.gradle").text]
+        }
+        run(true, '--offline', ':android-fixture-android:assertRootBuildKinds')
+
+        then:
+        generated.every { key, script ->
+            new File(fixture, "src/$key/android-fixture${key.capitalize()}.gradle").text == script
+        }
+    }
+
+    // The ordering regression needs no SDK or AGP download. Fail at plugin application
+    // if the consumer fallback has already attached Java to the Android descriptor.
+    static class MarkerProbeAndroidPlugin implements Plugin<Project> {
+        void apply(Project project) {
+            assert project.findProperty('xapiBuildKind') == 'android-application'
+            assert !project.plugins.hasPlugin('java')
+            assert !project.plugins.hasPlugin('java-library')
+            project.extensions.add('android', new MarkerProbeAndroidExtension())
+        }
+    }
+
+    static class MarkerProbeAndroidExtension {
+        void sourceSets(Closure ignored) {}
     }
 
     def 'build kind merging preserves absent and qualified declarations without sharing maps'() {

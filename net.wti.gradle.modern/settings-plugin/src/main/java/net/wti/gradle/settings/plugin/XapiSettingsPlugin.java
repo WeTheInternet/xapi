@@ -327,7 +327,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         }
 
 
-                        declaredBuildKinds.put(project.isMultiplatform() ? projectName : gradlePrefix, buildKind.getSchemaValue());
                         if (project.isMultiplatform()) {
                             view.getLogger().info("Multiplatform {} -> {} file://{} @ {}", projectName, modKey, userBuildFile, key);
 //                            if (project.isVirtual()) {
@@ -338,6 +337,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             proj.setProjectDir(gradleSourceDir);
                             proj.setBuildFileName(buildFileName);
                             proj.setName(modKey);
+                            declaredBuildKinds.put(proj.getPath(), buildKind.getSchemaValue());
                             view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}",
                                     projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
 //                            }
@@ -348,6 +348,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             final ProjectDescriptor proj = settings.project(gradlePrefix);
                             proj.setProjectDir(gradleSourceDir);
                             proj.setBuildFileName(buildFileName);
+                            declaredBuildKinds.put(proj.getPath(), buildKind.getSchemaValue());
                         }
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
