@@ -24,14 +24,18 @@ and are excluded from every built-in query. Existing models using this reserved
 pattern require an explicit rename/migration before using this provider. Owned
 temporary files are removed on ordinary failures. Crash remnants are retained but
 query-invisible: automatic removal of another process's staging file would be unsafe
-without store ownership, which this provider does not yet enforce.
+without store ownership. The ordinary unattached provider does not enforce that
+ownership; explicit `attachTransactionStore` adds the gate described in
+[model-provider-gate.md](model-provider-gate.md).
 
 Generated IDs retain the existing name/count convention without creating visible
 empty placeholder models. Canonical parent paths make reservations identical through root aliases; reservations
 only coordinate threads in this JVM. A clearly
 rejected new ID is cleared on its model so a retry cannot overwrite a reused provisional
 ID; uncertain outcomes retain their identity/reservation until resolved. This is not
-a cross-process allocation guarantee. Explicit-key writes remain last-writer-wins.
+a cross-process allocation guarantee in unattached mode. Unprotected explicit-key
+writes remain last-writer-wins; attached providers reject unconditional changes to
+transaction-protected keys.
 
 Loads report `ModelNotFoundException` only for actual absent-file reads. Corruption,
 unreadable files and other storage failures remain errors, preserving existing bytes

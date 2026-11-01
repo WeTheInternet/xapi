@@ -74,18 +74,18 @@ files directly are outside this contract.
 
 ## Required integration before claiming application atomicity
 
-- Acquire ownership before recovery and seeding. Current LifeQuest seeds in a
-  separate process before `Models` initialization; simply taking a lock afterward
-  does not protect startup. Resolve ownership/seeding explicitly.
-- Route all participating `ModelServiceJre` reads, queries, writes and deletes
-  through one engine/gate. Its current asynchronous reads happen later than method
-  entry, so a lock around the public method call is insufficient.
-- Reject unconditional legacy updates/deletes to protected records, including
-  after restart. `isProtected` provides inspection; it is not enforcement against
-  a bypassing provider. A thin capability must advertise transactions explicitly.
-- Move or gate `ModelPostEndpoint.Call.validateQuery` directory enumeration with
-  the actual query, and exclude reserved metadata/temporary files. A consistent
-  bounded snapshot is different from separate requests made across a commit.
+- Acquire ownership before recovery and seeding. Applications that launch an
+  unguarded seed subprocess must resolve that ownership gap rather than taking a
+  lock only afterward. Do not mix guarded and unguarded providers for one root.
+- Explicitly attach every participating `ModelServiceJre` instance before its first
+  filesystem operation. The opt-in provider now gates actual asynchronous read and
+  query bodies and rejects unconditional writes/deletes to protected keys. See
+  [model-provider-gate.md](model-provider-gate.md). `isProtected` alone does not
+  enforce rules against a bypassing provider.
+- Use `ModelServiceWithQueryValidation` for application directory validation and
+  actual query enumeration to share one scope. The provider filters reserved files;
+  HTTP callers still need their authorization/path validation in that scope. A
+  bounded snapshot differs from separate requests made across a commit.
 - Add the narrow authenticated transport and structured conflict/recovery results.
   Authorize all children and receipt disclosure; no payload actor field confers
   parent or ledger privileges. Preserve source manifests for old receipt lookup.
@@ -93,6 +93,8 @@ files directly are outside this contract.
   application's two-write partial-completion defect as fixed.
 
 The engine tests exercise real temporary files, faults and process termination.
-They do not establish HTTP authorization, provider integration, device behavior or
-physical power-loss/controller guarantees. The broader acceptance specification's
-I18/I21 and all outbox/migration cases remain integration work, not passing claims.
+Provider integration tests additionally exercise real serialization, protected
+legacy-write rejection after restart, scoped validation and asynchronous gate
+barriers. They do not establish HTTP authorization, application startup, device
+behavior or physical power-loss/controller guarantees. I21 and all outbox/migration
+cases remain application work, not passing claims.

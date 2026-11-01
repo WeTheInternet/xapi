@@ -45,6 +45,11 @@ public final class FileModelTransactionStore implements AutoCloseable {
     Faults NONE = (boundary, child) -> {};
   }
 
+  /** Synchronous file work only: never await an asynchronous callback while holding this scope. */
+  public interface IOOperation<T> {
+    T run() throws IOException;
+  }
+
   public static final class Conflict extends IOException {
     public Conflict(final String message) { super(message); }
   }
@@ -69,9 +74,31 @@ public final class FileModelTransactionStore implements AutoCloseable {
   private boolean closed;
   private boolean rootReserved;
   private long sequence;
+  private int operationDepth;
 
   public FileModelTransactionStore(final Path root) throws IOException {
     this(root, Faults.NONE);
+  }
+
+  /** Immutable canonical directory identity; the owner, not an attached provider, closes the store. */
+  public Path directory() { return root; }
+
+  /** Validates and reads under the same gate; callbacks belong outside this synchronous scope. */
+  public synchronized <T> T readScope(final IOOperation<T> operation) throws IOException {
+    ready();
+    operationDepth++;
+    try { return operation.run(); }
+    finally { operationDepth--; }
+  }
+
+  /** Rejects legacy writes to protected records and performs the actual mutation under one gate. */
+  public synchronized <T> T legacyWriteScope(final ModelStoreKey key, final IOOperation<T> operation) throws IOException {
+    ready();
+    mutationAllowed();
+    if (isProtected(key)) throw new Conflict("Protected model requires a conditional transaction");
+    operationDepth++;
+    try { return operation.run(); }
+    finally { operationDepth--; }
   }
 
   public FileModelTransactionStore(final Path directory, final Faults faults) throws IOException {
@@ -152,6 +179,7 @@ public final class FileModelTransactionStore implements AutoCloseable {
 
   public synchronized ModelTransactionReceipt commit(final ModelTransaction transaction) throws IOException {
     ready();
+    mutationAllowed();
     final byte[] request = ModelTransactionCodec.request(transaction);
     final String fingerprint = ModelTransactionCodec.hash(request);
     final ModelTransactionReceipt previous = receipt(transaction.actorScope(), transaction.operationId());
@@ -195,6 +223,7 @@ public final class FileModelTransactionStore implements AutoCloseable {
   /** Startup and explicit retry recovery finish an existing decision before reads are enabled. */
   public synchronized void recover() throws IOException {
     owned();
+    mutationAllowed();
     recoveryRequired = true;
     try {
       sequence = readSequence();
@@ -362,6 +391,10 @@ public final class FileModelTransactionStore implements AutoCloseable {
     if (recoveryRequired) throw new RecoveryRequired(null);
   }
 
+  private void mutationAllowed() throws IOException {
+    if (operationDepth != 0) throw new IOException("Cannot mutate or close the store from a synchronous read/write scope");
+  }
+
   private void owned() throws IOException {
     if (closed || ownerLock == null || !ownerLock.isValid()) throw new IOException("Model store is closed or unowned");
   }
@@ -431,6 +464,7 @@ public final class FileModelTransactionStore implements AutoCloseable {
   @Override
   public synchronized void close() throws IOException {
     if (closed) return;
+    mutationAllowed();
     closed = true;
     try { if (ownerLock != null) ownerLock.release(); }
     finally {
