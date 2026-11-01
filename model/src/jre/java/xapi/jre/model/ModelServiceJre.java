@@ -27,6 +27,11 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -38,51 +43,52 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
 
   private static final Comparator<? super File> FILE_SORT = (a, b)->a.getName().compareTo(b.getName());
   private File root;
+  private static final Set<File> RESERVED_IDS = new HashSet<>();
+  private final AtomicModelFile modelFiles = new AtomicModelFile();
 
   @Override
   @SuppressWarnings({
       "unchecked", "rawtypes"
   })
   protected <M extends Model> void doPersist(final String type, final M model, final SuccessHandler<M> callback) {
-    // For simplicity sake, lets use the file system to save our models.
     ModelKey key = getKey(model, type);
-    // make sure to generate id for keys of long type w/o ids
+    final boolean generatedId = X_String.isEmpty(key.getId());
     final File file = keyToFile(key, model, callback);
+    if (file == null) {
+      return;
+    }
     serialize(type, model, (serialized, error)-> {
       if (error != null) {
+        releaseFailedId(key, file, generatedId);
         fail(callback, error);
         return;
       }
-
+      final byte[] source;
+      try {
+        source = serialized.toSource().getBytes(StandardCharsets.UTF_8);
+      } catch (Throwable failure) {
+        releaseFailedId(key, file, generatedId);
+        fail(callback, failure);
+        return;
+      }
       final Runnable finish = () -> {
         try {
-          if (file.exists()) {
-            file.delete();
+          modelFiles.replace(file.toPath(), source);
+        } catch (final IOException failure) {
+          if (!(failure instanceof ModelPersistenceException)) {
+            releaseFailedId(key, file, generatedId);
           }
-          if (!file.getParentFile().isDirectory()) {
-            final boolean created = file.getParentFile().mkdirs();
-            if (!created) {
-              X_Log.warn(ModelServiceJre.class, "Unable to create directory", file.getParentFile());
-            }
-          }
-          final FileOutputStream result = new FileOutputStream(file);
-          final String source = serialized.toSource();
-          X_IO.drain(result, X_IO.toStreamUtf8(source));
-          callback.onSuccess(model);
-          X_Log.trace(ModelServiceJre.class, "Saved model to ", file);
-          X_Log.trace(ModelServiceJre.class, "Saved model source", source);
-          assert deserialize(type, CharIterator.forString(source)).equals(model);
-        } catch (final IOException e) {
-          X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
-          fail(callback, e);
+          fail(callback, failure);
+          return;
         }
+        releaseId(file);
+        callback.onSuccess(model);
       };
       if (isAsync()) {
         X_Time.runLater(finish);
       } else {
         finish.run();
       }
-
     }); // end serialize(...)
   } // end doPersist()
 
@@ -98,7 +104,13 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     f = new File(f, key.getKind());
     // nest hierarchical keys in a directory structure
     f = resolveParents(f, key.getParent());
-    f.mkdirs();
+    try {
+      // Resolve aliases in the parent, not a final symlink destination.
+      f = f.getCanonicalFile();
+    } catch (IOException failure) {
+      fail(callback, failure);
+      return null;
+    }
     if (X_String.isEmpty(key.getId())) {
       // No id; generate one
       try {
@@ -110,11 +122,15 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
         } else {
           rethrow(e);
         }
-        return f;
+        return null;
       }
       key.setId(f.getName());
     } else {
       f = new File(f, key.getId());
+    }
+    if (AtomicModelFile.isTemporary(f)) {
+      fail(callback, new IOException("Reserved model temporary-file name: " + f));
+      return null;
     }
     return f;
   }
@@ -155,41 +171,36 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     f = resolveParents(f, modelKey.getParent());
     // TODO: use nested structure for hierarchical keys
     f = new File(f, modelKey.getId());
-    if (!f.exists()) {
-      if (callback instanceof ErrorHandler) {
-        ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
-        return;
-      }
-    } else {
+    if (AtomicModelFile.isTemporary(f)) {
+      fail(callback, new IOException("Reserved model temporary-file name: " + f));
+      return;
+    }
+    {
       final File file = f;
       final Out1<RemovalHandler> scope = captureScope();
       X_Time.runLater(() -> {
         final RemovalHandler handler = scope.out1();
-        String result;
         try {
-          result = X_IO.toStringUtf8(new FileInputStream(file));
           final M model;
           try {
-            model = deserialize(modelClass, new StringCharIterator(result));
-          } catch (Throwable t) {
-            X_Log.error(ModelServiceJre.class, "Bad model string:\n" + result);
-            final String expectedUuid = getModelModule().getUuid();
-            throw new ModelDeserializationException(expectedUuid, result, t);
+            String result = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            try {
+              model = deserialize(modelClass, new StringCharIterator(result));
+            } catch (Throwable failure) {
+              final String expectedUuid = getModelModule() == null ? null : getModelModule().getUuid();
+              // Do not attach the raw file buffer here; decoder diagnostics still propagate.
+              throw new ModelDeserializationException(expectedUuid, null, failure);
+            }
+            final ModelKey newKey = model.getKey();
+            assert newKey.equals(modelKey) : "ModelKey changed during deserialization";
+            model.setKey(modelKey);
+          } catch (final Throwable failure) {
+            fail(callback, failure instanceof NoSuchFileException
+                ? new ModelNotFoundException(modelKey) : failure);
+            return;
           }
-          final ModelKey newKey = model.getKey();
-          assert newKey.equals(modelKey) : "ModelKey changed during deserialization;" +
-                  "\nwas: " + modelKey + "\nis: " + newKey;
-          // use the key object user passed to us
-          model.setKey(modelKey);
+          // A consumer callback failure is not a failed storage read.
           callback.onSuccess(model);
-        } catch (final Throwable e) {
-          if (callback instanceof ErrorHandler) {
-            X_Log.info(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
-            ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey, e));
-          } else {
-            X_Log.error(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
-            rethrow(e);
-          }
         } finally {
           handler.remove();
         }
@@ -239,7 +250,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       try {
         for (final File file : files) {
           lastKnown = file;
-          fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+          fileResult = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
           final M model = deserialize(modelClass, new StringCharIterator(fileResult));
           fileResult = null;
           result.addModel(model);
@@ -256,7 +267,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   private <M extends Model> void failQuery(Throwable t, final ModelQuery<M> query, final File lastKnown, final String fileResult, final SuccessHandler<ModelQueryResult<M>> callback) {
     X_Log.error(ModelServiceJre.class, "Unable to load files for query ", query);
     X_Log.error(ModelServiceJre.class, "Last viewed file:", lastKnown);
-    X_Log.error(ModelServiceJre.class, "Last viewed file contents:", fileResult);
+    // Keep corrupt payloads on disk, out of logs.
     ErrorHandler.delegateTo(callback)
             .onError(new ModelQueryFailureException(query, lastKnown.getPath(), t));
   }
@@ -288,7 +299,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
       try {
         for (final File file : files) {
           lastKnown = file;
-          fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+          fileResult = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
           final M model = deserialize(manifest, new StringCharIterator(fileResult));
           fileResult = null;
           result.addModel(model);
@@ -321,13 +332,14 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
         // Yes, listing all files is not going to be very performant; however, this implementation is
         // far too naive to be used for a production system. It is primarily a proof-of-concept that can
         // be usable for developing APIs against something that is simple to use and debug
-        allFiles = f.listFiles();
+        allFiles = f.listFiles(AtomicModelFile::isModelFile);
         if (allFiles == null) {
           allFiles = new File[]{};
         }
       } else {
         // If there is a cursor, we are continuing a query.
-        allFiles = f.listFiles((dir, name) -> name.compareTo(query.getCursor()) > -1);
+        allFiles = f.listFiles(file -> AtomicModelFile.isModelFile(file)
+            && file.getName().compareTo(query.getCursor()) > -1);
         if (allFiles == null) {
           // not really expected, but we'll tolerate it to avoid null pointers
           allFiles = new File[]{};
@@ -383,14 +395,15 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
             // Yes, listing all files is not going to be very performant; however, this implementation is
             // far too naive to be used for a production system. It is primarily a proof-of-concept that can
             // be usable for developing APIs against something that is simple to use and debug
-            allFiles = type.listFiles();
+            allFiles = type.listFiles(AtomicModelFile::isModelFile);
           } else {
             // If there is a cursor, we are continuing a query.
             allFiles = type.listFiles(new FilenameFilter() {
 
               @Override
               public boolean accept(final File dir, final String name) {
-                return name.compareTo(query.getCursor()) > -1;
+                return AtomicModelFile.isModelFile(new File(dir, name))
+                    && name.compareTo(query.getCursor()) > -1;
               }
             });
           }
@@ -428,14 +441,14 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
           for (final File file : files) {
             final Class<? extends Model> type = typeNameToClass.get(file.getParentFile().getName());
             if (file.isFile()) {
-              fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+              fileResult = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
               final Model model = deserialize(type, new StringCharIterator(fileResult));
               result.addModel(model);
             } else {
               final File[] kids = file.listFiles();
               if (kids != null) {
                 for (File kid : kids) {
-                  fileResult = X_IO.toStringUtf8(new FileInputStream(kid));
+                  fileResult = new String(Files.readAllBytes(kid.toPath()), StandardCharsets.UTF_8);
                   final Model model = deserialize(type, new StringCharIterator(fileResult));
                   result.addModel(model);
                 }
@@ -463,23 +476,35 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
    * @return
    * @throws IOException
    */
-  private synchronized File generateFile(File srcDir, Model m) throws IOException {
+  private File generateFile(File srcDir, Model m) throws IOException {
     final String prefix = m instanceof HasName ? ((HasName) m).getName() : "";
-    int loopBreak = 20;
-    File f;
-    final File[] files = srcDir.listFiles();
-    do {
+    synchronized (RESERVED_IDS) {
+      srcDir = srcDir.getCanonicalFile();
+      File[] files = srcDir.listFiles(file -> !AtomicModelFile.isTemporary(file));
       int size = files == null ? 0 : files.length;
-      f = new File(srcDir, (prefix == null ? "" : prefix + "-") + size);
-      if (loopBreak --<= 0) {
-        throw new IllegalStateException("Cannot save file to " + f.getAbsolutePath() + "; check parent directory exists, is readable and executable and the disk is not out of space");
-      }
-      if (f.createNewFile()) {
-        break;
-      }
-    } while (srcDir.exists());
-    m.getKey().setId(f.getName());
-    return f;
+      File candidate;
+      do {
+        candidate = new File(srcDir, (prefix == null ? "" : prefix + "-") + size++).getAbsoluteFile();
+      } while (candidate.exists() || RESERVED_IDS.contains(candidate));
+      RESERVED_IDS.add(candidate);
+      m.getKey().setId(candidate.getName());
+      return candidate;
+    }
+  }
+
+  private static void releaseFailedId(ModelKey key, File file, boolean generatedId) {
+    if (generatedId) {
+      // A rejected generated ID was never committed and must not become a retry overwrite.
+      key.setId(null);
+      releaseId(file);
+    }
+  }
+
+  private static void releaseId(File file) {
+    synchronized (RESERVED_IDS) {
+      // keyToFile resolves the parent canonically before allocation and serialization.
+      RESERVED_IDS.remove(file);
+    }
   }
 
   /**
@@ -494,10 +519,8 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
         temp = File.createTempFile("ephemeral", "models");
         root = new File(temp.getParentFile(), "models");
         temp.delete();
-        root.mkdirs();
       } else {
         root = new File(modelDir.replace("$USER_HOME", System.getProperty("user.home"))).getCanonicalFile();
-        root.mkdirs();
       }
       X_Log.info(ModelServiceJre.class, "Initialized model service to ", "file://" + root);
     }
