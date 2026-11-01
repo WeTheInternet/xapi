@@ -144,7 +144,7 @@ public class ModelReviewRegressionTest {
       service.drain(); assertEquals(1, result.success().getSize());
     }
     save(service, text(service, "A", "flat"));
-    final ModelQuery<Model> query = new ModelQuery<Model>().setNamespace("A").setCursor("flat");
+    final ModelQuery<Model> query = new ModelQuery<Model>().setNamespace("A").setCursor(UntypedModelCursor.encode("text", "flat"));
     final Result<ModelQueryResult<Model>> result = new Result<>(); service.query(query, result);
     query.setNamespace("B").setCursor("zzz"); service.drain(); assertEquals(1, result.success().getSize());
   }

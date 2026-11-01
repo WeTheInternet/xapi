@@ -37,6 +37,8 @@ final class ModelFileQueries {
 
   static ModelQueryResult<Model> untyped(final File root, final ModelQuery<Model> query,
       final boolean guarded, final Decoder<Model> decoder) throws IOException {
+    if (query.getLimit() < 1) throw new IOException("Untyped model query limit must be positive");
+    final UntypedModelCursor cursor = UntypedModelCursor.decode(query.getCursor());
     final ModelQueryResult<Model> result = new ModelQueryResult<>(null);
     final File namespace = query.getNamespace().isEmpty() ? root : new File(root, query.getNamespace());
     rejectInternal(root, namespace);
@@ -52,10 +54,12 @@ final class ModelFileQueries {
     }
     Arrays.sort(types, BY_NAME);
     for (final File type : types) {
+      final int compared = cursor == null ? 1 : type.getName().compareTo(cursor.type);
+      if (compared < 0) continue;
       if (guarded) validateDirectory(root, type);
-      for (final File file : records(type, query.getCursor(), guarded)) {
+      for (final File file : records(type, cursor != null && compared == 0 ? cursor.record : null, guarded)) {
         if (result.getSize() >= query.getLimit()) {
-          result.setCursor(file.getName());
+          result.setCursor(UntypedModelCursor.encode(type.getName(), file.getName()));
           return result;
         }
         result.addModel(decoder.decode(file));

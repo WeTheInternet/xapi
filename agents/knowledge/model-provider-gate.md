@@ -60,6 +60,15 @@ O(total protected records) metadata work per query plus in-scope binding/presenc
 checks, without loading all model bodies or introducing an index. Unreadable or
 corrupt metadata whose scope cannot be determined fails closed; no compaction or
 query-index performance guarantee is claimed.
+
+Untyped pagination uses a versioned opaque `(type, record)` cursor for the first
+unreturned record. Iteration skips earlier types, applies the record boundary only
+within the cursor's type, and includes every later type without that filename filter.
+This avoids both dropping later kinds and repeating a full earlier page. Typed
+queries retain their existing filename cursors. Malformed/version-unknown untyped
+cursors and historical bare filenames fail explicitly; callers must deliberately
+restart without a cursor instead of silently restarting or guessing the lost type.
+Pages are ordered continuations, not a snapshot spanning separate requests.
 Attached legacy persist rejects serialized images exceeding the engine's 4 MiB
 record bound before any write; query decoding checks the file size before allocating
 its input buffer. Detached legacy mode keeps its existing size behavior. A clear
