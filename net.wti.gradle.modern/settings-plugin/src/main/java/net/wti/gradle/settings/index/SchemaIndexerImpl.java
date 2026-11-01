@@ -533,7 +533,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                     log.log(SchemaIndexerImpl.class, TRACE, newOut1(() ->
                             "writeIndex: module=" + module.getName() +
                                     " include=[" + module.getInclude().join(",") + "]" +
-                                    " published=" + module.isPublished() +
+                                    " published=" + module.isPublished(platform.getName()) +
                                     " test=" + module.isTest() +
                                     " force=" + module.isForce() +
                                     " modulePublishPattern=" + module.getPublishPattern() +
@@ -546,7 +546,7 @@ public class SchemaIndexerImpl implements SchemaIndexer {
                             groupResolved + ":" + nameResolved + ":" + map.getVersion() +
                                     " -> " +
                                     project.getPublishedName() + ":" + platform.getName() + ":" + module.getName() +
-                                    "?" + platform.isPublished() + ":" + module.isPublished()
+                                    "?" + platform.isPublished() + ":" + module.isPublished(platform.getName())
                     ));
 
                     final String version = map.getVersion();

@@ -219,7 +219,7 @@ public class SchemaMap implements HasAllProjects {
 
     private void fixMetadata() {
         for (SchemaProject project : getAllProjects()) {
-            final Set<String> once = new HashSet<>();
+            final Set<PlatformModule> once = new HashSet<>();
             project.forAllPlatformsAndModules((plat, mod) -> {
                 if (plat.isDisabled()) {
                     // don't process disabled platforms
@@ -255,8 +255,8 @@ public class SchemaMap implements HasAllProjects {
                         PlatformModule intoPlatMod = myPlatMod.edit(null, includes);
                         final SchemaDependency dep = new SchemaDependency(DependencyType.internal, myPlatMod, getGroup(), getVersion(), intoPlatMod.toStringStrict());
                         project.getDependencies().get(myPlatMod).add(dep);
-                        if (mod.isPublished()) {
-                            ensureChildrenPublished(project, mod, includes, once);
+                        if (mod.isPublished(plat.getName())) {
+                            ensureChildrenPublished(project, plat.getName(), includes, once);
                         }
                     }
                 }
@@ -264,8 +264,8 @@ public class SchemaMap implements HasAllProjects {
         }
     }
 
-    private void ensureChildrenPublished(final SchemaProject project, final SchemaModule mod, final String includes, final Set<String> once) {
-        if (once.add(includes)) {
+    private void ensureChildrenPublished(final SchemaProject project, final String platform, final String includes, final Set<PlatformModule> once) {
+        if (once.add(new PlatformModule(platform, includes))) {
             final SchemaModule included;
             try {
                 included = project.getModule(includes);
@@ -274,11 +274,14 @@ public class SchemaMap implements HasAllProjects {
                         "(known modules: " + project.getAllModules().map(SchemaModule::getName).join(", ") + ")");
             }
 
-            if (!included.isPublished()) {
-                included.updatePublished(true);
-                for (String childInclude : included.getInclude()) {
-                    ensureChildrenPublished(project, included, childInclude, once);
-                }
+            // Applications cannot publish or carry publication through their includes.
+            // In particular, never promote a shared raw flag for another platform.
+            if (included.getBuildKind(platform) != SchemaModule.BuildKind.JAVA_LIBRARY) {
+                return;
+            }
+            included.inferPublished(platform);
+            for (String childInclude : included.getInclude()) {
+                ensureChildrenPublished(project, platform, childInclude, once);
             }
         }
     }
