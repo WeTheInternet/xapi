@@ -4,8 +4,10 @@ import org.gradle.api.Named;
 import xapi.fu.Debuggable;
 import xapi.fu.data.SetLike;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 ///
 /// Abstraction layer over a module descriptor, like `<mod-name require=["a", b] published=true />`
@@ -42,6 +44,9 @@ public class SchemaModule implements Named {
     private final SetLike<String> include;
     private String publishPattern;
     private boolean published;
+    // Computed by SchemaMap after declarations are merged. Keys are logical platform
+    // names, not generated config names; inference must not change sibling platforms.
+    private final Set<String> inferredPublishedPlatforms = new HashSet<>();
     private boolean test;
     private boolean force;
     // Module descriptors are shared across platforms. Keep an explicit default
@@ -81,12 +86,18 @@ public class SchemaModule implements Named {
         return include;
     }
 
+    /** Declared publication only; platform-aware consumers must use isPublished(platform). */
     public boolean isPublished() {
         return published;
     }
 
     public boolean isPublished(final String platform) {
-        return published && getBuildKind(platform) == BuildKind.JAVA_LIBRARY;
+        return (published || inferredPublishedPlatforms.contains(platform))
+                && getBuildKind(platform) == BuildKind.JAVA_LIBRARY;
+    }
+
+    void inferPublished(final String platform) {
+        inferredPublishedPlatforms.add(platform);
     }
 
     /** Qualified choices outrank defaults; a child default does not erase inherited overrides. */
@@ -169,6 +180,10 @@ public class SchemaModule implements Named {
 
     public SchemaModule update(SchemaModule module) {
         final SchemaModule merged = new SchemaModule(name, module.publishPattern, include.addNow(module.include), published || module.published, test || module.test, force || module.force);
+        // Preserve inferred state if a resolved descriptor is subsequently merged,
+        // without sharing mutable sets with either input.
+        merged.inferredPublishedPlatforms.addAll(inferredPublishedPlatforms);
+        merged.inferredPublishedPlatforms.addAll(module.inferredPublishedPlatforms);
         merged.defaultBuildKind = selectDeclaration(defaultBuildKind, module.defaultBuildKind);
         merged.platformBuildKinds.putAll(platformBuildKinds);
         module.platformBuildKinds.forEach((platform, declaration) ->

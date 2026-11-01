@@ -33,6 +33,11 @@ Generated `*.gradle` files are tracked deliberately so generator/configuration c
   dependencies. Applications have no Java publication or synthetic source sibling;
   source publication/consumption flags are rejected. See the settings plugin's
   `SCHEMA.md` for source-directory and dependency-configuration mappings.
+- Publication inferred through module includes is scoped to each logical platform.
+  An Android application cannot start or carry that inference; a Java library's
+  transitive includes still publish on its platform, including cyclic include graphs.
+  `SchemaModule.isPublished()` reports the declaration, while `isPublished(platform)`
+  reports effective publication after platform-specific inference and build-kind checks.
 - The settings plugin exposes the schema-derived `xapiBuildKind` property before
   project evaluation. A consumer's root-level Java-plugin fallback must respect it;
   the generator cannot remove Java after another callback applies it to an Android app.
