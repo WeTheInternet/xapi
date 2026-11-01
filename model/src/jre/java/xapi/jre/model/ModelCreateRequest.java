@@ -37,9 +37,7 @@ final class ModelCreateRequest {
     if (!type.equals(key.getKind())) throw new IllegalArgumentException("Model type does not match its complete key");
     canonicalKey = service.keyToString(key);
     // Freeze property order, generic metadata and directional rules using the existing manifest codec.
-    final String policy = ModelManifest.serialize(new CharBuffer(), selected, service.primitiveSerializer()).toSource();
-    manifest = ModelManifest.deserialize(new StringCharIterator(policy), service.primitiveSerializer());
-    if (manifest.getModelType() != selected.getModelType()) throw new IllegalArgumentException("Manifest class changed during capture");
+    manifest = freezeManifest(service, registered, selected);
     this.clientToServer = clientToServer;
     source = service.serializeCaptured(manifest, model, clientToServer).toSource();
     image = source.getBytes(StandardCharsets.UTF_8);
@@ -58,6 +56,20 @@ final class ModelCreateRequest {
 
   private <M extends Model> M decode(final AbstractJreModelService service, final byte[] bytes,
       final boolean receivingDirection) throws IOException {
+    return decodeImage(service, manifest, type, canonicalKey, bytes, receivingDirection);
+  }
+
+  static ModelManifest freezeManifest(final AbstractJreModelService service, final ModelManifest registered,
+      final ModelManifest selected) {
+    if (selected == null || selected != registered) throw new IllegalArgumentException("Expected registered model manifest");
+    final String policy = ModelManifest.serialize(new CharBuffer(), selected, service.primitiveSerializer()).toSource();
+    final ModelManifest captured = ModelManifest.deserialize(new StringCharIterator(policy), service.primitiveSerializer());
+    if (captured.getModelType() != selected.getModelType()) throw new IllegalArgumentException("Manifest class changed during capture");
+    return captured;
+  }
+
+  static <M extends Model> M decodeImage(final AbstractJreModelService service, final ModelManifest manifest,
+      final String type, final String canonicalKey, final byte[] bytes, final boolean receivingDirection) throws IOException {
     if (bytes.length > ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES) throw new IOException("Conditional model image exceeds byte limit");
     final String text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
         .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
