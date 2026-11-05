@@ -3,6 +3,7 @@ package xapi.jre.model;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
 import xapi.fu.In1Out1;
+import xapi.fu.Out1;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.io.api.IOMessage;
 import xapi.io.api.RequestFailed;
@@ -11,6 +12,7 @@ import xapi.jre.io.IOServiceDefault;
 import xapi.jre.io.HttpBearerToken;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
+import xapi.model.api.ModelList;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelModule;
 import xapi.model.api.ModelNotFoundException;
@@ -21,9 +23,14 @@ import xapi.model.service.ModelServiceWithCreateIfAbsent;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.SuccessHandler;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.HttpURLConnection;
 import java.net.URLConnection;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Objects;
@@ -47,6 +54,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * changed. Only a load HTTP 404 means absence. Timeouts and other failures do not
  * imply that a write failed to reach the server; callers must reconcile uncertain
  * writes using their stable key rather than create replacement records.
+ *
+ * <p>Autosave references must already have complete keys. Persist new referenced
+ * models first and use their returned saved models before persisting the owner.
+ * The entire outgoing autosave graph is checked before any request. Do not mutate
+ * that graph during the synchronous serialization phase. ModelList is supported
+ * as a nested property; this protocol does not carry a root ModelList's own key.
  */
 public class ModelServiceHttp extends AbstractJreModelService implements ModelServiceWithCreateIfAbsent {
 
@@ -55,6 +68,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
     private final IOService io;
     private final URI endpointUri;
     private final HttpBearerToken authorization;
+    private final ThreadLocal<Set<Model>> autosavePreflight = new ThreadLocal<>();
 
     public ModelServiceHttp(final String endpoint, final ModelModule module) {
         this(endpoint, module, 15_000);
@@ -99,6 +113,12 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
             registerManifest(manifest);
         }
         io = new IOServiceDefault() {
+            @Override
+            protected Reader createResponseReader(final InputStream in) {
+                return new InputStreamReader(in, StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT));
+            }
             @Override
             protected void applySettings(final URLConnection connection, final int modifiers) {
                 connection.setConnectTimeout(timeoutMillis);
@@ -158,13 +178,15 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         final String body;
         final ModelKey expected;
         try {
-            requireManifest(type);
+            requireRootManifest(type);
+            rejectRootList(model);
             validateKey(model.getKey(), false);
             if (model.getKey() != null && !type.equals(model.getKey().getKind())) {
                 throw new IllegalArgumentException("Model kind does not match its key");
             }
             // Snapshot identity, since the caller may keep editing while IO is pending.
             expected = keyFromString(keyToString(model.getKey()));
+            preflightAutosaves(type, model);
             body = serialize(type, model).toSource();
         } catch (final Throwable failure) {
             fail(callback, failure);
@@ -177,6 +199,52 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         }, callback, null);
     }
 
+    private void preflightAutosaves(final String type, final Model model) {
+        if (autosavePreflight.get() != null) {
+            throw new IllegalStateException("Reentrant persistence during HTTP autosave preflight");
+        }
+        final Set<Model> active = Collections.newSetFromMap(new IdentityHashMap<Model, Boolean>());
+        active.add(model);
+        autosavePreflight.set(active);
+        try {
+            // Use the real directional serializer to visit exactly the outgoing references.
+            // Its doPersistBlocking calls are intercepted below, with no network effects.
+            serialize(type, model);
+        } finally {
+            autosavePreflight.remove();
+        }
+    }
+
+    @Override
+    public <M extends Model> Out1<M> doPersistBlocking(final String type, final M model, final long milliTimeout) {
+        final Set<Model> active = autosavePreflight.get();
+        if (active == null) {
+            return super.doPersistBlocking(type, model, milliTimeout);
+        }
+        requireRootManifest(type);
+        rejectRootList(model);
+        // Reject before returning to the serializer: it would otherwise await an
+        // incomplete child's saved result and absorb properties without its new key.
+        validateKey(model.getKey(), true);
+        if (!type.equals(model.getKey().getKind())) {
+            throw new IllegalArgumentException("Autosaved model kind does not match its key");
+        }
+        if (!active.add(model)) {
+            throw new IllegalArgumentException("Cyclic HTTP autosave references are unsupported");
+        }
+        try {
+            serialize(type, model);
+        } finally {
+            active.remove(model);
+        }
+        // Complete keys never need an autosave result while serializing. Do not
+        // return the caller object: if a key changes mid-pass, fail before absorb
+        // can copy a model onto itself and clear aliased collection properties.
+        return () -> {
+            throw new IllegalStateException("An autosave key changed during HTTP preflight");
+        };
+    }
+
     @Override
     public <M extends Model> void load(final Class<M> type, final ModelKey key, final SuccessHandler<M> callback) {
         final String kind;
@@ -184,7 +252,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         final ModelKey expected;
         try {
             kind = getTypeName(type);
-            requireManifest(kind);
+            requireRootManifest(kind);
             validateKey(key, true);
             if (!kind.equals(key.getKind())) {
                 throw new IllegalArgumentException("Requested model class does not match key kind");
@@ -211,7 +279,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         final String ancestor;
         try {
             kind = getTypeName(type);
-            requireManifest(kind);
+            requireRootManifest(kind);
             if (query.getAncestor() != null) {
                 validateKey(query.getAncestor(), true);
             }
@@ -255,6 +323,20 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
     @Override
     public void delete(final ModelKey key, final SuccessHandler<Boolean> callback) {
         fail(callback, new UnsupportedOperationException("This HTTP protocol does not define delete"));
+    }
+
+    private ModelManifest requireRootManifest(final String kind) {
+        final ModelManifest manifest = requireManifest(kind);
+        if (ModelList.class.isAssignableFrom(manifest.getModelType())) {
+            throw new UnsupportedOperationException("The HTTP protocol does not carry a root ModelList's identity");
+        }
+        return manifest;
+    }
+
+    private void rejectRootList(final Model model) {
+        if (model instanceof ModelList) {
+            throw new UnsupportedOperationException("The HTTP protocol does not carry a root ModelList's identity");
+        }
     }
 
     private ModelManifest requireManifest(final String kind) {

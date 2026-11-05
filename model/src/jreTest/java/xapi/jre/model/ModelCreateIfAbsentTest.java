@@ -7,6 +7,8 @@ import xapi.model.content.ModelText;
 import xapi.model.impl.ModelKeyDefault;
 import xapi.model.impl.ModelUtil;
 import xapi.model.service.ModelServiceWithCreateIfAbsent;
+import xapi.model.test.api.ModelTestDirections;
+import xapi.model.test.api.ModelTestDirectionsEmbedded;
 import xapi.source.lex.CharIterator;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
@@ -216,6 +218,41 @@ public class ModelCreateIfAbsentTest {
       assertEquals("canonical-server-field",first.success().getModel().getServerToClient()); assertEquals("both",first.value.getModel().getBothEnabled()); assertNull(first.value.getModel().getClientToServer());
       candidate.setServerToClient("stale-caller"); final Result<ModelCreateResult<xapi.model.test.api.ModelTestDirections>> second=new Result<>(); fixture.service.createIfAbsent(candidate,second); fixture.service.drain();
       assertFalse(second.success().isCreated()); assertEquals("canonical-server-field",second.value.getModel().getServerToClient());
+    }
+  }
+  @Test public void fileAcknowledgmentsPreserveDirectionalListItemsForCreatedAndExistingImages() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      final ModelTestDirectionsEmbedded candidate = fixture.service.create(ModelTestDirectionsEmbedded.class);
+      candidate.setKey(new ModelKeyDefault("child-a", candidate.getType(), "directional-list"));
+      final ModelTestDirections item = fixture.service.create(ModelTestDirections.class);
+      item.setKey(candidate.getKey().getChild(item.getType(), "item"));
+      item.setServerToClient("canonical-server-field");
+      item.setClientToServer("not-stored");
+      item.setBothEnabled("canonical-shared-field");
+      item.setBothDisabled("not-on-wire");
+      final ModelList<ModelTestDirections> list = fixture.service.create(ModelList.class);
+      list.setModelType(ModelTestDirections.class);
+      list.add(item);
+      candidate.setList(list);
+
+      final Result<ModelCreateResult<ModelTestDirectionsEmbedded>> first = new Result<>();
+      fixture.service.createIfAbsent(candidate, first); fixture.service.drain();
+      assertTrue(first.success().isCreated());
+      final ModelTestDirections createdItem = first.value.getModel().getList().first();
+      assertNotSame(item, createdItem);
+      assertEquals("canonical-server-field", createdItem.getServerToClient());
+      assertEquals("canonical-shared-field", createdItem.getBothEnabled());
+      assertNull(createdItem.getClientToServer()); assertNull(createdItem.getBothDisabled());
+
+      item.setServerToClient("stale-caller"); item.setBothEnabled("stale-shared-field");
+      final Result<ModelCreateResult<ModelTestDirectionsEmbedded>> second = new Result<>();
+      fixture.service.createIfAbsent(candidate, second); fixture.service.drain();
+      assertFalse(second.success().isCreated());
+      final ModelTestDirections existingItem = second.value.getModel().getList().first();
+      assertNotSame(item, existingItem);
+      assertEquals("canonical-server-field", existingItem.getServerToClient());
+      assertEquals("canonical-shared-field", existingItem.getBothEnabled());
+      assertNull(existingItem.getClientToServer()); assertNull(existingItem.getBothDisabled());
     }
   }
   @Test public void malformedUtf8ExistingImageFailsClosedWithoutChangingStoredBytes() throws Exception {

@@ -100,8 +100,9 @@ public class ModelDeserializationContext {
     final ModelSerializationHints hints = new ModelSerializationHints();
     if (manifest != null) {
       hints.setKeyOnly(manifest.isKeyOnly(propName));
-      hints.setClientToServer(manifest.isClientToServerEnabled(propName));
     }
+    // The receiving endpoint determines direction, not the property's eligibility.
+    hints.setClientToServer(isClientToServer());
     return createChildContext(propertyType, componentType, hints);
   }
   public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final ModelSerializationHints hints) {

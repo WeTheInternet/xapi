@@ -218,6 +218,11 @@ public class SchemaMap implements HasAllProjects {
     }
 
     private void fixMetadata() {
+        // Finish declaration inheritance before deriving any publication state.
+        // Otherwise a parent's inferred leaf can bypass a child's application barrier.
+        for (SchemaProject project : getAllProjects()) {
+            project.preparePublicationInference();
+        }
         for (SchemaProject project : getAllProjects()) {
             final Set<PlatformModule> once = new HashSet<>();
             project.forAllPlatformsAndModules((plat, mod) -> {

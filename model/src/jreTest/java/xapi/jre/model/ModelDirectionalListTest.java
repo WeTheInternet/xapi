@@ -7,6 +7,7 @@ import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
 import xapi.model.test.api.ModelTestDirections;
+import xapi.model.test.api.ModelTestDirectionsEmbedded;
 import xapi.model.tools.ModelSerializerDefault;
 import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.model.user.ModelUser;
@@ -69,6 +70,35 @@ public class ModelDirectionalListTest {
     final StringCharIterator enabled = new StringCharIterator(client.serialize(module.getManifest("content"), parent).toSource());
     final ModelContent allowed = server.deserialize(module.getManifest("content"), enabled);
     assertFalse(enabled.hasNext()); assertEquals("inline-value", allowed.getChildren().first().getText()); assertEquals(parent.getPermaLink(), allowed.getPermaLink());
+  }
+
+  @Test public void embeddedListItemsUseTheReceivingDirectionInBothWireDirections() {
+    final ModelModule authored = new ModelModule();
+    authored.setModuleName("embedded-directions"); authored.setUuid("embedded-directions-v1");
+    for (Class<? extends Model> type : Arrays.asList(ModelTestDirectionsEmbedded.class, ModelTestDirections.class, ModelList.class)) {
+      authored.addManifest(ModelUtil.createManifest(type));
+    }
+    final ModelModule module = ModelSerializerDefault.deserializeModule(ModelSerializerDefault.serialize(authored));
+    final Server server = new Server(module);
+    final ModelServiceHttp client = new ModelServiceHttp("https://example.test/model", module);
+    final ModelTestDirectionsEmbedded parent = server.create(ModelTestDirectionsEmbedded.class);
+    parent.setKey(server.newKey("fixture", parent.getType(), "parent"));
+    final ModelTestDirections item = server.create(ModelTestDirections.class);
+    item.setKey(parent.getKey().getChild(item.getType(), "item"));
+    item.setClientToServer("upload"); item.setServerToClient("download");
+    item.setBothEnabled("shared"); item.setBothDisabled("hidden");
+    final ModelList<ModelTestDirections> list = server.create(ModelList.class);
+    list.setModelType(ModelTestDirections.class); list.add(item); parent.setList(list);
+
+    final StringCharIterator upload = new StringCharIterator(client.serialize(ModelTestDirectionsEmbedded.class, parent).toSource());
+    final ModelTestDirections uploaded = server.deserialize(ModelTestDirectionsEmbedded.class, upload).getList().first();
+    assertFalse(upload.hasNext()); assertEquals("upload", uploaded.getClientToServer());
+    assertNull(uploaded.getServerToClient()); assertEquals("shared", uploaded.getBothEnabled()); assertNull(uploaded.getBothDisabled());
+
+    final StringCharIterator download = new StringCharIterator(server.serialize(ModelTestDirectionsEmbedded.class, parent).toSource());
+    final ModelTestDirections downloaded = client.deserialize(ModelTestDirectionsEmbedded.class, download).getList().first();
+    assertFalse(download.hasNext()); assertEquals("download", downloaded.getServerToClient());
+    assertNull(downloaded.getClientToServer()); assertEquals("shared", downloaded.getBothEnabled()); assertNull(downloaded.getBothDisabled());
   }
 
   @Test public void manifestlessDisabledListPlaceholderHasExactlyTheNullMarker() {

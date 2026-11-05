@@ -60,6 +60,66 @@ public class FileModelTransactionStoreTest {
     }
   }
 
+  @Test public void rejectsNativePathBudgetsBeforePublishingUnderMissingBuckets() throws Exception {
+    final Path root = legacy();
+    try (FileModelTransactionStore store = new FileModelTransactionStore(root)) {
+      final String[] invalidPaths = {
+          "absent/" + repeated("x", 256),
+          "absent/" + repeated("é", 128),
+          "absent/" + repeated("界", 86) + "/nested/record",
+          // Every component fits; the total native pathname exceeds Linux PATH_MAX.
+          repeated(repeated("é", 20) + "/", 100) + "record",
+          // The final path fits, but not a full legal sibling temporary basename.
+          repeated(repeated("x", 50) + "/", 76) + "record"
+      };
+      for (int i = 0; i < invalidPaths.length; i++) {
+        final String operation = "path-budget-" + i;
+        final ModelStoreKey invalid = new ModelStoreKey("invalid-" + i, invalidPaths[i]);
+        final ModelTransaction request = new ModelTransaction("p", "m", "actor", operation, Arrays.asList(
+            new ModelMutation(A, 0, bytes("must-not-change")),
+            new ModelMutation(invalid, ModelMutation.MUST_NOT_EXIST, bytes("new"))));
+        final IOException failure = expect(IOException.class, () -> store.commit(request));
+        assertFalse(failure instanceof FileModelTransactionStore.RecoveryRequired);
+        assertNull(store.receipt("actor", operation));
+        assertFalse(Files.exists(root.resolve(FileModelTransactionStore.INTERNAL_DIRECTORY).resolve("pending")));
+        assertEquals("old-a", value(store.read(A)));
+        assertEquals(0, store.read(A).revision());
+      }
+      // Rejection must leave the engine usable, not merely without visible child files.
+      assertEquals(1, store.commit(transaction("after-path-rejections", 0, "a", "b")).revision());
+    }
+  }
+
+  @Test public void acceptsMaximumNativeComponentsAndChecksAllAtomicDestinations() throws Exception {
+    final Path root = Files.createTempDirectory("xapi-path-budget-");
+    final ModelStoreKey ascii = new ModelStoreKey("ascii", "a/" + repeated("x", 255));
+    final ModelStoreKey unicode = new ModelStoreKey("unicode", "b/" + repeated("界", 85));
+    try (FileModelTransactionStore store = new FileModelTransactionStore(root)) {
+      store.commit(new ModelTransaction("p", "m", "actor", "limits", Arrays.asList(
+          new ModelMutation(ascii, ModelMutation.MUST_NOT_EXIST, bytes("ascii")),
+          new ModelMutation(unicode, ModelMutation.MUST_NOT_EXIST, bytes("unicode")))));
+      assertEquals("ascii", value(store.read(ascii)));
+      assertEquals("unicode", value(store.read(unicode)));
+    }
+    // Validate an absent deep directory without creating it. Fixed-size journal/receipt
+    // and hash filenames also need their own parent-plus-temporary budget.
+    final Path deep = root.resolve(repeated(repeated("x", 50) + "/", 75));
+    final Path[] generated = {
+        deep.resolve(FileModelTransactionStore.INTERNAL_DIRECTORY).resolve("pending"),
+        deep.resolve(FileModelTransactionStore.INTERNAL_DIRECTORY).resolve("sequence"),
+        deep.resolve(FileModelTransactionStore.INTERNAL_DIRECTORY).resolve("receipts").resolve(repeated("a", 64)),
+        deep.resolve(FileModelTransactionStore.INTERNAL_DIRECTORY).resolve("revisions").resolve(repeated("b", 64)),
+        deep.resolve(FileModelTransactionStore.INTERNAL_DIRECTORY).resolve("identities").resolve(repeated("c", 64))
+    };
+    for (final Path target : generated) expect(IOException.class, () -> ModelFilePathBudget.validateWrite(target));
+  }
+
+  private static String repeated(final String value, final int count) {
+    final StringBuilder result = new StringBuilder(value.length() * count);
+    for (int i = 0; i < count; i++) result.append(value);
+    return result.toString();
+  }
+
   @Test public void rejectsOneStaleChildWithoutChangingEitherRecord() throws Exception {
     final Path root = legacy();
     try (FileModelTransactionStore store = new FileModelTransactionStore(root)) {

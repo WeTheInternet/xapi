@@ -342,6 +342,11 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
     return new IORequestDefault();
   }
 
+  /** Creates the response decoder; protocol-specific services may reject malformed bytes. */
+  protected Reader createResponseReader(final InputStream in) {
+    return new InputStreamReader(in, StandardCharsets.UTF_8);
+  }
+
   protected String drainInput
     ( final InputStream in, final IOCallback<IOMessage<String>> callback)
     throws IOException {
@@ -349,7 +354,7 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
       // Model and other length-prefixed protocols need the exact response, including
       // line endings. LineReader callbacks still receive their usual stripped lines.
       final StringBuilder message = new StringBuilder();
-      final BufferedReader read = new BufferedReader(new FilterReader(new InputStreamReader(in, StandardCharsets.UTF_8)) {
+      final BufferedReader read = new BufferedReader(new FilterReader(createResponseReader(in)) {
         @Override
         public int read(final char[] buffer, final int offset, final int length) throws IOException {
           final int count = super.read(buffer, offset, length);
