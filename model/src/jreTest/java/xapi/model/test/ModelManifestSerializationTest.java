@@ -4,10 +4,12 @@ import org.junit.Test;
 import xapi.dev.source.CharBuffer;
 import xapi.jre.model.ModelServiceJre;
 import xapi.model.api.*;
+import xapi.model.content.HasAuthor;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
 import xapi.model.test.api.ModelTestDirections;
+import xapi.model.test.api.ModelTestDirectionsEmbedded;
 import xapi.model.tools.ModelSerializerDefault;
 import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.source.lex.StringCharIterator;
@@ -67,6 +69,13 @@ public class ModelManifestSerializationTest {
         return manifest;
     }
 
+    private int formatMarker(final String serialized) {
+        final StringCharIterator input = new StringCharIterator(serialized);
+        primitives.deserializeString(input);
+        primitives.deserializeClass(input);
+        return primitives.deserializeInt(input);
+    }
+
     @Test
     public void readsFixedLegacyModuleWithoutInventingGenericMetadata() {
         final StringCharIterator input = new StringCharIterator(LEGACY_MODULE);
@@ -78,8 +87,53 @@ public class ModelManifestSerializationTest {
                 content.getPropertyNames());
         assertEquals(ModelList.class, content.getMethodData("children").getType());
         assertNull(content.getMethodData("children").getTypeParams());
+        assertFalse(content.isKeyOnly("author"));
+        assertFalse(content.isKeyOnly("related"));
+        assertFalse(content.isAutoSave("related"));
         assertDirections(loaded.getManifest(ModelTestDirections.MODEL_TEST_DIRECTIONS));
         assertEquals(LEGACY_MODULE, ModelSerializerDefault.serialize(loaded));
+    }
+
+    @Test
+    public void keepsGenericArtifactsInExistingFormatWithoutReferencePolicies() {
+        final ModelManifest authored = ModelUtil.createManifest(ModelTestDirectionsEmbedded.class);
+        assertFalse(authored.isKeyOnly("list"));
+        assertFalse(authored.isAutoSave("list"));
+        final String encoded = serialize(authored);
+        assertEquals(-1, formatMarker(encoded));
+        final ModelManifest imported = deserialize(encoded);
+        assertArrayEquals(new Class<?>[]{ModelTestDirections.class},
+                imported.getMethodData("list").getTypeParams());
+        assertTrue(imported.isClientToServerEncrypted("list"));
+        assertTrue(imported.isServerToClientEncrypted("list"));
+        assertFalse(imported.isKeyOnly("list"));
+        assertFalse(imported.isAutoSave("list"));
+        assertEquals(encoded, serialize(imported));
+    }
+
+    private interface NongenericReferences extends Model, HasAuthor {
+        @xapi.annotation.model.KeyOnly(autoSave = true)
+        ModelText getContent();
+        ModelText getInline();
+    }
+
+    @Test
+    public void referencePolicyVersionPreservesNongenericFlagsAndParameterStates() {
+        final ModelManifest authored = ModelUtil.createManifest(NongenericReferences.class);
+        authored.getMethodData("author").setTypeParams((Class<?>[]) null);
+        authored.getMethodData("content").setTypeParams(new Class<?>[0]);
+        final String encoded = serialize(authored);
+        assertEquals(-2, formatMarker(encoded));
+        final ModelManifest imported = deserialize(encoded);
+        assertTrue(imported.isKeyOnly("author"));
+        assertFalse(imported.isAutoSave("author"));
+        assertTrue(imported.isKeyOnly("content"));
+        assertTrue(imported.isAutoSave("content"));
+        assertFalse(imported.isKeyOnly("inline"));
+        assertFalse(imported.isAutoSave("inline"));
+        assertNull(imported.getMethodData("author").getTypeParams());
+        assertArrayEquals(new Class<?>[0], imported.getMethodData("content").getTypeParams());
+        assertEquals(encoded, serialize(imported));
     }
 
     @Test
@@ -108,6 +162,8 @@ public class ModelManifestSerializationTest {
                     assertArrayEquals(property, parameters, actual.getMethodData(property).getTypeParams());
                 }
                 assertEquals(expected.getMethodData(property), actual.getMethodData(property));
+                assertEquals(expected.isKeyOnly(property), actual.isKeyOnly(property));
+                assertEquals(expected.isAutoSave(property), actual.isAutoSave(property));
                 assertEquals(expected.getClientToServerSerializationStrategy(property), actual.getClientToServerSerializationStrategy(property));
                 assertEquals(expected.getServerToClientSerializationStrategy(property), actual.getServerToClientSerializationStrategy(property));
             }
@@ -137,7 +193,11 @@ public class ModelManifestSerializationTest {
         final ModelManifest authored = ModelUtil.createManifest(ModelContent.class);
         authored.getMethodData("text").setTypeParams((Class<?>[]) null);
         authored.getMethodData("time").setTypeParams(new Class<?>[0]);
-        final ModelManifest imported = deserialize(serialize(authored));
+        final String encoded = serialize(authored);
+        assertEquals(-2, formatMarker(encoded));
+        final ModelManifest imported = deserialize(encoded);
+        assertTrue(imported.isKeyOnly("related"));
+        assertTrue(imported.isAutoSave("related"));
         assertNull(imported.getMethodData("text").getTypeParams());
         assertArrayEquals(new Class<?>[0], imported.getMethodData("time").getTypeParams());
         assertArrayEquals(new Class<?>[]{ModelContent.class}, imported.getMethodData("children").getTypeParams());
@@ -176,12 +236,30 @@ public class ModelManifestSerializationTest {
     @Test
     public void rejectsUnknownVersionsAndInvalidCounts() {
         final String header = primitives.serializeString("content") + primitives.serializeClass(ModelContent.class);
-        assertMalformed(header + primitives.serializeInt(-2), "Unsupported model manifest format");
-        assertMalformed(header + primitives.serializeInt(-1) + primitives.serializeInt(-1), "Invalid model property count");
-        final String property = header + primitives.serializeInt(-1) + primitives.serializeInt(1)
+        assertMalformed(header + primitives.serializeInt(-3), "Unsupported model manifest format");
+        for (final int version : new int[]{-1, -2}) {
+            assertMalformed(header + primitives.serializeInt(version) + primitives.serializeInt(-1),
+                    "Invalid model property count");
+            final String property = header + primitives.serializeInt(version) + primitives.serializeInt(1)
+                    + primitives.serializeString("children") + primitives.serializeString("children")
+                    + primitives.serializeClass(ModelList.class);
+            assertMalformed(property + primitives.serializeInt(-2), "Invalid model type parameter count");
+        }
+    }
+
+    @Test
+    public void rejectsInvalidReferencePolicyMasksAndFlagCounts() {
+        final String property = primitives.serializeString("content") + primitives.serializeClass(ModelContent.class)
+                + primitives.serializeInt(-2) + primitives.serializeInt(1)
                 + primitives.serializeString("children") + primitives.serializeString("children")
-                + primitives.serializeClass(ModelList.class);
-        assertMalformed(property + primitives.serializeInt(-2), "Invalid model type parameter count");
+                + primitives.serializeClass(ModelList.class) + primitives.serializeInt(0);
+        final String policies = primitives.serializeBooleanArray(true, true, false, false, false);
+        for (final int invalid : new int[]{-1, 4}) {
+            assertMalformed(property + policies + primitives.serializeInt(invalid),
+                    "Invalid model reference policy flags");
+        }
+        assertMalformed(property + primitives.serializeBooleanArray(true, true, false, false),
+                "Invalid model policy flag count");
     }
 
     private void assertMalformed(final String serialized, final String message) {

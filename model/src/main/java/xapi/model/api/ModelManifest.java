@@ -34,9 +34,10 @@ import java.util.Map.Entry;
  */
 public class ModelManifest {
 
-  // A legacy manifest starts with a nonnegative property count. This version
-  // preserves generic component types; readers predating it need a legacy artifact.
+  // A legacy manifest starts with a nonnegative property count. Negative versions
+  // let older readers reject metadata they cannot interpret instead of dropping policy.
   private static final int FORMAT_WITH_TYPE_PARAMS = -1;
+  private static final int FORMAT_WITH_REFERENCE_POLICIES = -2;
 
   public static class MethodData {
 
@@ -238,7 +239,7 @@ public class ModelManifest {
     }
 
     static CharBuffer serializeData(final CharBuffer out, final MethodData data, final PrimitiveSerializer primitives,
-        final boolean withTypeParams) {
+        final boolean withTypeParams, final boolean withReferencePolicies) {
       out.append(primitives.serializeString(data.name));
       out.append(primitives.serializeClass(data.type));
       if (withTypeParams) {
@@ -256,6 +257,9 @@ public class ModelManifest {
         data.s2cEncrypted,
         data.obfuscated
       ));
+      if (withReferencePolicies) {
+        out.append(primitives.serializeInt((data.keyOnly ? 1 : 0) | (data.autoSave ? 2 : 0)));
+      }
       out.append(primitives.serializeInt(data.c2sSerializer.ordinal()));
       out.append(primitives.serializeInt(data.s2cSerializer.ordinal()));
       if (data.persistenceStrategy == null) {
@@ -282,7 +286,7 @@ public class ModelManifest {
     }
 
     static MethodData deserializeData(final CharIterator chars, final PrimitiveSerializer primitives,
-        final boolean withTypeParams) {
+        final boolean withTypeParams, final boolean withReferencePolicies) {
       final String name = primitives.deserializeString(chars);
       final MethodData data = new MethodData(name);
       data.type = primitives.deserializeClass(chars);
@@ -300,12 +304,23 @@ public class ModelManifest {
       }
 
       final boolean[] bools = primitives.deserializeBooleanArray(chars);
+      if (withReferencePolicies && bools.length != 5) {
+        throw new IllegalArgumentException("Invalid model policy flag count: " + bools.length);
+      }
 
       data.c2sEnabled = bools[0];
       data.s2cEnabled = bools[1];
       data.c2sEncrypted = bools[2];
       data.s2cEncrypted = bools[3];
       data.obfuscated = bools[4];
+      if (withReferencePolicies) {
+        final int referencePolicies = primitives.deserializeInt(chars);
+        if (referencePolicies < 0 || referencePolicies > 3) {
+          throw new IllegalArgumentException("Invalid model reference policy flags: " + referencePolicies);
+        }
+        data.keyOnly = (referencePolicies & 1) != 0;
+        data.autoSave = (referencePolicies & 2) != 0;
+      }
 
       int ordinal = primitives.deserializeInt(chars);
       data.c2sSerializer = SerializationStrategy.values()[ordinal];
@@ -360,17 +375,22 @@ public class ModelManifest {
 
     final String[] properties = manifest.getPropertyNames();
     boolean withTypeParams = false;
+    boolean withReferencePolicies = false;
     for (final String property : properties) {
-      final Class<?>[] typeParams = manifest.methodsByPropertyNames.get(property).typeParams;
-      if (typeParams != null && typeParams.length > 0) {
+      final MethodData data = manifest.methodsByPropertyNames.get(property);
+      if (data.typeParams != null && data.typeParams.length > 0) {
         withTypeParams = true;
-        break;
+      }
+      if (data.keyOnly || data.autoSave) {
+        withReferencePolicies = true;
       }
     }
-    // Leave nongeneric artifacts byte-for-byte compatible with existing readers.
-    // Generic artifacts require this reader on both peers; old generic artifacts
-    // can still be read, but must be re-exported to supply their missing metadata.
-    if (withTypeParams) {
+    // Preserve legacy and -1 bytes unless reference policy requires the new version.
+    // Version -2 includes all type-parameter states as well as the reference flags.
+    if (withReferencePolicies) {
+      withTypeParams = true;
+      out.append(primitives.serializeInt(FORMAT_WITH_REFERENCE_POLICIES));
+    } else if (withTypeParams) {
       out.append(primitives.serializeInt(FORMAT_WITH_TYPE_PARAMS));
     }
     out.append(primitives.serializeInt(properties.length));
@@ -380,7 +400,7 @@ public class ModelManifest {
 
     for (final String property : manifest.properties) {
       final MethodData data = manifest.methodsByPropertyNames.get(property);
-      MethodData.serializeData(out, data, primitives, withTypeParams);
+      MethodData.serializeData(out, data, primitives, withTypeParams, withReferencePolicies);
     }
 
     return out;
@@ -400,7 +420,8 @@ public class ModelManifest {
     final ModelManifest manifest = new ModelManifest(typeName, modelType);
 
     int numProps = primitives.deserializeInt(chars);
-    final boolean withTypeParams = numProps == FORMAT_WITH_TYPE_PARAMS;
+    final boolean withReferencePolicies = numProps == FORMAT_WITH_REFERENCE_POLICIES;
+    final boolean withTypeParams = withReferencePolicies || numProps == FORMAT_WITH_TYPE_PARAMS;
     if (withTypeParams) {
       numProps = primitives.deserializeInt(chars);
     } else if (numProps < 0) {
@@ -417,7 +438,7 @@ public class ModelManifest {
     }
 
     for (final String property : manifest.properties) {
-      final MethodData data = MethodData.deserializeData(chars, primitives, withTypeParams);
+      final MethodData data = MethodData.deserializeData(chars, primitives, withTypeParams, withReferencePolicies);
       manifest.methodsByPropertyNames.put(property, data);
     }
 
