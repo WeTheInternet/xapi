@@ -18,12 +18,21 @@ import xapi.model.api.ModelModule;
 import xapi.model.api.ModelNotFoundException;
 import xapi.model.api.ModelQuery;
 import xapi.model.api.ModelQueryResult;
+import xapi.model.api.ModelCreateResult;
+import xapi.model.service.ModelServiceWithCreateIfAbsent;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.SuccessHandler;
 
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.HttpURLConnection;
 import java.net.URLConnection;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Objects;
@@ -54,11 +63,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * that graph during the synchronous serialization phase. ModelList is supported
  * as a nested property; this protocol does not carry a root ModelList's own key.
  */
-public class ModelServiceHttp extends AbstractJreModelService {
+public class ModelServiceHttp extends AbstractJreModelService implements ModelServiceWithCreateIfAbsent {
 
     private final String endpoint;
     private final ModelModule module;
     private final IOService io;
+    private final IOService conditionalIo;
     private final URI endpointUri;
     private final HttpBearerToken authorization;
     private final ThreadLocal<Set<Model>> autosavePreflight = new ThreadLocal<>();
@@ -102,7 +112,19 @@ public class ModelServiceHttp extends AbstractJreModelService {
             throw new IllegalArgumentException("The shared module must have a valid name");
         }
         registerSharedManifests();
-        io = new IOServiceDefault() {
+        io = createIo(timeoutMillis, false);
+        conditionalIo = createIo(timeoutMillis, true);
+    }
+
+    private static IOService createIo(final int timeoutMillis, final boolean conditional) {
+        return new IOServiceDefault() {
+            @Override
+            protected Reader createResponseReader(final InputStream in) {
+                final InputStream response = conditional ? new ConditionalResponseInputStream(in) : in;
+                return new InputStreamReader(response, StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT));
+            }
             @Override
             protected void applySettings(final URLConnection connection, final int modifiers) {
                 connection.setConnectTimeout(timeoutMillis);
@@ -112,6 +134,46 @@ public class ModelServiceHttp extends AbstractJreModelService {
                 }
             }
         };
+    }
+
+    /** Counts actual response bytes before UTF-8 decoding and either response buffer can grow. */
+    static final class ConditionalResponseInputStream extends FilterInputStream {
+        private int remaining = MAX_MODEL_BYTES;
+
+        ConditionalResponseInputStream(final InputStream in) {
+            super(in);
+        }
+
+        private IOException exceeded() {
+            remaining = -1;
+            return new IOException("Conditional-create response exceeds byte limit");
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (remaining < 0) throw exceeded();
+            final int value = in.read();
+            if (value >= 0) {
+                if (remaining == 0) throw exceeded();
+                remaining--;
+            }
+            return value;
+        }
+
+        @Override
+        public int read(final byte[] buffer, final int offset, final int length) throws IOException {
+            Objects.requireNonNull(buffer, "buffer");
+            if (offset < 0 || length < 0 || offset > buffer.length - length) {
+                throw new IndexOutOfBoundsException();
+            }
+            if (length == 0) return 0;
+            if (remaining < 0) throw exceeded();
+            // One extra byte detects overflow; exact-limit EOF must still succeed.
+            final int count = in.read(buffer, offset, Math.min(length, remaining + 1));
+            if (count > remaining) throw exceeded();
+            if (count > 0) remaining -= count;
+            return count;
+        }
     }
 
     @Override
@@ -141,6 +203,34 @@ public class ModelServiceHttp extends AbstractJreModelService {
     @Override
     protected boolean isClientToServer() {
         return true;
+    }
+
+    @Override public boolean supportsCreateIfAbsent() { return true; }
+
+    @Override public <M extends Model> void createIfAbsent(final M model,
+            final SuccessHandler<ModelCreateResult<M>> callback) {
+        final ModelManifest manifest;
+        try { manifest = model == null ? null : requireManifest(model.getType()); }
+        catch (Throwable failure) { fail(callback, failure); return; }
+        createIfAbsent(manifest, model, callback);
+    }
+
+    @Override public <M extends Model> void createIfAbsent(final ModelManifest manifest, final M model,
+            final SuccessHandler<ModelCreateResult<M>> callback) {
+        final ModelCreateRequest request;
+        try {
+            request = new ModelCreateRequest(this, model == null ? null : requireManifest(model.getType()),
+                    manifest, model, isClientToServer());
+        } catch (Throwable failure) { fail(callback, failure); return; }
+        post("create", request.type, request.source, response -> {
+            if (response.statusCode() != 200 && response.statusCode() != 201) {
+                throw new IllegalStateException("Unexpected conditional-create status " + response.statusCode());
+            }
+            final M acknowledged;
+            try { acknowledged = request.decode(this, response.body().getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
+            catch (java.io.IOException invalid) { throw new IllegalStateException("Invalid conditional-create response", invalid); }
+            return new ModelCreateResult<>(response.statusCode() == 201, acknowledged);
+        }, callback, null); // A create 404 is failure, never missing state or permission to persist.
     }
 
     @Override
@@ -412,7 +502,8 @@ public class ModelServiceHttp extends AbstractJreModelService {
             if (authorization != null) {
                 headers.setValue("Authorization", authorization.authorizationHeader(endpointUri));
             }
-            io.post(endpoint + "/" + operation, body, headers, handler);
+            final IOService transport = "create".equals(operation) ? conditionalIo : io;
+            transport.post(endpoint + "/" + operation, body, headers, handler);
         } catch (final Throwable failure) {
             handler.onError(failure);
         }

@@ -1,6 +1,7 @@
 package xapi.jre.model;
 
 import xapi.bytecode.impl.BytecodeAdapterService;
+import xapi.dev.source.CharBuffer;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.Dictionary;
@@ -17,6 +18,7 @@ import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelUtil;
 import xapi.reflect.X_Reflect;
+import xapi.source.lex.CharIterator;
 import xapi.debug.X_Debug;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
@@ -38,6 +40,17 @@ import static xapi.util.impl.PairBuilder.entryOf;
  * Created on 28/10/15.
  */
 public abstract class AbstractJreModelService extends AbstractModelService {
+
+  /** Package-owned conditional operations decode immutable wire images without hidden child loads. */
+  final <M extends Model> M deserializeCaptured(final ModelManifest manifest, final CharIterator source,
+      final boolean clientToServer) {
+    return deserialize(manifest, source, clientToServer, false);
+  }
+
+  final <M extends Model> CharBuffer serializeCaptured(final ModelManifest manifest, final M model,
+      final boolean clientToServer) {
+    return serialize(manifest, model, clientToServer, false);
+  }
 
   private static ThreadLocal<ModelModule> currentModule = new ThreadLocal<>();
 

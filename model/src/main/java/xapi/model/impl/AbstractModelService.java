@@ -131,10 +131,10 @@ public abstract class AbstractModelService implements ModelService
     if (parent == null) {
         context = new ModelDeserializationContext(doCreate(cls), this, findManifest(cls));
         context.setKeyOnlyHydrationEnabled(isKeyOnlyHydrationEnabled());
+        context.setClientToServer(isClientToServer());
     } else {
         context = parent.createChildContext(cls, hints);
     }
-    context.setClientToServer(isClientToServer());
     boolean isKeyOnly = cls.getAnnotation(KeyOnly.class) != null || context.isKeyOnly() || hints.isKeyOnly();
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
     if (isKeyOnly) {
@@ -156,13 +156,19 @@ public abstract class AbstractModelService implements ModelService
 
   @Override
   public <M extends Model> M deserialize(final ModelManifest manifest, final CharIterator model) {
+    return deserialize(manifest, model, isClientToServer(), isKeyOnlyHydrationEnabled());
+  }
+
+  /** Decode one captured operation's policy without changing ordinary provider defaults. */
+  protected <M extends Model> M deserialize(final ModelManifest manifest, final CharIterator model,
+      final boolean clientToServer, final boolean hydrateKeyOnlyReferences) {
     if (model == null) {
       return null;
     }
     final Class<M> cls = (Class<M>) typeNameToClass.get(manifest.getType());
     final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), this, manifest);
-    context.setKeyOnlyHydrationEnabled(isKeyOnlyHydrationEnabled());
-    context.setClientToServer(isClientToServer());
+    context.setKeyOnlyHydrationEnabled(hydrateKeyOnlyReferences);
+    context.setClientToServer(clientToServer);
     context.setKeyOnly(manifest.isKeyOnly());
     final ModelSerializer<M> serializer = getSerializer(manifest.getType());
     return serializer.modelFromString(cls, model, context, manifest.isKeyOnly());
@@ -276,13 +282,20 @@ public abstract class AbstractModelService implements ModelService
 
   @Override
   public <M extends Model> CharBuffer serialize(final ModelManifest manifest, final M model) {
+    return serialize(manifest, model, isClientToServer(), true);
+  }
+
+  /** Capture one operation's direction and optional auto-save policy without changing defaults. */
+  protected <M extends Model> CharBuffer serialize(final ModelManifest manifest, final M model,
+      final boolean clientToServer, final boolean autoSaveReferencedModels) {
     if (model == null) {
       return null;
     }
 
     final CharBuffer buffer = new CharBuffer();
     final ModelSerializationContext context = new ModelSerializationContext(buffer, this, manifest);
-    context.setClientToServer(isClientToServer());
+    context.setClientToServer(clientToServer);
+    context.setAutoSaveEnabled(autoSaveReferencedModels);
     final ModelSerializer<Model> serializer = getSerializer(manifest.getType());
     return serializer.modelToString(manifest.getModelType(), model, context, false);
   }

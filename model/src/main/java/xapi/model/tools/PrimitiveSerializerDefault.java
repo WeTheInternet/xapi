@@ -293,6 +293,14 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       }
   }
 
+  private static int numericDigit(final char digit) {
+    // TAB is the valid negative terminal for 31; NUL is handled separately as MIN_VALUE.
+    if (digit != '\t' && (digit < '!' || digit > '~')) {
+      throw new IllegalArgumentException("Invalid encoded numeric digit: " + (int) digit);
+    }
+    return VALUE_TO_NUM[digit];
+  }
+
   /**
    * Consume characters from the supplied {@link CharIterator} to reassemble a serialized int value.
    * <p>
@@ -303,14 +311,18 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
   @Override
   public int deserializeInt(final CharIterator i) {
     int value = 0, multi = 1;
+    boolean first = true;
     for (; i.hasNext();) {
       final char c = i.next();
       if (c == NEG_ONE) {
-        assert value == 0 : "-1 should only occur at first char!";
+        if (!first) throw new IllegalArgumentException("Invalid encoded int: misplaced minimum sentinel");
         return Integer.MIN_VALUE;
       }
-      final int delta = multi * VALUE_TO_NUM[c];
-      assert delta >= 0 : "Unexpected Integer overlow; multi: " + multi + " ; char " + c  ;
+      final int digit = numericDigit(c);
+      if (digit > (Integer.MAX_VALUE - value) / multi) {
+        throw new IllegalArgumentException("Invalid encoded int: magnitude exceeds range");
+      }
+      final int delta = multi * digit;
       if (c < END_VALUE_BOUNDARY) {
         // We hit the end of this number
         if (c > NEGATIVE_VALUE_BOUNDARY) {
@@ -323,10 +335,13 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       }
       // For continuation digits, just accumulate the sum of each base 32 digit.
       value += delta;
+      if (multi > Integer.MAX_VALUE / 32) {
+        throw new IllegalArgumentException("Invalid encoded int: continuation exceeds range");
+      }
       multi <<= 5; // multiply by 32
+      first = false;
     }
-    assert false : "Malformed encoded number: `" + i + "` (outer ticks added)";
-    return value;
+    throw new IllegalArgumentException("Unterminated encoded int");
   }
 
   /**
@@ -339,14 +354,18 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
   @Override
     public long deserializeLong(final CharIterator l) {
       long value = 0, multi = 1;
+      boolean first = true;
       for (; l.hasNext();) {
         final char c = l.next();
         if (c == NEG_ONE) {
-          assert value == 0 : "-1 should only occur at first char!";
+          if (!first) throw new IllegalArgumentException("Invalid encoded long: misplaced minimum sentinel");
           return Long.MIN_VALUE;
         }
-        final long delta = (VALUE_TO_NUM[c]*multi);
-        assert delta >= 0 : "Unexpected Long overlow" ;
+        final int digit = numericDigit(c);
+        if (digit > (Long.MAX_VALUE - value) / multi) {
+          throw new IllegalArgumentException("Invalid encoded long: magnitude exceeds range");
+        }
+        final long delta = digit * multi;
         if (c < END_VALUE_BOUNDARY) {        // We hit the end of this number
           if (c > NEGATIVE_VALUE_BOUNDARY) {
             // And the number was not negative; just return the sum
@@ -358,10 +377,13 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
         }
         // For continuation digits, just accumulate the sum of each base 32 digit.
         value += delta;
+        if (multi > Long.MAX_VALUE / 32) {
+          throw new IllegalArgumentException("Invalid encoded long: continuation exceeds range");
+        }
         multi <<= 5; // multiply by 32
+        first = false;
       }
-      assert false : "Malformed encoded number: `" + l + "` (outer ticks added)";
-      return value;
+      throw new IllegalArgumentException("Unterminated encoded long");
     }
 
   /**
@@ -487,7 +509,9 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       sizeChunk = sizeChunk.next;
     }
     for (int i = 0; i < size; i++) {
-      final int value = boolsToBase32(z, i);
+      // Preserve the historical five-value padding byte used by manifest policy blocks.
+      // Larger arrays advance by a full group so later values are not duplicated or lost.
+      final int value = boolsToBase32(z, z.length <= 5 ? i : i * 5);
       assert value < 32;
       buffer[i+offset] = POSITIVE_NUM_ENDING[value%32];
     }
@@ -553,47 +577,64 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
 
   @Override
   public boolean deserializeBoolean(final CharIterator z) {
-    return z.next() == '1';
+    final char value = z.next();
+    if (value == '0') return false;
+    if (value == '1') return true;
+    throw new IllegalArgumentException("Invalid encoded boolean: expected 0 or 1: " + (int)value);
   }
 
   @Override
   public boolean[] deserializeBooleanArray(final CharIterator z) {
     final int size = deserializeInt(z);
-    final boolean[] result = new boolean[size];
-    for (int i = 0; ; ) {
-      final int value = deserializeInt(z);
-      if (i + 5 > size) {
-        // The last value; may not have all five booleans; use a loop
-        final int start = i;
-        for (;i < size; i++) {
-          result[i] = (value & BIT_MASKS[i-start]) != 0;
-        }
-        break;
-      } else {
-        // Write five more booleans
-        result[i++] = (value & 1) != 0;
-        result[i++] = (value & 2) != 0;
-        result[i++] = (value & 4) != 0;
-        result[i++] = (value & 8) != 0;
-        result[i++] = (value & 16) != 0;
+    if (size < 0) {
+      throw new IllegalArgumentException("Invalid encoded boolean array: negative length: " + size);
+    }
+    // Validate every encoded chunk, including the terminal padding, before
+    // allocating an array from the untrusted length. Each mask holds five values.
+    final int chunks = size / 5 + 1;
+    final StringBuilder masks = new StringBuilder();
+    for (int chunk = 0; chunk < chunks; chunk++) {
+      if (!z.hasNext()) {
+        throw new IllegalArgumentException("Invalid encoded boolean array: insufficient packed data for " + size);
       }
+      final int value = deserializeInt(z);
+      if (value < 0 || value > 31) {
+        throw new IllegalArgumentException("Invalid encoded boolean array: packed mask outside range: " + value);
+      }
+      masks.append((char) value);
+    }
+    final boolean[] result = new boolean[size];
+    for (int i = 0; i < size; i++) {
+      result[i] = (masks.charAt(i / 5) & BIT_MASKS[i % 5]) != 0;
     }
     return result;
   }
 
   @Override
   public byte deserializeByte(final CharIterator b) {
-    return (byte)deserializeInt(b);
+    final int value = deserializeInt(b);
+    if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) {
+      throw new IllegalArgumentException("Invalid encoded byte: outside range: " + value);
+    }
+    return (byte)value;
   }
 
   @Override
   public short deserializeShort(final CharIterator s) {
-    return (short)deserializeInt(s);
+    final int value = deserializeInt(s);
+    if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+      throw new IllegalArgumentException("Invalid encoded short: outside range: " + value);
+    }
+    return (short)value;
   }
 
   @Override
   public char deserializeChar(final CharIterator c) {
-    return (char)deserializeInt(c);
+    final int value = deserializeInt(c);
+    if (value < Character.MIN_VALUE || value > Character.MAX_VALUE) {
+      throw new IllegalArgumentException("Invalid encoded char: outside range: " + value);
+    }
+    return (char)value;
   }
 
   @Override

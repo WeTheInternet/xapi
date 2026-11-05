@@ -19,6 +19,11 @@ public class ModelSerializationContext {
   private PrimitiveSerializer primitives;
   private ModelManifest manifest;
   private boolean clientToServer;
+  private boolean autoSaveEnabled = true;
+
+  /** Conditional single-record operations must not save referenced models during image capture. */
+  public boolean isAutoSaveEnabled() { return autoSaveEnabled; }
+  public void setAutoSaveEnabled(final boolean enabled) { autoSaveEnabled = enabled; }
 
   public ModelSerializationContext(final CharBuffer buffer, final ModelService service, final ModelManifest manifest) {
     this.service = service;

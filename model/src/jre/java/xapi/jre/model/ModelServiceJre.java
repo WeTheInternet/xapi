@@ -13,6 +13,7 @@ import xapi.model.api.*;
 import xapi.model.service.ModelService;
 import xapi.model.service.ModelServiceWithRootDir;
 import xapi.model.service.ModelServiceWithQueryValidation;
+import xapi.model.service.ModelServiceWithCreateIfAbsent;
 import xapi.platform.JrePlatform;
 import xapi.prop.X_Properties;
 import xapi.source.lex.StringCharIterator;
@@ -36,7 +37,8 @@ import java.nio.file.NoSuchFileException;
  */
 @JrePlatform
 @SingletonDefault(implFor=ModelService.class)
-public class ModelServiceJre extends AbstractJreModelService implements ModelServiceWithRootDir, ModelServiceWithQueryValidation {
+public class ModelServiceJre extends AbstractJreModelService implements ModelServiceWithRootDir,
+    ModelServiceWithQueryValidation, ModelServiceWithCreateIfAbsent {
 
   private File root;
   private volatile FileModelTransactionStore transactions;
@@ -65,6 +67,27 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   }
 
   public boolean hasTransactionStore() { return transactions != null; }
+
+  @Override public boolean supportsCreateIfAbsent() { return transactions != null; }
+
+  @Override public <M extends Model> void createIfAbsent(final M model,
+      final SuccessHandler<ModelCreateResult<M>> callback) {
+    if (!supportsCreateIfAbsent()) { fail(callback, new UnsupportedOperationException("Conditional creation requires an attached store")); return; }
+    final ModelManifest manifest;
+    try { manifest = model == null ? null : findManifest(model.getType()); }
+    catch (Throwable failure) { fail(callback, failure); return; }
+    createIfAbsent(manifest, model, callback);
+  }
+
+  @Override public <M extends Model> void createIfAbsent(final ModelManifest manifest, final M model,
+      final SuccessHandler<ModelCreateResult<M>> callback) {
+    final FileModelTransactionStore store = transactions;
+    if (store == null) { fail(callback, new UnsupportedOperationException("Conditional creation requires an attached store")); return; }
+    final ModelManifest registered;
+    try { registered = model == null ? null : findManifest(model.getType()); }
+    catch (Throwable failure) { fail(callback, failure); return; }
+    ModelCreateIfAbsent.create(this, store, registered, manifest, model, isClientToServer(), callback);
+  }
 
   @Override
   protected boolean isKeyOnlyHydrationEnabled() { return transactions == null; }
@@ -176,7 +199,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     return key;
   }
 
-  private void fail(final SuccessHandler<?> callback, final Throwable e) {
+  void fail(final SuccessHandler<?> callback, final Throwable e) {
     if (callback instanceof ErrorHandler) {
       ((ErrorHandler) callback).onError(e);
     } else {
@@ -393,24 +416,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
 
   /** Copy original identity fields before a wire codec can inherit/normalize a child's namespace. */
   private ModelKey captureKey(final ModelKey original) throws IOException {
-    if (original == null) throw new IOException("Missing model identity");
-    final Set<ModelKey> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<ModelKey, Boolean>());
-    ModelKey captured = null, previous = null;
-    String namespace = null;
-    int depth = 0;
-    for (ModelKey part = original; part != null;) {
-      if (++depth > 64 || !seen.add(part)) throw new IOException("Model ancestor depth or cycle is invalid");
-      final String owner = part.getNamespace(), kind = part.getKind(), id = part.getId();
-      final int keyType = part.getKeyType();
-      final ModelKey parent = part.getParent();
-      if (!part.isComplete() || owner == null || kind == null || kind.isEmpty() || id == null || id.isEmpty()
-          || namespace != null && !namespace.equals(owner)) throw new IOException("Incomplete or inconsistent model identity");
-      namespace = owner;
-      final ModelKey copy = new xapi.model.impl.ModelKeyDefault(owner, kind, id).setKeyType(keyType);
-      if (captured == null) captured = copy; else previous.setParent(copy);
-      previous = copy; part = parent;
-    }
-    return captured;
+    return ModelKeySnapshot.complete(original);
   }
 
   private <T> T readScope(final FileModelTransactionStore store,
@@ -419,7 +425,10 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   }
 
   /** Scheduling seam; scope/gate acquisition belongs in the runnable, never around dispatch. */
-  protected void dispatchFileRead(final Runnable operation) { X_Time.runLater(operation); }
+  protected void dispatchFileRead(final Runnable operation) { dispatchFileOperation(operation); }
+
+  /** Shared scheduling boundary; no monitor or callback is carried across dispatch. */
+  protected void dispatchFileOperation(final Runnable operation) { X_Time.runLater(operation); }
 
   private File resolveParents(File file, ModelKey parent) {
     int depth = 0;
@@ -511,7 +520,7 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     callback.onSuccess(result);
   }
 
-  private ModelStoreKey storeKey(final FileModelTransactionStore store, final ModelKey key,
+  ModelStoreKey storeKey(final FileModelTransactionStore store, final ModelKey key,
       final File file) throws IOException {
     if (key == null) throw new IOException("Missing model identity");
     int depth = 0;
