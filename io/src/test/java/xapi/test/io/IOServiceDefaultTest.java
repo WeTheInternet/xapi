@@ -96,6 +96,13 @@ public class IOServiceDefaultTest {
     }
 
     @Test
+    public void ordinaryIoRetainsReplacementDecodingForMalformedUtf8() throws IOException {
+        final byte[] bytes = new byte[]{'a', (byte) 0xff, 'b'};
+        assertEquals("a\ufffdb", new ReaderService().read(
+                new ByteArrayInputStream(bytes), new DelegatingIOCallback<>(message -> {})));
+    }
+
+    @Test
     public void lineCallbacksKeepStrippedLinesWithoutChangingResponse() throws IOException {
         final String text = "one\r\ntwo\n\nthree\rfour";
         final Lines callback = new Lines();

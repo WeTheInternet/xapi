@@ -366,6 +366,16 @@ public final class FileModelTransactionStore implements AutoCloseable {
   }
 
   private void validate(final ModelTransaction transaction) throws IOException {
+    // Validate budgets only for new decisions. Recovery must still attempt older published
+    // journals, including paths which predate this conservative sibling-temporary reserve.
+    ModelFilePathBudget.validateWrite(pending);
+    ModelFilePathBudget.validateWrite(sequenceFile);
+    ModelFilePathBudget.validateWrite(receiptPath(transaction.actorScope(), transaction.operationId()));
+    for (final ModelMutation mutation : transaction.mutations()) {
+      ModelFilePathBudget.validateWrite(root.resolve(mutation.key().relativePath()));
+      ModelFilePathBudget.validateWrite(metadata(mutation.key()));
+      ModelFilePathBudget.validateWrite(identity(mutation.key()));
+    }
     validatePaths(transaction);
     for (final ModelMutation mutation : transaction.mutations()) {
       final ModelStoreRecord previous = record(mutation.key());

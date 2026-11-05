@@ -35,6 +35,26 @@ about a server transport limit. Deletion/tombstones, query indexes, compaction a
 receipt expiry are not implemented. Receipts retain the original request images;
 operators must account for that storage cost before activating the engine.
 
+## Native path budget
+
+New transaction decisions enforce a conservative path budget for the default
+Linux file provider on the pilot's ext4/XFS filesystems: at most 255 native bytes
+per component and 4095 bytes per absolute pathname (excluding the NUL terminator).
+The validator counts native URI-escaped bytes, not Java UTF-16 character counts,
+and reserves a full 255-byte component for each atomic sibling temporary file.
+It checks record paths, pending journal, sequence, receipts, and both hashed
+binding destinations before journal publication, even beneath missing directories.
+The conservative temporary reserve can reject a path the current JDK's shorter
+random temporary name could fit. This is a technical pilot limit, not a claim that
+every filesystem or platform has these capacities. Other filesystems/providers
+need their own reviewed durability and pathname contract before activation.
+
+These checks apply to new decisions. Recovery still attempts already published
+journals using the existing validation and durability protocol; the new budget
+must not strand a previously recoverable decision by imposing a stricter reserve
+on it. Physical IO failures after publication still require recovery. See #17 for
+the separately deferred root-provisioning and ancestor-force contract.
+
 ## Commit and recovery protocol
 
 1. Under the gate, resolve an existing receipt before evaluating current record

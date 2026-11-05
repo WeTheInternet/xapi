@@ -131,10 +131,10 @@ public abstract class AbstractModelService implements ModelService
     if (parent == null) {
         context = new ModelDeserializationContext(doCreate(cls), this, findManifest(cls));
         context.setKeyOnlyHydrationEnabled(isKeyOnlyHydrationEnabled());
+        context.setClientToServer(isClientToServer());
     } else {
         context = parent.createChildContext(cls, hints);
     }
-    context.setClientToServer(isClientToServer());
     boolean isKeyOnly = cls.getAnnotation(KeyOnly.class) != null || context.isKeyOnly() || hints.isKeyOnly();
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
     if (isKeyOnly) {

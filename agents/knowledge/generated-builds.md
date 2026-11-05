@@ -33,7 +33,10 @@ Generated `*.gradle` files are tracked deliberately so generator/configuration c
   dependencies. Applications have no Java publication or synthetic source sibling;
   source publication/consumption flags are rejected. See the settings plugin's
   `SCHEMA.md` for source-directory and dependency-configuration mappings.
-- Publication inferred through module includes is scoped to each logical platform.
+- Publication inferred through module includes is scoped to each project and logical
+  platform. After declaration inheritance, each project receives its own module
+  descriptors before inference begins; a parent's inferred leaf must not bypass a
+  child's Android application barrier.
   An Android application cannot start or carry that inference; a Java library's
   transitive includes still publish on its platform, including cyclic include graphs.
   `SchemaModule.isPublished()` reports the declaration, while `isPublished(platform)`

@@ -8,6 +8,7 @@ import xapi.model.impl.ModelUtil;
 import xapi.model.tools.ModelSerializerDefault;
 import xapi.util.api.SuccessHandler;
 import java.net.InetSocketAddress;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,7 +18,7 @@ import static org.junit.Assert.*;
 /** Real loopback transport, strict acknowledgments, no server deployment or fallback writes. */
 public class ModelCreateIfAbsentHttpTest {
   HttpServer server; ModelServiceHttp client; ModelServiceJre codec;
-  volatile int status = 201; volatile String response; volatile String received;
+  volatile int status = 201; volatile String response; volatile String received; volatile byte[] rawResponse;
   volatile CountDownLatch release; final CountDownLatch entered = new CountDownLatch(1);
   final AtomicInteger requests = new AtomicInteger();
   @Before public void start() throws Exception {
@@ -31,7 +32,7 @@ public class ModelCreateIfAbsentHttpTest {
       requests.incrementAndGet(); received = new String(read(exchange), StandardCharsets.UTF_8); entered.countDown();
       try { if (release != null && !release.await(5, TimeUnit.SECONDS)) throw new AssertionError("response release timeout"); }
       catch (InterruptedException failure) { Thread.currentThread().interrupt(); exchange.close(); return; }
-      byte[] body = (response == null ? received : response).getBytes(StandardCharsets.UTF_8);
+      byte[] body = rawResponse == null ? (response == null ? received : response).getBytes(StandardCharsets.UTF_8) : rawResponse;
       if (!"/model/create".equals(exchange.getRequestURI().getPath())) { exchange.sendResponseHeaders(500, -1); exchange.close(); return; }
       exchange.sendResponseHeaders(status, body.length); exchange.getResponseBody().write(body); exchange.close();
     }); server.start();
@@ -52,6 +53,30 @@ public class ModelCreateIfAbsentHttpTest {
   @Test public void failedAndUnexpectedStatusesNeverFallbackToPersistOrMissing() throws Exception {
     for (int code : new int[]{404,500,503,202}) { status=code; assertNotNull(failure(text("ACTIVE"))); }
     assertEquals(4,requests.get());
+  }
+  @Test public void malformedRawUtf8AcknowledgmentsFailBeforeReplacementDecoding() throws Exception {
+    final String wire = codec.serialize(ModelText.class, text("markerX")).toSource();
+    final int marker = wire.indexOf("markerX"); assertTrue(marker >= 0);
+    final byte[] bytes = wire.getBytes(StandardCharsets.UTF_8);
+    final int byteOffset = wire.substring(0, marker).getBytes(StandardCharsets.UTF_8).length;
+    bytes[byteOffset + "markerX".length() - 1] = (byte) 0xff;
+    rawResponse = bytes;
+    for (int code : new int[]{201, 200}) {
+      status = code;
+      final Throwable error = failure(text("ACTIVE"));
+      assertTrue("Expected raw UTF-8 decoding failure: " + error, error instanceof CharacterCodingException);
+    }
+    assertEquals(2, requests.get());
+  }
+  @Test public void validUtf8AcknowledgmentsPreserveUnicodeReplacementCharacterAndLineEndings() throws Exception {
+    final String value = "caf\u00e9 \u65e5\u672c\u8a9e \ud83c\udf31 \ufffd\r\nsecond\n";
+    rawResponse = codec.serialize(ModelText.class, text(value)).toSource().getBytes(StandardCharsets.UTF_8);
+    for (int code : new int[]{201, 200}) {
+      status = code;
+      final ModelCreateResult<ModelText> result = await(cb -> client.createIfAbsent(text("ACTIVE"), cb));
+      assertEquals(code == 201, result.isCreated()); assertEquals(value, result.getModel().getText());
+    }
+    assertEquals(2, requests.get());
   }
   @Test public void malformedOrDifferentFullIdentityFailsWithoutFallback() throws Exception {
     response="malformed"; assertNotNull(failure(text("ACTIVE")));
