@@ -14,6 +14,7 @@ import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
 import xapi.model.test.api.ModelTestDirections;
+import xapi.model.tools.ModelSerializerDefault;
 import xapi.model.user.ModelUser;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.SuccessHandler;
@@ -80,14 +81,21 @@ public class ModelServiceHttpGraphTest {
             content.getMethodData("related").addAnnotations(
                     ModelTestDirections.class.getMethod("getServerToClient").getAnnotations());
         }
-        // The manifest wire format omits property keyOnly/autoSave flags. Share the
-        // fixed in-memory policy so these tests actually exercise both autosave paths.
-        assertTrue(content.isKeyOnly("author"));
-        assertTrue(content.isAutoSave("author"));
-        assertTrue(content.isKeyOnly("related"));
-        assertTrue(content.isAutoSave("related"));
-        codec = new Codec(authored);
-        client = new ModelServiceHttp(endpoint, authored, 2000,
+        // Export only after authoring the policy: ModelModule caches its serialized form.
+        final String artifact = ModelSerializerDefault.serialize(authored);
+        final ModelModule serverModule = ModelSerializerDefault.deserializeModule(artifact);
+        final ModelModule clientModule = ModelSerializerDefault.deserializeModule(artifact);
+        for (final ModelModule imported : Arrays.asList(serverModule, clientModule)) {
+            final ModelManifest policy = imported.getManifest("content");
+            assertNotSame(content, policy);
+            assertTrue(policy.isKeyOnly("author"));
+            assertTrue(policy.isAutoSave("author"));
+            assertTrue(policy.isKeyOnly("related"));
+            assertTrue(policy.isAutoSave("related"));
+            assertEquals(!excludeRelatedUpload, policy.isClientToServerEnabled("related"));
+        }
+        codec = new Codec(serverModule);
+        client = new ModelServiceHttp(endpoint, clientModule, 2000,
                 HttpBearerToken.forLoopbackDevelopment(() -> {
                     credentialReads.incrementAndGet();
                     return "fixture-token";

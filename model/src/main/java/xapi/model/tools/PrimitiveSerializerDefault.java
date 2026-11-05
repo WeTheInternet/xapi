@@ -325,8 +325,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       value += delta;
       multi <<= 5; // multiply by 32
     }
-    assert false : "Malformed encoded number: `" + i + "` (outer ticks added)";
-    return value;
+    throw new IllegalArgumentException("Unterminated encoded int");
   }
 
   /**
@@ -360,8 +359,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
         value += delta;
         multi <<= 5; // multiply by 32
       }
-      assert false : "Malformed encoded number: `" + l + "` (outer ticks added)";
-      return value;
+      throw new IllegalArgumentException("Unterminated encoded long");
     }
 
   /**

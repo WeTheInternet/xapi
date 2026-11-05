@@ -97,3 +97,38 @@ offline outboxes and migration remain separate work.
 stores, controlled asynchronous runnable dispatch, transaction/read/write barriers,
 parent/child process ownership and crash/recovery. These tests are not a claim of
 device, HTTP authorization, household-store migration or physical power-loss proof.
+
+## Shared HTTP manifest artifacts
+
+HTTP peers must use the same exported model policy. A manifest starts with its type
+and model class, followed by either a legacy nonnegative property count or a
+negative format marker and then the property count:
+
+| Format | Preserved property metadata |
+| --- | --- |
+| Legacy count | Original directional/serialization policy; no generic parameters or reference flags |
+| `-1` | Original policy plus generic type-parameter states |
+| `-2` | Original policy, generic states and `keyOnly`/`autoSave` reference policy |
+
+The `-2` layout retains the existing five-boolean policy block and adds an integer
+reference-policy mask (bit 0 is `keyOnly`, bit 1 is `autoSave`). Other mask bits
+and negative masks are rejected. It always carries type-parameter counts so null,
+empty and concrete parameter arrays retain their distinct meanings. The writer
+selects `-2` only when a property has either reference flag; declarations without
+those flags retain the exact legacy or `-1` encoding. Existing readers which know
+only `-1` reject `-2` at the format marker instead of silently losing the flags.
+
+Old artifacts remain readable as written. Their omitted reference policy cannot
+be recovered from those bytes, and manifest equality is not a complete check of
+reference flags. Re-export from the authoritative reflected/authored declarations
+before using reference policies over HTTP. Construct a fresh module and finish
+authoring its manifests before the first serialization: `ModelModule` caches its
+policy serialization and UUID, and resetting only the UUID does not clear cached
+policy bytes.
+
+For a reference-policy upgrade, pin the freshly exported artifact and its UUID
+together with compatible XApi readers on both peers. Verify the actual exported
+bytes/UUID in the manual consumer batch; do not infer compatibility from matching
+class names or a successful old-artifact import. Any application policy for
+existing transaction receipts remains an explicit consumer decision; this codec
+change does not migrate receipts or reinterpret their policy identity.
