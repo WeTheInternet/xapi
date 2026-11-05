@@ -68,6 +68,42 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
 
   public boolean hasTransactionStore() { return transactions != null; }
 
+  /** Borrow the exact attached store; only its bootstrap owner may close or recover its lifecycle. */
+  public FileModelTransactionStore transactionStore() {
+    final FileModelTransactionStore store = transactions;
+    if (store == null) throw new IllegalStateException("Transactional snapshots require an attached store");
+    return store;
+  }
+
+  /** Pure canonical mapping; actual snapshot/commit operations validate filesystem bindings. */
+  public ModelStoreKey transactionKey(final ModelKey key) throws IOException {
+    return ModelFileSnapshots.key(this, transactionStore(), key);
+  }
+
+  public <M extends Model> void loadSnapshot(final ModelManifest manifest, final ModelKey key,
+      final SuccessHandler<ModelFileSnapshot<M>> callback) {
+    final FileModelTransactionStore store;
+    try { store = transactionStore(); }
+    catch (Throwable failure) { fail(callback, failure); return; }
+    ModelFileSnapshots.load(this, store, manifest, key, !isClientToServer(), callback);
+  }
+
+  /** Strict wire-only decode of an original receipt/snapshot image; no hidden child reads. */
+  public <M extends Model> M decodeSnapshotImage(final ModelManifest selected, final ModelKey original,
+      final byte[] image) throws IOException {
+    transactionStore();
+    final ModelKey key = ModelKeySnapshot.complete(original);
+    final ModelManifest manifest = ModelFileSnapshots.manifest(this, selected);
+    return ModelFileSnapshots.decode(this, manifest, key, image.clone(), !isClientToServer());
+  }
+
+  /** Capture a canonical transaction image without incidental referenced-model saves. */
+  public byte[] encodeTransactionImage(final ModelManifest manifest, final Model model) throws IOException {
+    transactionStore();
+    return new ModelCreateRequest(this, model == null ? null : findManifest(model.getType()), manifest, model,
+        isClientToServer()).image.clone();
+  }
+
   @Override public boolean supportsCreateIfAbsent() { return transactions != null; }
 
   @Override public <M extends Model> void createIfAbsent(final M model,

@@ -34,6 +34,11 @@ public final class FileModelTransactionStore implements AutoCloseable {
   public static final int MAX_REQUEST_BYTES = 4 * 1024 * 1024;
   private static final Set<Path> OWNED_ROOTS = new HashSet<>();
 
+  /** Operational unavailability; corrupt record/binding IO remains an ordinary IOException. */
+  public static final class Unavailable extends IOException {
+    public Unavailable(final String message) { super(message); }
+  }
+
   public enum Boundary {
     PREPARED, PUBLISHED, COMMITTED, RECORD_MATERIALIZED, METADATA_MATERIALIZED,
     IDENTITY_MATERIALIZED, SEQUENCE_MATERIALIZED, RECEIPT_MATERIALIZED, BEFORE_CLEANUP, CLEANUP_UNLINKED
@@ -231,6 +236,41 @@ public final class FileModelTransactionStore implements AutoCloseable {
       throw new IOException("Receipt identity mismatch");
     }
     return result;
+  }
+
+  /** Recheck every preparation image, including revision-zero legacy images, and commit under one gate. */
+  public synchronized ModelTransactionReceipt commitIfUnchanged(final ModelTransaction transaction,
+      final List<ModelReadCondition> conditions) throws IOException {
+    ready(); mutationAllowed();
+    // Preserve original fingerprint/receipt semantics before checking obsolete preparation images.
+    if (receipt(transaction.actorScope(), transaction.operationId()) != null) return commit(transaction);
+    if (conditions == null || conditions.size() > MAX_MUTATIONS) throw new IOException("Invalid read condition count");
+    final Map<String, ModelReadCondition> byKey = new LinkedHashMap<>();
+    final Set<String> paths = new HashSet<>();
+    long bytes = 0;
+    for (final ModelReadCondition condition : conditions) {
+      if (condition == null) throw new IOException("Missing read condition");
+      final ModelStoreKey key = condition.key();
+      destination(key);
+      if (byKey.put(key.canonicalKey(), condition) != null || !paths.add(key.relativePath())) {
+        throw new IOException("Duplicate read condition identity or path");
+      }
+      final byte[] expected = condition.expected().value();
+      bytes += expected == null ? 0 : expected.length;
+      if (bytes > MAX_REQUEST_BYTES) throw new IOException("Read conditions exceed image bound");
+    }
+    for (final ModelMutation mutation : transaction.mutations()) {
+      final ModelReadCondition condition = byKey.get(mutation.key().canonicalKey());
+      if (condition == null || !condition.key().relativePath().equals(mutation.key().relativePath())) {
+        throw new IOException("Mutation has no matching read condition");
+      }
+    }
+    for (final ModelReadCondition condition : byKey.values()) {
+      final ModelStoreRecord current = record(condition.key()), expected = condition.expected();
+      if (current.revision() != expected.revision() || current.exists() != expected.exists()
+          || !Arrays.equals(current.value(), expected.value())) throw new Conflict("Preparation image changed");
+    }
+    return commit(transaction);
   }
 
   public synchronized ModelTransactionReceipt commit(final ModelTransaction transaction) throws IOException {
@@ -467,7 +507,7 @@ public final class FileModelTransactionStore implements AutoCloseable {
   }
 
   private void owned() throws IOException {
-    if (closed || ownerLock == null || !ownerLock.isValid()) throw new IOException("Model store is closed or unowned");
+    if (closed || ownerLock == null || !ownerLock.isValid()) throw new Unavailable("Model store is closed or unowned");
   }
 
   private boolean exists(final Path path) throws IOException {
