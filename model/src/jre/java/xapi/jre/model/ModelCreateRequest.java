@@ -35,7 +35,7 @@ final class ModelCreateRequest {
     type = selected.getType();
     if (!type.equals(key.getKind())) throw new IllegalArgumentException("Model type does not match its complete key");
     canonicalKey = service.keyToString(key);
-    // Preserve the complete root declaration, including reference policies omitted by its wire codec.
+    // Preserve the complete root declaration without a wire round-trip.
     manifest = freezeManifest(service, registered, selected);
     this.clientToServer = clientToServer;
     source = service.serializeCaptured(manifest, model, clientToServer).toSource();

@@ -1366,7 +1366,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
     }
 
     protected void readProperty(final Model model, final String propertyName, final CharIterator src, final boolean doNotAttach, final ModelDeserializationContext ctx) {
-        final Class<?> propertyType = model.getPropertyType(propertyName);
+        // The context owns the wire declaration. A JRE proxy may still consult a live
+        // registered manifest whose property types changed after this operation was captured.
+        final ModelManifest manifest = ctx.getManifest();
+        final Class<?> propertyType = manifest == null ? model.getPropertyType(propertyName)
+                : manifest.getMethodData(propertyName).getType();
         final PrimitiveSerializer primitives = ctx.getPrimitives();
         final Object value;
         if (propertyType.isArray()) {
