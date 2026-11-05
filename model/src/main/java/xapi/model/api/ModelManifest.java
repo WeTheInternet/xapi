@@ -64,6 +64,25 @@ public class ModelManifest {
       idField = "id";
     }
 
+    private MethodData(final MethodData source) {
+      name = source.name;
+      c2sSerializer = source.c2sSerializer;
+      s2cSerializer = source.s2cSerializer;
+      c2sEnabled = source.c2sEnabled;
+      s2cEnabled = source.s2cEnabled;
+      c2sEncrypted = source.c2sEncrypted;
+      s2cEncrypted = source.s2cEncrypted;
+      keyOnly = source.keyOnly;
+      autoSave = source.autoSave;
+      obfuscated = source.obfuscated;
+      persistenceStrategy = source.persistenceStrategy;
+      validators = new ArrayList<>(source.validators);
+      type = source.type;
+      typeParams = source.typeParams == null ? null : source.typeParams.clone();
+      idField = source.idField;
+      methodNames.putAll(source.methodNames);
+    }
+
     public MethodData(final String name, String idField, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
       this.idField = idField;
       this.name = recordMethod(name, getter, setter, deleter);
@@ -439,6 +458,31 @@ public class ModelManifest {
     keyOnly = cls.getAnnotation(KeyOnly.class) != null;
     // Unused for this constructor
     defaultAnnotations = new Annotation[0];
+  }
+
+  private ModelManifest(final ModelManifest source) {
+    methodsByPropertyNames = new LinkedHashMap<>();
+    methodsByMethodNames = new HashMap<>();
+    defaultAnnotations = source.defaultAnnotations.clone();
+    type = source.type;
+    keyOnly = source.keyOnly;
+    properties = source.properties == null ? null : source.properties.clone();
+    modelType = source.modelType;
+    for (final Entry<String, MethodData> entry : source.methodsByPropertyNames.entrySet()) {
+      methodsByPropertyNames.put(entry.getKey(), new MethodData(entry.getValue()));
+    }
+    for (final Entry<String, MethodData> entry : source.methodsByMethodNames.entrySet()) {
+      methodsByMethodNames.put(entry.getKey(), methodsByPropertyNames.get(entry.getValue().name));
+    }
+  }
+
+  /**
+   * Copies this declaration in memory, including policies omitted by the wire format.
+   * Mutable property order, method metadata, collections and type-parameter arrays are independent.
+   * Manifests for referenced model types are not captured.
+   */
+  public ModelManifest copy() {
+    return new ModelManifest(this);
   }
 
   public ModelManifest(final Class<? extends Model> cls) {

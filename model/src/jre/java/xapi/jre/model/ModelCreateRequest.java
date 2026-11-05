@@ -1,6 +1,5 @@
 package xapi.jre.model;
 
-import xapi.dev.source.CharBuffer;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;
@@ -36,10 +35,8 @@ final class ModelCreateRequest {
     type = selected.getType();
     if (!type.equals(key.getKind())) throw new IllegalArgumentException("Model type does not match its complete key");
     canonicalKey = service.keyToString(key);
-    // Freeze property order, generic metadata and directional rules using the existing manifest codec.
-    final String policy = ModelManifest.serialize(new CharBuffer(), selected, service.primitiveSerializer()).toSource();
-    manifest = ModelManifest.deserialize(new StringCharIterator(policy), service.primitiveSerializer());
-    if (manifest.getModelType() != selected.getModelType()) throw new IllegalArgumentException("Manifest class changed during capture");
+    // Preserve the complete root declaration, including reference policies omitted by its wire codec.
+    manifest = selected.copy();
     this.clientToServer = clientToServer;
     source = service.serializeCaptured(manifest, model, clientToServer).toSource();
     image = source.getBytes(StandardCharsets.UTF_8);

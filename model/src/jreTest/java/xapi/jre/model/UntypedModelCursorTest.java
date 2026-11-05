@@ -4,6 +4,7 @@ import org.junit.Test;
 import xapi.annotation.model.IsModel;
 import xapi.model.api.*;
 import xapi.model.impl.ModelKeyDefault;
+import xapi.source.lex.StringCharIterator;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
@@ -82,6 +83,49 @@ public class UntypedModelCursorTest {
     }
   }
 
+  @Test public void untypedResultWireCarriesEachTypeAndPreservesPageCursor() throws Exception {
+    for (boolean attached : Arrays.asList(false, true)) try (Fixture fixture = new Fixture(attached)) {
+      fixture.records("a", "same", "z"); fixture.records("b", "same", "y");
+      final ModelQueryResult<Model> first = fixture.page(null, 3).success();
+      assertEquals(3, first.getSize()); assertNotNull(first.getCursor());
+      assertUntypedWire(fixture, first);
+      final ModelQueryResult<Model> last = fixture.page(first.getCursor(), 3).success();
+      assertEquals(1, last.getSize()); assertNull(last.getCursor());
+      assertUntypedWire(fixture, last);
+    }
+  }
+
+  private static void assertUntypedWire(final Fixture fixture, final ModelQueryResult<Model> result) {
+    final PrimitiveSerializer primitives = fixture.service.primitiveSerializer();
+    final StringCharIterator wire = new StringCharIterator(result.serialize(fixture.service, primitives));
+    assertEquals(result.getCursor(), primitives.deserializeString(wire));
+    assertEquals(result.getSize(), primitives.deserializeInt(wire));
+    for (final Model expected : result.getModelList()) {
+      final String kind = primitives.deserializeString(wire);
+      assertEquals(expected.getType(), kind);
+      final Model decoded = fixture.service.deserialize(fixture.service.typeToClass(kind), wire);
+      assertEquals(fixture.service.keyToString(expected.getKey()), fixture.service.keyToString(decoded.getKey()));
+      assertEquals((String) expected.getProperty("value"), (String) decoded.getProperty("value"));
+    }
+    assertFalse(wire.hasNext());
+  }
+
+  @Test public void typedResultWireStillOmitsPerRecordTypeNames() throws Exception {
+    for (boolean attached : Arrays.asList(false, true)) try (Fixture fixture = new Fixture(attached)) {
+      fixture.records("a", "x", "y"); fixture.records("b", "other");
+      final Result<ModelQueryResult<A>> callback = new Result<>();
+      fixture.service.query(A.class, new ModelQuery<A>().setPageSize(1), callback); fixture.service.drain();
+      final ModelQueryResult<A> result = callback.success();
+      final PrimitiveSerializer primitives = fixture.service.primitiveSerializer();
+      final StringCharIterator wire = new StringCharIterator(result.serialize(fixture.service, primitives));
+      assertEquals("y", primitives.deserializeString(wire));
+      assertEquals(1, primitives.deserializeInt(wire));
+      final A decoded = fixture.service.deserialize(A.class, wire);
+      assertEquals("x", decoded.getKey().getId()); assertEquals("x", decoded.getValue());
+      assertFalse(wire.hasNext());
+    }
+  }
+
   @Test public void equalIdsEmptyIntermediateTypesAndLimitOneHaveFiniteCompleteCoverage() throws Exception {
     for (boolean attached : Arrays.asList(false, true)) try (Fixture fixture = new Fixture(attached)) {
       fixture.records("a", "same", "é:[]"); fixture.records("b", "same"); Files.createDirectory(fixture.root.resolve("aa"));
@@ -92,6 +136,7 @@ public class UntypedModelCursorTest {
   @Test public void emptyAndSinglePageResultsHaveNullTerminalCursor() throws Exception {
     for (boolean attached : Arrays.asList(false, true)) try (Fixture fixture = new Fixture(attached)) {
       final ModelQueryResult<Model> empty = fixture.page(null, 1).success(); assertEquals(0, empty.getSize()); assertNull(empty.getCursor());
+      assertUntypedWire(fixture, empty);
       fixture.records("a", "x"); final ModelQueryResult<Model> single = fixture.page(null, 1).success(); assertEquals(1, single.getSize()); assertNull(single.getCursor());
     }
   }

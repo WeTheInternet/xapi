@@ -203,6 +203,85 @@ public class ModelCreateIfAbsentTest {
     }
   }
 
+  @Test public void ordinaryPersistenceRemainsCompatibleWithConditionalExistingReferences() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      final ModelContent parent = fixture.service.create(ModelContent.class);
+      parent.setKey(fixture.service.newKey("child-a", "content", "root"));
+      parent.setText("canonical-parent");
+      final ModelContent reference = fixture.service.create(ModelContent.class);
+      reference.setKey(fixture.service.newKey("child-a", "content", "reference"));
+      reference.setText("canonical-reference");
+      parent.related().add(reference);
+      assertTrue(fixture.service.findManifest(ModelContent.class).isKeyOnly("related"));
+      assertTrue(fixture.service.findManifest(ModelContent.class).isAutoSave("related"));
+      save(fixture.service, parent);
+      final Path parentFile = fixture.root.resolve("child-a/content/root");
+      final Path referenceFile = fixture.root.resolve("child-a/content/reference");
+      final byte[] parentBytes = Files.readAllBytes(parentFile);
+      final byte[] referenceBytes = Files.readAllBytes(referenceFile);
+      final int writes = fixture.service.ordinaryWrites;
+
+      parent.setText("stale-parent"); reference.setText("stale-reference");
+      final Result<ModelCreateResult<ModelContent>> existing = new Result<>();
+      fixture.service.createIfAbsent(parent, existing); fixture.service.drain();
+      final ModelContent acknowledged = existing.success().getModel();
+      assertFalse(existing.value.isCreated());
+      assertEquals("canonical-parent", acknowledged.getText());
+      assertEquals(fixture.service.keyToString(reference.getKey()),
+          fixture.service.keyToString(acknowledged.getRelated().first().getKey()));
+      assertNull("Conditional acknowledgments must not hydrate references",
+          acknowledged.getRelated().first().getText());
+      assertEquals(writes, fixture.service.ordinaryWrites);
+      assertArrayEquals(parentBytes, Files.readAllBytes(parentFile));
+      assertArrayEquals(referenceBytes, Files.readAllBytes(referenceFile));
+      assertTrue(fixture.service.operations.isEmpty());
+    }
+  }
+
+  @Test public void conditionalCreationRemainsCompatibleWithOrdinaryReferenceLoading() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      final ModelContent reference = fixture.service.create(ModelContent.class);
+      reference.setKey(fixture.service.newKey("child-a", "content", "reference"));
+      reference.setText("stored-reference");
+      save(fixture.service, reference);
+      final ModelContent parent = fixture.service.create(ModelContent.class);
+      parent.setKey(fixture.service.newKey("child-a", "content", "root"));
+      parent.setText("created-parent");
+      reference.setText("unsaved-caller-reference");
+      parent.related().add(reference);
+      final ModelManifest selected = fixture.service.findManifest(ModelContent.class);
+      final Class<?>[] componentTypes = selected.getMethodData("related").getTypeParams();
+      final Class<?> componentType = componentTypes[0];
+      final Result<ModelCreateResult<ModelContent>> created = new Result<>();
+      fixture.service.createIfAbsent(selected, parent, created);
+      componentTypes[0] = ModelText.class;
+      try {
+        fixture.service.drain();
+        assertTrue(created.success().isCreated());
+        final ModelContent acknowledgedReference = created.value.getModel().getRelated().first();
+        assertEquals(fixture.service.keyToString(reference.getKey()),
+            fixture.service.keyToString(acknowledgedReference.getKey()));
+        assertNull(acknowledgedReference.getText());
+      } finally {
+        componentTypes[0] = componentType;
+      }
+
+      final Result<ModelContent> loaded = new Result<>();
+      fixture.service.load(ModelContent.class, parent.getKey(), loaded); fixture.service.drain();
+      assertEquals("created-parent", loaded.success().getText());
+      final ModelContent loadedReference = loaded.value.getRelated().first();
+      assertNull("Owned-store loads must not hydrate references", loadedReference.getText());
+      assertEquals(fixture.service.keyToString(reference.getKey()),
+          fixture.service.keyToString(loadedReference.getKey()));
+      final Result<ModelContent> explicitlyLoadedReference = new Result<>();
+      fixture.service.load(ModelContent.class, loadedReference.getKey(), explicitlyLoadedReference);
+      fixture.service.drain();
+      assertEquals("stored-reference", explicitlyLoadedReference.success().getText());
+      assertEquals(1, fixture.service.ordinaryWrites);
+      assertTrue(fixture.service.operations.isEmpty());
+    }
+  }
+
   @Test public void byteLimitCountsUtf8RatherThanCharacters() throws Exception {
     try (Fixture fixture = new Fixture()) {
       final ModelText model = progress(fixture.service, "ACTIVE"); final char[] chars = new char[ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES / 2]; Arrays.fill(chars, '\u20ac'); model.setText(new String(chars));
