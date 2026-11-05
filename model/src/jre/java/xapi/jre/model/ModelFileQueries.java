@@ -39,7 +39,7 @@ final class ModelFileQueries {
       final boolean guarded, final Decoder<Model> decoder) throws IOException {
     if (query.getLimit() < 1) throw new IOException("Untyped model query limit must be positive");
     final UntypedModelCursor cursor = UntypedModelCursor.decode(query.getCursor());
-    final ModelQueryResult<Model> result = new ModelQueryResult<>(null);
+    final ModelQueryResult<Model> result = new ModelQueryResult<>(Model.class);
     final File namespace = query.getNamespace().isEmpty() ? root : new File(root, query.getNamespace());
     rejectInternal(root, namespace);
     if (guarded) validateDirectory(root, namespace);
