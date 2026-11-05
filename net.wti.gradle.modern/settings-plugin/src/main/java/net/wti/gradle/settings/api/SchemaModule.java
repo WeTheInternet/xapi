@@ -3,6 +3,7 @@ package net.wti.gradle.settings.api;
 import org.gradle.api.Named;
 import xapi.fu.Debuggable;
 import xapi.fu.data.SetLike;
+import xapi.fu.java.X_Jdk;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -98,6 +99,18 @@ public class SchemaModule implements Named {
 
     void inferPublished(final String platform) {
         inferredPublishedPlatforms.add(platform);
+    }
+
+    /** Copy declarations before deriving publication in an individual project. */
+    SchemaModule copyForPublication() {
+        final SetLike<String> copiedIncludes = X_Jdk.setLinked();
+        copiedIncludes.addNow(include);
+        final SchemaModule copy = new SchemaModule(name, publishPattern, copiedIncludes, published, test, force);
+        copy.defaultBuildKind = defaultBuildKind;
+        copy.platformBuildKinds.putAll(platformBuildKinds);
+        // Inferred publication belongs to the source project's include graph.
+        // Recompute it from declarations after every project's descriptors are isolated.
+        return copy;
     }
 
     /** Qualified choices outrank defaults; a child default does not erase inherited overrides. */

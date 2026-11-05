@@ -53,18 +53,32 @@ tasks.register('verifyPublicationClosure') {
 """)
         String android = "<android modules=[<$applicationModule buildKind=\"android-application\" />] />"
         String platforms = androidOnly ? android : androidFirst ? "$android, jre" : "jre, $android"
-        write('schema.xapi', """<xapi-schema name="publication-fixture" version="1.0"
+        String moduleGraph = '''modules=[<main published=true include=[bridge] />,
+            <bridge published=false include=[leaf] />, <leaf published=false />]'''
+        if (inherited) {
+            String inheritedPlatforms = androidFirst ? 'android, jre' : 'jre, android'
+            write('schema.xapi', """<xapi-schema name="publication-fixture" version="1.0"
+                multiplatform=true platforms=[$inheritedPlatforms] $moduleGraph projects=[
+                    <app inherit=true multiplatform=true platforms=[$android] />,
+                    <sibling inherit=true multiplatform=true />
+                ]
+            />""")
+        } else {
+            write('schema.xapi', """<xapi-schema name="publication-fixture" version="1.0"
             platforms=[main] modules=[main] projects=[
                 <app inherit=false multiplatform=true platforms=[$platforms]
-                    modules=[<main published=true include=[bridge] />,
-                        <bridge published=false include=[leaf] />, <leaf published=false />]
+                    $moduleGraph
                 />
             ]
         />""")
+        }
         def configs = ['android', 'androidBridge', 'androidLeaf']
         if (!androidOnly) configs.addAll(['jre', 'jreBridge', 'jreLeaf'])
         configs.each { key ->
             write("app/src/$key/java/fixture/Probe.java", 'package fixture; public class Probe {}')
+            if (inherited) {
+                write("sibling/src/$key/java/fixture/Probe.java", 'package fixture; public class Probe {}')
+            }
         }
         write("app/src/$applicationConfig/gradle/plugins", "id 'com.android.application'\n")
 
@@ -90,6 +104,10 @@ tasks.register('verifyPublicationClosure') {
             new File(fixture, "build/xindex/path/_app/$key/publish").text == 'true' &&
                     scripts[key].contains('maven-publish') && scripts[key].contains('xapiPublish')
         }
+        !inherited || configs.every { key ->
+            new File(fixture, "build/xindex/path/_sibling/$key/publish").text == 'true' &&
+                    new File(fixture, "sibling/src/$key/sibling${key.capitalize()}.gradle").text.contains('maven-publish')
+        }
 
         cleanup:
         if (firstResult != null) {
@@ -105,12 +123,14 @@ tasks.register('verifyPublicationClosure') {
         }
 
         where:
-        label                   | androidOnly | androidFirst | applicationModule
-        'android-only'          | true        | true         | 'main'
-        'android-first-source'  | false       | true         | 'main'
-        'jre-first-source'      | false       | false        | 'main'
-        'android-first-barrier' | false       | true         | 'bridge'
-        'jre-first-barrier'     | false       | false        | 'bridge'
+        label                     | androidOnly | androidFirst | applicationModule | inherited
+        'android-only'            | true        | true         | 'main'            | false
+        'android-first-source'    | false       | true         | 'main'            | false
+        'jre-first-source'        | false       | false        | 'main'            | false
+        'android-first-barrier'   | false       | true         | 'bridge'          | false
+        'jre-first-barrier'       | false       | false        | 'bridge'          | false
+        'android-first-inherited' | false       | true         | 'bridge'          | true
+        'jre-first-inherited'     | false       | false        | 'bridge'          | true
     }
 
     static class PublicationProbeAndroidPlugin implements Plugin<Project> {

@@ -74,6 +74,44 @@ class SchemaPublicationClosureTest extends AbstractSchemaTest<SchemaPublicationC
         !project.getModule('leaf').isPublished()
     }
 
+    @Unroll
+    def 'inherited publication respects child barriers with #platforms'() {
+        given:
+        customSchema = """<xapi-schema name="closure" multiplatform=true
+            platforms=[$platforms]
+            modules=[<main published=true include=[bridge] />,
+                <bridge published=false include=[leaf] />, <leaf published=false />]
+            projects=[
+                <app inherit=true multiplatform=true platforms=[
+                    <android modules=[<bridge buildKind="android-application" />] />
+                ] projects=[<nested inherit=true multiplatform=true />] />,
+                <sibling inherit=true multiplatform=true />
+            ]
+        />"""
+
+        when:
+        def parent = resolvedProject()
+        def app = parent.getProject('app')
+        def nested = app.getProject('nested')
+        def sibling = parent.getProject('sibling')
+
+        then:
+        [parent, sibling].every { project ->
+            ['main', 'bridge', 'leaf'].every { project.getModule(it).isPublished('android') }
+        }
+        [app, nested].every { project ->
+            project.getModule('main').isPublished('android') &&
+                    !project.getModule('bridge').isPublished('android') &&
+                    !project.getModule('leaf').isPublished('android')
+        }
+        [parent, app, nested, sibling].every { project ->
+            ['main', 'bridge', 'leaf'].every { project.getModule(it).isPublished('jre') }
+        }
+
+        where:
+        platforms << ['android, jre', 'jre, android']
+    }
+
     def 'resolved inference survives merges without sharing inferred state or overriding build kinds'() {
         given:
         def original = new SchemaModule('leaf', X_Jdk.setLinked(), false, false, false)

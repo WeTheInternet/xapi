@@ -130,6 +130,14 @@ public class SchemaProject implements Named, HasPath {
         return result;
     }
 
+    /** Parsing may share inherited descriptors; derived publication must not. */
+    void preparePublicationInference() {
+        final ListLike<SchemaModule> copies = X_Jdk.list();
+        getAllModules().forAll(module -> copies.add(module.copyForPublication()));
+        modules.clear();
+        copies.forAll(modules::add);
+    }
+
     public SchemaPlatform addPlatform(SchemaPlatform platform) {
         SchemaPlatform result;
         if (platforms.contains(platform)) {
