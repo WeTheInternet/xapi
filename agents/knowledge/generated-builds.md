@@ -22,10 +22,28 @@ Generated `*.gradle` files are tracked deliberately so generator/configuration c
 ## Known constraints
 
 - A declared schema version is installed as the default for every Gradle project before evaluation and is also emitted into generated normal/source scripts. Null, blank, and `UNKNOWN` versions are omitted.
-- Generated normal projects and synthetic `-sources` siblings both advertise the Java 8
+- Generated JVM projects and synthetic `-sources` siblings both advertise the Java 8
   toolchain. Source-only projects still participate in Gradle JVM variant matching even
   though they compile no Java; omitting this makes Java 8 consumers reject them when the
   build itself runs on Java 17.
+- A qualified module's `buildKind="android-application"` selects AGP application
+  generation instead of the default `java-library` backend. The backend is scoped
+  by the existing platform/module declaration; same-named JVM siblings are unchanged.
+  The owning plugins fragment applies/version-selects AGP, while schema still owns
+  dependencies. Applications have no Java publication or synthetic source sibling;
+  source publication/consumption flags are rejected. See the settings plugin's
+  `SCHEMA.md` for source-directory and dependency-configuration mappings.
+- Publication inferred through module includes is scoped to each project and logical
+  platform. After declaration inheritance, each project receives its own module
+  descriptors before inference begins; a parent's inferred leaf must not bypass a
+  child's Android application barrier.
+  An Android application cannot start or carry that inference; a Java library's
+  transitive includes still publish on its platform, including cyclic include graphs.
+  `SchemaModule.isPublished()` reports the declaration, while `isPublished(platform)`
+  reports effective publication after platform-specific inference and build-kind checks.
+- The settings plugin exposes the schema-derived `xapiBuildKind` property before
+  project evaluation. A consumer's root-level Java-plugin fallback must respect it;
+  the generator cannot remove Java after another callback applies it to an Android app.
 - Dependency keys below `build/xindex/coord` are logical schema values, not Gradle paths or Maven-coordinate mutations. Unsafe or Windows-reserved filename components are reversibly stored as `~` followed by lowercase UTF-8 hex; matching legacy colon-named files are removed when rewritten. See `../tasks/windows-illegal-generated-paths.md`.
 - `schemaLocation` is parsed but does not provide the documented generated-schema behavior. See `../tasks/deprecate-schema-location.md`.
 - The settings-plugin reference docs mix implemented semantics with work-in-progress design. See `../tasks/reconcile-settings-schema-docs.md`.

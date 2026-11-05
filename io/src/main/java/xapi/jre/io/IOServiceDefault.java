@@ -15,7 +15,6 @@ import xapi.fu.Out1;
 import xapi.io.IOConstants;
 import xapi.io.X_IO;
 import xapi.io.api.*;
-import xapi.io.api.StringReader;
 import xapi.io.impl.AbstractIOService;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
@@ -31,6 +30,7 @@ import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -49,6 +49,12 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
   public class IORequestDefault extends AbstractIORequest {
 
     private Thread connectionThread;
+
+    @Override
+    public boolean isSuccess() {
+      // An HTTP error can have a complete, non-null response body.
+      return super.isSuccess() && getStatusCode() < 400;
+    }
 
     @Override
     public void cancel() {
@@ -213,14 +219,14 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
           }
           final Moment start = X_Time.now();
           try {
-            in = connect.getInputStream();
+            in = responseStream(connect);
             try {
               res = drainInput(in, callback);
             } finally {
               in.close();
             }
           } catch (final SocketException e) {
-            in = connect.getInputStream();
+            in = responseStream(connect);
             if (request.isCancelled()) {
               callback.onError(new CancelledException(request));
               return;
@@ -259,9 +265,7 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
             request.setStatus(IORequest.STATUS_NOT_HTTP, "Request not using http: "+connect.getClass());
           }
 
-          final Moment callbackTime = X_Time.now();
-          try {
-            callback.onSuccess(new IOMessage<String>() {
+          final IOMessage<String> message = new IOMessage<String>() {
               @Override
               public String body() {
                 return request.getValue();
@@ -291,7 +295,15 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
               public String statusMessage() {
                 return request.getStatusText();
               }
-            });
+          };
+          if (message.statusCode() >= 400) {
+            // Keep HTTP failures distinct from network/read failures. In particular,
+            // callers must not infer 404 merely from FileNotFoundException.
+            throw new RequestFailed(message);
+          }
+          final Moment callbackTime = X_Time.now();
+          try {
+            callback.onSuccess(message);
           } catch (final Throwable t) {
             X_Log.error("Error invoking IO callback on",callback,"for request",url, t);
             callback.onError(X_Util.unwrap(t));
@@ -315,6 +327,17 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
     return X_IO.toStreamUtf8(body);
   }
 
+  private InputStream responseStream(final URLConnection connection) throws IOException {
+    if (connection instanceof HttpURLConnection) {
+      final HttpURLConnection http = (HttpURLConnection) connection;
+      if (http.getResponseCode() >= 400) {
+        final InputStream error = http.getErrorStream();
+        return error == null ? new ByteArrayInputStream(new byte[0]) : error;
+      }
+    }
+    return connection.getInputStream();
+  }
+
   protected IORequestDefault createRequest() {
     return new IORequestDefault();
   }
@@ -323,22 +346,34 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
     ( final InputStream in, final IOCallback<IOMessage<String>> callback)
     throws IOException {
     try {
-      final String message;
-      final BufferedReader read = new BufferedReader(new InputStreamReader(in));
-      final StringReader messageReader = new StringReader();
-      if (callback instanceof LineReader) {
-        messageReader.forwardTo((LineReader)callback);
-      }
+      // Model and other length-prefixed protocols need the exact response, including
+      // line endings. LineReader callbacks still receive their usual stripped lines.
+      final StringBuilder message = new StringBuilder();
+      final BufferedReader read = new BufferedReader(new FilterReader(new InputStreamReader(in, StandardCharsets.UTF_8)) {
+        @Override
+        public int read(final char[] buffer, final int offset, final int length) throws IOException {
+          final int count = super.read(buffer, offset, length);
+          if (count > 0) {
+            message.append(buffer, offset, count);
+          }
+          return count;
+        }
+      });
+      final LineReader lines = callback instanceof LineReader ? (LineReader) callback : null;
       String line;
-      messageReader.onStart();
-      while ((line = read.readLine())!=null) {
-        messageReader.onLine(line);
+      if (lines != null) {
+        lines.onStart();
       }
-      // grab body >before< calling onEnd, as it cleans up its memory
-      message = messageReader.toString();
-      messageReader.onEnd();
+      while ((line = read.readLine())!=null) {
+        if (lines != null) {
+          lines.onLine(line);
+        }
+      }
+      if (lines != null) {
+        lines.onEnd();
+      }
       // All done.
-      return message;
+      return message.toString();
     } finally {
       in.close();
     }

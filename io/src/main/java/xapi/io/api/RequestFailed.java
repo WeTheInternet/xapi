@@ -10,4 +10,9 @@ public class RequestFailed extends Throwable {
         super("Request " + msg.url() + " failed:\n" + msg.body());
         this.msg = msg;
     }
+
+    /** The HTTP response, including status and body, that caused this failure. */
+    public IOMessage<String> getResponse() {
+        return msg;
+    }
 }

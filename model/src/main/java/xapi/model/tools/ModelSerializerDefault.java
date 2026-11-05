@@ -287,24 +287,8 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
                 out.append(primitives.serializeLong(0L));
             }
         } else if (isModelType(valueType)) {
-            // model null marker
+            // Every model, including ModelList, consumes only -2 for null before any header.
             out.append(primitives.serializeInt(-2));
-            if (ModelList.class.isAssignableFrom(valueType)) {
-                // For ModelList header: still need to emit type and size to keep alignment
-                // We don't know the component type here; prefer declared type from manifest if available
-                final Class<?> listType;
-                final ModelManifest manifest = ctx.getManifest();
-                if (manifest != null) {
-                    final ModelManifest.MethodData data = manifest.getMethodData(""); // no prop name here; placeholder write is used only when skipping in write(), where we do know property names.
-                    // Fallback: emit void.class and zero length (safe to read back as empty)
-                    listType = Object.class;
-                } else {
-                    listType = Object.class;
-                }
-                // State 0, class, size 0
-                out.append(primitives.serializeClass(listType));
-                out.append(primitives.serializeInt(0));
-            }
         } else if (isModelKeyType(valueType)) {
             // keys are encoded as strings; write null string
             out.append(primitives.serializeInt(-1));
@@ -1341,6 +1325,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             if (key == null) {
                 return null;
             }
+            // Owned snapshots retain references exactly as encoded; a deferred load would mutate
+            // this returned object later and could combine records from different commit revisions.
+            if (!ctx.isKeyOnlyHydrationEnabled()) return model;
             // a keyOnly type that's a sub-model won't have any field info in our model source, load that in bg.
             final Class<Model> actualType = ctx.getService().typeToClass(key.getKind());
             if (actualType != modelType) {
