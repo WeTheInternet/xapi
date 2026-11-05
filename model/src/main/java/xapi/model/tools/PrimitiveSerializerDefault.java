@@ -589,6 +589,9 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     final boolean[] result = new boolean[size];
     for (int i = 0; ; ) {
       final int value = deserializeInt(z);
+      if (value < 0 || value > 31) {
+        throw new IllegalArgumentException("Invalid encoded boolean array: packed mask outside range: " + value);
+      }
       if (i + 5 > size) {
         // The last value; may not have all five booleans; use a loop
         final int start = i;

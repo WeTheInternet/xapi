@@ -187,6 +187,38 @@ public class ModelScalarDomainTest {
         }
     }
 
+    @Test public void packedBooleanArrayRejectsMasksOutsideFiveBits() {
+        // Each pair is the primitive frame and the same frame with the model's outer size.
+        // Check data chunks, the empty array's chunk, and consumed five/ten-value padding.
+        final String[][] malformed = {
+                {"T1", "TT1"}, {"TeT", "TTeT"},
+                {"E1", "EE1"}, {"EeT", "EEeT"},
+                {"NK1", "NNK1"}, {"NKeT", "NNKeT"},
+                {"LKL1", "LLKL1"}, {"LKLeT", "LLKLeT"}
+        };
+        for (final String[] frame : malformed) {
+            assertInvalid("boolean array", () ->
+                    primitives.deserializeBooleanArray(new StringCharIterator(frame[0])));
+            assertInvalid("boolean array", () -> codec.decode(boolean[].class, frame[1]));
+        }
+    }
+
+    @Test public void packedBooleanArrayRetainsValidUnusedBitsAndPadding() {
+        // Mask 31 is valid even when some or all of its bits are unused.
+        assertArrayEquals(new boolean[0],
+                primitives.deserializeBooleanArray(new StringCharIterator("E\\")));
+        assertArrayEquals(new boolean[0], (boolean[]) codec.decode(boolean[].class, "EE\\"));
+        assertArrayEquals(new boolean[]{true},
+                primitives.deserializeBooleanArray(new StringCharIterator("T\\")));
+        assertArrayEquals(new boolean[]{true}, (boolean[]) codec.decode(boolean[].class, "TT\\"));
+        final boolean[] allTrue = {true, true, true, true, true};
+        final StringCharIterator input = new StringCharIterator("N\\\\T");
+        assertArrayEquals(allTrue, primitives.deserializeBooleanArray(input));
+        assertEquals("The following scalar must remain framed", 1, primitives.deserializeInt(input));
+        assertFalse(input.hasNext());
+        assertArrayEquals(allTrue, (boolean[]) codec.decode(boolean[].class, "NN\\\\"));
+    }
+
     @Test public void narrowPrimitiveArrayLayoutRemainsUnchanged() {
         final byte[] value = new byte[]{Byte.MIN_VALUE, 0, Byte.MAX_VALUE};
         final String wire = primitives.serializeInt(value.length) + "e4E`O";
