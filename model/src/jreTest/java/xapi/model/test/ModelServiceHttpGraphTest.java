@@ -14,7 +14,6 @@ import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
 import xapi.model.test.api.ModelTestDirections;
-import xapi.model.tools.ModelSerializerDefault;
 import xapi.model.user.ModelUser;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.SuccessHandler;
@@ -81,9 +80,14 @@ public class ModelServiceHttpGraphTest {
             content.getMethodData("related").addAnnotations(
                     ModelTestDirections.class.getMethod("getServerToClient").getAnnotations());
         }
-        final String artifact = ModelSerializerDefault.serialize(authored);
-        codec = new Codec(ModelSerializerDefault.deserializeModule(artifact));
-        client = new ModelServiceHttp(endpoint, ModelSerializerDefault.deserializeModule(artifact), 2000,
+        // The manifest wire format omits property keyOnly/autoSave flags. Share the
+        // fixed in-memory policy so these tests actually exercise both autosave paths.
+        assertTrue(content.isKeyOnly("author"));
+        assertTrue(content.isAutoSave("author"));
+        assertTrue(content.isKeyOnly("related"));
+        assertTrue(content.isAutoSave("related"));
+        codec = new Codec(authored);
+        client = new ModelServiceHttp(endpoint, authored, 2000,
                 HttpBearerToken.forLoopbackDevelopment(() -> {
                     credentialReads.incrementAndGet();
                     return "fixture-token";

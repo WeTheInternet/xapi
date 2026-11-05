@@ -370,6 +370,15 @@ public class ModelServiceHttpTest {
 
     @Test
     public void sharedManifestUsesClientToServerAndServerToClientPolicies() throws Exception {
+        assertSharedManifestPolicies(false);
+    }
+
+    @Test
+    public void flushingCachesRestoresSharedManifestPoliciesForExistingModels() throws Exception {
+        assertSharedManifestPolicies(true);
+    }
+
+    private void assertSharedManifestPolicies(final boolean flushCaches) throws Exception {
         final ModelModule authored = new ModelModule();
         authored.setModuleName("http-model-test");
         authored.setUuid("directions-v1");
@@ -390,6 +399,12 @@ public class ModelServiceHttpTest {
         response.setBothEnabled("acknowledged");
         forcedStatus = 200;
         forcedBody = remote.serialize(ModelTestDirections.class, response).toSource();
+        // The model predates the flush. No create/register call repairs the caches
+        // before persistence must apply the shared directional policy and decode.
+        if (flushCaches) {
+            local.flushCaches();
+            local.flushCaches();
+        }
         final ModelTestDirections saved = await(callback -> local.persist(original, callback));
         final ModelTestDirections received = remote.deserialize(ModelTestDirections.class, new StringCharIterator(lastBody));
         assertEquals("outgoing", received.getClientToServer());

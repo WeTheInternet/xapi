@@ -1,6 +1,10 @@
 package xapi.model.test;
 
 import org.junit.Test;
+import xapi.annotation.model.ClientToServer;
+import xapi.annotation.model.IsModel;
+import xapi.annotation.model.KeyOnly;
+import xapi.annotation.model.Serializable;
 import xapi.dev.source.CharBuffer;
 import xapi.jre.model.ModelServiceJre;
 import xapi.model.api.*;
@@ -119,6 +123,63 @@ public class ModelManifestSerializationTest {
         assertTrue(imported.getManifest("content").isClientToServerEnabled("related"));
         assertArrayEquals(new Class<?>[]{ModelKey.class, Model.class}, imported.getManifest("list").getMethodData("models").getTypeParams());
         assertDirections(imported.getManifest(ModelTestDirections.MODEL_TEST_DIRECTIONS));
+    }
+
+    @Test
+    public void copiesReferencePolicyAndIndependentDeclarationsWithoutWireEncoding() {
+        final ModelManifest authored = ModelUtil.createManifest(ModelContent.class);
+        final ModelManifest.MethodData related = authored.getMethodData("related");
+        related.setIdField("related");
+        final String[] order = authored.getPropertyNames().clone();
+        final ModelManifest copy = authored.copy();
+        final ModelManifest.MethodData copiedRelated = copy.getMethodData("related");
+
+        assertTrue(copy.isKeyOnly("related"));
+        assertTrue(copy.isAutoSave("related"));
+        assertNotSame(related, copiedRelated);
+        assertSame(copiedRelated, copy.getMethodData("getRelated"));
+        assertSame(copiedRelated, copy.getMethodData("setRelated"));
+        assertNotSame(authored.getPropertyNames(), copy.getPropertyNames());
+        assertNotSame(related.getTypeParams(), copiedRelated.getTypeParams());
+        assertArrayEquals(new Class<?>[]{ModelContent.class}, copiedRelated.getTypeParams());
+
+        authored.getPropertyNames()[0] = "changed";
+        related.getTypeParams()[0] = ModelText.class;
+        related.setType(ModelText.class);
+        related.setIdField("changed");
+        assertArrayEquals(order, copy.getPropertyNames());
+        assertEquals(ModelList.class, copiedRelated.getType());
+        assertArrayEquals(new Class<?>[]{ModelContent.class}, copiedRelated.getTypeParams());
+        // The copied custom id-field rule and both method indexes remain independent.
+        copy.addProperty("related", "related", null, null, null);
+        assertEquals(ModelMethodType.ID, copy.getMethodType("related"));
+        assertTrue(copy.hasSeenMethod("related"));
+        assertFalse(authored.hasSeenMethod("related"));
+        assertNull(authored.getMethodType("related"));
+        assertSame(copiedRelated, copy.getMethodData("related"));
+    }
+
+    @KeyOnly
+    @IsModel(modelType = "copy-defaults",
+        serializable = @Serializable(clientToServer = @ClientToServer(enabled = false)))
+    private interface CopyDefaults extends Model {}
+
+    @Test
+    public void copiesRootPoliciesAndDefaultsForNewProperties() {
+        final ModelManifest authored = new ModelManifest(CopyDefaults.class);
+        final ModelManifest copy = authored.copy();
+        assertEquals("copy-defaults", copy.getType());
+        assertEquals(CopyDefaults.class, copy.getModelType());
+        assertTrue(copy.isKeyOnly());
+        copy.addProperty("getValue", "id", null, null, null).setType(String.class);
+        assertFalse(copy.isClientToServerEnabled("value"));
+        assertTrue(copy.isServerToClientEnabled("value"));
+        assertTrue(copy.hasSeenMethod("getValue"));
+        assertFalse(authored.hasSeenMethod("getValue"));
+        assertArrayEquals(new String[]{"value"}, copy.getPropertyNames());
+        authored.addProperty("getOriginal", "id", null, null, null).setType(String.class);
+        assertArrayEquals(new String[]{"original"}, authored.getPropertyNames());
+        assertArrayEquals(new String[]{"value"}, copy.getPropertyNames());
     }
 
     private void assertDirections(final ModelManifest manifest) {

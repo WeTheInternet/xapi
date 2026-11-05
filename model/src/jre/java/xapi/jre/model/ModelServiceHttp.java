@@ -108,10 +108,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         if (moduleName == null || moduleName.trim().isEmpty() || moduleName.contains("\r") || moduleName.contains("\n")) {
             throw new IllegalArgumentException("The shared module must have a valid name");
         }
-        for (final ModelManifest manifest : module.getManifests()) {
-            register(Objects.requireNonNull(manifest.getModelType(), "manifest model class"));
-            registerManifest(manifest);
-        }
+        registerSharedManifests();
         io = new IOServiceDefault() {
             @Override
             protected Reader createResponseReader(final InputStream in) {
@@ -133,6 +130,20 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
     @Override
     public ModelModule getModelModule() {
         return module;
+    }
+
+    /** Clears derived caches while retaining the shared module's wire policy. */
+    @Override
+    public void flushCaches() {
+        super.flushCaches();
+        registerSharedManifests();
+    }
+
+    private void registerSharedManifests() {
+        for (final ModelManifest manifest : module.getManifests()) {
+            register(Objects.requireNonNull(manifest.getModelType(), "manifest model class"));
+            registerManifest(manifest);
+        }
     }
 
     @Override
