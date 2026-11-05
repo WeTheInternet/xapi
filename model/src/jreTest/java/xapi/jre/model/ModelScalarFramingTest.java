@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
-/** Missing numeric terminators must fail even when ordinary JVM assertions are disabled. */
+/** Invalid numeric fields must fail even when ordinary JVM assertions are disabled. */
 public class ModelScalarFramingTest {
   @Test
   public void rejectsTruncatedScalarsAndAcknowledgmentsWithoutAssertions() throws Exception {
@@ -85,9 +85,10 @@ public class ModelScalarFramingTest {
         assertFalse("Acknowledgment decoder must run with -da", ModelCreateRequest.class.desiredAssertionStatus());
         validNumericEncodingsRemainUnchanged();
         missingAndUnterminatedScalarsFail();
-        truncatedHttpAcknowledgmentsFailWithoutFallback();
+        invalidNumericAlphabetBoundsAndSentinelsFail();
+        malformedHttpAcknowledgmentsFailWithoutFallback();
         corruptExistingFilesFailWithoutReplacement();
-        System.out.println("Assertion-disabled scalar, HTTP 200/201 and existing-file checks passed.");
+        System.out.println("Assertion-disabled scalar alphabet/bounds, HTTP 200/201 and existing-file checks passed.");
       } catch (final Throwable failure) {
         failure.printStackTrace();
         System.exit(1);
@@ -113,10 +114,23 @@ public class ModelScalarFramingTest {
       final String encoded = codec.serializeLong(value);
       assertEquals(value, codec.deserializeLong(new StringCharIterator(encoded)));
     }
-    assertEquals(Integer.MAX_VALUE, codec.deserializeInt(new StringCharIterator(codec.serializeInt(Integer.MAX_VALUE))));
+    for (final int value : new int[]{-Integer.MAX_VALUE, Integer.MAX_VALUE}) {
+      assertEquals(value, codec.deserializeInt(new StringCharIterator(codec.serializeInt(value))));
+    }
     assertEquals(0.0, codec.deserializeDouble(new StringCharIterator(codec.serializeDouble(0.0))), 0.0);
     assertEquals(200.0, codec.deserializeDouble(new StringCharIterator(codec.serializeDouble(200.0))), 0.0);
     assertEquals(-17.5f, codec.deserializeFloat(new StringCharIterator(codec.serializeFloat(-17.5f))), 0.0f);
+    for (final float value : new float[]{Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, -0.0f}) {
+      assertEquals(Float.floatToIntBits(value),
+          Float.floatToIntBits(codec.deserializeFloat(new StringCharIterator(codec.serializeFloat(value)))));
+    }
+    for (final double value : new double[]{Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, -0.0}) {
+      assertEquals(Double.doubleToLongBits(value),
+          Double.doubleToLongBits(codec.deserializeDouble(new StringCharIterator(codec.serializeDouble(value)))));
+    }
+    // Nonminimal forms within the numeric width retain their existing meaning.
+    assertEquals(1, codec.deserializeInt(new StringCharIterator("tE")));
+    assertEquals(1L, codec.deserializeLong(new StringCharIterator("tE")));
   }
 
   private static void missingAndUnterminatedScalarsFail() {
@@ -146,32 +160,63 @@ public class ModelScalarFramingTest {
     }
   }
 
-  private static void expectMalformed(final Runnable decode) {
-    try {
-      decode.run();
-      fail("Missing/unterminated scalar was accepted");
-    } catch (final IllegalArgumentException expected) {
-      assertTrue(expected.getMessage().startsWith("Unterminated encoded "));
+  private static void invalidNumericAlphabetBoundsAndSentinelsFail() {
+    final PrimitiveSerializerDefault codec = new PrimitiveSerializerDefault();
+    for (final char invalid : new char[]{1, 8, ' ', '\n', '\r', 31, 127, 128, 0xd800}) {
+      for (final String wire : new String[]{Character.toString(invalid), "t" + invalid}) {
+        expectMalformed(() -> codec.deserializeInt(new StringCharIterator(wire)));
+        expectMalformed(() -> codec.deserializeLong(new StringCharIterator(wire)));
+        expectMalformed(() -> codec.deserializeFloat(new StringCharIterator(wire)));
+        expectMalformed(() -> codec.deserializeDouble(new StringCharIterator(wire)));
+      }
+    }
+    for (final String wire : new String[]{"e\0", "t\0"}) {
+      expectMalformed(() -> codec.deserializeInt(new StringCharIterator(wire)));
+      expectMalformed(() -> codec.deserializeLong(new StringCharIterator(wire)));
+    }
+    for (final String wire : new String[]{zeros(6) + "A", zeros(6) + "2", zeros(7) + "E"}) {
+      expectMalformed(() -> codec.deserializeInt(new StringCharIterator(wire)));
+      expectMalformed(() -> codec.deserializeFloat(new StringCharIterator(wire)));
+    }
+    for (final String wire : new String[]{zeros(12) + "R", zeros(12) + "8", zeros(13) + "E"}) {
+      expectMalformed(() -> codec.deserializeLong(new StringCharIterator(wire)));
+      expectMalformed(() -> codec.deserializeDouble(new StringCharIterator(wire)));
     }
   }
 
-  private static void truncatedHttpAcknowledgmentsFailWithoutFallback() throws Exception {
+  private static String zeros(final int count) {
+    final char[] digits = new char[count];
+    Arrays.fill(digits, 'e');
+    return new String(digits);
+  }
+
+  private static void expectMalformed(final Runnable decode) {
+    try {
+      decode.run();
+      fail("Malformed numeric scalar was accepted");
+    } catch (final IllegalArgumentException expected) {
+      assertTrue(causedByMalformedScalar(expected));
+    }
+  }
+
+  private static void malformedHttpAcknowledgmentsFailWithoutFallback() throws Exception {
     final ModelCreateIfAbsentHttpTest fixture = new ModelCreateIfAbsentHttpTest();
     try {
       fixture.start();
       final ModelText acknowledged = fixture.text("FINISHED");
       final String full = fixture.codec.serialize(ModelText.class, acknowledged).toSource();
-      final String[] truncated = truncatedTime(fixture.codec, acknowledged, full);
+      final String[] malformed = malformedTimes(fixture.codec, acknowledged, full);
       for (final int status : new int[]{200, 201}) {
         fixture.status = status;
-        for (final String body : truncated) {
+        for (final String body : malformed) {
           fixture.response = body;
           final Throwable failure = fixture.failure(fixture.text("ACTIVE"));
-          assertTrue("Expected missing numeric terminator: " + failure, causedByMalformedScalar(failure));
+          assertTrue("Expected malformed numeric scalar: " + failure, causedByMalformedScalar(failure));
           assertFalse(failure instanceof ModelNotFoundException);
         }
       }
-      assertEquals("No ordinary-persist fallback or extra request", 4, fixture.requests.get());
+      final int failedRequests = 2 * malformed.length;
+      assertEquals("No ordinary-persist fallback or extra request", failedRequests, fixture.requests.get());
       for (final int status : new int[]{200, 201}) {
         fixture.status = status;
         fixture.response = full;
@@ -181,23 +226,25 @@ public class ModelScalarFramingTest {
         assertEquals("FINISHED", result.getModel().getText());
         assertEquals(200.0, result.getModel().getTime(), 0.0);
       }
-      assertEquals(6, fixture.requests.get());
+      assertEquals(failedRequests + 2, fixture.requests.get());
     } finally {
       fixture.stop();
     }
   }
 
-  private static String[] truncatedTime(final ModelServiceJre service, final ModelText model, final String full) {
+  private static String[] malformedTimes(final ModelServiceJre service, final ModelText model, final String full) {
     final String time = service.primitiveSerializer().serializeDouble(model.getTime());
     assertTrue("Fixture requires a multi-character final time scalar", time.length() > 1);
     assertTrue("Fixture must truncate time, not another field", full.endsWith(time));
-    return new String[]{full.substring(0, full.length() - time.length()), full.substring(0, full.length() - 1)};
+    final String withoutTime = full.substring(0, full.length() - time.length());
+    return new String[]{withoutTime, full.substring(0, full.length() - 1), withoutTime + " ", withoutTime + "\n"};
   }
 
   private static boolean causedByMalformedScalar(final Throwable failure) {
     for (Throwable current = failure; current != null; current = current.getCause()) {
       if (current instanceof IllegalArgumentException
-          && current.getMessage() != null && current.getMessage().startsWith("Unterminated encoded ")) return true;
+          && current.getMessage() != null && (current.getMessage().startsWith("Unterminated encoded ")
+          || current.getMessage().startsWith("Invalid encoded "))) return true;
     }
     return false;
   }
@@ -234,8 +281,8 @@ public class ModelScalarFramingTest {
       final ModelText candidate = service.create(ModelText.class);
       candidate.setKey(service.keyFromString(service.keyToString(existing.getKey())));
       candidate.setText("ACTIVE"); candidate.setTime(100);
-      for (final String truncated : truncatedTime(service, existing, full)) {
-        final byte[] corrupt = truncated.getBytes(StandardCharsets.UTF_8);
+      for (final String malformed : malformedTimes(service, existing, full)) {
+        final byte[] corrupt = malformed.getBytes(StandardCharsets.UTF_8);
         Files.write(file, corrupt);
         final Result failed = new Result();
         service.createIfAbsent(candidate, failed);
