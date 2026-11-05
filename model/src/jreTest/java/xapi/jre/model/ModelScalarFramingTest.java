@@ -3,6 +3,7 @@ package xapi.jre.model;
 import org.junit.Test;
 import xapi.model.api.Model;
 import xapi.model.api.ModelCreateResult;
+import xapi.model.api.ModelDeserializationContext;
 import xapi.model.api.ModelList;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelModule;
@@ -23,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,7 +43,7 @@ public class ModelScalarFramingTest {
     final Path log = Files.createTempFile("xapi-scalar-framing-", ".log");
     final List<String> command = new ArrayList<>(Arrays.asList(
         System.getProperty("java.home") + File.separator + "bin" + File.separator + "java",
-        "-da", "-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir")));
+        "-da", "-Xmx128m", "-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir")));
     for (final String property : new String[]{"xapi.injector.cache", "xapi.mvn.repo"}) {
       final String value = System.getProperty(property);
       if (value != null) command.add("-D" + property + "=" + value);
@@ -88,6 +90,7 @@ public class ModelScalarFramingTest {
   public static final class AssertionsDisabled {
     public static void main(final String[] args) {
       try {
+        assertTrue("Huge-header probes require a bounded child heap", Runtime.getRuntime().maxMemory() <= 128L * 1024 * 1024);
         assertFalse("Probe must run with -da", ModelScalarFramingTest.class.desiredAssertionStatus());
         assertFalse("Numeric decoder must run with -da", PrimitiveSerializerDefault.class.desiredAssertionStatus());
         assertFalse("Model decoder must run with -da", ModelSerializerDefault.class.desiredAssertionStatus());
@@ -99,7 +102,10 @@ public class ModelScalarFramingTest {
         corruptExistingFilesFailWithoutReplacement();
         negativeListCountsFailHttpAcknowledgmentsWithoutFallback();
         negativeListCountsFailExistingFilesWithoutReplacement();
-        System.out.println("Assertion-disabled scalar alphabet/bounds, ModelList counts, HTTP 200/201 and existing-file checks passed.");
+        hugeArrayHeadersRejectMissingPayloads();
+        hugeArrayAcknowledgmentsFailWithoutFallback();
+        hugeArrayExistingFilesFailWithoutReplacement();
+        System.out.println("Assertion-disabled scalar, collection-count and bounded-array HTTP/file checks passed.");
       } catch (final Throwable failure) {
         failure.printStackTrace();
         System.exit(1);
@@ -474,6 +480,172 @@ public class ModelScalarFramingTest {
       assertEquals(1, fresh.calls); assertNull(fresh.error); assertNotNull(fresh.value);
       assertTrue(fresh.value.isCreated()); assertListSize(fresh.value.getModel(), 1);
       assertListSize(candidate, 0);
+      assertEquals("No ordinary-persist fallback", 0, service.ordinaryWrites);
+    }
+  }
+
+  private static final class ArrayFrameCodec extends ModelSerializerDefault<Model> {
+    final PrimitiveSerializerDefault primitives = new PrimitiveSerializerDefault();
+    final ModelServiceJre service = new ModelServiceJre();
+
+    Object decode(final Class<?> type, final String wire) {
+      final StringCharIterator input = new StringCharIterator(wire);
+      final ModelDeserializationContext context = new ModelDeserializationContext(null, service, null);
+      final Object result = readObject(type, "payload", input, primitives, context);
+      assertFalse("Array decoder left trailing input", input.hasNext());
+      return result;
+    }
+  }
+
+  public enum ArrayEnum { VALUE }
+
+  private static void hugeArrayHeadersRejectMissingPayloads() {
+    final ArrayFrameCodec codec = new ArrayFrameCodec();
+    final String huge = codec.primitives.serializeInt(Integer.MAX_VALUE);
+    assertTrue("The oversized declaration must remain a tiny input", huge.length() <= 7);
+    for (final String payload : new String[]{"", codec.primitives.serializeInt(1)}) {
+      expectInvalidArrayPayload("Invalid encoded array length:", () -> codec.decode(byte[].class, huge + payload));
+      expectInvalidArrayPayload("Invalid encoded array length:", () -> codec.decode(long[].class, huge + payload));
+    }
+    for (final String payload : new String[]{"", codec.primitives.serializeString("one")}) {
+      expectInvalidArrayPayload("Invalid encoded array length:", () -> codec.decode(String[].class, huge + payload));
+    }
+    for (final String mask : new String[]{"", codec.primitives.serializeInt(0)}) {
+      expectInvalidArrayPayload("Invalid encoded boolean array:", () ->
+          codec.primitives.deserializeBooleanArray(new StringCharIterator(huge + mask)));
+      expectInvalidArrayPayload("Invalid encoded boolean array:", () ->
+          codec.decode(boolean[].class, huge + huge + mask));
+    }
+    final String enumType = codec.primitives.serializeClass(ArrayEnum.class);
+    for (final String item : new String[]{"", codec.primitives.serializeInt(0)}) {
+      expectInvalidArrayPayload("Invalid encoded enum set count:", () -> codec.decode(EnumSet.class, huge + enumType + item));
+    }
+  }
+
+  private static void expectInvalidArrayPayload(final String prefix, final Runnable decode) {
+    try {
+      decode.run();
+      fail("Oversized declaration with missing payload was accepted");
+    } catch (final IllegalArgumentException expected) {
+      assertTrue("Expected payload validation failure: " + expected,
+          expected.getMessage() != null && expected.getMessage().startsWith(prefix));
+    }
+  }
+
+  @xapi.annotation.model.IsModel(modelType = "arrayFrame")
+  public interface ArrayHolder extends Model {
+    byte[] getPayload();
+    void setPayload(byte[] payload);
+  }
+
+  private static ModelModule arrayModule() {
+    final ModelModule module = new ModelModule();
+    module.setModuleName("array-frame-fixture"); module.setUuid("array-frame-fixture-v1");
+    module.addManifest(ModelUtil.createManifest(ArrayHolder.class));
+    return module;
+  }
+
+  private static ArrayHolder arrayHolder(final AbstractJreModelService service, final String id, final byte[] payload) {
+    final ArrayHolder result = service.create(ArrayHolder.class);
+    result.setKey(service.newKey("array-frame", result.getType(), id));
+    result.setPayload(payload);
+    return result;
+  }
+
+  private static String hugeArrayImage(final ModelServiceJre service, final ArrayHolder empty) {
+    assertArrayEquals(new String[]{"payload"}, service.getOrMakeModelManifest(ArrayHolder.class).getPropertyNames());
+    final String full = service.serialize(ArrayHolder.class, empty).toSource();
+    final String zero = service.primitiveSerializer().serializeInt(0);
+    assertTrue("Fixture must end in the sole empty-array length", full.endsWith(zero));
+    return full.substring(0, full.length() - zero.length()) + service.primitiveSerializer().serializeInt(Integer.MAX_VALUE);
+  }
+
+  private static boolean causedByInvalidArrayLength(final Throwable failure) {
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current instanceof IllegalArgumentException && current.getMessage() != null
+          && current.getMessage().startsWith("Invalid encoded array length:")) return true;
+    }
+    return false;
+  }
+
+  private static void hugeArrayAcknowledgmentsFailWithoutFallback() throws Exception {
+    final ModelCreateIfAbsentHttpTest fixture = new ModelCreateIfAbsentHttpTest();
+    try {
+      fixture.start();
+      final ModelModule module = arrayModule();
+      fixture.codec = new ModelServiceJre(); registerListModule(fixture.codec, module);
+      fixture.client = new ModelServiceHttp("http://127.0.0.1:" + fixture.server.getAddress().getPort() + "/model",
+          ModelSerializerDefault.deserializeModule(ModelSerializerDefault.serialize(module)), 2000);
+      final ArrayHolder candidate = arrayHolder(fixture.client, "existing", new byte[0]);
+      fixture.response = hugeArrayImage(fixture.codec, arrayHolder(fixture.codec, "existing", new byte[0]));
+      final List<AtomicInteger> failureCallbacks = new ArrayList<>();
+      for (final int status : new int[]{200, 201}) {
+        fixture.status = status;
+        final AtomicInteger callbacks = new AtomicInteger(); failureCallbacks.add(callbacks);
+        final CompletableFuture<ModelCreateResult<ArrayHolder>> future = new CompletableFuture<>();
+        fixture.client.createIfAbsent(candidate, SuccessHandler.handler(
+            result -> { callbacks.incrementAndGet(); future.complete(result); },
+            error -> { callbacks.incrementAndGet(); future.completeExceptionally(error); }));
+        try {
+          future.get(5, TimeUnit.SECONDS);
+          fail("Huge array length was accepted as an HTTP acknowledgment");
+        } catch (final ExecutionException failure) {
+          assertTrue("Expected array payload validation: " + failure, causedByInvalidArrayLength(failure));
+          assertFalse(failure.getCause() instanceof ModelNotFoundException);
+        }
+        assertEquals("One terminal callback for each malformed acknowledgment", 1, callbacks.get());
+      }
+      assertEquals("No ordinary-persist fallback or extra request", 2, fixture.requests.get());
+      for (final int status : new int[]{200, 201}) {
+        fixture.status = status;
+        for (final byte[] payload : new byte[][]{null, new byte[0], new byte[]{0, 1, -1, Byte.MIN_VALUE, Byte.MAX_VALUE}}) {
+          fixture.response = fixture.codec.serialize(ArrayHolder.class, arrayHolder(fixture.codec, "existing", payload)).toSource();
+          final ModelCreateResult<ArrayHolder> result = ModelCreateIfAbsentHttpTest.await(
+              callback -> fixture.client.createIfAbsent(candidate, callback));
+          assertEquals(status == 201, result.isCreated());
+          assertArrayEquals(payload, result.getModel().getPayload());
+        }
+      }
+      assertArrayEquals(new byte[0], candidate.getPayload());
+      for (final AtomicInteger callbacks : failureCallbacks) assertEquals(1, callbacks.get());
+      assertEquals(8, fixture.requests.get());
+    } finally {
+      fixture.stop();
+    }
+  }
+
+  private static void hugeArrayExistingFilesFailWithoutReplacement() throws Exception {
+    final Path root = Files.createTempDirectory("xapi-array-frame-file-");
+    try (FileModelTransactionStore store = new FileModelTransactionStore(root)) {
+      final InlineService service = new InlineService();
+      registerListModule(service, arrayModule()); service.attachTransactionStore(store);
+      final ArrayHolder existing = arrayHolder(service, "existing", new byte[0]);
+      final ArrayHolder candidate = arrayHolder(service, "existing", new byte[0]);
+      final Path file = root.resolve("array-frame").resolve(existing.getType()).resolve("existing");
+      Files.createDirectories(file.getParent());
+      final byte[] corrupt = hugeArrayImage(service, existing).getBytes(StandardCharsets.UTF_8);
+      Files.write(file, corrupt);
+      final Result<ArrayHolder> failed = new Result<>();
+      service.createIfAbsent(candidate, failed);
+      assertEquals(1, failed.calls); assertNull(failed.value);
+      assertTrue("Corrupt existing array must fail validation", causedByInvalidArrayLength(failed.error));
+      assertFalse(failed.error instanceof ModelNotFoundException);
+      assertArrayEquals("Corrupt array must not be replaced by the candidate", corrupt, Files.readAllBytes(file));
+      for (final byte[] payload : new byte[][]{null, new byte[0], new byte[]{0, 1, -1, Byte.MIN_VALUE, Byte.MAX_VALUE}}) {
+        final byte[] canonical = service.serialize(ArrayHolder.class, arrayHolder(service, "existing", payload))
+            .toSource().getBytes(StandardCharsets.UTF_8);
+        Files.write(file, canonical);
+        final Result<ArrayHolder> valid = new Result<>();
+        service.createIfAbsent(candidate, valid);
+        assertEquals(1, valid.calls); assertNull(valid.error); assertNotNull(valid.value);
+        assertFalse(valid.value.isCreated()); assertArrayEquals(payload, valid.value.getModel().getPayload());
+        assertArrayEquals(canonical, Files.readAllBytes(file));
+      }
+      final Result<ArrayHolder> fresh = new Result<>();
+      service.createIfAbsent(arrayHolder(service, "new", new byte[]{7}), fresh);
+      assertEquals(1, fresh.calls); assertNull(fresh.error); assertNotNull(fresh.value);
+      assertTrue(fresh.value.isCreated()); assertArrayEquals(new byte[]{7}, fresh.value.getModel().getPayload());
+      assertArrayEquals(new byte[0], candidate.getPayload());
       assertEquals("No ordinary-persist fallback", 0, service.ordinaryWrites);
     }
   }

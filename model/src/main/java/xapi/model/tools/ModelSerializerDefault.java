@@ -1412,6 +1412,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         if (len == -1) {
             return null;
         }
+        if (len < 0) {
+            throw new IllegalArgumentException("Invalid encoded array length: " + len);
+        }
         if (componentType == boolean.class) {
             // writeArray stores a packed boolean array after the outer array length.
             final boolean[] values = primitives.deserializeBooleanArray(src);
@@ -1420,38 +1423,51 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             }
             return values;
         }
-        if (componentType.isPrimitive()) {
-            final Object array = Array.newInstance(componentType, len);
-            for (int i = 0; i < len; i++) {
+        // The declared length is untrusted. Retain only small typed chunks until
+        // all elements have been decoded, avoiding both eager allocation and primitive boxing.
+        final List<Object> chunks = new ArrayList<>();
+        int remaining = len;
+        while (remaining > 0) {
+            if (!src.hasNext()) {
+                throw new IllegalArgumentException("Invalid encoded array length: insufficient elements for " + len);
+            }
+            final int chunkSize = Math.min(remaining, 256);
+            final Object chunk = Array.newInstance(componentType, chunkSize);
+            for (int i = 0; i < chunkSize; i++) {
+                if (!src.hasNext()) {
+                    throw new IllegalArgumentException("Invalid encoded array length: insufficient elements for " + len);
+                }
                 if (componentType == int.class) {
-                    Array.setInt(array, i, primitives.deserializeInt(src));
+                    Array.setInt(chunk, i, primitives.deserializeInt(src));
                 } else if (componentType == float.class) {
-                    Array.setFloat(array, i, primitives.deserializeFloat(src));
-                } else if (componentType == boolean.class) {
-                    Array.setBoolean(array, i, primitives.deserializeBoolean(src));
+                    Array.setFloat(chunk, i, primitives.deserializeFloat(src));
                 } else if (componentType == char.class) {
-                    Array.setChar(array, i, primitives.deserializeChar(src));
+                    Array.setChar(chunk, i, primitives.deserializeChar(src));
                 } else if (componentType == double.class) {
-                    Array.setDouble(array, i, primitives.deserializeDouble(src));
+                    Array.setDouble(chunk, i, primitives.deserializeDouble(src));
                 } else if (componentType == long.class) {
-                    Array.setLong(array, i, primitives.deserializeLong(src));
+                    Array.setLong(chunk, i, primitives.deserializeLong(src));
                 } else if (componentType == short.class) {
-                    Array.setShort(array, i, primitives.deserializeShort(src));
+                    Array.setShort(chunk, i, primitives.deserializeShort(src));
                 } else if (componentType == byte.class) {
-                    Array.setByte(array, i, primitives.deserializeByte(src));
-                } else {
+                    Array.setByte(chunk, i, primitives.deserializeByte(src));
+                } else if (componentType.isPrimitive()) {
                     throw new UnsupportedOperationException("Unsupported array component type" + componentType);
+                } else {
+                    Array.set(chunk, i, readObject(componentType, propName, src, primitives, ctx));
                 }
             }
-            return array;
-        } else {
-            final Object array = Array.newInstance(componentType, len);
-            for (int i = 0; i < len; i++) {
-                final Object value = readObject(componentType, propName, src, primitives, ctx);
-                Array.set(array, i, value);
-            }
-            return array;
+            chunks.add(chunk);
+            remaining -= chunkSize;
         }
+        final Object array = Array.newInstance(componentType, len);
+        int offset = 0;
+        for (final Object chunk : chunks) {
+            final int count = Array.getLength(chunk);
+            System.arraycopy(chunk, 0, array, offset, count);
+            offset += count;
+        }
+        return array;
     }
 
     /**
@@ -1613,6 +1629,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             return primitives.deserializeClass(src);
         } else if (EnumSet.class.isAssignableFrom(propertyType)) {
             int amt = primitives.deserializeInt(src);
+            if (amt < -1) {
+                throw new IllegalArgumentException("Invalid encoded enum set count: " + amt);
+            }
             Class<? extends Enum<?>> enumType = primitives.deserializeClass(src);
             if (amt == -1) {
                 return null;
@@ -1620,8 +1639,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             if (amt == 0) {
                 return EnumSet.noneOf((Class) enumType);
             }
-            List<Enum> items = new ArrayList<>(amt);
+            List<Enum> items = new ArrayList<>();
             while (amt-- > 0) {
+                if (!src.hasNext()) {
+                    throw new IllegalArgumentException("Invalid encoded enum set count: insufficient elements");
+                }
                 items.add(deserializeEnum(enumType, primitives, src));
             }
             // pull the last item off list. this is cheapest for array list

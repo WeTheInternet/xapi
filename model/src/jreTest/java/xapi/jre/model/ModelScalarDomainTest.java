@@ -15,6 +15,7 @@ import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.source.lex.StringCharIterator;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 
 import static org.junit.Assert.*;
 
@@ -337,6 +338,72 @@ public class ModelScalarDomainTest {
         assertEquals("value", readList.get(1));
         assertEquals(Integer.valueOf(7), readList.get(2));
         assertNull(readList.get(3));
+    }
+
+    @Test public void arraysRetainTypesAndValuesAcrossStagingBoundaries() {
+        for (final int length : new int[]{255, 256, 257, 513}) {
+            final byte[] bytes = new byte[length];
+            final short[] shorts = new short[length];
+            final char[] chars = new char[length];
+            final int[] ints = new int[length];
+            final long[] longs = new long[length];
+            final float[] floats = new float[length];
+            final double[] doubles = new double[length];
+            final String[] strings = new String[length];
+            for (int i = 0; i < length; i++) {
+                bytes[i] = (byte) (i - 128);
+                shorts[i] = (short) (i * 257 - 32768);
+                chars[i] = (char) (i * 129);
+                ints[i] = i % 2 == 0 ? Integer.MIN_VALUE + i : Integer.MAX_VALUE - i;
+                longs[i] = i % 2 == 0 ? Long.MIN_VALUE + i : Long.MAX_VALUE - i;
+                floats[i] = i % 4 == 0 ? -0.0f : i % 4 == 1 ? Float.NaN
+                        : i % 4 == 2 ? Float.POSITIVE_INFINITY : i * 0.5f;
+                doubles[i] = i % 4 == 0 ? -0.0 : i % 4 == 1 ? Double.NaN
+                        : i % 4 == 2 ? Double.NEGATIVE_INFINITY : i + 0.25;
+                strings[i] = i % 3 == 0 ? null : "value-" + i;
+            }
+            assertArrayEquals(bytes, (byte[]) readCollectionFrame(byte[].class, codec.encode(byte[].class, bytes)));
+            assertArrayEquals(shorts, (short[]) readCollectionFrame(short[].class, codec.encode(short[].class, shorts)));
+            assertArrayEquals(chars, (char[]) readCollectionFrame(char[].class, codec.encode(char[].class, chars)));
+            assertArrayEquals(ints, (int[]) readCollectionFrame(int[].class, codec.encode(int[].class, ints)));
+            assertArrayEquals(longs, (long[]) readCollectionFrame(long[].class, codec.encode(long[].class, longs)));
+            final float[] readFloats = (float[]) readCollectionFrame(float[].class, codec.encode(float[].class, floats));
+            final double[] readDoubles = (double[]) readCollectionFrame(double[].class, codec.encode(double[].class, doubles));
+            for (int i = 0; i < length; i++) {
+                assertEquals(Float.floatToIntBits(floats[i]), Float.floatToIntBits(readFloats[i]));
+                assertEquals(Double.doubleToLongBits(doubles[i]), Double.doubleToLongBits(readDoubles[i]));
+            }
+            assertArrayEquals(strings, (String[]) readCollectionFrame(String[].class, codec.encode(String[].class, strings)));
+        }
+    }
+
+    @Test public void arrayStagingPreservesNullEmptyNestedAndBoxedFrames() {
+        assertNull(readCollectionFrame(int[].class, codec.encode(int[].class, null)));
+        assertNull(readCollectionFrame(String[].class, codec.encode(String[].class, null)));
+        assertArrayEquals(new int[0], (int[]) readCollectionFrame(int[].class, "E"));
+        assertArrayEquals(new String[0], (String[]) readCollectionFrame(String[].class, "E"));
+        final byte[][] nested = {{1, 2}, null, {}, {3, -4}};
+        final byte[][] decoded = (byte[][]) readCollectionFrame(byte[][].class, codec.encode(byte[][].class, nested));
+        assertEquals(nested.length, decoded.length);
+        for (int i = 0; i < nested.length; i++) assertArrayEquals(nested[i], decoded[i]);
+        // Boxed Integer array elements use long encoding, including Integer.MIN_VALUE.
+        final String boxed = "O" + primitives.serializeLong(Integer.MIN_VALUE)
+                + primitives.serializeLong(0) + primitives.serializeLong(Integer.MAX_VALUE);
+        assertArrayEquals(new Integer[]{Integer.MIN_VALUE, 0, Integer.MAX_VALUE},
+                (Integer[]) readCollectionFrame(Integer[].class, boxed));
+        assertInvalid("array length", () -> codec.decode(int[].class, primitives.serializeInt(-2)));
+        assertInvalid("array length", () -> codec.decode(String[].class, "T"));
+        assertInvalid("boolean array", () -> primitives.deserializeBooleanArray(new StringCharIterator("S" + "K")));
+    }
+
+    @Test public void enumSetStagingRetainsExistingReaderFrames() {
+        final String enumClass = primitives.serializeClass(CollectionKey.class);
+        assertNull(readCollectionFrame(EnumSet.class, "1" + enumClass));
+        assertEquals(EnumSet.noneOf(CollectionKey.class), readCollectionFrame(EnumSet.class, "E" + enumClass));
+        final EnumSet<CollectionKey> values = EnumSet.of(CollectionKey.VALUE);
+        assertEquals(values, readCollectionFrame(EnumSet.class, codec.encode(EnumSet.class, values)));
+        assertInvalid("enum set count", () -> codec.decode(EnumSet.class, primitives.serializeInt(-2)));
+        assertInvalid("enum set count", () -> codec.decode(EnumSet.class, "T" + enumClass));
     }
 
     @Test public void floatingPointDomainsAndWireRepresentationsRemainUnchanged() {
