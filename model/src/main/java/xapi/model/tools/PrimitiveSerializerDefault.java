@@ -586,27 +586,26 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
   @Override
   public boolean[] deserializeBooleanArray(final CharIterator z) {
     final int size = deserializeInt(z);
-    final boolean[] result = new boolean[size];
-    for (int i = 0; ; ) {
+    if (size < 0) {
+      throw new IllegalArgumentException("Invalid encoded boolean array: negative length: " + size);
+    }
+    // Validate every encoded chunk, including the terminal padding, before
+    // allocating an array from the untrusted length. Each mask holds five values.
+    final int chunks = size / 5 + 1;
+    final StringBuilder masks = new StringBuilder();
+    for (int chunk = 0; chunk < chunks; chunk++) {
+      if (!z.hasNext()) {
+        throw new IllegalArgumentException("Invalid encoded boolean array: insufficient packed data for " + size);
+      }
       final int value = deserializeInt(z);
       if (value < 0 || value > 31) {
         throw new IllegalArgumentException("Invalid encoded boolean array: packed mask outside range: " + value);
       }
-      if (i + 5 > size) {
-        // The last value; may not have all five booleans; use a loop
-        final int start = i;
-        for (;i < size; i++) {
-          result[i] = (value & BIT_MASKS[i-start]) != 0;
-        }
-        break;
-      } else {
-        // Write five more booleans
-        result[i++] = (value & 1) != 0;
-        result[i++] = (value & 2) != 0;
-        result[i++] = (value & 4) != 0;
-        result[i++] = (value & 8) != 0;
-        result[i++] = (value & 16) != 0;
-      }
+      masks.append((char) value);
+    }
+    final boolean[] result = new boolean[size];
+    for (int i = 0; i < size; i++) {
+      result[i] = (masks.charAt(i / 5) & BIT_MASKS[i % 5]) != 0;
     }
     return result;
   }
