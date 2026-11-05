@@ -1399,6 +1399,14 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         if (len == -1) {
             return null;
         }
+        if (componentType == boolean.class) {
+            // writeArray stores a packed boolean array after the outer array length.
+            final boolean[] values = primitives.deserializeBooleanArray(src);
+            if (values.length != len) {
+                throw new IllegalArgumentException("Invalid encoded boolean array: length mismatch");
+            }
+            return values;
+        }
         if (componentType.isPrimitive()) {
             final Object array = Array.newInstance(componentType, len);
             for (int i = 0; i < len; i++) {
@@ -1540,7 +1548,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             return X_Model.keyFromString(key);
         } else if (Number.class.isAssignableFrom(propertyType)) {
             if (propertyType == Integer.class) {
-                return (int) primitives.deserializeLong(src);
+                final long value = primitives.deserializeLong(src);
+                if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+                    throw new IllegalArgumentException("Invalid encoded Integer: outside range: " + value);
+                }
+                return (int) value;
             } else if (propertyType == Long.class) {
                 return primitives.deserializeLong(src);
             } else if (propertyType == Float.class) {
@@ -1548,9 +1560,17 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             } else if (propertyType == Double.class) {
                 return primitives.deserializeDouble(src);
             } else if (propertyType == Short.class) {
-                return (short) primitives.deserializeLong(src);
+                final long value = primitives.deserializeLong(src);
+                if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+                    throw new IllegalArgumentException("Invalid encoded Short: outside range: " + value);
+                }
+                return (short) value;
             } else if (propertyType == Byte.class) {
-                return (byte) primitives.deserializeLong(src);
+                final long value = primitives.deserializeLong(src);
+                if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) {
+                    throw new IllegalArgumentException("Invalid encoded Byte: outside range: " + value);
+                }
+                return (byte) value;
             } else if (propertyType == BigInteger.class) {
                 // need to do something... less bad here
                 return BigInteger.valueOf((long) primitives.deserializeLong(src));
@@ -1560,6 +1580,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             }
         } else if (Boolean.class == propertyType) {
             final int val = primitives.deserializeInt(src);
+            if (val < -1 || val > 1) {
+                throw new IllegalArgumentException("Invalid encoded Boolean: expected -1, 0 or 1: " + val);
+            }
             return val == -1 ? null : val == 1;
         } else if (propertyType.isArray()) {
             return readArray(propertyType.getComponentType(), propName, src, primitives, ctx);
