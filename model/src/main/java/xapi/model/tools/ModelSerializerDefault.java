@@ -650,6 +650,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
                 out.append(primitives.serializeInt(-1));
             } else {
                 final Class<?> itemType = getItemType(collection, o);
+                out.append(primitives.serializeClass(itemType));
                 writeObject(out, propName, itemType, o, primitives, ctx);
             }
         }
@@ -717,6 +718,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         }
 
         int length = primitives.deserializeInt(src);
+        if (length < -1) {
+            throw new IllegalArgumentException("Invalid encoded iterable count: " + length);
+        }
         if (length == -1) {
             // We are null
 
@@ -821,6 +825,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         }
 
         int length = primitives.deserializeInt(src);
+        if (length < -1) {
+            throw new IllegalArgumentException("Invalid encoded sized iterable count: " + length);
+        }
         if (length == -1) {
             // We are null
             if (X_Log.logLevel().isLoggable(DEBUG)) {
@@ -844,7 +851,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         // Go through each item, reading them from stream.
         for (int i = 0; i < length; i++) {
             final Class<?> valueType = primitives.deserializeClass(src);
-            Object value = readObject(valueType, propName, src, primitives, ctx);
+            final Object value = valueType == null ? null : readObject(valueType, propName, src, primitives, ctx);
             result.add(value);
         }
 
@@ -872,6 +879,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         final StringTo<Object> map = X_Collect.newStringMap(valueType);
 
         int length = primitives.deserializeInt(src);
+        if (length < -1) {
+            throw new IllegalArgumentException("Invalid encoded string map count: " + length);
+        }
         if (length == -1) {
             // We are null
             if (X_Log.logLevel().isLoggable(DEBUG)) {
@@ -1291,6 +1301,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             // model lists are special! they will contain the type of the list, followed by the size.
             final Class<? extends Model> listType = primitives.deserializeClass(src);
             int listSize = primitives.deserializeInt(src);
+            if (listSize < 0) {
+                throw new IllegalArgumentException("Invalid encoded ModelList count: negative value: " + listSize);
+            }
             //noinspection rawtypes
             final ModelList result = (ModelList) ctx.getModel();
             result.setModelType(listType);
@@ -1620,6 +1633,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             return EnumSet.of(last, array);
         } else if (EnumMap.class.isAssignableFrom(propertyType)) {
             int amt = primitives.deserializeInt(src);
+            if (amt < -1) {
+                throw new IllegalArgumentException("Invalid encoded enum map count: " + amt);
+            }
             if (amt == -1) {
                 return null;
             }

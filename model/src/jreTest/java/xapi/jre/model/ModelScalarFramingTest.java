@@ -3,8 +3,13 @@ package xapi.jre.model;
 import org.junit.Test;
 import xapi.model.api.Model;
 import xapi.model.api.ModelCreateResult;
+import xapi.model.api.ModelList;
+import xapi.model.api.ModelManifest;
+import xapi.model.api.ModelModule;
 import xapi.model.api.ModelNotFoundException;
 import xapi.model.content.ModelText;
+import xapi.model.impl.ModelUtil;
+import xapi.model.tools.ModelSerializerDefault;
 import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.source.lex.StringCharIterator;
 import xapi.util.api.ErrorHandler;
@@ -21,12 +26,15 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
-/** Invalid numeric fields must fail even when ordinary JVM assertions are disabled. */
+/** Invalid numeric fields and collection counts must fail with ordinary JVM assertions disabled. */
 public class ModelScalarFramingTest {
   @Test
   public void rejectsTruncatedScalarsAndAcknowledgmentsWithoutAssertions() throws Exception {
@@ -82,13 +90,16 @@ public class ModelScalarFramingTest {
       try {
         assertFalse("Probe must run with -da", ModelScalarFramingTest.class.desiredAssertionStatus());
         assertFalse("Numeric decoder must run with -da", PrimitiveSerializerDefault.class.desiredAssertionStatus());
+        assertFalse("Model decoder must run with -da", ModelSerializerDefault.class.desiredAssertionStatus());
         assertFalse("Acknowledgment decoder must run with -da", ModelCreateRequest.class.desiredAssertionStatus());
         validNumericEncodingsRemainUnchanged();
         missingAndUnterminatedScalarsFail();
         invalidNumericAlphabetBoundsAndSentinelsFail();
         malformedHttpAcknowledgmentsFailWithoutFallback();
         corruptExistingFilesFailWithoutReplacement();
-        System.out.println("Assertion-disabled scalar alphabet/bounds, HTTP 200/201 and existing-file checks passed.");
+        negativeListCountsFailHttpAcknowledgmentsWithoutFallback();
+        negativeListCountsFailExistingFilesWithoutReplacement();
+        System.out.println("Assertion-disabled scalar alphabet/bounds, ModelList counts, HTTP 200/201 and existing-file checks passed.");
       } catch (final Throwable failure) {
         failure.printStackTrace();
         System.exit(1);
@@ -259,11 +270,11 @@ public class ModelScalarFramingTest {
     }
   }
 
-  private static final class Result implements SuccessHandler<ModelCreateResult<ModelText>>, ErrorHandler<Throwable> {
-    ModelCreateResult<ModelText> value;
+  private static final class Result<M extends Model> implements SuccessHandler<ModelCreateResult<M>>, ErrorHandler<Throwable> {
+    ModelCreateResult<M> value;
     Throwable error;
     int calls;
-    @Override public void onSuccess(final ModelCreateResult<ModelText> result) { value = result; calls++; }
+    @Override public void onSuccess(final ModelCreateResult<M> result) { value = result; calls++; }
     @Override public void onError(final Throwable failure) { error = failure; calls++; }
   }
 
@@ -284,7 +295,7 @@ public class ModelScalarFramingTest {
       for (final String malformed : malformedTimes(service, existing, full)) {
         final byte[] corrupt = malformed.getBytes(StandardCharsets.UTF_8);
         Files.write(file, corrupt);
-        final Result failed = new Result();
+        final Result<ModelText> failed = new Result<>();
         service.createIfAbsent(candidate, failed);
         assertEquals(1, failed.calls); assertNull(failed.value);
         assertTrue("Corrupt existing scalar must fail", causedByMalformedScalar(failed.error));
@@ -293,7 +304,7 @@ public class ModelScalarFramingTest {
 
         final byte[] canonical = full.getBytes(StandardCharsets.UTF_8);
         Files.write(file, canonical);
-        final Result valid = new Result();
+        final Result<ModelText> valid = new Result<>();
         service.createIfAbsent(candidate, valid);
         assertEquals(1, valid.calls); assertNull(valid.error); assertNotNull(valid.value);
         assertFalse(valid.value.isCreated());
@@ -302,11 +313,167 @@ public class ModelScalarFramingTest {
         assertArrayEquals(canonical, Files.readAllBytes(file));
       }
       candidate.setKey(service.newKey("scalar", candidate.getType(), "new"));
-      final Result fresh = new Result();
+      final Result<ModelText> fresh = new Result<>();
       service.createIfAbsent(candidate, fresh);
       assertEquals(1, fresh.calls); assertNull(fresh.error); assertNotNull(fresh.value);
       assertTrue(fresh.value.isCreated());
       assertEquals(100.0, fresh.value.getModel().getTime(), 0.0);
+      assertEquals("No ordinary-persist fallback", 0, service.ordinaryWrites);
+    }
+  }
+
+  @xapi.annotation.model.IsModel(modelType = "listCount")
+  public interface ListHolder extends Model {
+    ModelList<ModelText> getItems();
+    void setItems(ModelList<ModelText> items);
+  }
+
+  private static ModelModule listModule() {
+    final ModelModule module = new ModelModule();
+    module.setModuleName("list-count-fixture"); module.setUuid("list-count-fixture-v1");
+    module.addManifest(ModelUtil.createManifest(ModelList.class));
+    module.addManifest(ModelUtil.createManifest(ModelText.class));
+    module.addManifest(ModelUtil.createManifest(ListHolder.class));
+    return module;
+  }
+
+  private static void registerListModule(final ModelServiceJre service, final ModelModule module) {
+    for (final ModelManifest manifest : module.getManifests()) {
+      service.register(manifest.getModelType());
+      service.registerManifest(manifest);
+    }
+  }
+
+  private static ListHolder listHolder(final AbstractJreModelService service, final String id, final int size) {
+    final ListHolder result = service.create(ListHolder.class);
+    result.setKey(service.newKey("list-count", result.getType(), id));
+    if (size >= 0) {
+      final ModelList<ModelText> items = service.create(ModelList.class);
+      items.setModelType(ModelText.class);
+      for (int i = 0; i < size; i++) {
+        final ModelText child = service.create(ModelText.class);
+        child.setKey(service.newKey("list-count", child.getType(), "child-" + i));
+        child.setText("child-" + i); child.setTime(200);
+        items.add(child);
+      }
+      result.setItems(items);
+    }
+    return result;
+  }
+
+  private static void assertListSize(final ListHolder result, final int size) {
+    if (size < 0) {
+      assertNull(result.getItems());
+    } else {
+      assertNotNull(result.getItems());
+      assertEquals(size, result.getItems().size());
+      if (size > 0) assertEquals("child-0", result.getItems().iterator().next().getText());
+    }
+  }
+
+  private static String[] negativeListCounts(final ModelServiceJre service, final ListHolder empty) {
+    final String full = service.serialize(ListHolder.class, empty).toSource();
+    final String zero = service.primitiveSerializer().serializeInt(0);
+    final String header = zero + service.primitiveSerializer().serializeClass(ModelText.class) + zero;
+    assertTrue("Fixture must end in the nonnull empty ModelList header and count", full.endsWith(header));
+    final String prefix = full.substring(0, full.length() - zero.length());
+    return new String[]{prefix + service.primitiveSerializer().serializeInt(-1),
+        prefix + service.primitiveSerializer().serializeInt(-2),
+        prefix + service.primitiveSerializer().serializeInt(Integer.MIN_VALUE)};
+  }
+
+  private static boolean causedByInvalidListCount(final Throwable failure) {
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current instanceof IllegalArgumentException && current.getMessage() != null
+          && current.getMessage().startsWith("Invalid encoded ModelList count:")) return true;
+    }
+    return false;
+  }
+
+  private static void negativeListCountsFailHttpAcknowledgmentsWithoutFallback() throws Exception {
+    final ModelCreateIfAbsentHttpTest fixture = new ModelCreateIfAbsentHttpTest();
+    try {
+      fixture.start();
+      final ModelModule module = listModule();
+      fixture.codec = new ModelServiceJre(); registerListModule(fixture.codec, module);
+      fixture.client = new ModelServiceHttp("http://127.0.0.1:" + fixture.server.getAddress().getPort() + "/model",
+          ModelSerializerDefault.deserializeModule(ModelSerializerDefault.serialize(module)), 2000);
+      final ListHolder candidate = listHolder(fixture.client, "existing", 0);
+      final String[] malformed = negativeListCounts(fixture.codec, listHolder(fixture.codec, "existing", 0));
+      final List<AtomicInteger> failureCallbacks = new ArrayList<>();
+      for (final int status : new int[]{200, 201}) {
+        fixture.status = status;
+        for (final String body : malformed) {
+          fixture.response = body;
+          final AtomicInteger callbacks = new AtomicInteger(); failureCallbacks.add(callbacks);
+          final CompletableFuture<ModelCreateResult<ListHolder>> future = new CompletableFuture<>();
+          fixture.client.createIfAbsent(candidate, SuccessHandler.handler(
+              result -> { callbacks.incrementAndGet(); future.complete(result); },
+              error -> { callbacks.incrementAndGet(); future.completeExceptionally(error); }));
+          try {
+            future.get(5, TimeUnit.SECONDS);
+            fail("Negative ModelList count was accepted as an HTTP acknowledgment");
+          } catch (final ExecutionException failure) {
+            assertTrue("Expected malformed ModelList count: " + failure, causedByInvalidListCount(failure));
+            assertFalse(failure.getCause() instanceof ModelNotFoundException);
+          }
+          assertEquals("One terminal callback for each malformed acknowledgment", 1, callbacks.get());
+        }
+      }
+      final int failedRequests = 2 * malformed.length;
+      assertEquals("No ordinary-persist fallback or extra request", failedRequests, fixture.requests.get());
+      for (final int status : new int[]{200, 201}) {
+        fixture.status = status;
+        for (final int size : new int[]{-1, 0, 1}) {
+          fixture.response = fixture.codec.serialize(ListHolder.class, listHolder(fixture.codec, "existing", size)).toSource();
+          final ModelCreateResult<ListHolder> result = ModelCreateIfAbsentHttpTest.await(
+              callback -> fixture.client.createIfAbsent(candidate, callback));
+          assertEquals(status == 201, result.isCreated());
+          assertListSize(result.getModel(), size);
+        }
+      }
+      assertListSize(candidate, 0);
+      for (final AtomicInteger callbacks : failureCallbacks) assertEquals(1, callbacks.get());
+      assertEquals(failedRequests + 6, fixture.requests.get());
+    } finally {
+      fixture.stop();
+    }
+  }
+
+  private static void negativeListCountsFailExistingFilesWithoutReplacement() throws Exception {
+    final Path root = Files.createTempDirectory("xapi-list-count-file-");
+    try (FileModelTransactionStore store = new FileModelTransactionStore(root)) {
+      final InlineService service = new InlineService();
+      registerListModule(service, listModule()); service.attachTransactionStore(store);
+      final ListHolder existing = listHolder(service, "existing", 0);
+      final ListHolder candidate = listHolder(service, "existing", 0);
+      final Path file = root.resolve("list-count").resolve(existing.getType()).resolve("existing");
+      Files.createDirectories(file.getParent());
+      for (final String malformed : negativeListCounts(service, existing)) {
+        final byte[] corrupt = malformed.getBytes(StandardCharsets.UTF_8);
+        Files.write(file, corrupt);
+        final Result<ListHolder> failed = new Result<>();
+        service.createIfAbsent(candidate, failed);
+        assertEquals(1, failed.calls); assertNull(failed.value);
+        assertTrue("Corrupt existing list count must fail", causedByInvalidListCount(failed.error));
+        assertFalse(failed.error instanceof ModelNotFoundException);
+        assertArrayEquals("Corrupt list must not be replaced by the candidate", corrupt, Files.readAllBytes(file));
+      }
+      for (final int size : new int[]{-1, 0, 1}) {
+        final byte[] canonical = service.serialize(ListHolder.class, listHolder(service, "existing", size))
+            .toSource().getBytes(StandardCharsets.UTF_8);
+        Files.write(file, canonical);
+        final Result<ListHolder> valid = new Result<>();
+        service.createIfAbsent(candidate, valid);
+        assertEquals(1, valid.calls); assertNull(valid.error); assertNotNull(valid.value);
+        assertFalse(valid.value.isCreated()); assertListSize(valid.value.getModel(), size);
+        assertArrayEquals(canonical, Files.readAllBytes(file));
+      }
+      final Result<ListHolder> fresh = new Result<>();
+      service.createIfAbsent(listHolder(service, "new", 1), fresh);
+      assertEquals(1, fresh.calls); assertNull(fresh.error); assertNotNull(fresh.value);
+      assertTrue(fresh.value.isCreated()); assertListSize(fresh.value.getModel(), 1);
+      assertListSize(candidate, 0);
       assertEquals("No ordinary-persist fallback", 0, service.ordinaryWrites);
     }
   }

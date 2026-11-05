@@ -1,7 +1,12 @@
 package xapi.jre.model;
 
 import org.junit.Test;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.SetLike;
+import xapi.fu.java.X_Jdk;
 import xapi.model.api.Model;
 import xapi.model.api.ModelDeserializationContext;
 import xapi.model.api.ModelSerializationContext;
@@ -9,9 +14,11 @@ import xapi.model.tools.ModelSerializerDefault;
 import xapi.model.tools.PrimitiveSerializerDefault;
 import xapi.source.lex.StringCharIterator;
 
+import java.util.EnumMap;
+
 import static org.junit.Assert.*;
 
-/** Scalar target domains must reject coercion while preserving their existing wire encodings. */
+/** Scalar and collection domains reject invalid values while preserving valid framing. */
 public class ModelScalarDomainTest {
     private final PrimitiveSerializerDefault primitives = new PrimitiveSerializerDefault();
     private final ScalarCodec codec = new ScalarCodec(primitives);
@@ -226,6 +233,110 @@ public class ModelScalarDomainTest {
         assertArrayEquals(value, (byte[]) codec.decode(byte[].class, wire));
         assertInvalid("byte", () -> codec.decode(byte[].class,
                 primitives.serializeInt(1) + primitives.serializeInt(256)));
+    }
+
+    private enum CollectionKey { VALUE }
+
+    private Object readCollectionFrame(final Class<?> type, final String wire) {
+        final StringCharIterator input = new StringCharIterator(wire + "T");
+        final Object value = codec.read(type, input);
+        assertEquals("The following scalar must remain framed", 1, primitives.deserializeInt(input));
+        assertFalse(input.hasNext());
+        return value;
+    }
+
+    @Test public void collectionsRejectCountsBelowTheirNullSentinel() {
+        final String stringClass = primitives.serializeClass(String.class);
+        final Class<?>[] types = {ObjectTo.class, SetLike.class, StringTo.class, EnumMap.class};
+        final String[] domains = {"iterable count", "sized iterable count", "string map count", "enum map count"};
+        final String[] prefixes = {"", "", stringClass, ""};
+        final String[] suffixes = {stringClass + stringClass, "", "", primitives.serializeClass(CollectionKey.class)};
+        for (int index = 0; index < types.length; index++) {
+            final int i = index;
+            for (final int count : new int[]{-2, -31, Integer.MIN_VALUE}) {
+                final StringCharIterator input = new StringCharIterator(
+                        prefixes[i] + primitives.serializeInt(count) + suffixes[i] + "T");
+                assertInvalid(domains[i], () -> codec.read(types[i], input));
+                assertEquals("Reject at the count without consuming later fields", suffixes[i] + "T", input.consumeAll().toString());
+            }
+        }
+    }
+
+    @Test public void collectionCountsPreserveNullEmptyAndFollowingFields() {
+        final String property = "xapiModelNullForEmpty";
+        final String previous = System.getProperty(property);
+        try {
+            System.setProperty(property, "false");
+            assertNull(readCollectionFrame(ObjectTo.class, "1"));
+            assertNull(readCollectionFrame(SetLike.class, "1"));
+            assertNull(readCollectionFrame(EnumMap.class, "1"));
+            assertNull(readCollectionFrame(StringTo.class, primitives.serializeClass(void.class)));
+            // Preserve the reader's existing typed-null form as well as the writer's void marker.
+            final String stringClass = primitives.serializeClass(String.class);
+            assertNull(readCollectionFrame(StringTo.class, stringClass + "1"));
+            assertEquals(0, ((ObjectTo<?, ?>) readCollectionFrame(ObjectTo.class,
+                    "E" + stringClass + stringClass)).size());
+            assertEquals(0, ((SetLike<?>) readCollectionFrame(SetLike.class, "E")).size());
+            assertEquals(0, ((StringTo<?>) readCollectionFrame(StringTo.class, stringClass + "E")).size());
+            assertEquals(0, ((EnumMap<?, ?>) readCollectionFrame(EnumMap.class,
+                    "E" + primitives.serializeClass(CollectionKey.class))).size());
+            assertEquals("1", codec.encode(SetLike.class, null));
+            assertEquals("E", codec.encode(SetLike.class, X_Jdk.setLinked()));
+            System.setProperty(property, "true");
+            assertEquals("1", codec.encode(SetLike.class, X_Jdk.setLinked()));
+            assertNull(readCollectionFrame(SetLike.class, "E"));
+            assertNull(readCollectionFrame(ObjectTo.class, "E"));
+        } finally {
+            if (previous == null) System.clearProperty(property);
+            else System.setProperty(property, previous);
+        }
+    }
+
+    @Test public void collectionEntriesPreserveTheirTypeFrames() {
+        final String stringClass = primitives.serializeClass(String.class);
+        final String key = primitives.serializeString("key");
+        final String value = primitives.serializeString("value");
+        final ObjectTo<?, ?> objects = (ObjectTo<?, ?>) readCollectionFrame(ObjectTo.class,
+                "T" + stringClass + stringClass + key + value);
+        assertEquals(1, objects.size());
+        assertEquals("value", objects.get("key"));
+        final StringTo<?> strings = (StringTo<?>) readCollectionFrame(StringTo.class,
+                stringClass + "T" + key + value);
+        assertEquals(1, strings.size());
+        assertEquals("value", strings.get("key"));
+        final EnumMap<?, ?> enums = (EnumMap<?, ?>) readCollectionFrame(EnumMap.class,
+                "T" + primitives.serializeClass(CollectionKey.class) + "E" + stringClass + value);
+        assertEquals(1, enums.size());
+        assertEquals("value", enums.get(CollectionKey.VALUE));
+    }
+
+    @Test public void sizedIterableWriterRoundTripsTypedAndNullItems() {
+        final String stringClass = primitives.serializeClass(String.class);
+        final SetLike<String> set = X_Jdk.setLinked();
+        set.add("first");
+        set.add("second");
+        final String setWire = codec.encode(SetLike.class, set);
+        assertEquals("A" + stringClass + primitives.serializeString("first")
+                + stringClass + primitives.serializeString("second"), setWire);
+        final SetLike<?> readSet = (SetLike<?>) readCollectionFrame(SetLike.class, setWire);
+        final java.util.Iterator<?> values = readSet.iterator();
+        assertEquals("first", values.next());
+        assertEquals("second", values.next());
+        assertFalse(values.hasNext());
+        assertEquals(2, readSet.size());
+
+        // SetLike deliberately drops null members; ListLike preserves the existing null-item marker.
+        final ListLike<Object> list = X_Jdk.listArray();
+        list.add(null).add("value").add(Integer.valueOf(7)).add(null);
+        final String listWire = codec.encode(ListLike.class, list);
+        assertEquals("I1" + stringClass + primitives.serializeString("value")
+                + primitives.serializeClass(Integer.class) + primitives.serializeLong(7) + "1", listWire);
+        final ListLike<?> readList = (ListLike<?>) readCollectionFrame(ListLike.class, listWire);
+        assertEquals(4, readList.size());
+        assertNull(readList.get(0));
+        assertEquals("value", readList.get(1));
+        assertEquals(Integer.valueOf(7), readList.get(2));
+        assertNull(readList.get(3));
     }
 
     @Test public void floatingPointDomainsAndWireRepresentationsRemainUnchanged() {
