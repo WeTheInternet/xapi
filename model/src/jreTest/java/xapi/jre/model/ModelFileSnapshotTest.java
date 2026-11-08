@@ -7,6 +7,7 @@ import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelUnavailable;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
+import xapi.model.service.ModelServiceWithCreateIfAbsent;
 import xapi.model.user.ModelUser;
 import xapi.source.lex.CharIterator;
 import xapi.util.api.ErrorHandler;
@@ -240,5 +241,22 @@ public class ModelFileSnapshotTest {
     assertTrue("Existing JRE exception subtype remains compatible",
         result.error instanceof FileModelTransactionStore.Unavailable);
     assertEquals(1, result.count);
+  }
+
+  @Test
+  public void oversizedSnapshotImageFailsWithBoundedIOException() throws Exception {
+    final Service service = new Service();
+    try (FileModelTransactionStore store =
+        new FileModelTransactionStore(Files.createTempDirectory("snapshot-image-limit"))) {
+      service.attachTransactionStore(store);
+      final ModelText model = text(service, "unused");
+      final byte[] oversized = new byte[ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES + 1];
+      try {
+        service.decodeSnapshotImage(service.findManifest(ModelText.class), model.getKey(), oversized);
+        fail("The image byte bound must be checked before cloning or decoding");
+      } catch (final IOException expected) {
+        assertTrue(expected.getMessage(), expected.getMessage().contains("byte limit"));
+      }
+    }
   }
 }

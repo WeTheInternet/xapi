@@ -96,12 +96,20 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     ModelFileSnapshots.load(this, store, manifest, key, !isClientToServer(), callback);
   }
 
-  /** Strict wire-only decode of an original receipt/snapshot image; no hidden child reads. */
+  /**
+   * Strict wire-only decode of an original receipt/snapshot image; no hidden
+   * child reads or writes. Reject an oversized caller-owned image before making
+   * the defensive copy; the decoder checks the exact same bound after copying.
+   */
   public <M extends Model> M decodeSnapshotImage(final ModelManifest selected, final ModelKey original,
       final byte[] image) throws IOException {
     transactionStore();
     final ModelKey key = ModelKeySnapshot.complete(original);
     final ModelManifest manifest = ModelFileSnapshots.manifest(this, selected);
+    Objects.requireNonNull(image, "image");
+    if (image.length > ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES) {
+      throw new IOException("Snapshot model image exceeds byte limit");
+    }
     return ModelFileSnapshots.decode(this, manifest, key, image.clone(), !isClientToServer());
   }
 
