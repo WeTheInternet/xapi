@@ -513,7 +513,7 @@ public interface XapiSchemaParser {
                 if (!module.hasAttribute("virtual")) {
                     module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
                 }
-                if (Boolean.TRUE.equals(meta.isExplicitMultiplatform())) {
+                if (Boolean.TRUE.equals(meta.isExplicitMultiplatform()) && !module.hasAttribute("multiplatform")) {
                     module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(true));
                 } else if (!module.hasAttribute("multiplatform")) {
                     module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
@@ -1778,7 +1778,21 @@ public interface XapiSchemaParser {
             if (platformPublished && !mod.hasAttribute("published")) {
                 mod.addAttribute("published", BooleanLiteralExpr.boolLiteral(true));
             }
-            mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
+            final Maybe<UiAttrExpr> forPlatform = mod.getAttribute("forPlatform");
+            if (!forPlatform.isPresent()) {
+                mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
+            } else {
+                // A module nested under one platform must not route its unqualified
+                // requires/buildKind declarations to a different platform.
+                final ComposableXapiVisitor<Object> visitor = whenMissingFail(XapiSchemaParser.class);
+                visitor.nameOrStringOrType(declared -> {
+                    if (!platformName.equals(declared)) {
+                        throw new IllegalArgumentException("Module " + mod.getName() + " under " + platformName
+                                + ".modules declares conflicting forPlatform " + declared);
+                    }
+                });
+                forPlatform.get().getExpression().accept(visitor, null);
+            }
         });
     }
 

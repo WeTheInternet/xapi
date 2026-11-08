@@ -603,7 +603,8 @@ public class ModelScalarFramingTest {
           final ModelCreateResult<ArrayHolder> result = ModelCreateIfAbsentHttpTest.await(
               callback -> fixture.client.createIfAbsent(candidate, callback));
           assertEquals(status == 201, result.isCreated());
-          assertArrayEquals(payload, result.getModel().getPayload());
+          // Model proxies materialize an empty default for a null array property.
+          assertArrayEquals(payload == null ? new byte[0] : payload, result.getModel().getPayload());
         }
       }
       assertArrayEquals(new byte[0], candidate.getPayload());
@@ -638,7 +639,9 @@ public class ModelScalarFramingTest {
         final Result<ArrayHolder> valid = new Result<>();
         service.createIfAbsent(candidate, valid);
         assertEquals(1, valid.calls); assertNull(valid.error); assertNotNull(valid.value);
-        assertFalse(valid.value.isCreated()); assertArrayEquals(payload, valid.value.getModel().getPayload());
+        assertFalse(valid.value.isCreated());
+        // Model proxies materialize an empty default for a null array property.
+        assertArrayEquals(payload == null ? new byte[0] : payload, valid.value.getModel().getPayload());
         assertArrayEquals(canonical, Files.readAllBytes(file));
       }
       final Result<ArrayHolder> fresh = new Result<>();

@@ -222,7 +222,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
             request = new ModelCreateRequest(this, model == null ? null : requireManifest(model.getType()),
                     manifest, model, isClientToServer());
         } catch (Throwable failure) { fail(callback, failure); return; }
-        post("create", request.type, request.source, response -> {
+        postModelOperation("create", request.type, request.source, response -> {
             if (response.statusCode() != 200 && response.statusCode() != 201) {
                 throw new IllegalStateException("Unexpected conditional-create status " + response.statusCode());
             }
@@ -252,7 +252,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
             fail(callback, failure);
             return;
         }
-        post("persist", type, body, response -> {
+        postModelOperation("persist", type, body, response -> {
             final M saved = readModel(type, response.body());
             verifyIdentity(expected, saved.getKey());
             return saved;
@@ -323,7 +323,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
             fail(callback, failure);
             return;
         }
-        post("load", kind, body, response -> {
+        postModelOperation("load", kind, body, response -> {
             final M loaded = readModel(kind, response.body());
             verifyIdentity(expected, loaded.getKey());
             return loaded;
@@ -350,7 +350,7 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
             fail(callback, failure);
             return;
         }
-        post("query", kind, body, response -> {
+        postModelOperation("query", kind, body, response -> {
             final StringCharIterator chars = new StringCharIterator(response.body());
             final ModelQueryResult<M> result = new ModelQueryResult<>(type);
             result.setCursor(primitiveSerializer().deserializeString(chars));
@@ -463,9 +463,27 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         }
     }
 
-    private <T> void post(final String operation, final String type, final String body,
+    /**
+     * Transport hook for application-owned model operations. Only a single safe
+     * operation segment is accepted; requests reuse this client's shared module,
+     * bearer authorization, timeouts and no-redirect policy. The caller supplies
+     * the domain payload and successful-response decoder.
+     *
+     * <p>One terminal success or error is reported. A supplied missing key maps
+     * HTTP 404 to model absence; other failures are not evidence that a write was
+     * rolled back. Applications must reconcile uncertain writes by operation ID.
+     */
+    protected final <T> void postModelOperation(final String operation, final String type, final String body,
                           final In1Out1<IOMessage<String>, T> decode, final SuccessHandler<T> callback,
                           final ModelKey missingKey) {
+        try {
+            if (operation == null || !operation.matches("[A-Za-z][A-Za-z0-9_-]{0,63}")) {
+                throw new IllegalArgumentException("Invalid model operation identifier");
+            }
+            requireManifest(type);
+            Objects.requireNonNull(body, "body");
+            Objects.requireNonNull(decode, "decode");
+        } catch (Throwable failure) { fail(callback, failure); return; }
         final AtomicBoolean terminal = new AtomicBoolean();
         final StringDictionary<String> headers = X_Collect.newDictionary();
         headers.setValue("Content-Type", "text/plain;charset=UTF-8");

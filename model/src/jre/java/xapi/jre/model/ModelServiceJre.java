@@ -26,6 +26,7 @@ import xapi.util.api.SuccessHandler;
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -67,6 +68,62 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
   }
 
   public boolean hasTransactionStore() { return transactions != null; }
+
+  /** Borrow the exact attached store; only its bootstrap owner may close or recover its lifecycle. */
+  public FileModelTransactionStore transactionStore() {
+    final FileModelTransactionStore store = transactions;
+    if (store == null) throw new IllegalStateException("Transactional snapshots require an attached store");
+    return store;
+  }
+
+  /** Pure canonical mapping; actual snapshot/commit operations validate filesystem bindings. */
+  public ModelStoreKey transactionKey(final ModelKey key) throws IOException {
+    return ModelFileSnapshots.key(this, transactionStore(), key);
+  }
+
+  /**
+   * Capture the stored bytes and revision under the owned gate, then decode their
+   * detached model view and notify the caller outside that gate. A genuinely absent
+   * record produces a snapshot with a null model, not a missing-model failure.
+   * This does not guarantee the record remains unchanged after the callback;
+   * pass its store key and record to a conditional transaction to revalidate it.
+   */
+  public <M extends Model> void loadSnapshot(final ModelManifest manifest, final ModelKey key,
+      final SuccessHandler<ModelFileSnapshot<M>> callback) {
+    final FileModelTransactionStore store;
+    try { store = transactionStore(); }
+    catch (Throwable failure) { fail(callback, failure); return; }
+    ModelFileSnapshots.load(this, store, manifest, key, !isClientToServer(), callback);
+  }
+
+  /**
+   * Strict wire-only decode of an original receipt/snapshot image; no hidden
+   * child reads or writes. Reject an oversized caller-owned image before making
+   * the defensive copy; the decoder checks the exact same bound after copying.
+   */
+  public <M extends Model> M decodeSnapshotImage(final ModelManifest selected, final ModelKey original,
+      final byte[] image) throws IOException {
+    transactionStore();
+    final ModelKey key = ModelKeySnapshot.complete(original);
+    final ModelManifest manifest = ModelFileSnapshots.manifest(this, selected);
+    Objects.requireNonNull(image, "image");
+    if (image.length > ModelServiceWithCreateIfAbsent.MAX_MODEL_BYTES) {
+      throw new IOException("Snapshot model image exceeds byte limit");
+    }
+    return ModelFileSnapshots.decode(this, manifest, key, image.clone(), !isClientToServer());
+  }
+
+  /**
+   * Capture the exact canonical wire image for one model without persisting its
+   * referenced children. The selected manifest must match the registered model
+   * type; the result is a detached byte array suitable for a transaction mutation.
+   */
+  public byte[] encodeTransactionImage(final ModelManifest manifest, final Model model) throws IOException {
+    transactionStore();
+    Objects.requireNonNull(model, "model");
+    return new ModelCreateRequest(this, findManifest(model.getType()), manifest, model,
+        isClientToServer()).image.clone();
+  }
 
   @Override public boolean supportsCreateIfAbsent() { return transactions != null; }
 
