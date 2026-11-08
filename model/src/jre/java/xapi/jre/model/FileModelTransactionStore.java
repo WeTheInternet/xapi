@@ -1,5 +1,7 @@
 package xapi.jre.model;
 
+import xapi.model.api.ModelUnavailable;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -34,8 +36,14 @@ public final class FileModelTransactionStore implements AutoCloseable {
   public static final int MAX_REQUEST_BYTES = 4 * 1024 * 1024;
   private static final Set<Path> OWNED_ROOTS = new HashSet<>();
 
-  /** Operational unavailability; corrupt record/binding IO remains an ordinary IOException. */
-  public static final class Unavailable extends IOException {
+  /**
+   * @deprecated Catch {@link ModelUnavailable} from shared model code. Retained so
+   * existing JRE clients compiled against the nested type continue to work.
+   * Corrupt record/binding IO remains an ordinary IOException.
+   */
+  @Deprecated
+  public static final class Unavailable extends ModelUnavailable {
+    private static final long serialVersionUID = 1L;
     public Unavailable(final String message) { super(message); }
   }
 

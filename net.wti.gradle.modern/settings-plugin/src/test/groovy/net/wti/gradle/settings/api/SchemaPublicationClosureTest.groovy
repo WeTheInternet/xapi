@@ -23,6 +23,46 @@ class SchemaPublicationClosureTest extends AbstractSchemaTest<SchemaPublicationC
     }
 
     @Unroll
+    def 'module nested under Android retains its own buildKind with binding #binding'() {
+        given:
+        customSchema = """<xapi-schema name="platform-binding" multiplatform=true
+            platforms=[
+                <android modules=[<main $binding buildKind="android-application" />] />,
+                <jre />
+            ]
+            modules=[<main published=true />]
+        />"""
+
+        when:
+        def main = resolvedProject().getModule('main')
+
+        then:
+        main.getBuildKind('android') == SchemaModule.BuildKind.ANDROID_APPLICATION
+        main.getBuildKind('jre') == SchemaModule.BuildKind.JAVA_LIBRARY
+
+        where:
+        binding << ['', 'forPlatform="android"', 'forPlatform=android']
+    }
+
+    def 'module cannot bind to another platform from inside Android modules'() {
+        given:
+        customSchema = '''<xapi-schema name="platform-binding" multiplatform=true
+            platforms=[
+                <android modules=[<main forPlatform="jre" buildKind="android-application" />] />,
+                <jre />
+            ]
+            modules=[<main published=true />]
+        />'''
+
+        when:
+        resolvedProject()
+
+        then:
+        def problem = thrown(IllegalArgumentException)
+        problem.message.contains('conflicting forPlatform jre')
+    }
+
+    @Unroll
     def 'publication closure is platform scoped with #platforms and Android app at #applicationModule'() {
         given:
         customSchema = """<xapi-schema name="closure" multiplatform=true

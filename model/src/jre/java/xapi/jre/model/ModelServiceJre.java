@@ -26,6 +26,7 @@ import xapi.util.api.SuccessHandler;
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -80,6 +81,13 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     return ModelFileSnapshots.key(this, transactionStore(), key);
   }
 
+  /**
+   * Capture the stored bytes and revision under the owned gate, then decode their
+   * detached model view and notify the caller outside that gate. A genuinely absent
+   * record produces a snapshot with a null model, not a missing-model failure.
+   * This does not guarantee the record remains unchanged after the callback;
+   * pass its store key and record to a conditional transaction to revalidate it.
+   */
   public <M extends Model> void loadSnapshot(final ModelManifest manifest, final ModelKey key,
       final SuccessHandler<ModelFileSnapshot<M>> callback) {
     final FileModelTransactionStore store;
@@ -97,10 +105,15 @@ public class ModelServiceJre extends AbstractJreModelService implements ModelSer
     return ModelFileSnapshots.decode(this, manifest, key, image.clone(), !isClientToServer());
   }
 
-  /** Capture a canonical transaction image without incidental referenced-model saves. */
+  /**
+   * Capture the exact canonical wire image for one model without persisting its
+   * referenced children. The selected manifest must match the registered model
+   * type; the result is a detached byte array suitable for a transaction mutation.
+   */
   public byte[] encodeTransactionImage(final ModelManifest manifest, final Model model) throws IOException {
     transactionStore();
-    return new ModelCreateRequest(this, model == null ? null : findManifest(model.getType()), manifest, model,
+    Objects.requireNonNull(model, "model");
+    return new ModelCreateRequest(this, findManifest(model.getType()), manifest, model,
         isClientToServer()).image.clone();
   }
 

@@ -463,6 +463,16 @@ public class ModelServiceHttp extends AbstractJreModelService implements ModelSe
         }
     }
 
+    /**
+     * Transport hook for application-owned model operations. Only a single safe
+     * operation segment is accepted; requests reuse this client's shared module,
+     * bearer authorization, timeouts and no-redirect policy. The caller supplies
+     * the domain payload and successful-response decoder.
+     *
+     * <p>One terminal success or error is reported. A supplied missing key maps
+     * HTTP 404 to model absence; other failures are not evidence that a write was
+     * rolled back. Applications must reconcile uncertain writes by operation ID.
+     */
     protected final <T> void postModelOperation(final String operation, final String type, final String body,
                           final In1Out1<IOMessage<String>, T> decode, final SuccessHandler<T> callback,
                           final ModelKey missingKey) {

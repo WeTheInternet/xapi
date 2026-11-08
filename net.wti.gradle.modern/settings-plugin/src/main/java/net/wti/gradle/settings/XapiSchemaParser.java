@@ -1778,8 +1778,20 @@ public interface XapiSchemaParser {
             if (platformPublished && !mod.hasAttribute("published")) {
                 mod.addAttribute("published", BooleanLiteralExpr.boolLiteral(true));
             }
-            if (!mod.hasAttribute("forPlatform")) {
+            final Maybe<UiAttrExpr> forPlatform = mod.getAttribute("forPlatform");
+            if (!forPlatform.isPresent()) {
                 mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
+            } else {
+                // A module nested under one platform must not route its unqualified
+                // requires/buildKind declarations to a different platform.
+                final ComposableXapiVisitor<Object> visitor = whenMissingFail(XapiSchemaParser.class);
+                visitor.nameOrStringOrType(declared -> {
+                    if (!platformName.equals(declared)) {
+                        throw new IllegalArgumentException("Module " + mod.getName() + " under " + platformName
+                                + ".modules declares conflicting forPlatform " + declared);
+                    }
+                });
+                forPlatform.get().getExpression().accept(visitor, null);
             }
         });
     }
