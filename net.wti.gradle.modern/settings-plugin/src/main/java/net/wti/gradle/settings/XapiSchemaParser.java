@@ -513,7 +513,7 @@ public interface XapiSchemaParser {
                 if (!module.hasAttribute("virtual")) {
                     module.addAttribute("virtual", BooleanLiteralExpr.boolLiteral(virtual[0]));
                 }
-                if (Boolean.TRUE.equals(meta.isExplicitMultiplatform())) {
+                if (Boolean.TRUE.equals(meta.isExplicitMultiplatform()) && !module.hasAttribute("multiplatform")) {
                     module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(true));
                 } else if (!module.hasAttribute("multiplatform")) {
                     module.addAttribute("multiplatform", BooleanLiteralExpr.boolLiteral(multiplatform[0]));
@@ -1778,7 +1778,9 @@ public interface XapiSchemaParser {
             if (platformPublished && !mod.hasAttribute("published")) {
                 mod.addAttribute("published", BooleanLiteralExpr.boolLiteral(true));
             }
-            mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
+            if (!mod.hasAttribute("forPlatform")) {
+                mod.addAttribute("forPlatform", StringLiteralExpr.stringLiteral(platformName));
+            }
         });
     }
 
