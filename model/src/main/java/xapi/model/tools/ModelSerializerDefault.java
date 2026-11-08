@@ -650,6 +650,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
                 out.append(primitives.serializeInt(-1));
             } else {
                 final Class<?> itemType = getItemType(collection, o);
+                out.append(primitives.serializeClass(itemType));
                 writeObject(out, propName, itemType, o, primitives, ctx);
             }
         }
@@ -717,6 +718,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         }
 
         int length = primitives.deserializeInt(src);
+        if (length < -1) {
+            throw new IllegalArgumentException("Invalid encoded iterable count: " + length);
+        }
         if (length == -1) {
             // We are null
 
@@ -821,6 +825,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         }
 
         int length = primitives.deserializeInt(src);
+        if (length < -1) {
+            throw new IllegalArgumentException("Invalid encoded sized iterable count: " + length);
+        }
         if (length == -1) {
             // We are null
             if (X_Log.logLevel().isLoggable(DEBUG)) {
@@ -844,7 +851,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         // Go through each item, reading them from stream.
         for (int i = 0; i < length; i++) {
             final Class<?> valueType = primitives.deserializeClass(src);
-            Object value = readObject(valueType, propName, src, primitives, ctx);
+            final Object value = valueType == null ? null : readObject(valueType, propName, src, primitives, ctx);
             result.add(value);
         }
 
@@ -872,6 +879,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         final StringTo<Object> map = X_Collect.newStringMap(valueType);
 
         int length = primitives.deserializeInt(src);
+        if (length < -1) {
+            throw new IllegalArgumentException("Invalid encoded string map count: " + length);
+        }
         if (length == -1) {
             // We are null
             if (X_Log.logLevel().isLoggable(DEBUG)) {
@@ -1139,7 +1149,7 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             }
             if (keyOnly) {
 
-                if (autoSave) {
+                if (autoSave && ctx.isAutoSaveEnabled()) {
 
                     if (ModelList.class.isAssignableFrom(propertyType)) {
                         autoSaveModelList(propName, childModel, ctx);
@@ -1291,6 +1301,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             // model lists are special! they will contain the type of the list, followed by the size.
             final Class<? extends Model> listType = primitives.deserializeClass(src);
             int listSize = primitives.deserializeInt(src);
+            if (listSize < 0) {
+                throw new IllegalArgumentException("Invalid encoded ModelList count: negative value: " + listSize);
+            }
             //noinspection rawtypes
             final ModelList result = (ModelList) ctx.getModel();
             result.setModelType(listType);
@@ -1366,7 +1379,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
     }
 
     protected void readProperty(final Model model, final String propertyName, final CharIterator src, final boolean doNotAttach, final ModelDeserializationContext ctx) {
-        final Class<?> propertyType = model.getPropertyType(propertyName);
+        // The context owns the wire declaration. A JRE proxy may still consult a live
+        // registered manifest whose property types changed after this operation was captured.
+        final ModelManifest manifest = ctx.getManifest();
+        final Class<?> propertyType = manifest == null ? model.getPropertyType(propertyName)
+                : manifest.getMethodData(propertyName).getType();
         final PrimitiveSerializer primitives = ctx.getPrimitives();
         final Object value;
         if (propertyType.isArray()) {
@@ -1395,38 +1412,62 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
         if (len == -1) {
             return null;
         }
-        if (componentType.isPrimitive()) {
-            final Object array = Array.newInstance(componentType, len);
-            for (int i = 0; i < len; i++) {
+        if (len < 0) {
+            throw new IllegalArgumentException("Invalid encoded array length: " + len);
+        }
+        if (componentType == boolean.class) {
+            // writeArray stores a packed boolean array after the outer array length.
+            final boolean[] values = primitives.deserializeBooleanArray(src);
+            if (values.length != len) {
+                throw new IllegalArgumentException("Invalid encoded boolean array: length mismatch");
+            }
+            return values;
+        }
+        // The declared length is untrusted. Retain only small typed chunks until
+        // all elements have been decoded, avoiding both eager allocation and primitive boxing.
+        final List<Object> chunks = new ArrayList<>();
+        int remaining = len;
+        while (remaining > 0) {
+            if (!src.hasNext()) {
+                throw new IllegalArgumentException("Invalid encoded array length: insufficient elements for " + len);
+            }
+            final int chunkSize = Math.min(remaining, 256);
+            final Object chunk = Array.newInstance(componentType, chunkSize);
+            for (int i = 0; i < chunkSize; i++) {
+                if (!src.hasNext()) {
+                    throw new IllegalArgumentException("Invalid encoded array length: insufficient elements for " + len);
+                }
                 if (componentType == int.class) {
-                    Array.setInt(array, i, primitives.deserializeInt(src));
+                    Array.setInt(chunk, i, primitives.deserializeInt(src));
                 } else if (componentType == float.class) {
-                    Array.setFloat(array, i, primitives.deserializeFloat(src));
-                } else if (componentType == boolean.class) {
-                    Array.setBoolean(array, i, primitives.deserializeBoolean(src));
+                    Array.setFloat(chunk, i, primitives.deserializeFloat(src));
                 } else if (componentType == char.class) {
-                    Array.setChar(array, i, primitives.deserializeChar(src));
+                    Array.setChar(chunk, i, primitives.deserializeChar(src));
                 } else if (componentType == double.class) {
-                    Array.setDouble(array, i, primitives.deserializeDouble(src));
+                    Array.setDouble(chunk, i, primitives.deserializeDouble(src));
                 } else if (componentType == long.class) {
-                    Array.setLong(array, i, primitives.deserializeLong(src));
+                    Array.setLong(chunk, i, primitives.deserializeLong(src));
                 } else if (componentType == short.class) {
-                    Array.setShort(array, i, primitives.deserializeShort(src));
+                    Array.setShort(chunk, i, primitives.deserializeShort(src));
                 } else if (componentType == byte.class) {
-                    Array.setByte(array, i, primitives.deserializeByte(src));
-                } else {
+                    Array.setByte(chunk, i, primitives.deserializeByte(src));
+                } else if (componentType.isPrimitive()) {
                     throw new UnsupportedOperationException("Unsupported array component type" + componentType);
+                } else {
+                    Array.set(chunk, i, readObject(componentType, propName, src, primitives, ctx));
                 }
             }
-            return array;
-        } else {
-            final Object array = Array.newInstance(componentType, len);
-            for (int i = 0; i < len; i++) {
-                final Object value = readObject(componentType, propName, src, primitives, ctx);
-                Array.set(array, i, value);
-            }
-            return array;
+            chunks.add(chunk);
+            remaining -= chunkSize;
         }
+        final Object array = Array.newInstance(componentType, len);
+        int offset = 0;
+        for (final Object chunk : chunks) {
+            final int count = Array.getLength(chunk);
+            System.arraycopy(chunk, 0, array, offset, count);
+            offset += count;
+        }
+        return array;
     }
 
     /**
@@ -1536,7 +1577,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             return X_Model.keyFromString(key);
         } else if (Number.class.isAssignableFrom(propertyType)) {
             if (propertyType == Integer.class) {
-                return (int) primitives.deserializeLong(src);
+                final long value = primitives.deserializeLong(src);
+                if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+                    throw new IllegalArgumentException("Invalid encoded Integer: outside range: " + value);
+                }
+                return (int) value;
             } else if (propertyType == Long.class) {
                 return primitives.deserializeLong(src);
             } else if (propertyType == Float.class) {
@@ -1544,9 +1589,17 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             } else if (propertyType == Double.class) {
                 return primitives.deserializeDouble(src);
             } else if (propertyType == Short.class) {
-                return (short) primitives.deserializeLong(src);
+                final long value = primitives.deserializeLong(src);
+                if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+                    throw new IllegalArgumentException("Invalid encoded Short: outside range: " + value);
+                }
+                return (short) value;
             } else if (propertyType == Byte.class) {
-                return (byte) primitives.deserializeLong(src);
+                final long value = primitives.deserializeLong(src);
+                if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) {
+                    throw new IllegalArgumentException("Invalid encoded Byte: outside range: " + value);
+                }
+                return (byte) value;
             } else if (propertyType == BigInteger.class) {
                 // need to do something... less bad here
                 return BigInteger.valueOf((long) primitives.deserializeLong(src));
@@ -1556,6 +1609,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             }
         } else if (Boolean.class == propertyType) {
             final int val = primitives.deserializeInt(src);
+            if (val < -1 || val > 1) {
+                throw new IllegalArgumentException("Invalid encoded Boolean: expected -1, 0 or 1: " + val);
+            }
             return val == -1 ? null : val == 1;
         } else if (propertyType.isArray()) {
             return readArray(propertyType.getComponentType(), propName, src, primitives, ctx);
@@ -1573,6 +1629,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             return primitives.deserializeClass(src);
         } else if (EnumSet.class.isAssignableFrom(propertyType)) {
             int amt = primitives.deserializeInt(src);
+            if (amt < -1) {
+                throw new IllegalArgumentException("Invalid encoded enum set count: " + amt);
+            }
             Class<? extends Enum<?>> enumType = primitives.deserializeClass(src);
             if (amt == -1) {
                 return null;
@@ -1580,8 +1639,11 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             if (amt == 0) {
                 return EnumSet.noneOf((Class) enumType);
             }
-            List<Enum> items = new ArrayList<>(amt);
+            List<Enum> items = new ArrayList<>();
             while (amt-- > 0) {
+                if (!src.hasNext()) {
+                    throw new IllegalArgumentException("Invalid encoded enum set count: insufficient elements");
+                }
                 items.add(deserializeEnum(enumType, primitives, src));
             }
             // pull the last item off list. this is cheapest for array list
@@ -1593,6 +1655,9 @@ public class ModelSerializerDefault<M extends Model> implements ModelSerializer<
             return EnumSet.of(last, array);
         } else if (EnumMap.class.isAssignableFrom(propertyType)) {
             int amt = primitives.deserializeInt(src);
+            if (amt < -1) {
+                throw new IllegalArgumentException("Invalid encoded enum map count: " + amt);
+            }
             if (amt == -1) {
                 return null;
             }
