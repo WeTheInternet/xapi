@@ -35,6 +35,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * XapiSettingsPlugin:
@@ -156,6 +158,16 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
             settings.getGradle().beforeProject(applySchemaVersion);
         }
 
+        // Register during settings evaluation, before consumer root build scripts
+        // install their own beforeProject fallbacks. Script-body metadata is too late.
+        final Map<String, String> declaredBuildKinds = new LinkedHashMap<>();
+        settings.getGradle().beforeProject(project -> {
+            final String kind = declaredBuildKinds.get(project.getPath());
+            if (kind != null) {
+                project.getExtensions().getExtraProperties().set("xapiBuildKind", kind);
+            }
+        });
+
         // In order to access Project objects from within code running while settings.gradle is being processed,
         // we'll just setup beforeProject/afterProject listeners:
         final File rootDirFile = view.getProjectDir();
@@ -241,6 +253,8 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                     }
                 }
                 String key = QualifiedModule.unparse(plat.getName(), mod.getName());
+                final SchemaModule.BuildKind buildKind = mod.getBuildKind(plat.getName());
+                final boolean androidApplication = buildKind == SchemaModule.BuildKind.ANDROID_APPLICATION;
                 String modKey = project.getName() + (project.isMultiplatform() ? "-" + key : "");
                 String projectName = project.isMultiplatform() ? gradlePrefix + "-" + key : gradlePrefix;
                 String moduleSourcePath = "src" + File.separator + key;
@@ -323,6 +337,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             proj.setProjectDir(gradleSourceDir);
                             proj.setBuildFileName(buildFileName);
                             proj.setName(modKey);
+                            declaredBuildKinds.put(proj.getPath(), buildKind.getSchemaValue());
                             view.getLogger().info("Creating project {} named {} with build file {} for module {}:{}",
                                     projectName, modKey, userBuildFile.getAbsolutePath(), plat, mod);
 //                            }
@@ -333,6 +348,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             final ProjectDescriptor proj = settings.project(gradlePrefix);
                             proj.setProjectDir(gradleSourceDir);
                             proj.setBuildFileName(buildFileName);
+                            declaredBuildKinds.put(proj.getPath(), buildKind.getSchemaValue());
                         }
 
                         // Create our generated buildscript containing dependencies, publication configuration or any other settings we want to handle automatically
@@ -421,8 +437,19 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         if (versionAssignment != null) {
                             out.println(versionAssignment);
                         }
-                        // for now, we're just going to forcibly use java-library.
-                        // we can add an optional switch to disable this if it's ever needed
+                        final boolean isSourcePublished = plat.isSourcePublished(),
+                                      isSourceConsumed = plat.isSourceConsumed();
+                        if (androidApplication) {
+                            if (isSourcePublished || isSourceConsumed) {
+                                throw new GradleException("Android application " + projectName
+                                        + " cannot publish or consume synthetic Java source modules");
+                            }
+                            AndroidApplicationBuildScript.validateSourceLayout(moduleSourceDir, moduleTestSourceDir);
+                            AndroidApplicationBuildScript.render(out,
+                                    toGenIncludePath(moduleSourceDir, rootDirFile),
+                                    toGenIncludePath(moduleTestSourceDir, rootDirFile));
+                        } else {
+                        // Preserve the established JVM output for the default backend.
                         out.addPlugin("java-library");
                         // Need to make the java version configurable...
                         out.println("java.toolchain.languageVersion = JavaLanguageVersion.of(8)");
@@ -441,8 +468,6 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                         test.invoke("java.setSrcDirs($2)", "[]");
                         test.invoke("resources.setSrcDirs($2)", "[]");
 
-                        final boolean isSourcePublished = plat.isSourcePublished(),
-                                      isSourceConsumed = plat.isSourceConsumed();
                         if (isSourcePublished) {
                             // need to setup a synthetic source module, so we can include source transitivity
                             view.getLogger().info("Setting up transitive source project for {}", userBuildFile);
@@ -520,6 +545,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                                 }
                             }
                         }
+                        }
                         Lazy<ClosureBuffer> dependencies = Lazy.deferred1(()->
                                 out.startClosure("dependencies")
                         );
@@ -576,7 +602,9 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
                             final ClosureBuffer depOut = dependencies.out1();
                             boolean withSource = false;
                             final boolean includeSourceDependencies = !isSourceSkipped && isSourcePublished;
-                            switch (dependency.getTransitivity()) {
+                            if (androidApplication) {
+                                depOut.print(AndroidApplicationBuildScript.configurationFor(dependency.getTransitivity()));
+                            } else switch (dependency.getTransitivity()) {
                                 case api:
                                     depOut.print(
                                             project.isMultiplatform() || "main".equals(key) ?
@@ -799,7 +827,7 @@ public class XapiSettingsPlugin implements Plugin<Settings> {
 
                             }
                         }
-                        if (index.isPublished(view, project.getPathIndex(), myPlatMod)) {
+                        if (!androidApplication && index.isPublished(view, project.getPathIndex(), myPlatMod)) {
                             out.addPlugin("maven-publish");
                             if (X_String.isEmpty(mavenRepo)) {
                                 mavenRepo = "$rootDir/repo";

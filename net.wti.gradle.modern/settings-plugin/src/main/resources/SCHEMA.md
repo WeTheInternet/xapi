@@ -402,6 +402,19 @@ In `loadModules(...)`, each module element is turned into a `SchemaModule`:
         - Default: `true` for module `main`, false otherwise (but this can change if platform-specific overrides publish)
     - `test` (boolean, default `false`)
     - `force` (boolean, default `false`)
+    - `buildKind` (`java-library` or `android-application`, default `java-library`)
+        - Selects generated build behavior, not dependency coordinates.
+        - A top-level module declaration supplies a default; a module nested in a
+          platform supplies an override for that platform/module pair only.
+        - Omitted declarations preserve existing values. A nearer child project wins
+          over inherited declarations, even when inheritance is applied later. At
+          the same project depth, later declarations replace the same default or
+          qualified override; unknown values are errors.
+        - A qualified override takes precedence over a default, including a default
+          in a nearer project. A child default changes fallback platforms; resetting
+          an inherited platform choice requires an explicit override for that platform.
+        - Android applications are not Java publications, even when `main` inherits
+          `published=true`. JVM publication behavior is unchanged.
     - `requires` / `require`
         - Module-level dependencies for this module across platforms (see **§5**)
     - `include` / `includes`
@@ -413,6 +426,54 @@ In `loadModules(...)`, each module element is turned into a `SchemaModule`:
             - e.g. j2cl-only module layout
 
 Other attributes are preserved for later processing (e.g. `forPlatform`).
+
+#### Android application generation
+
+For example, the following chooses Android generation only for `android:main`:
+
+```text
+platforms = [
+    main,
+    <android modules = [ <main buildKind = "android-application" /> ] />
+]
+```
+
+The owning `src/<qualifiedKey>/gradle/plugins` (or `src/gradle/<qualifiedKey>/plugins`)
+fragment must apply `com.android.application`, including the selected AGP version
+where needed. The generator does not infer backend from plugin text, or add another
+copy of a versioned plugin declaration. An absent Android plugin produces an explicit
+configuration error. SDK, namespace, application ID, version and Android compileOptions
+belong in supported owning body fragments; dependencies remain in schema `requires`.
+Android projects receive Google Maven and Maven Central repositories, including for
+AGP build-tool resolution; pluginManagement repositories alone do not cover it.
+
+The Android backend uses AGP source sets instead of Gradle Java SourceSets. Under
+`src/<qualifiedKey>`, it maps `java`, JVM `resources`, Android `res`, `assets`,
+`jniLibs`, and `AndroidManifest.xml` to AGP `main`. XApi's existing
+`src/<qualifiedKey>Test/{java,resources}` convention maps to local unit tests (`test`),
+not instrumentation tests. Kotlin/Groovy sources, instrumentation layouts and native
+compilation are outside this initial backend; Kotlin/Groovy directories are rejected.
+Native binaries may be supplied in ABI subdirectories of `jniLibs` or through an
+owning packaging task. Resolving a native-classifier JAR alone does not unpack it.
+
+For this application backend, `api` and `impl` map to `implementation`, `runtime`
+and `runtime_only` map to `runtimeOnly`, and `compile_only`, `annotation_processor`
+and `test` map to `compileOnly`, `annotationProcessor` and `testImplementation`.
+Coordinates, classifiers and dependency closures keep their existing syntax.
+
+No Java plugin, Java toolchain declaration, Maven/Java publication or synthetic
+`-sources` sibling is generated for an Android application. `needSource` and
+`publishSource` are rejected for that backend. Existing JVM generation is unchanged.
+
+The settings plugin sets each generated project's `xapiBuildKind` extra property
+in `beforeProject`, before consumer root scripts register their callbacks. Consumers
+with legacy blanket Java-plugin fallbacks must respect this marker before applying
+Java; metadata emitted in a project script would be too late for that decision.
+The marker is derived from schema, not a second user-configurable topology switch.
+
+Focused real-AGP tests require `ANDROID_HOME` and `ANDROID_TEST_JAVA_HOME`; they assemble
+a generated fixture without installation or launch. The AGP Gradle process uses the
+selected supported JDK independently of the settings plugin's Java 8 compilation.
 
 ### 4.3.3. Platform-specific `modules` block
 

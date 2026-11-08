@@ -130,6 +130,7 @@ public abstract class AbstractModelService implements ModelService
     final ModelDeserializationContext context;
     if (parent == null) {
         context = new ModelDeserializationContext(doCreate(cls), this, findManifest(cls));
+        context.setKeyOnlyHydrationEnabled(isKeyOnlyHydrationEnabled());
     } else {
         context = parent.createChildContext(cls, hints);
     }
@@ -150,6 +151,9 @@ public abstract class AbstractModelService implements ModelService
     return false;
   }
 
+  /** Legacy providers hydrate key-only references; owned snapshot providers may retain wire-only references. */
+  protected boolean isKeyOnlyHydrationEnabled() { return true; }
+
   @Override
   public <M extends Model> M deserialize(final ModelManifest manifest, final CharIterator model) {
     if (model == null) {
@@ -157,6 +161,7 @@ public abstract class AbstractModelService implements ModelService
     }
     final Class<M> cls = (Class<M>) typeNameToClass.get(manifest.getType());
     final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), this, manifest);
+    context.setKeyOnlyHydrationEnabled(isKeyOnlyHydrationEnabled());
     context.setClientToServer(isClientToServer());
     context.setKeyOnly(manifest.isKeyOnly());
     final ModelSerializer<M> serializer = getSerializer(manifest.getType());
