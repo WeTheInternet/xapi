@@ -1,0 +1,4 @@
+interface:
+  display_name: "XApi Bootstrap"
+  short_description: "Verify, build, and smoke-test XApi consumers"
+  default_prompt: "Use $xapi-bootstrap to verify the seed and choose the smallest build or smoke check for this XApi consumer."
